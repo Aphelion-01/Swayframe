@@ -1,3 +1,4 @@
+import { snapTimeDelta } from '../core/timeline-snapping';
 import { CompositingGraphPanel } from './CompositingGraph';
 import { motionSegments, segmentMotionCurve } from '../core/motion-curve';
 import { applyMotionCurveCommands } from '../core/motion-curve-commands';
@@ -20,7 +21,8 @@ import { advancePlayback } from './playback';
 export function Timeline({ store }: { store: EditorStore }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const zoomAnchor = useRef<{ time: number; x: number } | undefined>(undefined);
-  const rulerDrag = useRef(false);
+  const rulerDrag = useRef<{ time: number } | undefined>(undefined);
+  const [snapping, setSnapping] = useState(true);
   const marquee = useRef<
     | {
         x: number;
@@ -49,7 +51,11 @@ export function Timeline({ store }: { store: EditorStore }) {
     () => localStorage.getItem('motion.active-timeline') === 'compositing',
   );
   const [motionOpen, setMotionOpen] = useState(false);
-  const [frameDrag, setFrameDrag] = useState<{ id: string; delta: number }>();
+  const [frameDrag, setFrameDrag] = useState<{
+    id: string;
+    delta: number;
+    snapTime?: number;
+  }>();
   const dragRef = useRef<
     | {
         id: string;
@@ -58,6 +64,8 @@ export function Timeline({ store }: { store: EditorStore }) {
         delta: number;
         snapshot: unknown;
         duplicate: boolean;
+        times: readonly number[];
+        targets: readonly number[];
       }
     | undefined
   >(undefined);
@@ -142,7 +150,8 @@ export function Timeline({ store }: { store: EditorStore }) {
     setFrameDrag(undefined);
     marquee.current = undefined;
     setBox(undefined);
-    rulerDrag.current = false;
+    if (rulerDrag.current) store.setTime(rulerDrag.current.time);
+    rulerDrag.current = undefined;
     setKeyMenu(undefined);
   });
   const easingSegments = () => {
@@ -270,6 +279,14 @@ export function Timeline({ store }: { store: EditorStore }) {
             onClick={() => setLoop(!loop)}
           >
             ↻
+          </IconButton>
+          <IconButton
+            label="时间轴吸附"
+            aria-pressed={snapping}
+            title="关键帧吸附到播放头、其他关键帧和边界 · Cmd/Ctrl 临时关闭"
+            onClick={() => setSnapping(!snapping)}
+          >
+            ⌁
           </IconButton>
           <button
             className="timecode"
@@ -416,7 +433,7 @@ export function Timeline({ store }: { store: EditorStore }) {
                 }}
                 onPointerDown={(event) => {
                   if (event.button !== 0) return;
-                  rulerDrag.current = true;
+                  rulerDrag.current = { time: store.getSnapshot().time };
                   event.currentTarget.setPointerCapture(event.pointerId);
                   const r = event.currentTarget.getBoundingClientRect();
                   store.setPlaying(false);
@@ -436,12 +453,26 @@ export function Timeline({ store }: { store: EditorStore }) {
                   );
                 }}
                 onPointerUp={() => {
-                  rulerDrag.current = false;
+                  rulerDrag.current = undefined;
                 }}
                 onPointerCancel={() => {
-                  rulerDrag.current = false;
+                  if (rulerDrag.current) store.setTime(rulerDrag.current.time);
+                  rulerDrag.current = undefined;
+                }}
+                onLostPointerCapture={() => {
+                  if (rulerDrag.current) store.setTime(rulerDrag.current.time);
+                  rulerDrag.current = undefined;
                 }}
               >
+                {frameDrag?.snapTime !== undefined && (
+                  <span
+                    className="timeline-snap-guide"
+                    aria-label="关键帧吸附参考线"
+                    style={{
+                      left: `${(frameDrag.snapTime / c.duration) * 100}%`,
+                    }}
+                  />
+                )}
                 <span className="ruler-playhead" style={{ left: playhead }}>
                   ▼
                 </span>
@@ -673,21 +704,75 @@ export function Timeline({ store }: { store: EditorStore }) {
                                           delta: 0,
                                           snapshot: view.project,
                                           duplicate: event.altKey,
+                                          times: c.layers
+                                            .flatMap(visibleProperties)
+                                            .flatMap(({ property: p }) =>
+                                              p.keyframes
+                                                .filter((k) =>
+                                                  store
+                                                    .getSnapshot()
+                                                    .frames.some(
+                                                      (ref) =>
+                                                        ref.keyframeId === k.id,
+                                                    ),
+                                                )
+                                                .map((k) => k.time),
+                                            ),
+                                          targets: [
+                                            0,
+                                            c.duration,
+                                            store.getSnapshot().time,
+                                            ...c.layers
+                                              .flatMap(visibleProperties)
+                                              .flatMap(({ property: p }) =>
+                                                p.keyframes
+                                                  .filter(
+                                                    (k) =>
+                                                      !store
+                                                        .getSnapshot()
+                                                        .frames.some(
+                                                          (ref) =>
+                                                            ref.keyframeId ===
+                                                            k.id,
+                                                        ),
+                                                  )
+                                                  .map((k) => k.time),
+                                              ),
+                                          ],
                                         };
                                       }}
                                       onPointerMove={(event) => {
                                         const drag = dragRef.current;
                                         if (!drag || drag.id !== frame.id)
                                           return;
-                                        const delta =
-                                          Math.round(
-                                            ((event.clientX - drag.x) /
-                                              drag.width) *
-                                              c.duration *
-                                              c.fps,
-                                          ) / c.fps;
-                                        drag.delta = delta;
-                                        setFrameDrag({ id: frame.id, delta });
+                                        if (
+                                          drag.snapshot !==
+                                          store.getSnapshot().project
+                                        ) {
+                                          dragRef.current = undefined;
+                                          setFrameDrag(undefined);
+                                          return;
+                                        }
+                                        const result = snapTimeDelta(
+                                          drag.times,
+                                          ((event.clientX - drag.x) /
+                                            Math.max(1, drag.width)) *
+                                            c.duration,
+                                          c.duration,
+                                          c.fps,
+                                          drag.targets,
+                                          snapping &&
+                                            !event.metaKey &&
+                                            !event.ctrlKey
+                                            ? (8 / Math.max(1, drag.width)) *
+                                                c.duration
+                                            : -1,
+                                        );
+                                        drag.delta = result.delta;
+                                        setFrameDrag({
+                                          id: frame.id,
+                                          ...result,
+                                        });
                                       }}
                                       onPointerUp={(event) => {
                                         event.stopPropagation();
@@ -758,6 +843,10 @@ export function Timeline({ store }: { store: EditorStore }) {
                                           );
                                       }}
                                       onPointerCancel={() => {
+                                        dragRef.current = undefined;
+                                        setFrameDrag(undefined);
+                                      }}
+                                      onLostPointerCapture={() => {
                                         dragRef.current = undefined;
                                         setFrameDrag(undefined);
                                       }}

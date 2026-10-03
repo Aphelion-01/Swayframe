@@ -1,3 +1,4 @@
+import { layerTimeDragDelta } from '../core/timeline-snapping';
 import { useInteractionCancel } from './workspace/interaction';
 import { useRef, useState } from 'react';
 import type { Layer, Composition } from '../core/project-model';
@@ -49,7 +50,7 @@ export function LayerTimeBar({
           }}
           aria-label={`${layer.name}时间范围`}
           onPointerDown={(event) => {
-            if (layer.locked) return;
+            if (event.button !== 0 || layer.locked) return;
             event.stopPropagation();
             event.currentTarget.setPointerCapture(event.pointerId);
             const mode = (event.target as HTMLElement).dataset.edge as
@@ -66,13 +67,21 @@ export function LayerTimeBar({
           onPointerMove={(event) => {
             const g = drag.current;
             if (!g) return;
-            g.delta =
-              Math.round(
-                ((event.clientX - g.x) /
-                  (ref.current?.getBoundingClientRect().width || 1)) *
-                  c.duration *
-                  c.fps,
-              ) / c.fps;
+            if (g.project !== store.getSnapshot().project) {
+              drag.current = undefined;
+              setPreview(undefined);
+              return;
+            }
+            g.delta = layerTimeDragDelta(
+              g.start,
+              g.end,
+              ((event.clientX - g.x) /
+                Math.max(1, ref.current?.getBoundingClientRect().width ?? 1)) *
+                c.duration,
+              g.mode,
+              c.duration,
+              c.fps,
+            );
             setPreview({
               start: g.mode === 'end' ? g.start : g.start + g.delta,
               end: g.mode === 'start' ? g.end : g.end + g.delta,
@@ -116,6 +125,10 @@ export function LayerTimeBar({
             }
           }}
           onPointerCancel={() => {
+            drag.current = undefined;
+            setPreview(undefined);
+          }}
+          onLostPointerCapture={() => {
             drag.current = undefined;
             setPreview(undefined);
           }}
