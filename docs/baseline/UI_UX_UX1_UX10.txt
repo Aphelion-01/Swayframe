@@ -1,0 +1,1911 @@
+你现在需要对当前 Motion Design Editor 进行一次系统性的 UI / UX 重构。
+
+本轮任务的核心不是新增动画功能，也不是简单“美化界面”。
+
+核心目标是：
+
+======================================================================
+重新建立一套专业、稳定、低学习成本的动画编辑器交互范式。
+======================================================================
+
+当前软件已经具有：
+
+Canvas
+Layer
+Inspector
+Timeline
+Keyframe
+Curve Editor
+Composition
+Shape
+Text
+以及其他基础动画能力。
+
+但是目前 UI 存在明显问题：
+
+1. 功能按钮大量平铺在界面上；
+2. 顶部工具栏承担过多职责；
+3. Timeline 控件过于拥挤；
+4. 不同功能之间缺乏清晰视觉层级；
+5. 高频操作和低频操作混在一起；
+6. Canvas 缺乏专业设计软件应有的直接操作体验；
+7. 很多操作仍然具有“网页表单”感，而不是“桌面创作软件”感；
+8. 面板尺寸、信息密度、控件层级不够统一；
+9. 用户难以快速形成肌肉记忆；
+10. 界面整体缺乏明确的 Workspace 概念。
+
+本轮不要追求独特设计语言。
+
+优先参考成熟专业软件长期验证过的交互方式：
+
+Adobe After Effects：
+Timeline、Layer、Keyframe、Graph Editor、Composition 工作逻辑。
+
+Figma：
+Canvas、Selection、Transform、Zoom/Pan、Direct Manipulation、
+Inspector、工具栏、快捷键等交互方式。
+
+可以参考它们的“交互范式和信息架构”，
+但禁止直接复制：
+
+品牌视觉
+图标资源
+专有图形
+Logo
+代码
+商业 UI Assets。
+
+当前目标不是创新 UI。
+
+当前目标是：
+
+======================================================================
+先把编辑器做得“像一个真正成熟的专业创作软件”。
+======================================================================
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+一、本轮最高设计原则
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+建立明确的五区工作空间：
+
+┌─────────────────────────────────────────────┐
+│               Global Toolbar                │
+├────────────┬───────────────────┬────────────┤
+│            │                   │            │
+│ Project /  │                   │ Inspector  │
+│ Layers     │      Canvas       │            │
+│            │                   │            │
+│            │                   │            │
+├────────────┴───────────────────┴────────────┤
+│                 Timeline                    │
+└─────────────────────────────────────────────┘
+
+五个区域职责必须严格区分。
+
+Global Toolbar：
+只放全局和创建工具。
+
+Left Panel：
+Project / Assets / Layers。
+
+Center：
+Canvas / Composition Viewer。
+
+Right Panel：
+Inspector / Properties。
+
+Bottom：
+Timeline / Keyframes / Graph Editor。
+
+不要让一个区域同时承担多个不相关职责。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二、彻底精简顶部区域
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+当前顶部按钮太多。
+
+重新设计顶部工具栏。
+
+顶部只保留真正高频、全局的操作。
+
+建议布局：
+
+左侧：
+
+App / Project Menu
+
+Selection Tool
+Hand Tool
+Shape Tool
+Pen Tool
+Text Tool
+
+中间：
+
+当前 Composition 名称
+
+右侧：
+
+Preview
+Export
+Undo
+Redo
+
+工程保存、新建、打开等操作不要全部以大按钮永久占据顶部空间。
+
+可以放入：
+
+File Menu
+
+或者更紧凑的 Project Menu。
+
+例如：
+
+File
+ ├ New Project
+ ├ Open
+ ├ Save
+ ├ Save As
+ └ Export
+
+工具栏应该像：
+
+Figma / AE
+
+而不是网页 Dashboard。
+
+控件尺寸必须统一。
+
+不要出现：
+
+某些按钮 100px
+某些按钮 35px
+某些按钮又包含长文字
+
+导致视觉节奏混乱。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+三、建立真正的工具系统
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Canvas 操作应建立 Tool 模型。
+
+例如：
+
+V = Selection Tool
+
+H = Hand Tool
+
+R = Rectangle
+
+E = Ellipse
+
+P = Pen
+
+T = Text
+
+Z = Zoom（可选）
+
+不同 Tool 决定 Canvas 鼠标行为。
+
+不要依靠：
+
+“添加矩形”
+“添加圆形”
+“添加文字”
+
+这样的网页按钮。
+
+正确体验应类似：
+
+点击 Rectangle Tool
+
+然后：
+
+Canvas 上拖拽
+
+创建 Rectangle。
+
+点击 Text Tool
+
+然后：
+
+Canvas 点击 / 拖动
+
+创建 Text。
+
+Selection Tool：
+
+负责：
+
+Select
+Move
+Scale
+Rotate
+
+工具栏图标尽量使用：
+
+icon + tooltip
+
+不要让所有工具都显示长文字。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+四、Canvas 必须成为整个软件的视觉中心
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+当前 Canvas 看起来只是一个“预览框”。
+
+必须升级为真正编辑画布。
+
+Center Area 应占界面最大面积。
+
+Canvas 支持：
+
+Selection
+Multi Selection
+Move
+Scale
+Rotate
+Anchor Point
+Bounding Box
+Control Handles
+
+交互参考：
+
+Figma
+After Effects
+Illustrator
+
+Canvas Background 与 Composition 边界要明显区分。
+
+Composition 外区域：
+
+Pasteboard / Workspace
+
+Composition 内：
+
+真正输出区域。
+
+Composition 边界应该一眼可见。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+五、Canvas 导航方式
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+必须实现专业软件常见导航习惯。
+
+Space + Drag：
+
+Pan Canvas
+
+Mouse Wheel：
+
+默认垂直或根据系统行为处理。
+
+Ctrl / Cmd + Wheel：
+
+Zoom Canvas
+
+或者保留当前平台适合的 Zoom 行为。
+
+支持：
+
+Fit to Screen
+
+100%
+
+200%
+
+Selection Zoom
+
+快捷入口不要使用巨大 Dropdown。
+
+右下角可以放：
+
+100% ▼
+
+类似 Figma。
+
+缩放必须以鼠标所在位置为中心。
+
+不要始终围绕 Composition Center 缩放。
+
+这是非常重要的操作手感。
+
+缩放过程中 Canvas 不允许明显跳动。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+六、Selection 交互
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+实现专业 Canvas 选择行为。
+
+单击：
+
+Select Layer
+
+Shift + Click：
+
+Add / Remove Selection
+
+拖空白区域：
+
+Marquee Selection
+
+点击空白：
+
+Clear Selection
+
+Double Click：
+
+进入对象内部编辑模式
+例如：
+
+Shape Path
+Text Editing
+Precomp
+
+Esc：
+
+退出当前编辑层级。
+
+Selection 必须在：
+
+Canvas
+Layer Panel
+Inspector
+Timeline
+
+之间同步。
+
+例如：
+
+Canvas 选择 Rectangle
+
+则：
+
+Layer Panel 高亮 Rectangle
+
+Inspector 显示 Rectangle 属性
+
+Timeline 展开 / 定位 Rectangle。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+七、直接操作优先
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+尽可能减少：
+
+输入数字
+点击 Apply
+
+这种网页式交互。
+
+Position：
+
+Canvas 直接拖。
+
+Scale：
+
+Bounding Box Handle。
+
+Rotation：
+
+旋转 Handle。
+
+Anchor：
+
+Anchor Tool 或直接操作。
+
+数字输入是：
+
+精确控制手段
+
+而不是：
+
+主要操作方式。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+八、Left Panel 重新设计
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+左侧不要同时杂乱显示：
+
+素材
+合成选择器
+说明文字
+图层
+
+建议使用 Tabs：
+
+Project
+Layers
+
+或者：
+
+Project 区域
++
+Layers 区域
+
+上下拆分。
+
+Project：
+
+Assets
+Compositions
+
+Assets 可以：
+
+Import
+Drag
+Preview
+
+Composition：
+
+双击打开。
+
+Layers：
+
+按照 Z Order 显示：
+
+Text
+Shape
+Image
+Precomp
+Null
+
+每一个 Layer Row 显示：
+
+Visibility
+Lock
+Layer Type Icon
+Layer Name
+
+必要时：
+
+Solo
+
+不要显示大量低频按钮。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+九、Layer Panel 操作
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+支持：
+
+Click Select
+Shift Multi-select
+Drag Reorder
+Rename
+Duplicate
+Delete
+
+常见快捷键：
+
+Enter / F2：
+Rename
+
+Cmd/Ctrl + D：
+Duplicate
+
+Delete：
+Delete
+
+右键：
+
+Context Menu
+
+例如：
+
+Duplicate
+Rename
+Pre-compose
+Create Parent
+Enable 3D
+Delete
+
+不要把这些低频功能全做成永久按钮。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十、Right Inspector 重新组织
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Inspector 必须具有明确层级。
+
+不要把所有属性直接平铺。
+
+建议结构：
+
+Layer Name
+
+Transform
+▼
+Position
+Scale
+Rotation
+Opacity
+Anchor
+
+Appearance
+▼
+
+Fill
+Stroke
+
+Text
+▼
+
+Effects
+▼
+
+Mask
+▼
+
+3D
+▼
+
+不同 Layer 类型只显示相关 Section。
+
+使用 Collapsible Sections。
+
+例如：
+
+Transform         ˅
+
+Position     X 960   Y 540
+
+Scale        X 100   Y 100
+
+Rotation     0°
+
+Opacity      100%
+
+Anchor       X 0     Y 0
+
+属性名称和输入框布局必须统一。
+
+避免现在这种：
+
+标题
+一小段空白
+两个 Input
+另一段空白
+
+导致信息密度不稳定。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十一、Inspector 数字交互
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+数字输入不能只是普通 HTML Input。
+
+实现专业设计软件 Scrub Input：
+
+鼠标拖动数字 Label：
+
+Position X
+↔
+
+即可连续修改值。
+
+Shift：
+
+大步长
+
+Alt / Option：
+
+小步长
+
+Double Click：
+
+直接输入精确数值。
+
+Enter：
+
+确认。
+
+Esc：
+
+取消。
+
+方向键：
+
+±1
+
+Shift + 方向：
+
+±10
+
+具体步长可以依据 Property Type 设置。
+
+未来很多 Property 都使用同一个 NumericField Component。
+
+不要重复实现。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十二、关键帧按钮的位置
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+类似 AE。
+
+所有可动画属性：
+
+Position
+Scale
+Rotation
+Opacity
+Effects Parameters
+etc.
+
+属性旁边显示：
+
+Keyframe / Stopwatch Icon
+
+而不是把：
+
+“自动记录位置关键帧”
+
+放到 Timeline 顶部作为全局大按钮。
+
+例如：
+
+Transform
+
+◇ Position       X 960 Y 540
+
+◇ Scale          100%
+
+◇ Rotation       0°
+
+◇ Opacity        100%
+
+点击 Diamond / Stopwatch：
+
+Enable Animation / Add Keyframe。
+
+这会明显降低 Timeline 顶部的杂乱程度。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十三、Timeline 必须彻底重构
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+这是本轮最重要的 UI 重构部分之一。
+
+当前 Timeline 顶部：
+
+动画缓动
+曲线编辑器
+自动记录
+上一个关键帧
+下一个关键帧
+复制
+粘贴
+复制下一帧
+删除
+缩放
+属性
+……
+
+全部平铺。
+
+必须拆掉。
+
+Timeline 应分成：
+
+Timeline Header
+
+Layer / Property Column
+
+Time Ruler
+
+Track Area
+
+Playback Controls
+
+Zoom Controls
+
+不要把所有命令都放到 Header。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十四、Timeline 基本布局
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+参考：
+
+AE
+
+建议：
+
+┌─────────────────────────────────────────┐
+│ ▶  ■  Loop    Time    FPS        Zoom   │
+├───────────────┬─────────────────────────┤
+│ Layer/Property│ 0s  1s  2s  3s  4s     │
+├───────────────┼─────────────────────────┤
+│ ▾ Rectangle   │───────────────           │
+│   Position    │ ◆          ◆            │
+│   Scale       │ ◆          ◆            │
+│   Rotation    │                          │
+│   Opacity     │                          │
+├───────────────┼─────────────────────────┤
+│ Text          │───────────────           │
+└───────────────┴─────────────────────────┘
+
+左边：
+
+Layer / Property
+
+右边：
+
+时间轨道。
+
+用户必须一眼看懂：
+
+哪个 Layer
+哪个 Property
+哪个 Keyframe。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十五、Timeline 层级展开
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Layer Row：
+
+▸ Rectangle
+
+点击：
+
+▾ Rectangle
+
+展开：
+
+Transform
+
+进一步：
+
+▾ Transform
+   Position
+   Scale
+   Rotation
+   Opacity
+
+类似 AE。
+
+默认不要一次把所有 Property 展开。
+
+可以支持快捷键过滤。
+
+例如：
+
+P = Position
+S = Scale
+R = Rotation
+T = Opacity
+
+如果快捷键与工具冲突，
+根据当前 Focus Context 处理。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十六、Timeline Keyframe 操作
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+支持：
+
+Click Select
+
+Shift Add Selection
+
+Marquee Select
+
+Drag Move
+
+Multi-keyframe Move
+
+Alt Drag Duplicate（如果适合平台）
+
+Delete
+
+Copy
+Paste
+
+这些操作通过：
+
+快捷键
+
+和：
+
+右键 Context Menu
+
+完成。
+
+删除顶部永久存在的：
+
+复制
+粘贴
+删除关键帧
+
+等按钮。
+
+这类功能没有必要永久占据界面。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十七、Playhead 操作
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Playhead 必须可以：
+
+Drag
+
+Click Ruler
+
+Jump
+
+拖动过程中：
+
+Canvas 实时更新。
+
+时间显示：
+
+00:00:01:05
+
+或：
+
+1.167 s
+
+提供切换。
+
+不要让：
+
+时间输入框
+
+占据播放按钮旁非常大的位置。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十八、Timeline Zoom
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+不要只用：
+
+1x Dropdown。
+
+实现：
+
+Horizontal Timeline Zoom
+
+可以：
+
+Alt/Option + Wheel
+
+或者：
+
+Ctrl/Cmd + Wheel
+
+以及：
+
+底部 Zoom Slider。
+
+时间轴缩放必须围绕：
+
+Playhead
+
+或者：
+
+鼠标位置
+
+而不是简单改变 CSS width。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十九、Graph Editor 模式
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Graph Editor 不需要永久和 Timeline 同时全部展开。
+
+设计：
+
+Timeline
+
+[ Graph Editor ]
+
+按钮。
+
+点击后：
+
+Track Area
+
+切换成：
+
+Value Graph / Speed Graph。
+
+也可以：
+
+Timeline
+Graph
+
+两个 Tab。
+
+Motion Curve Panel：
+
+作为单独 Panel / Popover。
+
+不要把：
+
+Timeline
+Graph Editor
+Motion Curve Editor
+
+三个功能全部挤在同一个 Toolbar。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十、Context Menu
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+大量低频操作迁移到右键菜单。
+
+Canvas Object：
+
+Duplicate
+Copy
+Paste
+Group
+Pre-compose
+Rename
+Delete
+
+Layer：
+
+Duplicate
+Pre-compose
+Parent
+Enable 3D
+Delete
+
+Keyframe：
+
+Ease In
+Ease Out
+Ease In-Out
+Linear
+Hold
+Open Graph Editor
+Copy Easing
+
+这样可以大幅减少永久 UI。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十一、快捷键体系
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+建立 Shortcut Registry。
+
+不要把快捷键 hard-code 在不同 React Component 中。
+
+例如：
+
+V Selection
+H Hand
+R Rectangle
+T Text
+P Pen
+
+Space：
+Play / Pause
+或者根据应用上下文决定。
+
+Delete：
+Delete Selection
+
+Cmd/Ctrl + Z：
+Undo
+
+Cmd/Ctrl + Shift + Z：
+Redo
+
+Cmd/Ctrl + C：
+Copy
+
+Cmd/Ctrl + V：
+Paste
+
+Cmd/Ctrl + D：
+Duplicate
+
+Cmd/Ctrl + S：
+Save
+
+所有快捷键统一注册。
+
+根据 Focus Context 判断：
+
+Canvas
+Timeline
+Text Editing
+Numeric Input
+
+避免用户正在输入文字时：
+
+按 V
+
+突然切换 Selection Tool。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十二、Command Palette
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+参考现代 Figma / VS Code 等软件。
+
+增加：
+
+Cmd/Ctrl + K
+
+打开 Command Palette。
+
+可以搜索：
+
+Create Rectangle
+Create Text
+Pre-compose
+Add Blur
+Open Graph Editor
+Fit Canvas
+Export
+
+这可以减少很多低频按钮。
+
+注意：
+
+Command Palette 是辅助入口。
+
+不是替代 GUI。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十三、Panel Resize
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Left Panel
+Right Inspector
+Timeline Height
+
+必须可调整尺寸。
+
+通过 Divider：
+
+Drag Resize。
+
+记录用户 Workspace Layout。
+
+例如重新打开应用后：
+
+保持：
+
+左侧宽度
+右侧宽度
+Timeline 高度。
+
+设置合理：
+
+minWidth
+maxWidth
+minHeight。
+
+避免用户把 Panel 拖到完全不可用。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十四、Panel Collapse
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+允许：
+
+Collapse Left Panel
+
+Collapse Inspector
+
+Collapse Timeline
+
+以获得更大的 Canvas。
+
+可以提供：
+
+Tab
+
+或快捷键控制。
+
+但第一版不用开发复杂 Workspace Preset。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十五、视觉层级
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+本轮视觉优化遵循：
+
+少颜色
+少描边
+少大按钮
+高信息密度
+统一 spacing
+统一 radius
+统一 typography
+
+避免：
+
+每个按钮都拥有独立背景色。
+
+Primary Action：
+
+才使用强调色。
+
+普通工具：
+
+Icon Button。
+
+Selected：
+
+轻微背景变化。
+
+Hover：
+
+清楚但克制。
+
+Disabled：
+
+明显降低对比度。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十六、Design Tokens
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+建立统一 Design Tokens。
+
+不要到处写：
+
+#111827
+#202938
+12px
+14px
+8px
+10px
+
+创建：
+
+color.background.primary
+
+color.background.panel
+
+color.background.hover
+
+color.border
+
+color.text.primary
+
+color.text.secondary
+
+color.accent
+
+spacing.xs
+spacing.sm
+spacing.md
+spacing.lg
+
+radius.sm
+radius.md
+
+font.size.small
+font.size.normal
+font.size.heading
+
+control.height.sm
+control.height.md
+
+整个 Editor 必须使用统一 Tokens。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十七、控件尺寸统一
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+建立基础组件：
+
+IconButton
+
+Button
+
+Select
+
+NumericField
+
+TextField
+
+Checkbox
+
+Toggle
+
+Tooltip
+
+PanelHeader
+
+SectionHeader
+
+ContextMenu
+
+DropdownMenu
+
+Divider
+
+Tabs
+
+Popover
+
+Slider
+
+ScrubField
+
+不要每个页面自己写一套按钮。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十八、Tooltip
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+所有纯 Icon 工具：
+
+Hover
+
+显示：
+
+Tool Name
+
+Shortcut
+
+例如：
+
+Selection Tool (V)
+
+Pen Tool (P)
+
+Graph Editor
+
+Fit to View
+
+避免用户猜图标。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十九、Status Bar
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+底部或 Canvas Bottom 可以设置极轻量 Status Bar。
+
+显示：
+
+Zoom
+Selection Info
+Render Status
+
+不要显示大量常驻说明文字。
+
+例如当前界面：
+
+“拖动自动记录位置 · 中键 / Alt 拖动平移 · Ctrl 滚轮缩放”
+
+这种教学文字不应该永久占据 Canvas 下方大量空间。
+
+应该变成：
+
+第一次进入时 onboarding
+
+或者：
+
+Tooltip / Help
+
+或者：
+
+Status Hint。
+
+专业软件工作区里不要长期放教程文字。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+三十、删除不必要的 UI
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+请主动审查当前所有永久按钮。
+
+对于每一个按钮问：
+
+用户是否每 1~2 分钟都会使用？
+
+如果不是：
+
+考虑移动到：
+
+Context Menu
+Menu
+Inspector
+Command Palette
+快捷键
+
+不要害怕删除按钮。
+
+专业编辑器的优秀 UI 不是：
+
+“所有功能都看得到”
+
+而是：
+
+“当前需要的功能总是在合理的位置”。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+三十一、交互反馈
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+所有可点击元素必须拥有：
+
+Hover
+
+Pressed
+
+Selected
+
+Disabled
+
+Focus
+
+状态。
+
+Canvas 操作：
+
+Cursor 根据 Tool 改变。
+
+例如：
+
+Move
+Resize
+Rotate
+Pen
+
+必须提供正确 Cursor。
+
+拖动中：
+
+不能出现 Browser Text Selection。
+
+避免网页感。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+三十二、拖拽行为
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+所有 Drag 必须遵守统一 Drag System。
+
+例如：
+
+Move Layer
+Move Keyframe
+Resize Panel
+Move Playhead
+Move Canvas Object
+
+定义：
+
+Drag Start
+Drag Update
+Drag Commit
+Drag Cancel
+
+Drag Start：
+
+记录原状态。
+
+Drag Update：
+
+Preview。
+
+Drag Commit：
+
+生成 Command / Transaction。
+
+Esc：
+
+Cancel Drag
+
+恢复原值。
+
+不要 mousemove 每次创建一个 Undo Command。
+
+一次完整 Drag：
+
+只能产生一个 Undo Step。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+三十三、Undo 行为
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+非常重要：
+
+用户把 Rectangle 从：
+
+x=100
+
+连续拖到：
+
+x=800
+
+中间可能产生 200 次 mousemove。
+
+Undo：
+
+应该一步回到：
+
+x=100。
+
+而不是需要按：
+
+Ctrl+Z 200 次。
+
+所有 Continuous Interaction：
+
+Move
+Resize
+Rotate
+Scrub
+Curve Drag
+Keyframe Drag
+
+都使用：
+
+Preview State
+
++
+
+Commit Command
+
+模式。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+三十四、双击行为
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+形成统一双击语义。
+
+Layer Name：
+
+Rename
+
+Text：
+
+Edit Text
+
+Precomp：
+
+Open Composition
+
+Shape：
+
+进入 Path / Shape Editing
+
+Asset：
+
+Preview / Open
+
+避免同一类对象行为完全不同。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+三十五、不要在这次重构中破坏底层架构
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+这是 UI / UX 重构。
+
+不是：
+
+重写 Project Model。
+
+禁止为了方便 UI：
+
+直接把数据全部存 React State。
+
+继续遵循：
+
+UI
+↓
+Command System
+↓
+Scene Model
+↓
+Animation Engine
+↓
+Renderer
+
+UI 可以拥有：
+
+temporary interaction state。
+
+例如：
+
+hover
+drag preview
+selection box
+
+但正式工程数据：
+
+必须属于 Project / Scene Model。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+三十六、重构顺序
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+不要一次性重写整个 UI。
+
+严格分阶段。
+
+UX-1
+
+建立 Design Tokens
+基础 UI Components
+Editor Shell
+Resizable Panels
+
+UX-2
+
+Top Toolbar
+Tool System
+Canvas Navigation
+
+UX-3
+
+Selection
+Transform Handles
+Direct Manipulation
+
+UX-4
+
+Left Project / Layer Panel
+
+UX-5
+
+Inspector
+Property Sections
+Numeric Scrubbing
+
+UX-6
+
+Timeline Layout
+
+UX-7
+
+Keyframe Interaction
+Timeline Zoom
+Playhead
+
+UX-8
+
+Graph Editor Integration
+
+UX-9
+
+Context Menu
+Shortcut Registry
+Command Palette
+
+UX-10
+
+Polish
+Interaction consistency
+Performance
+Accessibility
+
+每个阶段完成：
+
+lint
+typecheck
+test
+build
+
+再进入下一阶段。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+三十七、此次重构不得新增的大功能
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+当前先不要增加：
+
+更多 Effects
+复杂 3D
+AI Agent
+Auto Layout
+生成式 AI
+Particle
+Tracking
+Roto
+Expressions
+大量新 Layer 类型
+
+除非修复现有 UI 必须。
+
+本轮唯一目标：
+
+让现有功能：
+
+更好找
+更好理解
+更好操作
+更像真正专业创作软件。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+三十八、最终验收：第一印象
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+打开软件时：
+
+用户应该立即理解：
+
+左边管理项目和图层。
+
+中间编辑画面。
+
+右边修改属性。
+
+下面制作动画。
+
+上面切换工具。
+
+而不是需要阅读大量按钮文字。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+三十九、最终验收：基本绘图
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+用户：
+
+选择 Rectangle Tool
+
+↓
+
+Canvas 拖动
+
+↓
+
+创建 Rectangle
+
+↓
+
+自动切回 Selection 或保持 Rectangle Tool，
+行为保持一致并可配置。
+
+↓
+
+拖动 Rectangle
+
+↓
+
+移动。
+
+↓
+
+拖 Bounding Box
+
+↓
+
+Scale。
+
+↓
+
+拖 Rotation Handle
+
+↓
+
+Rotate。
+
+整个过程中不要求用户去 Inspector 输入数据。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+四十、最终验收：动画
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+用户：
+
+选择 Rectangle
+
+↓
+
+Inspector → Transform → Position
+
+↓
+
+点击 Keyframe
+
+↓
+
+移动 Playhead
+
+↓
+
+Canvas 拖动 Rectangle
+
+↓
+
+自动更新 / 创建 Position Keyframe
+
+↓
+
+播放
+
+看到动画。
+
+不需要在 Timeline Header 点击大量按钮。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+四十一、最终验收：Timeline
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Timeline 一眼能够辨认：
+
+Layer
+
+Property
+
+Keyframe
+
+Time
+
+Playhead
+
+用户可以：
+
+选择关键帧
+
+拖动
+
+复制
+
+删除
+
+调整时间。
+
+不需要顶部长期存在：
+
+复制
+粘贴
+删除
+上一个
+下一个
+
+等大按钮。
+
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+四十二、最终验收：专业操作感
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+最终版本必须让软件从：
+
+“一个拥有动画功能的网页界面”
+
+转变为：
+
+“一个真正的桌面 Motion Design Editor”。
+
+评价重点不是视觉华丽程度。
+
+而是：
+
+信息架构
+空间利用
+直接操作
+鼠标手感
+快捷键
+拖拽逻辑
+面板层级
+Timeline 可读性
+Undo 行为
+交互一致性。
+
+======================================================================
+最终设计目标
+======================================================================
+
+当前阶段：
+
+AE 提供 Timeline / Animation 工作范式参考。
+
+Figma 提供 Canvas / Direct Manipulation / Inspector 工作范式参考。
+
+我们暂时借用这些经过验证的用户习惯。
+
+不要急于创造一套完全陌生的交互语言。
+
+等基础 Editor 达到专业软件操作水平后，
+
+再逐渐加入本项目自己的：
+
+AI Assistance
+Motion Intelligence
+Auto Layout
+Agent
+Reference Intelligence
+
+等特有交互。
+
+当前首先要做到：
+
+用户即使从来不使用 AI，
+
+也愿意长期在这个 Editor 里直接做动画。

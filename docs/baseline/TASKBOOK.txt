@@ -1,0 +1,483 @@
+Codex 第一阶段开发任务书
+
+Human-first AI-native Motion Design System
+
+第一阶段：可编辑动画内核与 AI 接入闭环（V0.1）
+
+版本：V0.1日期：2026年10月用途：作为 Codex 第一阶段开发、验收和后续迭代的执行依据
+
+一、任务书定位与第一阶段总目标
+
+本任务书是《Human-first AI-native Motion Design System 项目计划书 V0.1》的第一阶段落地文件。其目的不是让 Codex 一次性实现完整的 After Effects 替代品，而是建立一个足够小、可运行、可测试、可继续扩展的动画编辑内核，并验证“人工直接操作、AI 辅助和 Agent 自动执行最终走同一套工程模型与命令系统”这一核心架构是否成立。第一阶段的所有技术选择都应服务于这一验证目标，任何不能明显帮助该闭环成立的高级功能均应延后。
+
+第一阶段完成时，软件应当能够创建基础二维元素，在画布和属性面板中直接编辑它们，在时间轴上添加关键帧并实时播放动画；工程可以保存和重新打开，用户的每一次修改都通过 Command System 进入历史记录并支持 Undo/Redo；同时保留一条最小的 Agent 接入路径，使模拟 Agent 或真实语言模型能够通过同一套命令创建“蓝色方块从左侧进入、过冲并淡入”这一演示动画。这个闭环即为 V0.1 的核心交付，而不是特效数量、格式支持数量或渲染性能。
+
+目标层级 | 第一阶段必须做到 | 第一阶段明确不追求
+
+编辑能力 | 基础图层、Transform、关键帧、时间轴、播放与画布编辑 | 完整 AE 功能、复杂节点合成、3D、粒子、Roto、Tracking
+
+架构能力 | Project Model、Property System、Command、Transaction、History、Renderer Adapter | 大规模 Native 重写、复杂 GPU Render Graph
+
+AI 能力 | Agent/Intelligence 接口、Command Tool Bridge、一个最小自然语言演示闭环 | 自研布局神经网络、视频生成模型、复杂多 Agent 系统
+
+工程质量 | 可测试、可序列化、可撤销、模块解耦、稳定 ID | 为了展示效果牺牲架构边界或测试
+
+1.1 第一阶段完成的判定标准
+
+第一阶段不是以“代码写了多少”作为完成标准，而是以用户可验证的完整工作流作为完成标准。若下列主流程中的任何一环仍需手工改 JSON、刷新页面后状态丢失、Undo 无法正确恢复、Agent 绕过 Command 直接改状态，均视为第一阶段尚未完成。
+
+启动应用→ 新建 Composition→ 创建 Rectangle / Ellipse / Text / Image→ 在 Canvas 或 Inspector 中修改 Transform→ 在 Timeline 添加关键帧→ 播放并看到插值动画→ 保存工程→ 关闭并重新打开工程→ Undo / Redo 正常→ Agent 通过 Command API 创建一个动画→ 整个 Agent 操作一次 Undo 即可撤销
+
+二、范围控制：必须实现与禁止实现
+
+2.1 P0 必须实现范围
+
+第一阶段只允许围绕“二维可编辑动画 + 统一 Command + Agent 接口”扩展。下面项目属于 P0，必须在 V0.1 结束前具备可运行实现，而不是只创建空接口。
+
+工程与合成：Project、Composition、画布尺寸、帧率、时长、活动合成。
+
+基础图层：Rectangle、Ellipse、Text、Image；统一 Layer 基类或可辨识联合类型。
+
+基础属性：Position、Scale、Rotation、Opacity；内部采用统一 Property<T> 表示。
+
+动画：Keyframe、Linear、Cubic Bezier、Spring 三类插值；按任意时间 t 求值。
+
+编辑：Canvas 选择与拖拽、Inspector 数值编辑、Layer Panel 图层选择与顺序、Timeline 播放头与关键帧。
+
+历史：Command、Transaction、Undo、Redo；AI 复合操作可作为一次 Transaction 撤销。
+
+持久化：JSON 工程保存与加载，包含 schemaVersion，并保留迁移入口。
+
+最小 AI Bridge：定义 Agent Tool API；支持用结构化 Tool Call 或测试脚本创建演示动画。
+
+测试：关键核心模块单元测试，至少覆盖插值、命令撤销、Transaction、序列化和 Agent Bridge。
+
+2.2 P1 可做但不得阻塞交付
+
+网格、吸附、参考线与基础对齐按钮。
+
+简单 Auto Layout 规则接口与 Mock Provider，但不要求真正完成高级自动排版。
+
+基础颜色建议接口、Motion Retake 接口、Reference Intelligence 接口占位。
+
+桌面壳（如 Tauri/Electron）打包；如果打包显著拖慢核心验证，可以先以本地 Web 应用完成。
+
+Timeline 缩放、关键帧多选等体验优化。
+
+2.3 V0.1 明确禁止的范围
+
+Codex 不得因为“以后会需要”而在第一阶段主动加入下列能力。它们可以留下接口或文档，但不能成为当前 Sprint 的实现重点。
+
+3D、Camera、Lighting、Particles、Tracking、Roto、复杂 Mask、复杂 Blend Mode。
+
+自研 GPU Render Graph、Rust 原生渲染核心、FFmpeg 完整媒体管线。
+
+生成式视频、生成式图片、扩散模型推理服务。
+
+训练 Layout Transformer、Diffusion Layout 或任何大型自有神经网络。
+
+插件市场、多人协作、云渲染、账户系统、支付系统。
+
+完整脚本语言或兼容 After Effects Expression 的 JavaScript 运行时。
+
+为了快速实现而允许 React 组件、LLM 或 Agent 直接修改 Project JSON。
+
+三、不可违反的架构约束
+
+第一阶段最重要的成果不是界面，而是可持续演化的核心边界。以下约束应写入仓库根目录的 ARCHITECTURE.md 或 AGENTS.md，并作为 Codex 每次修改前的检查项。
+
+编号 | 约束 | 执行说明
+
+C-01 | Single Mutation Path | 任何工程状态变化只能通过 Command/Transaction 发生。UI、快捷键、Agent 和未来 Intelligence Service 均不得直接修改 Project Model。
+
+C-02 | Shared Command API | 人工操作与 AI 操作调用完全相同的 Command。不得维护 humanMoveLayer 与 agentMoveLayer 两套业务逻辑。
+
+C-03 | Model/UI Separation | Project/Scene/Animation 核心模型不依赖 React，不读取 DOM，也不持有组件引用。UI 只是 Controller 与 View。
+
+C-04 | Deterministic Core | 给定相同 Project 状态和时间 t，动画求值与 Renderer 输入必须可重复，不依赖 LLM 随机输出。
+
+C-05 | Stable Identity | Project、Composition、Layer、Property、Keyframe、Command/Transaction 中需引用的实体均使用稳定 ID。
+
+C-06 | Time in Seconds | 引擎内部统一使用秒作为时间单位；UI 可以显示帧，但帧与秒只在边界转换。
+
+C-07 | Proposal before Mutation | 未来 Layout/Color/Motion Intelligence 只返回 Proposal；Proposal 经验证并转换为 Command 后才能作用于 Scene。
+
+C-08 | Renderer Adapter | 核心模型不得直接依赖 Canvas API。通过 Renderer 接口隔离，便于未来替换 WebGPU/wgpu/Native Core。
+
+C-09 | Versioned Project Format | 工程文件必须带 schemaVersion。加载器不得假设永远只有一个版本。
+
+C-10 | No Premature Native Core | 第一阶段不得为了理论性能提前把核心逻辑分裂到 Rust/C++；先验证数据模型和交互闭环。
+
+四、第一阶段技术栈与工程组织
+
+为了让 Codex 可以高频迭代、快速测试并尽量减少跨语言复杂度，V0.1 建议采用 TypeScript 单语言核心。第一阶段只在 Renderer 抽象层之后讨论未来的 Rust/wgpu 迁移，不提前引入原生构建链。
+
+层 | 建议技术 | 选择理由
+
+语言 | TypeScript（strict） | 类型约束适合结构化 Scene/Command/Tool Schema，也方便后续 Agent Tool Calling。
+
+UI | React + Vite | 开发速度快，适合构建 Canvas、Inspector、Timeline 等编辑器界面。
+
+状态桥接 | Zustand 或轻量自研 Store | 只用于订阅核心状态与 UI 状态；业务修改仍必须由 Command System 完成。
+
+校验 | Zod | 工程 JSON、Command/Tool 参数、Proposal 的运行时校验。
+
+渲染 | Canvas 2D，封装 RendererAdapter | 第一阶段足够；模型不依赖 Canvas，未来可替换 WebGPU/wgpu。
+
+测试 | Vitest + React Testing Library；必要时 Playwright | 核心算法优先单测，最终主流程用少量 E2E 覆盖。
+
+ID | crypto.randomUUID() | 稳定且无需新增依赖。
+
+格式化/检查 | ESLint + Prettier + TypeScript noEmit | 在每次任务完成时作为质量门禁。
+
+4.1 推荐 Monorepo/Workspace 结构
+
+motion-system/├─ apps/│  └─ editor/                    # React/Vite 应用├─ packages/│  ├─ core-types/                # Vec2、Color、ID、Time 等基础类型│  ├─ project-model/             # Project / Composition / Layer / Property│  ├─ animation-engine/          # Keyframe 与插值求值│  ├─ command-system/            # Command / Transaction / History│  ├─ project-io/                # JSON schemaVersion、保存/加载/迁移入口│  ├─ renderer-core/             # RendererAdapter 与 render snapshot│  ├─ agent-contracts/           # Tool schema / Agent bridge 接口│  └─ intelligence-contracts/    # Layout/Color/Motion Advisor 接口（只定义协议）├─ docs/│  ├─ ARCHITECTURE.md│  ├─ PROJECT_FORMAT.md│  └─ DECISIONS/├─ tests/└─ package.json
+
+若 Codex 判断完整 workspace 在最初数个小时内会制造过多配置成本，可以暂时将 packages 作为 apps/editor/src/core 下的模块目录，但模块边界必须保持一致，并在 V0.1 完成前确保没有 React 反向侵入核心模型。
+
+五、核心数据模型与接口定义
+
+5.1 基础数据约定
+
+对象 | 内部约定 | UI 表示
+
+时间 | number，单位秒 | 可按 fps 显示为帧/时间码
+
+坐标 | Composition 像素坐标，原点左上 | Canvas 可缩放显示，但不改变模型坐标
+
+Scale | Vec2，1.0 表示 100% | Inspector 显示为百分比
+
+Rotation | degree | degree
+
+Opacity | 0~1 | 0~100%
+
+Color | RGBA，0~1 | HEX/RGBA 均可作为输入形式
+
+ID | UUID 字符串 | 通常不在 UI 展示
+
+5.2 Project 与 Composition
+
+type ID = string;type Seconds = number;interface Project {  schemaVersion: "0.1.0";  id: ID;  name: string;  compositions: Composition[];  activeCompositionId: ID;  assets: Asset[];}interface Composition {  id: ID;  name: string;  width: number;  height: number;  fps: number;  duration: Seconds;  layers: Layer[];}
+
+5.3 Layer 与 Transform
+
+type Layer = ShapeLayer | TextLayer | ImageLayer;interface LayerBase {  id: ID;  name: string;  visible: boolean;  locked: boolean;  transform: Transform;  semantic?: SemanticMetadata;}interface Transform {  position: Property<Vec2>;  scale: Property<Vec2>;  rotation: Property<number>;  opacity: Property<number>;}
+
+Rectangle 与 Ellipse 可以共用 ShapeLayer，并以 shapeKind 区分；TextLayer 保存纯文本与最小字体参数；ImageLayer 保存 assetId。第一阶段不要让 Layer 类型承担复杂效果系统，也不要把具体 Canvas 对象引用写入 Layer。
+
+5.4 Property 与 Keyframe
+
+interface Property<T> {  id: ID;  baseValue: T;  keyframes: Keyframe<T>[];}interface Keyframe<T> {  id: ID;  time: Seconds;  value: T;  interpolation: Interpolation;}type Interpolation =  | { type: "linear" }  | { type: "bezier"; out: Vec2; in: Vec2 }  | { type: "spring"; stiffness: number; damping: number; mass: number };
+
+Property 求值函数必须是纯函数或表现为纯函数：输入 Property 与时间 t，输出该时刻的值。Timeline 播放、Renderer、Inspector 的“当前值”、Agent Preview 都应调用同一求值函数，禁止各自实现插值。
+
+5.5 Semantic Metadata：只做最小预留
+
+interface SemanticMetadata {  semanticRole?: string;   // main_title / subtitle / logo / subject ...  visualRole?: string;     // focal_point / support / decoration ...  importance?: number;     // 0..1  tags?: string[];}
+
+第一阶段只需要可序列化、可在 Inspector 中查看或编辑，不需要训练模型自动填写。它存在的意义是避免未来引入 Agent 时不得不重构 Layer schema。
+
+六、Command、Transaction 与 History 实现规范
+
+Command System 是第一阶段最重要的模块。任何功能只要绕过它，即使界面看起来已经可用，也不应合并到主分支。Command 可以采用类或可序列化 discriminated union；考虑到未来 Agent Tool Calling、日志与远程协作，可序列化数据命令更适合长期架构。
+
+6.1 推荐 Command 数据结构
+
+type Command =  | { type: "layer.create"; compositionId: ID; layer: Layer }  | { type: "layer.delete"; compositionId: ID; layerId: ID }  | { type: "layer.reorder"; compositionId: ID; layerId: ID; toIndex: number }  | { type: "property.setBase"; propertyId: ID; value: unknown }  | { type: "keyframe.add"; propertyId: ID; keyframe: Keyframe<unknown> }  | { type: "keyframe.update"; propertyId: ID; keyframeId: ID; patch: unknown }  | { type: "keyframe.delete"; propertyId: ID; keyframeId: ID };interface AppliedCommand {  command: Command;  inverse: Command;}
+
+执行 Command 时应同时得到 inverse command 或等价撤销信息。Undo 不应依赖“重新加载上一个完整 Project 快照”作为长期实现。第一阶段可以在复杂边界处保留快照兜底，但主要命令应验证逆操作正确。
+
+6.2 Transaction
+
+interface Transaction {  id: ID;  label: string;  source: "human" | "agent" | "system";  commands: Command[];  createdAt: number;}
+
+一次鼠标拖拽产生的连续 pointermove 不应在 History 中制造几百条记录。拖拽开始时开启临时编辑，过程中可以更新预览，pointerup 时提交一个最终 Transaction。Agent 的一组复合命令必须默认提交成一个 Transaction，这样用户一次 Undo 可以撤销整次 AI 行为。
+
+6.3 History 行为要求
+
+新 Transaction 提交后进入 undoStack，并清空 redoStack。
+
+Undo 按逆序执行 Transaction 中各 Command 的 inverse。
+
+Redo 重新执行原始 Transaction。
+
+连续 Undo/Redo 后工程状态必须与相应历史节点完全一致。
+
+加载工程后默认清空 History，除非以后单独设计持久化历史。
+
+History 中应记录 label 与 source，未来 UI 可显示“Agent：创建标题入场动画”。
+
+七、Animation Engine 任务规范
+
+Animation Engine 的职责是根据 Property 与任意时间 t 得到确定的属性值。它不应知道 React、Canvas、Layer Panel 或 Agent 的存在。第一阶段只实现满足演示需要的插值，避免提前做复杂曲线编辑器。
+
+7.1 求值规则
+
+没有关键帧：返回 baseValue。
+
+只有一个关键帧：在该关键帧之前可使用 baseValue 或第一帧值，但必须选定一个规则并写入测试；建议使用第一关键帧值作为动画区间外延值。
+
+多个关键帧：按 time 排序，找到 t 所在区间，使用左关键帧 interpolation 求值。
+
+超出最后关键帧：返回最后一个关键帧值。
+
+Vec2 与 number 应共用插值框架；颜色插值可留到下一阶段。
+
+Spring 必须避免 NaN/Infinity，并对异常参数做 schema 校验。
+
+7.2 最低测试集合
+
+测试 | 输入 | 预期
+
+线性标量 | 0s=0，1s=100，t=0.5 | 50
+
+线性 Vec2 | (0,0)→(100,200)，t=0.5 | (50,100)
+
+区间外 | 最后关键帧 1s=100，t=2 | 100
+
+关键帧排序 | 输入数组乱序 | 求值结果仍按 time 正确
+
+Bezier | 已知控制点与 t | 结果连续且端点精确
+
+Spring | 合理 stiffness/damping/mass | 无 NaN，最终收敛到目标值
+
+八、Renderer 与编辑器 UI 任务规范
+
+8.1 Renderer Adapter
+
+interface RendererAdapter {  render(input: RenderInput, target: RenderTarget): void;}interface RenderInput {  composition: Composition;  time: Seconds;  selection: ID[];}
+
+Canvas 2D 是 V0.1 的实现细节，而不是 Project Model 的一部分。Renderer 每帧读取 Composition 和当前时间，对各 Layer 的 Property 调用 Animation Engine 求值后绘制。未来替换 WebGPU/wgpu 时，上层 Timeline、Command、Agent Tool 不应发生结构性变化。
+
+8.2 Canvas
+
+显示 Composition 边界及背景。
+
+按图层顺序绘制 Rectangle、Ellipse、Text、Image。
+
+点击图层可选择，选中项显示基础边框。
+
+拖动选中图层改变 Position，最终变化必须通过 Command 提交。
+
+画布 Zoom/Pan 可使用 UI State，不进入 Project JSON。
+
+Canvas 不保存业务真相；刷新绘制应完全从 Project Snapshot 重建。
+
+8.3 Layer Panel
+
+显示当前 Composition 的图层列表。
+
+点击选择图层。
+
+支持新建四类基础 Layer。
+
+支持删除、重命名、显示/隐藏。
+
+若实现拖拽排序，必须走 layer.reorder Command。
+
+8.4 Inspector
+
+Inspector 至少能够编辑 Position X/Y、Scale X/Y、Rotation、Opacity，并显示图层类型与名称。数值输入在提交时转换为 Command。拖动数值 Scrub 可以后置，不要求第一阶段实现。
+
+8.5 Timeline
+
+Timeline 只实现建立闭环所需的最小能力，不追求 AE 级别轨道编辑器。必须包含播放头、播放/暂停、时间显示、图层行、四个 Transform 属性的关键帧状态和添加/删除关键帧入口。关键帧可先以固定小菱形表示，不要求第一阶段实现复杂拖拽曲线编辑器。
+
+Timeline V0.1 最小交互：[播放/暂停] [当前时间] [fps]Layer A  Position   ◇---------◇  Scale      ----◇------  Rotation   -----------  Opacity    ◇---------◇
+
+九、工程文件、序列化与版本迁移
+
+V0.1 工程格式使用 JSON，目标不是追求体积，而是确保可读、可调试、可被 Agent 和测试工具稳定理解。保存前必须通过 schema 校验，加载时若校验失败应向 UI 返回结构化错误，而不是直接崩溃。
+
+根节点必须包含 schemaVersion。
+
+所有实体 ID 必须持久化，加载后不能重新生成。
+
+ImageLayer 只引用 assetId，不把 Canvas Image 对象写入 JSON。
+
+项目格式中不得保存 DOM 状态、Canvas 缓存、React state 或选择框几何。
+
+建立 migrateProject(raw): Project 的统一入口，即使 V0.1 暂时只有 identity migration。
+
+保存/加载 round-trip 测试必须证明 save(load(save(project))) 保持语义等价。
+
+十、Agent 与 Intelligence 接口预留
+
+V0.1 不要求建立复杂 AI 系统，但必须从第一阶段验证 AI 是否可以在不破坏工程边界的情况下成为“第二操作者”。因此需要实现 Agent Tool Bridge，并定义 Intelligence Provider 协议。前者需要真正跑通一个演示，后者只需要接口和 Mock。
+
+10.1 Agent Tool Bridge
+
+interface AgentToolContext {  getProjectSnapshot(): Project;  executeTransaction(tx: Transaction): TransactionResult;  getCurrentTime(): Seconds;  getSelection(): ID[];}// 示例工具inspect_scene()create_layer(...)set_property(...)add_keyframe(...)set_interpolation(...)preview_frame(...)undo_last_transaction()
+
+第一阶段 Agent 演示可以有两种实现方式：其一使用本地固定脚本模拟 Tool Call；其二接入一个语言模型将提示词转换为工具调用。验收标准关注的是 Tool → Command → Transaction → Scene 这一链路，而不是模型推理质量，因此即使暂时使用 Mock Agent 也可以完成核心架构验证。
+
+10.2 Intelligence Provider 接口
+
+interface LayoutAdvisor {  suggest(input: LayoutContext): Promise<LayoutProposal[]>;}interface ColorAdvisor {  suggest(input: ColorContext): Promise<ColorProposal[]>;}interface MotionAdvisor {  suggest(input: MotionContext): Promise<MotionProposal[]>;}interface IntelligenceProposal {  id: ID;  score?: number;  operations: ProposedOperation[];}
+
+V0.1 只需提供 MockLayoutAdvisor / MockColorAdvisor / MockMotionAdvisor，以固定规则返回可预测 Proposal，并证明 Proposal 可以经过 validation → command conversion → transaction 应用。不要在这一阶段加入神经网络依赖。
+
+十一、Codex 执行顺序与任务包
+
+以下任务包必须按依赖顺序推进。Codex 可以在同一任务包内部并行修改多个文件，但不得跳过核心测试直接进入 UI 装饰。每完成一个任务包，应执行 typecheck、lint 和对应测试，并记录实际完成项与未完成项。
+
+编号 | 任务包 | Codex 实施内容 | 完成标准
+
+T0 | 仓库初始化与质量门禁 | 建立 Vite/React/TypeScript strict；ESLint、Prettier、Vitest；创建 docs/ARCHITECTURE.md；确保 npm test、npm run typecheck、npm run lint 可执行。 | 工程可启动；三项质量命令通过；README 给出启动方式。
+
+T1 | Core Types 与 Project Model | 实现 ID、Vec2、Color、Project、Composition、Layer、Transform、Property、Keyframe、schemaVersion；提供 createDefaultProject/createLayer factory。 | 无 React 依赖；模型单测通过；ID 稳定。
+
+T2 | Animation Engine | 实现 Property 求值、Linear/Bezier/Spring；处理边界与参数校验。 | 至少覆盖第七章测试集合；无 NaN/Infinity。
+
+T3 | Command/Transaction/History | 实现基础 Command、inverse、Transaction、undo/redo；鼠标拖拽的 transaction 合并策略先留 API。 | 单命令与多命令 Transaction 均可精确撤销/重做。
+
+T4 | Project IO | 实现 Zod schema、save/load、migrateProject、round-trip tests。 | 保存后重开工程状态一致；非法 JSON 返回明确错误。
+
+T5 | Renderer Adapter + Canvas | 实现 Canvas2D renderer；基础图层绘制；按当前时间求值；选择与拖拽。 | 拖动后 Project 改变且 History 出现一项；播放时动画可见。
+
+T6 | Layer Panel + Inspector | 新建/删除/重命名/显隐；编辑 Transform；全部调用 Command。 | UI 操作可 Undo/Redo；无组件直接 mutation。
+
+T7 | Timeline V0.1 | 播放头、播放循环、时间显示、关键帧显示及添加/删除入口。 | Position/Scale/Rotation/Opacity 动画可在时间轴中创建并播放。
+
+T8 | Agent Tool Bridge | 实现 inspect/create/set/addKeyframe 等工具到 Command/Transaction 的转换；提供 Mock Agent demo。 | 一句固定提示或 demo action 能创建蓝色方块入场动画；一次 Undo 全部撤销。
+
+T9 | Intelligence Contracts | 定义 Advisor/Proposal 接口与 Mock Provider；实现 Proposal→Command validator/converter 最小路径。 | Mock Layout Proposal 可被应用且可 Undo；无 ML 依赖。
+
+T10 | 集成验收与清理 | E2E 主流程、错误处理、README、架构检查、无死代码和越界依赖。 | 第十三章验收全部通过。
+
+11.1 每个任务包的固定执行模板
+
+1. 先阅读 README、ARCHITECTURE.md 与相关 package，不猜测现有结构。2. 列出本任务会修改/新增的模块与依赖方向。3. 先补或新增测试，再实现核心逻辑；UI 任务至少保证核心逻辑已有测试。4. 不扩大任务范围，不顺手实现下一阶段功能。5. 运行：typecheck → lint → unit tests → 必要的 E2E。6. 汇报：完成项、改动文件、测试结果、已知限制、下一任务依赖。7. 若必须改变架构约束，先在 docs/DECISIONS 写 ADR，不可静默改变。
+
+十二、Codex 编码规则与代码审查清单
+
+12.1 代码规则
+
+TypeScript 开启 strict；不使用 any 绕过核心模型类型，unknown 必须在边界校验后收窄。
+
+核心 package 不允许 import React、DOM 或具体 Canvas 实现。
+
+所有跨模块协议优先使用显式类型与 schema，不传递松散 object。
+
+业务函数应短小并可测试；避免把 Scene 修改、UI toast、网络调用写进同一个函数。
+
+不得在 React 组件内直接写 project.layers.push、property.baseValue = 等 mutation。
+
+Command 执行入口保持集中，便于未来日志、权限、Agent 追踪和协作扩展。
+
+Renderer 不缓存不可追踪的业务状态；缓存如存在，应可由 Project + time 重建。
+
+不要为了抽象而抽象：第一阶段只有在存在明确替换点时引入 interface/provider。
+
+新增核心行为必须有测试；修复核心 bug 必须先写回归测试。
+
+12.2 Pull Request / Review 清单
+
+检查项 | 必须满足
+
+状态修改 | 所有 Project 变化是否全部经 Command/Transaction？
+
+Undo/Redo | 新增命令是否定义并测试逆操作？
+
+模型隔离 | core 是否误依赖 React/DOM/Canvas？
+
+序列化 | 新增字段是否可保存、加载，并考虑 schemaVersion？
+
+Agent 兼容 | 新增用户能力是否原则上可以通过 Command API 被 Agent 调用？
+
+测试 | 是否有覆盖正常路径和至少一个边界条件的测试？
+
+范围 | 是否引入了 V0.1 禁止功能或无必要的大型依赖？
+
+性能 | 是否出现每帧重建整个工程、深拷贝大对象等明显问题？
+
+可读性 | 关键模块是否有简短文档与清晰命名，避免“magic”逻辑？
+
+十三、V0.1 最终验收场景
+
+最终验收必须以实际用户流程执行，而不是只看单元测试覆盖率。建议录制一段完整演示或保留 E2E 自动化脚本，作为 V0.1 的基线回归。
+
+编号/场景 | 操作 | 验收结果
+
+A-01 新建工程 | 新建 1920×1080、30fps、5s Composition；创建 Rectangle。 | 画布显示方块，Layer Panel 与 Inspector 同步。
+
+A-02 人工编辑 | 拖动方块并修改 Scale、Rotation、Opacity。 | 所有修改可逐步 Undo/Redo；刷新渲染一致。
+
+A-03 关键帧动画 | Position 在 0s 与 1s 建立关键帧；设置 Spring；Opacity 从 0 到 1。 | 播放时从左侧进入并淡入，时间轴关键帧正确显示。
+
+A-04 工程保存 | 保存工程，完全关闭后重新加载。 | ID、关键帧、插值、图层顺序和属性保持一致。
+
+A-05 Transaction | 一次拖拽或一组复合操作提交一个 Transaction。 | 一次 Undo 恢复到操作前状态。
+
+A-06 Agent Demo | 输入/触发“创建蓝色方块，从左侧进入，1 秒到中心，轻微过冲并淡入”。 | Agent Bridge 生成 Command Transaction，画面可播放，用户仍可手改。
+
+A-07 Agent Undo | 完成 A-06 后执行一次 Undo。 | Agent 创建与动画修改整体撤销，无残留状态。
+
+A-08 Proposal Demo | 调用 MockLayoutAdvisor 返回一个 LayoutProposal 并应用。 | Proposal 先校验后转换为 Command，可撤销。
+
+A-09 错误文件 | 打开结构非法或版本未知的工程 JSON。 | 应用给出可读错误，不崩溃、不部分写入当前项目。
+
+A-10 架构检查 | 搜索核心模块与 UI 代码。 | 不存在 UI/Agent 直接修改 Project 的越权路径。
+
+13.1 Definition of Done
+
+所有 A-01 至 A-10 验收通过。
+
+typecheck、lint、unit tests 全部通过；E2E 主流程通过或提供明确的手工验收记录。
+
+README 可让新环境按步骤启动项目。
+
+ARCHITECTURE.md 与实际代码一致，不存在已知绕过 Command 的主路径。
+
+工程文件格式有 schemaVersion 和迁移入口。
+
+Agent 演示不直接写 Project JSON。
+
+代码库中没有为了未来功能提前引入的大型未使用依赖。
+
+十四、第一阶段风险与处理原则
+
+风险 | 表现 | 处理原则
+
+过早追求 AE 完整度 | Codex 不断增加 Mask、Effect、3D、插件等 | 冻结 V0.1 范围，以 A-01~A-10 为唯一交付标准。
+
+UI 先行导致架构腐化 | 组件直接改 state，Undo 后补 | Command/History 在 Canvas 编辑前必须先完成。
+
+过度工程化 | 过多抽象、包、事件总线、依赖注入框架 | 只保留项目计划书已明确的替换边界。
+
+Agent 绑死某家模型 | 业务逻辑直接写在具体 SDK 回调中 | Tool/Agent bridge 与 model provider 分离。
+
+渲染与模型耦合 | Layer 保存 Canvas 对象或 DOM 引用 | RendererAdapter 单向读取 Project Snapshot。
+
+时间单位混乱 | 帧、毫秒、秒混用造成关键帧误差 | 核心统一 Seconds，仅 UI 边界换算。
+
+Undo 不可靠 | 局部功能不能撤销或 redo 不一致 | 新增 Command 必须带回归测试后才合并。
+
+十五、第一阶段结束后允许进入的第二阶段入口
+
+只有当 V0.1 验收通过后，项目才进入 AI Assistance 阶段。此时应优先实现规则式 Auto Layout、Auto Color、基础 Motion Retake 与 Semantic Metadata 的实际使用，而不是立刻训练大型模型。因为如果 Intelligence Service 接口、Proposal、Command 和 Undo 链路在 V0.1 已经验证，后续无论接规则算法、优化器还是神经网络，都会成为可替换的 Provider，而不需要重构编辑器。
+
+第二阶段的关键判断问题应是：“一个智能模块能否在不夺走用户控制权的情况下给出多个可编辑方案？”而第三阶段才逐步研究 Learned Scoring、Neural Layout Generation、Reference Intelligence 和更完整的 Agent 自我检查循环。换言之，第一阶段所搭建的不是一个临时 Demo，而是后续所有智能能力共同使用的操作系统。
+
+附录 A：可直接交给 Codex 的第一阶段启动指令
+
+下面的指令用于第一次将本任务书交给 Codex 时使用。后续应按 T0～T10 分任务推进，而不是要求 Codex 在一次会话中把所有功能全部实现。
+
+你正在开发一个 Human-first、AI-native 的二维 Motion Design 编辑器。请先阅读本仓库的《Codex 第一阶段开发任务书 V0.1》和 ARCHITECTURE.md，然后只执行当前指定的任务包。最高架构约束：1. UI、Agent、快捷键都不得直接修改 Project Model，所有工程修改必须通过 Command/Transaction。2. Human 与 Agent 共用同一套 Command API。3. Project/Animation/Command 核心模块不得依赖 React、DOM 或 Canvas。4. Renderer 通过 Adapter 读取 Project Snapshot，不把渲染对象写回模型。5. Intelligence Service 只能输出 Proposal，Proposal 经过 validation 和 command conversion 后才能修改 Scene。6. 所有核心实体使用稳定 ID；引擎内部时间统一为秒。7. 当前阶段禁止实现 3D、粒子、Tracking、Roto、完整 Effects、视频生成、自研神经网络和 Rust 原生渲染核心。每个任务执行流程：- 先检查已有代码与测试，不猜测。- 说明你准备修改的模块与依赖方向。- 优先补测试，再实现核心逻辑。- 完成后运行 typecheck、lint 和测试。- 报告改动文件、测试结果、已知限制。- 不要顺手扩展下一阶段功能。当前任务：从 T0 开始。先建立最小工程骨架、质量门禁和 ARCHITECTURE.md，不实现动画功能。
+
+附录 B：第一阶段成果目录清单
+
+类别 | V0.1 应存在的成果
+
+代码 | Project Model、Animation Engine、Command/Transaction/History、Project IO、Renderer Adapter、基础 Editor UI、Agent Bridge、Intelligence Contracts。
+
+测试 | 核心插值、Command inverse、Transaction Undo/Redo、Serialization Round-trip、Agent Demo、至少一条集成/E2E 主流程。
+
+文档 | README、ARCHITECTURE.md、PROJECT_FORMAT.md、必要 ADR。
+
+演示 | 人工创建并编辑动画；Agent 创建蓝色方块入场动画；一次 Undo 撤销 Agent 全部操作。
+
+格式 | 一个可保存/加载的 schemaVersion=0.1.0 JSON 工程示例。
+
+第一阶段的成功不是“看起来像 AE”，而是证明一个更重要的架构事实：人类直接编辑、智能辅助与 Agent 自动执行可以在同一个可编辑、可撤销、可测试的工程体系中共存。只要这一基础成立，后续自动排版、自动配色、Motion Retake、Reference Intelligence 乃至神经网络模型都可以在不推翻编辑器核心的前提下逐步接入。

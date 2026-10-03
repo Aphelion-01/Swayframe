@@ -1,0 +1,2372 @@
+你现在需要在当前 Swayframe 项目中新增一个核心高级模块：
+
+======================================================================
+Compositing Graph V0.1
+节点式合成 / 图像处理流程系统
+======================================================================
+
+它可以参考 Nuke 等节点式合成软件的“节点 + 端口 + 连线 + 数据流”工作范式，
+但不要复制任何商业软件代码、UI 资源或专有实现。
+
+本模块的目标不是把 Swayframe 改造成 Nuke，
+也不是让所有用户都必须使用节点。
+
+Swayframe 仍然坚持：
+
+Human-first
++
+Layer / Timeline
++
+Canvas Direct Manipulation
++
+Inspector
+
+作为主工作流。
+
+Compositing Graph 是：
+
+“复杂图像处理、合成、效果链和未来 AI 处理流程的高级可视化入口”。
+
+======================================================================
+一、最高设计原则
+======================================================================
+
+必须坚持以下原则：
+
+1. 不替代现有 Layer / Timeline 工作流。
+
+普通用户仍然可以完全不用 Node Graph，
+完成：
+
+Shape
+Text
+Image
+Keyframe
+Motion Curve
+Mask
+Effects
+2.5D Animation
+
+等工作。
+
+2. Node Graph 是高级视图，不是第二套工程系统。
+
+禁止建立：
+
+Layer 数据
++
+Graph 数据
++
+Effect 数据
+
+三套互不兼容状态。
+
+3. Effect Stack 与 Compositing Graph 必须尽量共享同一份底层数据。
+
+例如：
+
+Inspector:
+
+Exposure
+Gaussian Blur
+Glow
+
+在 Graph 中应表现为：
+
+Source
+  ↓
+Exposure
+  ↓
+Gaussian Blur
+  ↓
+Glow
+  ↓
+Output
+
+用户在 Effect Stack 删除 Blur：
+
+Graph 同步删除节点。
+
+用户在 Graph 删除 Blur：
+
+Effect Stack 同步更新。
+
+不要保存两份状态。
+
+4. 所有节点参数必须尽可能复用 Property<T>。
+
+例如：
+
+Blur.radius
+Exposure.amount
+Transform.position
+Mask.feather
+
+都应该可以：
+
+添加 Keyframe
+进入 Timeline
+使用 Motion Curve
+被 Agent 修改
+
+5. 所有正式 Graph 修改必须经过 Command System。
+
+Node Editor 不允许直接修改 Project JSON。
+
+6. Compositing Graph 与内部 Render Graph 必须分离。
+
+用户看到的是：
+
+User Compositing Graph
+
+内部 Renderer 使用的是：
+
+Compiled Render Graph
+
+不要把底层 GPU Pass 暴露给用户工程。
+
+======================================================================
+二、开始开发之前
+======================================================================
+
+在编码前先完整阅读：
+
+Project Model
+Scene Model
+Layer Model
+Property System
+Keyframe System
+Effects Pipeline
+Mask System
+Renderer
+Render Pipeline
+Command System
+Transaction
+Undo / Redo
+Serialization
+Desktop Project Format
+
+然后输出：
+
+COMPOSITING_GRAPH_DESIGN.md
+
+内容简洁说明：
+
+1. 当前 Effect Stack 的数据结构
+2. 当前 Renderer 如何处理 Layer / Effects
+3. Graph 最适合插入现有架构的位置
+4. 哪些结构可以复用
+5. 哪些结构需要新增
+6. Effect Stack 与 Graph 如何保持单一数据源
+7. Graph 如何编译为 Renderer 可执行流程
+
+完成设计后立即编码。
+
+不要停留在长时间讨论阶段。
+
+======================================================================
+三、第一阶段只做 Layer Compositing Graph
+======================================================================
+
+V0.1 不先做整个 Composition 的 Nuke 式全局 Graph。
+
+第一阶段：
+
+每个支持的 Layer
+可以拥有一个：
+
+CompositingGraph
+
+例如：
+
+Image Layer
+
+Source
+  ↓
+Exposure
+  ↓
+Blur
+  ↓
+Output
+
+优先支持：
+
+ImageLayer
+PrecompLayer
+SolidLayer
+
+如果 Shape/Text 当前 Renderer 已经能够输出中间 Texture，
+后续再接入。
+
+第一阶段先把：
+
+Layer Graph
+
+做扎实。
+
+以后再扩展：
+
+Composition Graph。
+
+======================================================================
+四、核心数据模型
+======================================================================
+
+建立清晰、可序列化的数据模型。
+
+建议：
+
+type NodeId = string;
+type PortId = string;
+type EdgeId = string;
+
+interface CompositingGraph {
+    id: string;
+
+    nodes: CompositingNode[];
+
+    edges: GraphEdge[];
+
+    outputNodeId: NodeId;
+
+    version: number;
+}
+
+interface CompositingNode {
+    id: NodeId;
+
+    type: CompositingNodeType;
+
+    name: string;
+
+    position: {
+        x: number;
+        y: number;
+    };
+
+    inputs: NodePort[];
+
+    outputs: NodePort[];
+
+    parameters: Record<
+        string,
+        Property<unknown>
+    >;
+
+    enabled: boolean;
+
+    metadata?: NodeMetadata;
+}
+
+interface NodePort {
+    id: PortId;
+
+    name: string;
+
+    direction: "input" | "output";
+
+    dataType: NodeDataType;
+
+    required?: boolean;
+}
+
+interface GraphEdge {
+    id: EdgeId;
+
+    fromNodeId: NodeId;
+    fromPortId: PortId;
+
+    toNodeId: NodeId;
+    toPortId: PortId;
+}
+
+不要只设计：
+
+fromNode
+toNode
+
+必须从第一天支持：
+
+Port。
+
+因为未来：
+
+Merge
+Mask
+Generative
+Depth
+Track Matte
+
+一定会出现多输入。
+
+======================================================================
+五、Node Data Type
+======================================================================
+
+定义明确端口类型。
+
+第一阶段至少：
+
+Image
+
+Mask
+
+以后预留：
+
+Number
+Vector
+Color
+Depth
+MotionData
+Geometry
+Audio
+Metadata
+
+V0.1 不要求全部实现。
+
+但 Graph Validation 应当能够判断：
+
+Image → Image
+
+是否合法。
+
+例如：
+
+Image Output
+
+不能直接连接：
+
+Number Input。
+
+不要允许所有 Port 都是 any。
+
+======================================================================
+六、Node 类型系统
+======================================================================
+
+不要使用大量：
+
+if (node.type === ...)
+
+散落整个 Renderer。
+
+建立：
+
+NodeDefinition / NodeRegistry。
+
+例如：
+
+interface NodeDefinition {
+    type: string;
+
+    title: string;
+
+    category: NodeCategory;
+
+    inputs: PortDefinition[];
+
+    outputs: PortDefinition[];
+
+    parameters: ParameterDefinition[];
+
+    evaluate:
+        NodeEvaluator;
+}
+
+Node Registry：
+
+registerNode()
+
+getNodeDefinition()
+
+createNode()
+
+未来插件 / Agent / AI Node
+可以通过 Registry 扩展。
+
+======================================================================
+七、V0.1 第一批节点
+======================================================================
+
+严格控制范围。
+
+先只实现真正可用的：
+
+INPUT
+
+1. Source
+
+表示当前 Layer 的原始图像。
+
+2. Solid
+
+产生纯色 Image。
+
+TRANSFORM
+
+3. Transform
+
+Position
+Scale
+Rotation
+Anchor
+
+第一阶段可以先复用现有 Transform 数学。
+
+FILTER
+
+4. Gaussian Blur
+
+radius
+
+COLOR
+
+5. Exposure
+
+exposure
+
+6. Brightness / Contrast
+
+brightness
+contrast
+
+7. Hue / Saturation
+
+hue
+saturation
+lightness
+
+MASK
+
+8. Mask
+
+输入：
+
+Image
+Mask
+
+或根据当前 Mask Pipeline 设计。
+
+COMPOSITE
+
+9. Merge
+
+输入：
+
+A
+B
+Mask（可选）
+
+输出：
+
+Image
+
+UTILITY
+
+10. Passthrough
+
+用于调试。
+
+OUTPUT
+
+11. Output
+
+Graph 唯一最终输出。
+
+不要第一阶段就做：
+
+几十种 Node。
+
+目标是验证完整 Graph Pipeline。
+
+======================================================================
+八、Source Node
+======================================================================
+
+Layer Graph 必须存在明确 Source。
+
+例如：
+
+ImageLayer
+
+Source：
+
+输出 Layer 原始像素。
+
+然后：
+
+Source
+ ↓
+Effects
+ ↓
+Output
+
+Source 不允许删除。
+
+可以隐藏或锁定。
+
+如果 Layer 类型不支持 Graph：
+
+显示不可用状态。
+
+======================================================================
+九、Output Node
+======================================================================
+
+Graph 必须只有一个 Active Output。
+
+Output：
+
+Image input
+
+代表：
+
+Layer 最终渲染结果。
+
+Output Node：
+
+不可删除。
+
+未来可以支持多个 Viewer，
+但 V0.1 不需要。
+
+======================================================================
+十、Merge Node
+======================================================================
+
+Merge 是整个 Graph 中最重要的多输入节点。
+
+接口至少：
+
+A
+B
+Mask(optional)
+
+Output：
+
+Image
+
+模式第一阶段可以只实现：
+
+Over / Normal
+
+如果当前 Blend Mode Pipeline 已经成熟：
+
+可以支持：
+
+Multiply
+Screen
+Add
+
+但不要为了 Blend Mode 推迟 Graph 核心。
+
+Merge 语义必须明确：
+
+B = background
+
+A = foreground
+
+result = A over B
+
+不要使用模糊顺序。
+
+======================================================================
+十一、Graph Edge Validation
+======================================================================
+
+建立连接验证。
+
+禁止：
+
+Node 自己连接自己。
+
+禁止：
+
+形成循环。
+
+例如：
+
+A → B → C → A
+
+必须在：
+
+Connect Edge
+
+阶段检测。
+
+Graph V0.1 必须是：
+
+DAG
+Directed Acyclic Graph
+
+原因：
+
+Render 编译和缓存会大幅简单。
+
+以后如需要：
+
+Feedback Node
+
+再特殊处理。
+
+======================================================================
+十二、Graph Evaluation
+======================================================================
+
+不要按照 UI Node 顺序遍历。
+
+Graph 执行必须：
+
+从 Output
+
+反向查找依赖
+
+→
+
+建立依赖图
+
+→
+
+Topological Sort
+
+→
+
+生成执行顺序。
+
+例如：
+
+Source
+ ↓
+Exposure
+ ↓
+Blur
+ ↓
+Output
+
+执行：
+
+Source
+Exposure
+Blur
+Output
+
+Merge：
+
+Source A ──┐
+           Merge
+Source B ──┘
+
+必须先：
+
+A
+B
+
+完成后：
+
+Merge。
+
+======================================================================
+十三、User Graph ≠ Render Graph
+======================================================================
+
+非常重要。
+
+建立：
+
+GraphCompiler
+
+例如：
+
+compileCompositingGraph(
+    graph,
+    context
+)
+
+→
+
+CompiledRenderGraph
+
+用户：
+
+Gaussian Blur Node
+
+内部可以编译：
+
+Horizontal Blur Pass
+Vertical Blur Pass
+
+用户：
+
+Merge Node
+
+内部可以编译：
+
+GPU Composite Pass
+
+但：
+
+Project 文件只保存：
+
+Gaussian Blur
+
+不要保存：
+
+BlurPassX
+BlurPassY
+
+这些内部实现细节。
+
+这样未来可以：
+
+Canvas2D
+WebGL
+WebGPU
+wgpu
+Metal
+Vulkan
+
+替换 Renderer。
+
+======================================================================
+十四、第一阶段允许简单 Renderer
+======================================================================
+
+不要因为 Graph 系统：
+
+立刻重写整个 GPU Renderer。
+
+如果当前 Renderer 能够用：
+
+Canvas
+OffscreenCanvas
+WebGL/WebGPU
+
+实现基本 Node Pipeline：
+
+先复用。
+
+重点验证：
+
+Graph Model
+Graph Compiler
+Graph Editing
+Property Animation
+Undo
+Serialization
+
+性能优化后续再做。
+
+======================================================================
+十五、Property(t) 集成
+======================================================================
+
+Node Parameter 必须尽量是：
+
+Property<T>
+
+例如：
+
+GaussianBlur:
+
+radius: Property<number>
+
+Exposure:
+
+amount: Property<number>
+
+Transform:
+
+position: Property<Vec2>
+
+因此：
+
+Node Parameter
+
+自动拥有：
+
+Base Value
+
+Keyframe
+
+Animation
+
+Timeline
+
+Motion Curve
+
+Graph Editor
+
+能力。
+
+不要创建：
+
+NodeKeyframeSystem
+
+这种第二套动画系统。
+
+======================================================================
+十六、Timeline 集成
+======================================================================
+
+一个 Layer 包含 Compositing Graph 后：
+
+Timeline 可以展开：
+
+Layer
+  Effects / Graph
+    Exposure
+      Amount
+    Gaussian Blur
+      Radius
+
+或者继续沿用：
+
+Effect Stack
+
+显示参数。
+
+关键点：
+
+Node Parameter Animation
+
+必须出现在现有 Timeline 中。
+
+不要再做一条：
+
+Node Timeline。
+
+======================================================================
+十七、Inspector 集成
+======================================================================
+
+用户选中 Node：
+
+Inspector 显示：
+
+Node Name
+
+Enabled
+
+Parameters
+
+例如：
+
+Gaussian Blur
+
+Radius      20
+◇
+
+Edge Mode
+
+其中：
+
+Radius
+
+使用现有：
+
+NumericField
+Property Row
+Keyframe Control
+
+不要另外开发一套 Node Inspector 控件。
+
+======================================================================
+十八、Effect Stack 与 Graph 的关系
+======================================================================
+
+必须实现：
+
+Effect Stack 是 Linear Graph 的简化视图。
+
+例如：
+
+Source
+ ↓
+Exposure
+ ↓
+Blur
+ ↓
+Glow
+ ↓
+Output
+
+Inspector Effects：
+
+Exposure
+Blur
+Glow
+
+如果 Graph 是纯线性：
+
+Effect Stack 可以正常显示和排序。
+
+如果 Graph 出现：
+
+Branch
+
+例如：
+
+        Blur
+       /
+Source
+       \
+        Exposure
+          ↓
+        Merge
+
+Effect Stack 无法完整表达。
+
+此时：
+
+Inspector 可以显示：
+
+Advanced Graph
+
+或者：
+
+Graph contains branching.
+
+Open Compositing Graph
+
+不要强行把 Branch 压平成 Effects List。
+
+======================================================================
+十九、避免双数据源
+======================================================================
+
+不要：
+
+EffectStack.effects[]
+
+同时：
+
+Graph.nodes[]
+
+两边各保存一份。
+
+推荐：
+
+Compositing Graph
+
+作为长期底层真相。
+
+Effect Stack：
+
+读取 Graph 中的：
+
+Linear Chain Representation。
+
+如果当前项目已有 Effects Array：
+
+不要立刻破坏所有代码。
+
+可以建立：
+
+EffectGraphAdapter
+
+逐步迁移。
+
+保持向后兼容。
+
+======================================================================
+二十、Node Editor UI
+======================================================================
+
+建立真正可操作 Node Editor。
+
+基础布局：
+
+┌────────────────────────────────────┐
+│ Compositing Graph                  │
+├────────────────────────────────────┤
+│                                    │
+│ [Source]                           │
+│    │                               │
+│    ▼                               │
+│ [Exposure]                         │
+│    │                               │
+│    ▼                               │
+│ [Blur]                             │
+│    │                               │
+│    ▼                               │
+│ [Output]                           │
+│                                    │
+└────────────────────────────────────┘
+
+支持：
+
+Pan
+
+Zoom
+
+Select Node
+
+Multi-select
+
+Move Node
+
+Marquee Selection
+
+Connect Port
+
+Disconnect
+
+Delete
+
+Duplicate
+
+Context Menu
+
+Fit Graph
+
+不要只做静态流程图。
+
+======================================================================
+二十一、Graph Navigation
+======================================================================
+
+鼠标：
+
+Space + Drag
+
+Pan
+
+Wheel / Cmd/Ctrl + Wheel：
+
+Zoom
+
+缩放以鼠标位置为中心。
+
+F：
+
+Fit Graph
+
+Home：
+
+Fit All Nodes
+
+如果快捷键冲突：
+
+由 Shortcut Context Registry 处理。
+
+======================================================================
+二十二、Node UI
+======================================================================
+
+每个 Node：
+
+┌─────────────────────┐
+│ Gaussian Blur       │
+├─────────────────────┤
+● Image          Image ●
+│                     │
+│ Radius      20      │
+│                     │
+└─────────────────────┘
+
+但不要在 Node 内塞所有复杂 Inspector。
+
+Node 内只显示：
+
+名称
+必要关键参数
+Ports
+Enable 状态
+
+详细参数：
+
+Inspector。
+
+避免巨大 Node。
+
+======================================================================
+二十三、Port UI
+======================================================================
+
+Input：
+
+Node 左侧。
+
+Output：
+
+Node 右侧。
+
+或者根据现有 UI 方向统一。
+
+不同 DataType：
+
+可以有轻微颜色区别。
+
+但是不要五颜六色。
+
+重点是：
+
+连接状态
+Hover
+Compatible Target
+Invalid Target
+
+清晰。
+
+拖 Port：
+
+开始连接。
+
+悬停 Compatible Port：
+
+高亮。
+
+松开：
+
+创建 Edge。
+
+Esc：
+
+取消。
+
+======================================================================
+二十四、自动连接
+======================================================================
+
+提高操作效率。
+
+例如：
+
+当前 Graph：
+
+Source → Output
+
+用户在 Edge 上：
+
+Add Gaussian Blur
+
+自动：
+
+Source → Blur → Output
+
+用户添加 Effect：
+
+默认插入 Output 前。
+
+如果用户选中某个 Node：
+
+新 Node 默认插入：
+
+Selected → NewNode → FormerTarget
+
+行为保持一致。
+
+======================================================================
+二十五、Node 创建
+======================================================================
+
+支持：
+
+右键空白
+
+→ Add Node
+
+以及：
+
+Tab
+
+打开：
+
+Node Search
+
+搜索：
+
+Blur
+Exposure
+Merge
+Transform
+
+不要建立巨大固定侧栏占空间。
+
+Node Search 支持：
+
+category
+
+Filter
+
+Keyboard Navigation
+
+Enter Create。
+
+======================================================================
+二十六、Command System
+======================================================================
+
+所有 Graph 编辑必须走 Command。
+
+至少：
+
+CreateNodeCommand
+
+DeleteNodeCommand
+
+MoveNodeCommand
+
+ConnectNodesCommand
+
+DisconnectEdgeCommand
+
+SetNodeParameterCommand
+
+EnableNodeCommand
+
+DuplicateNodeCommand
+
+RenameNodeCommand
+
+Graph Node Drag：
+
+连续 mousemove
+
+只能产生：
+
+1 个 Undo Step。
+
+不要：
+
+拖 300px
+
+产生 300 Command。
+
+======================================================================
+二十七、Transaction
+======================================================================
+
+复杂 Graph 操作：
+
+使用 Transaction。
+
+例如：
+
+在 Edge 中插入 Blur：
+
+Create Blur
+Delete Existing Edge
+Create Edge A
+Create Edge B
+
+必须：
+
+一个 Undo
+
+全部撤销。
+
+不能：
+
+Ctrl+Z 三次。
+
+======================================================================
+二十八、Serialization
+======================================================================
+
+Compositing Graph 必须保存进：
+
+.swayframe
+
+Project。
+
+保存：
+
+nodes
+node positions
+ports
+edges
+parameters
+enabled state
+graph version
+
+重新打开：
+
+完全恢复。
+
+Graph UI 的：
+
+pan
+zoom
+
+可以作为：
+
+Workspace / Graph View State
+
+而不是核心 Render Data。
+
+区分：
+
+Graph Data
+
+和：
+
+Graph View Data。
+
+======================================================================
+二十九、Migration
+======================================================================
+
+如果已有 Effect Stack 工程：
+
+加载旧项目时：
+
+自动转换：
+
+Effects Array
+
+→
+
+Linear Compositing Graph
+
+例如：
+
+Effect 1
+Effect 2
+Effect 3
+
+迁移为：
+
+Source
+ ↓
+Effect 1
+ ↓
+Effect 2
+ ↓
+Effect 3
+ ↓
+Output
+
+Migration 必须测试。
+
+不要破坏旧工程。
+
+======================================================================
+三十、Caching / Invalidation
+======================================================================
+
+为未来性能预留合理机制。
+
+每个 Node：
+
+输入未变化
+
+参数未变化
+
+时间未变化
+
+则理论上可以复用结果。
+
+V0.1 不需要大型缓存系统。
+
+但 Graph Compiler 应能识别：
+
+Node Dependencies。
+
+修改：
+
+Blur.radius
+
+只 invalid：
+
+Blur
+以及 downstream。
+
+不要把整个系统设计成：
+
+任何变化
+→
+整个 Project 全部重算
+
+的死结构。
+
+======================================================================
+三十一、Bypass
+======================================================================
+
+每个 Effect / Transform Node：
+
+支持：
+
+Enabled / Disabled
+
+Disabled：
+
+直接：
+
+Input → Output
+
+即 Bypass。
+
+UI：
+
+Node Header
+
+显示：
+
+Enable Toggle。
+
+快捷键可后续增加。
+
+======================================================================
+三十二、Viewer Preview
+======================================================================
+
+V0.1 可以先使用：
+
+Output Node
+
+决定最终 Layer 输出。
+
+但数据结构预留：
+
+Preview Node
+
+未来允许：
+
+选中某 Node
+
+按快捷键：
+
+Preview
+
+Canvas 显示：
+
+该节点中间结果。
+
+不要第一阶段开发复杂多 Viewer。
+
+======================================================================
+三十三、Layer Graph 入口
+======================================================================
+
+用户选择支持的 Layer 后：
+
+提供：
+
+Open Compositing Graph
+
+入口。
+
+可以位于：
+
+Inspector
+
+Context Menu
+
+Workspace Tab
+
+不要放一个巨大的永久按钮。
+
+建议：
+
+右键 Layer：
+
+Open Compositing Graph
+
+或者：
+
+Inspector Effects Header：
+
+Graph 图标。
+
+======================================================================
+三十四、Workspace 集成
+======================================================================
+
+Node Graph 可以：
+
+替换 Timeline Bottom Area
+
+或者：
+
+作为独立 Bottom Tab。
+
+例如：
+
+Timeline
+Graph
+Motion Curve
+
+不要同时显示：
+
+Timeline
+Graph Editor
+Motion Curve
+Compositing Graph
+
+四个大区域。
+
+推荐：
+
+底部：
+
+Timeline | Compositing Graph
+
+Timeline 内：
+
+Graph Editor
+
+继续作为动画子模式。
+
+避免界面过度拥挤。
+
+======================================================================
+三十五、未来 Composition Graph 预留
+======================================================================
+
+现在不要实现。
+
+但是 Graph 数据模型不要只写死：
+
+ownerLayerId。
+
+设计：
+
+GraphOwner
+
+例如：
+
+type GraphOwner =
+    | LayerOwner
+    | CompositionOwner;
+
+V0.1：
+
+只允许 LayerOwner。
+
+以后：
+
+Composition Graph
+
+可以直接扩展。
+
+======================================================================
+三十六、未来 AI Node 预留
+======================================================================
+
+未来可能加入：
+
+Segmentation Node
+
+Depth Estimation Node
+
+Generative Fill Node
+
+Image Generation Node
+
+Video Generation Node
+
+Color Match Node
+
+Object Tracking Node
+
+Reference Analysis Node
+
+但：
+
+V0.1 不实现。
+
+只保证：
+
+Node Registry
+
+允许未来注册这些节点。
+
+======================================================================
+三十七、未来 Agent API
+======================================================================
+
+Graph 必须可被未来 Agent 结构化操作。
+
+提供工具接口或 service：
+
+inspectGraph(layerId)
+
+createNode(layerId, nodeType)
+
+deleteNode(nodeId)
+
+connectPorts(...)
+
+disconnectEdge(...)
+
+setNodeParameter(...)
+
+setNodePosition(...)
+
+enableNode(...)
+
+compileGraph(...)
+
+未来用户说：
+
+“给背景加一点虚化，
+人物保持清晰，
+最后整体偏冷。”
+
+Agent 可以：
+
+创建：
+
+Mask
+Blur
+Merge
+Color
+
+等 Node。
+
+而不是：
+
+模拟鼠标点击。
+
+======================================================================
+三十八、AI 操作仍然走 Command
+======================================================================
+
+Agent Tool：
+
+不能：
+
+graph.nodes.push(...)
+
+必须：
+
+Agent
+↓
+Graph Tool
+↓
+Command
+↓
+Transaction
+↓
+Graph Model
+
+这样 AI 创建的整个 Graph：
+
+可以一次 Undo。
+
+======================================================================
+三十九、未来 AI 可解释性
+======================================================================
+
+Node Graph 可以成为 AI 操作的可视化解释。
+
+因此：
+
+AI 创建 Node
+
+最好允许记录：
+
+source: "agent"
+
+以及可选：
+
+label
+
+例如：
+
+"Background blur requested by user"
+
+但不要把大量聊天内容写进 Project。
+
+只保留轻量 Metadata。
+
+======================================================================
+四十、Graph Validation
+======================================================================
+
+编译前执行：
+
+validateGraph()
+
+检查：
+
+Output 是否存在
+
+Port 类型
+
+Missing Node
+
+Missing Port
+
+Cycle
+
+Invalid Edge
+
+Multiple Connection Violations
+
+Required Input
+
+Graph 错误：
+
+不得直接导致整个应用崩溃。
+
+Canvas 可以显示：
+
+Graph Error
+
+Node 可以显示：
+
+Error Badge。
+
+======================================================================
+四十一、Node Error
+======================================================================
+
+单个 Node 执行失败：
+
+例如：
+
+参数非法
+
+Asset Missing
+
+Renderer Unsupported
+
+应该：
+
+该 Node 显示错误
+
+Graph 返回：
+
+fallback / transparent / previous safe result
+
+具体行为根据 Node 类型定义。
+
+不要：
+
+一个 Blur Node 错误
+
+导致整个 Editor Crash。
+
+======================================================================
+四十二、Graph Version
+======================================================================
+
+Graph：
+
+version
+
+独立于：
+
+Project schemaVersion。
+
+因为 Node Graph 结构未来可能独立迁移。
+
+例如：
+
+graphVersion: 1
+
+未来：
+
+GraphMigration。
+
+不要复杂化。
+
+只预留正确方向。
+
+======================================================================
+四十三、第一阶段开发顺序
+======================================================================
+
+严格按照：
+
+CG-0
+
+Repository Audit
+
+COMPOSITING_GRAPH_DESIGN.md
+
+
+CG-1
+
+Graph Core Model
+
+Node
+Port
+Edge
+Graph
+Validation
+Cycle Detection
+
+
+CG-2
+
+Node Registry
+
+Node Definition
+Factory
+Port Type
+
+
+CG-3
+
+Graph Command System
+
+Create
+Delete
+Connect
+Disconnect
+Move
+Undo / Redo
+
+
+CG-4
+
+Graph Serialization
+
+Project Save / Load
+Migration
+
+
+CG-5
+
+Graph Compiler
+
+DAG
+Topological Sort
+Compiled Graph
+
+
+CG-6
+
+基础 Nodes
+
+Source
+Output
+Passthrough
+Transform
+Exposure
+Blur
+
+
+CG-7
+
+Merge
+
+Multi-input
+Mask Input
+
+
+CG-8
+
+Node Editor UI
+
+Pan
+Zoom
+Move
+Connect
+Delete
+Node Search
+
+
+CG-9
+
+Inspector / Property Integration
+
+Property(t)
+Keyframe
+Timeline
+
+
+CG-10
+
+Effect Stack Adapter
+
+Linear Graph
+Effects UI Sync
+
+
+CG-11
+
+Performance / Cache Foundation
+
+Dependency Invalidation
+
+
+CG-12
+
+Agent-ready Service API
+
+只实现结构化接口。
+
+不实现 AI。
+
+
+======================================================================
+四十四、每阶段质量门禁
+======================================================================
+
+每完成一个 CG 阶段：
+
+运行：
+
+lint
+
+typecheck
+
+unit tests
+
+integration tests
+
+build
+
+desktop build
+
+如果本轮引入错误：
+
+先修复。
+
+再继续。
+
+======================================================================
+四十五、必须编写的测试
+======================================================================
+
+至少覆盖：
+
+Graph Node Creation
+
+Port Connection
+
+Invalid Port Type
+
+Cycle Detection
+
+Topological Sort
+
+Node Deletion
+
+Edge Deletion
+
+Undo Create Node
+
+Undo Connect
+
+Transaction Insert Node
+
+Graph Serialization
+
+Graph Round-trip
+
+Old Effect Stack Migration
+
+Property Animation on Node Parameter
+
+Graph Compilation
+
+Merge Inputs
+
+Disabled Node Bypass
+
+Invalid Graph Handling
+
+======================================================================
+四十六、最终验收 CASE 1
+======================================================================
+
+Image Layer。
+
+Open Compositing Graph。
+
+默认：
+
+Source → Output。
+
+添加：
+
+Exposure。
+
+自动变为：
+
+Source
+ ↓
+Exposure
+ ↓
+Output
+
+Canvas 画面实时改变。
+
+======================================================================
+四十七、CASE 2
+======================================================================
+
+再增加：
+
+Gaussian Blur。
+
+Source
+ ↓
+Exposure
+ ↓
+Blur
+ ↓
+Output
+
+修改 Radius：
+
+Canvas 实时响应。
+
+======================================================================
+四十八、CASE 3
+======================================================================
+
+Blur.radius：
+
+添加关键帧。
+
+0s：
+
+0
+
+1s：
+
+30
+
+Timeline：
+
+显示 Blur Radius Keyframes。
+
+播放：
+
+Blur 动画正常。
+
+证明：
+
+Node Parameter
+真正复用了：
+
+Property(t)。
+
+======================================================================
+四十九、CASE 4
+======================================================================
+
+用户在 Effects Inspector 添加：
+
+Exposure
+Blur
+
+Compositing Graph：
+
+自动同步。
+
+Graph 删除：
+
+Blur。
+
+Effects Inspector：
+
+同步删除。
+
+不存在两份不一致状态。
+
+======================================================================
+五十、CASE 5
+======================================================================
+
+创建：
+
+Solid
+
+与：
+
+Source。
+
+连接：
+
+Source → Merge A
+
+Solid → Merge B
+
+Merge → Output
+
+Canvas：
+
+显示正确 Composite。
+
+======================================================================
+五十一、CASE 6
+======================================================================
+
+尝试：
+
+A → B
+B → C
+C → A
+
+系统拒绝创建最后一条 Edge。
+
+显示：
+
+Cycle not allowed。
+
+应用不崩溃。
+
+======================================================================
+五十二、CASE 7
+======================================================================
+
+拖动 Node：
+
+移动 500px。
+
+连续产生大量 pointermove。
+
+Undo：
+
+一步恢复原位置。
+
+======================================================================
+五十三、CASE 8
+======================================================================
+
+在：
+
+Source → Output
+
+Edge 中插入：
+
+Blur。
+
+整个操作：
+
+创建 Node
+断开 Edge
+创建两个 Edge
+
+Undo 一次：
+
+完全恢复：
+
+Source → Output。
+
+======================================================================
+五十四、CASE 9
+======================================================================
+
+保存：
+
+.swayframe
+
+关闭应用。
+
+重新打开。
+
+Node：
+
+位置
+参数
+连接
+动画
+
+全部保持。
+
+======================================================================
+五十五、CASE 10
+======================================================================
+
+打开旧工程：
+
+只有 Effect Stack。
+
+Migration：
+
+自动生成：
+
+Source
+→ Effects
+→ Output
+
+视觉结果尽可能保持一致。
+
+======================================================================
+五十六、性能验收
+======================================================================
+
+简单 Graph：
+
+Source
+Exposure
+Blur
+Output
+
+拖 Blur.radius：
+
+应保持接近实时。
+
+Node Drag：
+
+不应触发 Renderer 全重算。
+
+Graph Pan / Zoom：
+
+不应重新计算 Render Graph。
+
+Node UI 状态变化：
+
+不要错误 invalidate Scene。
+
+======================================================================
+五十七、明确不做
+======================================================================
+
+V0.1 暂时不要：
+
+完整 Nuke Clone
+
+完整 Composition Graph
+
+3D Node Graph
+
+Particle Graph
+
+Audio Graph
+
+Shader Editor
+
+Material Graph
+
+User Script Node
+
+Python Node
+
+Generative AI Node
+
+Video AI Node
+
+Tracking Node
+
+Roto Node
+
+复杂 Viewer System
+
+复杂 Cache System
+
+插件 SDK
+
+这些全部后续。
+
+当前目标只有：
+
+建立正确 Graph 基础。
+
+======================================================================
+五十八、架构最终要求
+======================================================================
+
+最终必须形成：
+
+                 Human UI
+                    │
+        ┌───────────┴────────────┐
+        │                        │
+  Effect Stack            Compositing Graph
+        │                        │
+        └───────────┬────────────┘
+                    │
+               Graph Model
+                    │
+              Property(t)
+                    │
+              Command System
+                    │
+              Graph Compiler
+                    │
+             Render Graph
+                    │
+                Renderer
+
+未来：
+
+                  AI Agent
+                     │
+                 Graph Tools
+                     │
+                 Commands
+                     │
+                 Graph Model
+
+
+======================================================================
+五十九、最重要的产品原则
+======================================================================
+
+不要强迫普通用户学习 Nodes。
+
+简单任务：
+
+继续使用：
+
+Canvas
+Layer
+Inspector
+Timeline
+Effects
+
+复杂任务：
+
+进入：
+
+Compositing Graph。
+
+Effect Stack 是：
+
+Graph 的简化线性视图。
+
+Graph 是：
+
+复杂合成的高级结构化视图。
+
+二者属于：
+
+同一个工程。
+
+======================================================================
+最终目标
+======================================================================
+
+这次不是：
+
+“做一个能拖方框连线的 Node UI”。
+
+而是：
+
+建立 Swayframe 第一代真正可执行的节点式合成系统。
+
+Node：
+
+必须真实参与 Renderer。
+
+Parameter：
+
+必须真实支持 Property / Keyframe。
+
+Graph：
+
+必须真实保存进 Project。
+
+操作：
+
+必须真实支持 Undo / Redo。
+
+Effect Stack：
+
+必须和 Graph 数据一致。
+
+未来 Agent：
+
+必须可以结构化控制 Graph。
+
+完成后，Swayframe 应能够让用户：
+
+普通动画继续使用 AE/Figma 式工作流，
+
+复杂视觉处理切换到 Nuke 式 Graph 工作流，
+
+而两种工作方式始终共享同一个底层工程体系。
+
+Do not build a fake node editor.
+
+Build a real compositing graph.

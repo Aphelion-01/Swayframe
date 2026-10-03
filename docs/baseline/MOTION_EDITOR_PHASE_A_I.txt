@@ -1,0 +1,1247 @@
+你现在负责继续开发当前 AI-native Motion Design 项目。
+
+在开始编码前，必须先完整阅读当前仓库、ARCHITECTURE.md、现有 README、已有数据模型、Command System、渲染相关代码和测试。优先继承现有架构，不允许为了快速实现功能而推倒重写。
+
+本阶段的目标发生调整：
+
+暂时不要重点开发 AI Agent、自动排版、神经网络或生成式视频能力。
+
+当前最高优先级是：
+
+======================================================================
+把软件首先建设成一个真正能够完成大部分常规二维 Motion Design 工作的动画编辑器，
+并加入一套简单但完整可用的 2.5D / 3D 合成功能。
+======================================================================
+
+可以参考 After Effects 的核心工作方式，但不要试图完整复制 AE，也不要复制其历史包袱。
+
+最终目标不是“做出很多按钮”，而是让用户能够真正完成：
+
+素材导入
+→ 图层组织
+→ 图形/文字设计
+→ 属性编辑
+→ 关键帧动画
+→ 速度曲线调整
+→ 遮罩
+→ 调色与基础效果
+→ 预合成
+→ 简单 3D 空间动画
+→ 实时预览
+→ 导出
+
+这样一个完整工作流。
+
+所有功能必须服务于这个闭环。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+一、最重要的开发原则
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. 不允许只创建 UI 空壳。
+
+任何出现在界面中的主要功能都必须实际工作。
+
+2. 不允许为了赶功能数量破坏现有架构。
+
+继续坚持：
+
+UI
+↓
+Command System
+↓
+Project / Scene Model
+↓
+Animation / Render System
+
+UI 不允许直接修改 Scene 数据。
+
+未来 AI Agent 也必须能够通过同一套 Command System 使用这些功能。
+
+3. 保持 Human-first。
+
+当前阶段所有核心功能都必须可以由用户直接通过 GUI 操作完成。
+
+不要假设用户需要 Prompt 才能使用软件。
+
+4. 所有可动画属性尽可能使用统一 Property<T> 系统。
+
+例如：
+
+Position
+Scale
+Rotation
+Opacity
+Color
+Blur Radius
+Mask Feather
+Effect Parameters
+
+都应能够进入：
+
+Property<T>
++
+Keyframes
++
+Interpolation
+
+避免每种功能单独发明动画系统。
+
+5. Renderer 与 Editor 解耦。
+
+编辑器操作 Scene；
+Animation Engine 根据时间求值；
+Renderer 负责显示最终画面。
+
+6. 所有编辑操作都必须尽量支持：
+
+Undo
+Redo
+
+多步骤复杂操作使用 Transaction。
+
+7. 不要在本阶段实现超出目标的大型功能。
+
+明确禁止为了“像 AE”而开始实现：
+
+高级粒子系统
+完整 3D 建模器
+骨骼绑定
+复杂角色动画系统
+摄像机跟踪
+Rotoscoping
+高级抠像
+完整 Expressions 语言
+第三方插件兼容层
+完整 AE 文件兼容
+节点式 VFX 软件
+复杂物理模拟
+大型 AI 模型
+生成式视频模型
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二、编辑器基础框架
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+首先确保以下核心界面真实可用：
+
+Project / Assets Panel
+Layer Panel
+Canvas / Composition Viewer
+Inspector / Properties Panel
+Timeline
+Graph Editor
+Playback Controls
+
+Canvas 至少支持：
+
+Zoom
+Pan
+Selection
+Bounding Box
+Transform Handles
+Anchor Point 显示
+多选
+拖动
+缩放
+旋转
+
+Timeline 至少支持：
+
+Playhead
+时间刻度
+图层轨道
+图层起止时间
+关键帧显示
+关键帧选择
+拖动关键帧
+多关键帧选择
+缩放时间轴
+播放 / 暂停
+Loop Preview
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+三、Composition 系统
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+实现 Composition：
+
+width
+height
+frameRate
+duration
+backgroundColor
+
+支持：
+
+创建 Composition
+修改 Composition Settings
+多个 Composition
+Composition 嵌套
+Pre-compose / Precomp
+
+Precomp 应当成为普通 Layer，可以：
+
+Transform
+Animate
+Mask
+Apply Effect
+
+Composition 嵌套必须避免循环引用。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+四、Layer 系统
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+至少支持以下 Layer：
+
+ShapeLayer
+TextLayer
+ImageLayer
+VideoLayer（如果当前媒体架构允许）
+SolidLayer
+NullLayer
+PrecompLayer
+
+如果视频解码会显著拖慢阶段开发，可以晚于其他 Layer，但架构必须预留。
+
+每个基础 Layer 至少具有：
+
+id
+name
+visible
+locked
+opacity
+blendMode
+parent
+inPoint
+outPoint
+
+Transform：
+
+Anchor Point
+Position
+Scale
+Rotation
+Opacity
+
+二维 Layer 后续允许开启：
+
+3D Layer
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+五、Shape Layer
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Shape 是当前阶段非常重要的模块。
+
+至少实现：
+
+Rectangle
+Ellipse
+Polygon
+Star
+Bezier Path
+
+支持：
+
+Fill
+Stroke
+Stroke Width
+Stroke Join
+Stroke Cap
+
+支持基础 Gradient：
+
+Linear Gradient
+Radial Gradient
+
+Shape 属性尽可能可以关键帧化。
+
+支持：
+
+Position
+Scale
+Rotation
+Opacity
+Path
+Fill Color
+Stroke Color
+Stroke Width
+
+至少实现基础 Path 编辑：
+
+创建点
+移动点
+删除点
+Bezier Handles
+
+如果实现成本合理，加入：
+
+Trim Paths
+
+但 Trim Paths 的优先级低于 Path、Fill、Stroke 和 Keyframe。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+六、Text Layer
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+实现基础文本编辑。
+
+至少支持：
+
+Text Content
+Font
+Font Size
+Font Weight
+Color
+Alignment
+Tracking
+Line Height
+
+Text Layer 本身可以进行：
+
+Position
+Scale
+Rotation
+Opacity
+
+动画。
+
+暂时不要求复刻 AE Text Animator 的全部功能。
+
+但数据结构应避免阻塞未来实现：
+
+Character-level Animation
+Text Range Selector
+Text Animator
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+七、核心动画系统
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+这是整个阶段最重要的模块之一。
+
+必须实现完整的 Keyframe 工作流。
+
+关键帧至少包含：
+
+time
+value
+interpolation
+incoming tangent
+outgoing tangent
+
+支持：
+
+Add Keyframe
+Delete Keyframe
+Move Keyframe
+Copy
+Paste
+Duplicate
+Multi-select
+
+支持插值模式：
+
+Hold
+Linear
+Bezier
+
+至少实现基础：
+
+Ease In
+Ease Out
+Ease In-Out
+
+动画属性改变时：
+
+Renderer 必须根据当前时间实时求值。
+
+同一 Property 的动画逻辑必须统一处理。
+
+禁止：
+
+Position 自己一套 Keyframe，
+Opacity 又重新写一套 Keyframe。
+
+必须抽象统一 Animation Evaluation。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+八、Graph Editor / 速度曲线
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Graph Editor 是必须完成的核心模块，不允许只显示曲线但无法编辑。
+
+至少实现：
+
+Value Graph
+Speed Graph
+
+用户能够：
+
+查看关键帧曲线
+选择关键帧
+拖动控制柄
+修改 Ease
+修改 Influence
+修改入速度
+修改出速度
+
+调整 Graph 后：
+
+Timeline 和 Canvas 动画必须立即更新。
+
+重点确保：
+
+Position 动画可以通过 Speed Graph 做出真正明显的加速、减速和缓入缓出。
+
+以后 Motion Intelligence 会直接操作这套 Curve 数据。
+
+因此 Graph / Curve 数据模型必须独立于 UI。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+九、Parenting
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+实现基础 Parent / Child 关系。
+
+子图层继承父图层：
+
+Position
+Rotation
+Scale
+
+变换。
+
+支持 Null Layer 作为控制器。
+
+防止循环 Parent：
+
+A → B → C → A
+
+Parent 必须与动画系统兼容。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十、Mask 系统
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+至少实现：
+
+Rectangle Mask
+Ellipse Mask
+Bezier Mask
+
+Mask 属性：
+
+Path
+Mode
+Opacity
+Feather
+Expansion
+
+至少支持：
+
+Add
+Subtract
+Intersect
+
+Mask Path 应支持关键帧。
+
+未来 AI / Rotoscoping 可以复用此 Mask 数据结构。
+
+如果实现成本可接受，再增加：
+
+Alpha Matte
+Luma Matte
+
+Track Matte 优先级高于高级蒙版特效。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十一、Blend Mode
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+至少实现常用 Blend Modes：
+
+Normal
+Multiply
+Screen
+Overlay
+Add
+Darken
+Lighten
+
+如果渲染架构允许，再加入：
+
+Color Dodge
+Color Burn
+Difference
+Soft Light
+Hard Light
+
+Blend Mode 必须是 Render Pipeline 的正式模块，不要通过临时 CSS 效果模拟。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十二、基础调色系统
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+实现一个统一的 Effect / Color Adjustment 架构。
+
+不要给每个效果写完全独立的系统。
+
+优先实现：
+
+Brightness / Contrast
+Exposure
+Hue / Saturation
+Temperature
+Tint
+Levels
+
+如果架构允许，再加入：
+
+Curves
+
+Curves 至少考虑：
+
+RGB
+Red
+Green
+Blue
+
+Effect 参数原则上应该可以通过 Property System 动画。
+
+例如：
+
+Exposure.amount
+
+能够添加 Keyframe。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十三、基础视觉效果
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+在统一 Effects Pipeline 下实现少量真正实用的效果：
+
+Gaussian Blur
+Directional Blur（可选）
+Drop Shadow
+Glow
+Tint / Fill
+Sharpen（低优先级）
+
+不要追求几十种 Effect。
+
+重要的是建立：
+
+Effect Stack
+
+例如：
+
+Layer
+↓
+Transform
+↓
+Mask
+↓
+Effect 1
+↓
+Effect 2
+↓
+Color
+↓
+Composite
+
+用户能够：
+
+Add Effect
+Delete Effect
+Enable / Disable Effect
+Reorder Effects
+
+Effect 参数可以编辑。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十四、基础时间操作
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Timeline 至少支持：
+
+Layer In Point
+Layer Out Point
+Trim Start
+Trim End
+Split Layer
+Move Layer in Time
+
+如果实现成本可控：
+
+Time Stretch
+
+但不要优先做复杂 Time Remapping。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十五、简单 3D / 2.5D 模块
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+这里不要实现 Blender。
+
+目标更接近 AE 的基础 3D Layer。
+
+用户可以把普通 Layer 切换为：
+
+3D Layer
+
+开启后增加：
+
+Position X/Y/Z
+
+Rotation X
+Rotation Y
+Rotation Z
+
+Scale X/Y/Z
+
+Anchor X/Y/Z
+
+Layer 本身仍然是二维平面。
+
+它只是存在于三维空间中。
+
+实现基础透视投影。
+
+加入：
+
+Camera
+
+Camera 至少包含：
+
+Position
+Rotation
+Field of View
+Focal Length 或 Zoom
+
+Camera 可以通过 Keyframe 动画。
+
+实现：
+
+Perspective
+Layer Z Depth
+Camera Movement
+
+用户应能够完成：
+
+多张图片在 Z 轴上错开
+↓
+Camera 向前运动
+↓
+形成简单空间穿梭动画
+
+或者：
+
+卡片围绕 Y 轴旋转
+
+这样的基本 2.5D 动画。
+
+如果成本可控，可以实现：
+
+Ambient Light
+Directional Light
+
+但 Light 的优先级明显低于：
+
+3D Layer
+Camera
+Perspective
+
+本阶段明确不实现：
+
+Mesh
+Polygon Modeling
+Material Editor
+Texture Mapping Pipeline
+Rigging
+Advanced Lighting
+Ray Tracing
+3D Physics
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十六、基础导入
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+至少支持常见图片：
+
+PNG
+JPEG
+WebP
+
+如果媒体架构可用：
+
+GIF
+MP4
+MOV
+
+支持将素材拖入：
+
+Assets
+Canvas
+Timeline
+
+同一 Asset 应通过 Asset ID 被多个 Layer 引用，避免复制数据。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十七、保存与加载
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+工程必须能够保存。
+
+Project Format 应包含：
+
+Compositions
+Layers
+Properties
+Keyframes
+Effects
+Masks
+Parenting
+Assets
+3D Settings
+
+必须存在：
+
+schemaVersion
+
+支持未来 Migration。
+
+测试：
+
+Save
+↓
+Close / Reload
+↓
+Load
+
+结果应保持一致。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十八、Preview 与缓存
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+实现可用实时 Preview。
+
+优先保证：
+
+Current Frame
+
+和：
+
+Playhead 附近动画
+
+响应快速。
+
+不要为了最终 Render Quality 导致编辑完全卡顿。
+
+架构允许的话：
+
+将实时预览和最终输出区分为：
+
+Preview Quality
+Final Quality
+
+简单缓存：
+
+如果 Scene 未改变，不应重复计算完全相同结果。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十九、导出
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+第一阶段至少实现一种真正可验证的输出：
+
+PNG Image Sequence
+
+如果项目已经存在可靠媒体编码能力，再增加：
+
+MP4 / H.264
+
+或者其他通用格式。
+
+不要为了实现复杂 Codec 延误整个编辑器。
+
+优先保证：
+
+Composition
+↓
+逐帧正确 Evaluate
+↓
+Renderer
+↓
+输出
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十、未来 AI 接口必须保留
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+虽然本阶段暂时不重点开发 AI，但绝对不能把 Editor 写成未来 Agent 无法控制的结构。
+
+未来 Agent 应该能执行：
+
+CreateLayer
+DeleteLayer
+SetProperty
+AddKeyframe
+MoveKeyframe
+SetCurve
+AddMask
+AddEffect
+SetBlendMode
+CreatePrecomp
+SetParent
+Enable3D
+MoveCamera
+
+因此这些行为必须通过明确 Command API 暴露。
+
+不要写成：
+
+onClick → React State → Canvas
+
+这样的封闭流程。
+
+必须形成：
+
+UI
+        \
+         Command System
+        /
+Future Agent
+
+↓
+Scene / Project Model
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十一、本阶段暂时不要真正开发的 AI 功能
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+只保留接口。
+
+不要在此阶段花大量时间实现：
+
+LLM Chat
+Prompt-to-animation
+Auto Layout Neural Network
+Auto Color AI
+Motion AI
+Vision Agent
+Generative Image
+Generative Video
+
+等 Editor 基础能力稳定后再开发。
+
+原因很简单：
+
+AI 的能力上限取决于它可以控制的软件能力。
+
+现在先把“手”造完整，再给 AI “大脑”。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十二、实施顺序
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+严格建议按以下顺序推进，不要一次创建全部空模块：
+
+Phase A
+
+Project Model
+Layer Model
+Property System
+Command System
+History
+
+Phase B
+
+Canvas
+Layer Panel
+Inspector
+Transform
+
+Phase C
+
+Timeline
+Keyframe
+Animation Evaluation
+Playback
+
+Phase D
+
+Bezier
+Ease
+Graph Editor
+Speed Curve
+
+Phase E
+
+Shape Layer
+Text
+Image
+Path Editing
+
+Phase F
+
+Mask
+Blend Mode
+Effects
+Color Adjustment
+
+Phase G
+
+Precomp
+Parenting
+Timeline Editing
+
+Phase H
+
+3D Layer
+Camera
+Perspective
+
+Phase I
+
+Import
+Save / Load
+Export
+Performance
+
+每完成一个 Phase：
+
+必须运行：
+
+lint
+typecheck
+unit tests
+integration tests
+build
+
+并修复全部由本阶段引入的问题。
+
+不要等全部完成后再测试。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十三、测试重点
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+必须至少覆盖：
+
+Property evaluation
+
+Keyframe interpolation
+
+Bezier interpolation
+
+Ease
+
+Undo / Redo
+
+Command
+
+Transaction
+
+Parent Transform
+
+Mask
+
+Effect Parameters
+
+Project serialization
+
+3D Transform
+
+Camera projection
+
+这些核心数学/数据逻辑应尽量有 Unit Tests。
+
+UI 关键流程增加 Integration Tests。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十四、最终验收场景
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+完成本阶段后，必须能够独立完成以下案例。
+
+CASE 01
+
+创建 1920×1080 Composition。
+
+创建一个 Rectangle。
+
+修改颜色。
+
+让其从画面左侧移动到中央。
+
+同时从 0% 淡入到 100%。
+
+通过 Graph Editor 调整为明显的 Ease Out。
+
+播放动画结果正确。
+
+CASE 02
+
+创建 Circle。
+
+设置 Scale：
+
+0%
+→
+115%
+→
+100%
+
+通过 Speed Graph 调整为弹性入场感。
+
+CASE 03
+
+创建 Text Layer。
+
+修改：
+
+Font
+Size
+Tracking
+Color
+
+添加：
+
+Position
+Opacity
+
+动画。
+
+CASE 04
+
+创建一个复杂 Shape。
+
+修改：
+
+Fill
+Stroke
+Stroke Width
+
+并编辑 Bezier Path。
+
+CASE 05
+
+导入图片。
+
+添加 Mask。
+
+设置 Feather。
+
+对 Mask Path 添加动画。
+
+CASE 06
+
+图片应用：
+
+Exposure
+Hue / Saturation
+Gaussian Blur
+
+并能够调整 Effect 顺序。
+
+CASE 07
+
+建立：
+
+Parent Null
+↓
+多个 Child Layers
+
+旋转 Null 后所有子图层正确跟随。
+
+CASE 08
+
+将多个图层 Pre-compose。
+
+Precomp 作为一个 Layer 再继续做动画。
+
+CASE 09
+
+建立三张图片。
+
+启用 3D Layer。
+
+分别放置在不同 Z Depth。
+
+创建 Camera。
+
+Camera 在 Z 轴向前移动。
+
+预览中产生正确透视和空间变化。
+
+CASE 10
+
+完整工程：
+
+Save
+↓
+Close / Reload
+↓
+Load
+
+所有：
+
+Layer
+Keyframe
+Curve
+Mask
+Effect
+Parent
+Precomp
+3D
+
+状态保持一致。
+
+CASE 11
+
+将测试 Composition：
+
+Export
+
+至少成功导出 PNG Sequence。
+
+输出帧和 Canvas Preview 一致。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十五、Definition of Done
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+本阶段完成不能以：
+
+“模块已经创建”
+
+作为标准。
+
+真正的完成标准是：
+
+一个普通用户已经可以不用 AI，
+
+仅依赖当前软件，
+
+完成一个具有：
+
+图形
+文字
+图片
+关键帧
+速度曲线
+遮罩
+调色
+视觉效果
+父子关系
+Precomp
+简单 3D Camera
+
+的完整二维 Motion Design 作品。
+
+并能够：
+
+实时预览
+保存
+重新加载
+导出。
+
+同时底层仍保持：
+
+Scene Model
+Property System
+Command System
+Animation Engine
+Renderer
+
+之间清晰解耦。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十六、自主执行要求
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+你拥有常规工程决策自主权。
+
+不要因为：
+
+变量命名
+普通库选择
+文件结构细节
+小型 UI 方案
+常规算法选择
+
+反复等待用户确认。
+
+遇到非关键选择时：
+
+选择：
+
+最简单
+可维护
+模块化
+可测试
+方便未来 AI 接入
+
+的实现。
+
+如果现有代码与本任务要求冲突：
+
+不要立刻全部推翻。
+
+先分析：
+
+哪些模块可以复用
+哪些模块应该重构
+哪些模块需要迁移
+
+再以增量方式修改。
+
+禁止在没有必要的情况下大规模重写整个仓库。
+
+如果发现真正阻塞的问题：
+
+在 DEVELOPMENT_BLOCKERS.md 中记录：
+
+问题
+原因
+尝试过的解决方案
+影响范围
+推荐解决路径
+
+然后继续推进所有不受阻塞影响的任务。
+
+除非遇到无法合理推断且会改变产品根本架构的问题，否则不要停止整个开发流程等待用户回复。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十七、本阶段最终方向
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+不要把它理解为：
+
+“复制 After Effects。”
+
+而要理解为：
+
+“建立一个现代化的、结构清晰的 Motion Design Editor 核心。”
+
+After Effects 只是功能参考。
+
+我们真正需要的是：
+
+专业二维动画能力
++
+简单 2.5D 空间动画
++
+现代软件架构
++
+未来 AI Agent 可以完全控制的底层能力。
+
+当前阶段最重要的不是 AI。
+
+当前阶段最重要的是：
+
+先给未来 AI 构建一双真正强大的手。

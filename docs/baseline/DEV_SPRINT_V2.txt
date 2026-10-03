@@ -1,0 +1,2114 @@
+你现在进入 Swayframe 的「高强度自主开发冲刺 V2」。
+
+本轮不是讨论产品方向，也不是重新做架构设计。
+
+当前目标是：
+
+持续读取现有代码
+→ 找到最高价值未完成任务
+→ 实现
+→ 测试
+→ 修复
+→ 优化
+→ 继续下一项
+
+在不破坏现有架构的前提下，
+尽可能把 Swayframe 推进成一个真正可长期使用的专业 Motion Design Desktop Editor。
+
+除非遇到真正无法绕过的外部阻塞，
+否则不要停止等待用户确认。
+
+======================================================================
+0. 当前上下文
+======================================================================
+
+当前项目正在或已经优先推进：
+
+Compositing Graph V0.1
+
+其核心原则包括：
+
+Node / Port / Edge
+Graph Compiler
+Property(t)
+Command / Transaction
+Effect Stack ↔ Graph
+Renderer Integration
+Undo / Redo
+Project Serialization
+未来 Agent-ready API
+
+因此：
+
+不要重新发明第二套 Node Graph。
+
+如果：
+
+COMPOSITING_GRAPH_DESIGN.md
+
+或相关 Graph 模块已经存在：
+
+先阅读并复用。
+
+如果 Compositing Graph 仍未完成：
+
+只修复阻塞整个 Editor 的关键问题。
+
+不要在本轮重新投入大量时间：
+
+重复设计
+重新规划
+重新写另一套 Graph。
+
+把它当作：
+
+已经建立或正在建立的基础能力。
+
+======================================================================
+1. 本轮最终目标
+======================================================================
+
+将当前 Swayframe 从：
+
+“具备很多实验性模块的编辑器原型”
+
+推进为：
+
+“可以真正完成一段完整 Motion Design 作品的专业桌面软件”。
+
+本轮评价标准不是：
+
+代码量
+模块数量
+页面数量
+TODO 数量
+
+而是：
+
+稳定性
+专业操作手感
+完整工作流
+功能连通性
+性能
+可维护性
+桌面软件成熟度
+
+最终用户应该能够：
+
+创建项目
+→
+导入素材
+→
+创建 Shape / Text
+→
+直接操作 Canvas
+→
+制作关键帧
+→
+调 Motion Curve
+→
+调 Speed Graph
+→
+Mask / Effect / Color
+→
+Parent / Precomp
+→
+简单 2.5D
+→
+必要时进入 Compositing Graph
+→
+实时预览
+→
+保存
+→
+重新打开
+→
+导出
+
+这条完整链路的价值：
+
+高于新增任何孤立功能。
+
+======================================================================
+2. 开发模式：高自主权
+======================================================================
+
+对于：
+
+变量命名
+文件拆分
+组件拆分
+合理依赖
+普通 UI 选择
+成熟算法
+测试方案
+小范围架构实现
+常规性能优化
+
+你拥有自主决定权。
+
+不要反复询问：
+
+“是否继续？”
+
+“要不要做这个？”
+
+“A 还是 B？”
+
+对于：
+
+可逆
+局部
+符合当前架构
+不会改变产品根本方向
+
+的选择：
+
+直接采用更合理的方案。
+
+只有以下情况需要真正停止：
+
+A.
+需要用户提供不存在的外部凭据 / API Key / 商业许可
+
+B.
+会不可逆地修改 Project Format 且存在多个完全不同产品方向
+
+C.
+需要删除大量用户已有工程数据
+
+D.
+现有仓库严重损坏，无法构建且没有可恢复路径
+
+其他问题：
+
+自行判断并继续。
+
+======================================================================
+3. 禁止“无限分析模式”
+======================================================================
+
+启动后：
+
+快速审计仓库。
+
+不要重新生成一份几十页规划。
+
+检查：
+
+git status
+
+当前 branch
+
+README
+
+ARCHITECTURE
+
+DEV_SPRINT
+
+DEVELOPMENT_BLOCKERS
+
+COMPOSITING_GRAPH_DESIGN
+
+package scripts
+
+当前 tests
+
+然后执行：
+
+lint
+typecheck
+tests
+build
+
+记录当前 baseline。
+
+审计时间必须控制。
+
+完成快速判断后：
+
+立即开始编码。
+
+原则：
+
+Analysis should lead to implementation.
+
+不要：
+
+分析 40 分钟
+→
+只新增一个 Markdown。
+
+======================================================================
+4. DEV_SPRINT.md
+======================================================================
+
+维护：
+
+DEV_SPRINT.md
+
+但保持精简。
+
+格式：
+
+# Current Goal
+
+# In Progress
+
+# Completed
+
+# Next High-Value Tasks
+
+# Known Regressions
+
+# Blockers
+
+# Test Status
+
+每完成一个真正功能：
+
+更新一次即可。
+
+不要每修改一个文件：
+
+更新文档。
+
+编码时间必须显著高于文档时间。
+
+======================================================================
+5. 当前任务优先级
+======================================================================
+
+严格按以下价值顺序判断任务。
+
+P0
+
+严重 Bug
+数据丢失
+Project 无法打开
+Undo 错误
+Crash
+Build / Type Error
+Scene / Renderer 错误
+
+P1
+
+Canvas
+Timeline
+Keyframe
+Motion Curve
+Graph Editor
+Direct Manipulation
+Undo / Transaction
+
+P2
+
+Shape
+Text
+Mask
+Effect
+Color
+Parent
+Precomp
+
+P3
+
+Desktop Workflow
+Save / Load
+Asset
+Autosave
+Recovery
+Export
+
+P4
+
+2.5D / Camera
+Performance
+Polish
+
+P5
+
+新的高级功能
+
+如果：
+
+P1 仍然不好用
+
+不要为了：
+
+增加第 25 种 Effect
+
+跳过 P1。
+
+======================================================================
+6. 第一重点：Canvas 专业操作手感
+======================================================================
+
+把 Canvas 做到真正可以长期使用。
+
+完善：
+
+Selection Tool
+
+Single Selection
+
+Multi Selection
+
+Shift Selection
+
+Marquee Selection
+
+Move
+
+Scale
+
+Rotate
+
+Anchor Point
+
+Bounding Box
+
+Resize Handles
+
+Rotation Handle
+
+Direct Manipulation
+
+Snap
+
+Pan
+
+Zoom
+
+Fit to View
+
+100%
+
+Mouse-centered Zoom
+
+Space + Drag
+
+Esc Cancel
+
+Double Click Editing
+
+Selection Sync
+
+Canvas
+Layers
+Timeline
+Inspector
+
+保持一致。
+
+重点：
+
+用户不应该依赖 Inspector 数字输入
+才能完成普通构图。
+
+Canvas 应是：
+
+主要操作入口。
+
+======================================================================
+7. Continuous Interaction 模型
+======================================================================
+
+所有连续交互：
+
+Move
+Scale
+Rotate
+Anchor
+Numeric Scrub
+Keyframe Drag
+Playhead Drag
+Curve Drag
+Node Drag
+Panel Resize
+
+统一行为：
+
+pointerDown
+
+→ beginInteraction()
+
+pointerMove
+
+→ preview state
+
+pointerUp
+
+→ commit one Command / Transaction
+
+Esc
+
+→ cancel
+
+重要：
+
+100 次 mousemove
+
+只能产生：
+
+1 次 Undo。
+
+这是整个软件“专业手感”的基础。
+
+主动检查已有模块是否违反这一原则。
+
+发现问题：
+
+修复。
+
+======================================================================
+8. Timeline：高优先级核心
+======================================================================
+
+Timeline 必须持续强化。
+
+目标：
+
+用户无需阅读说明
+就能理解。
+
+完善：
+
+Time Ruler
+
+Playhead
+
+Layer Rows
+
+Property Rows
+
+Expand / Collapse
+
+In Point
+
+Out Point
+
+Layer Duration
+
+Current Time
+
+Keyframe
+
+Keyframe Selection
+
+Multi-select
+
+Marquee Select
+
+Drag
+
+Duplicate
+
+Delete
+
+Copy
+
+Paste
+
+Timeline Zoom
+
+Timeline Pan
+
+Snap
+
+Property Filter
+
+Layer Selection Sync
+
+Timeline 不应该是：
+
+大量按钮集合。
+
+低频操作：
+
+Context Menu
+Shortcut
+Command Palette。
+
+======================================================================
+9. Keyframe 系统
+======================================================================
+
+确保统一：
+
+Property<T>
++
+Keyframe
++
+Interpolation
+
+支持：
+
+Hold
+Linear
+Bezier
+
+以及：
+
+Ease In
+Ease Out
+Ease In-Out
+
+检查：
+
+Number
+Vec2
+Vec3
+Opacity
+Effect Parameter
+Node Parameter
+
+是否尽量复用同一 Animation Engine。
+
+禁止继续产生：
+
+新模块
+→
+新关键帧系统。
+
+======================================================================
+10. Motion Curve
+======================================================================
+
+这是 Swayframe 的重要体验模块。
+
+继续强化：
+
+Cubic Bezier Solver
+
+x1
+y1
+x2
+y2
+
+Bezier X Inversion
+
+Realtime Preview
+
+Curve Handle
+
+Numeric Input
+
+Presets
+
+Custom Presets
+
+Favorites
+
+Recent
+
+Reverse
+
+Copy Easing
+
+Paste Easing
+
+Multi-keyframe
+
+Multi-property
+
+Motion Curve 必须：
+
+真正修改动画 Timing。
+
+不要只修改 UI。
+
+======================================================================
+11. Graph Editor
+======================================================================
+
+明确区分：
+
+Motion Curve
+
+Value Graph
+
+Speed Graph
+
+三者不是同一种东西。
+
+Motion Curve：
+
+time → normalized progress
+
+Value Graph：
+
+time → property value
+
+Speed Graph：
+
+time → velocity
+
+完善：
+
+Value Graph
+
+Speed Graph
+
+Editable Handles
+
+Influence
+
+Velocity
+
+Keyframe Selection
+
+Graph Zoom / Pan
+
+确保：
+
+Position Spatial Path
+
+与：
+
+Temporal Easing
+
+完全解耦。
+
+修改速度：
+
+不能改变路径几何。
+
+======================================================================
+12. Inspector
+======================================================================
+
+让 Inspector 逐渐成为真正专业属性编辑器。
+
+统一：
+
+PropertyRow
+
+NumericField
+
+ScrubField
+
+Slider
+
+ColorField
+
+Dropdown
+
+Toggle
+
+KeyframeButton
+
+Section
+
+结构：
+
+Transform
+
+Appearance
+
+Text
+
+Mask
+
+Effects
+
+3D
+
+Graph / Advanced
+
+避免：
+
+每个 Layer 自己做一套表单。
+
+支持：
+
+Label Drag Numeric Scrubbing
+
+Shift 大步长
+
+Alt / Option 小步长
+
+Arrow 调整
+
+Enter Commit
+
+Esc Cancel
+
+======================================================================
+13. Shape System
+======================================================================
+
+继续完善：
+
+Rectangle
+
+Ellipse
+
+Polygon
+
+Star
+
+Bezier Path
+
+Fill
+
+Stroke
+
+Stroke Width
+
+Cap
+
+Join
+
+Gradient
+
+Path Editor
+
+Anchor
+
+Bezier Handles
+
+Path Animation
+
+Shape 系统稳定后：
+
+再做：
+
+Trim Paths。
+
+不要本末倒置。
+
+======================================================================
+14. Text
+======================================================================
+
+至少保证：
+
+Text Content
+
+Font
+
+Font Size
+
+Weight
+
+Color
+
+Alignment
+
+Tracking
+
+Leading
+
+Text Box
+
+Canvas Direct Editing
+
+Double Click：
+
+Edit Text。
+
+Text Editing 模式：
+
+Shortcut Registry 必须正确屏蔽编辑器快捷键。
+
+======================================================================
+15. Mask
+======================================================================
+
+完善：
+
+Rectangle
+
+Ellipse
+
+Bezier
+
+Add
+
+Subtract
+
+Intersect
+
+Path
+
+Opacity
+
+Feather
+
+Expansion
+
+Keyframe
+
+Mask 与 Compositing Graph：
+
+未来必须能够共享数据或建立清晰 Adapter。
+
+不要创建：
+
+Graph Mask
+
+和：
+
+Layer Mask
+
+完全不兼容的两套系统。
+
+======================================================================
+16. Effects / Color
+======================================================================
+
+继续采用统一 Effects Pipeline。
+
+优先保证常用能力：
+
+Exposure
+
+Brightness / Contrast
+
+Hue / Saturation
+
+Temperature / Tint
+
+Levels
+
+Gaussian Blur
+
+Drop Shadow
+
+Glow
+
+Fill
+
+Effect Stack：
+
+Add
+Delete
+Enable
+Disable
+Reorder
+
+Effect Parameter：
+
+尽量为：
+
+Property<T>
+
+允许：
+
+Keyframe。
+
+Compositing Graph 已存在时：
+
+不要重新创建另一套 Effect Data。
+
+遵守：
+
+Effect Stack = Graph 的简单线性视图
+
+或当前项目已经确定的 Adapter 策略。
+
+======================================================================
+17. Compositing Graph
+======================================================================
+
+如果 Graph V0.1 已完成：
+
+本轮只做：
+
+Bug Fix
+
+Integration
+
+UX
+
+Performance
+
+不要重新设计 Graph Core。
+
+重点检查：
+
+Graph ↔ Effects
+
+Graph ↔ Property(t)
+
+Graph ↔ Timeline
+
+Graph ↔ Renderer
+
+Graph ↔ Save / Load
+
+Graph ↔ Undo
+
+是否真正连通。
+
+如果 Node UI：
+
+只是“能连线”
+
+但不参与 Renderer：
+
+这是 P0 问题。
+
+优先修复。
+
+不要接受：
+
+Fake Node Editor。
+
+======================================================================
+18. Parenting / Null
+======================================================================
+
+强化：
+
+Parent / Child
+
+Null
+
+Transform inheritance
+
+Animated Parent
+
+Cycle Detection
+
+确保：
+
+父层动画
+
++
+
+子层自身动画
+
+组合正确。
+
+======================================================================
+19. Precomp
+======================================================================
+
+完成：
+
+Multiple Composition
+
+Nested Composition
+
+Pre-compose
+
+Precomp Layer
+
+Transform
+
+Effects
+
+Animation
+
+保存 / 加载。
+
+必须防止：
+
+Composition Cycle
+
+A → B → A。
+
+======================================================================
+20. 2.5D
+======================================================================
+
+只做：
+
+高价值基础能力。
+
+3D Layer
+
+XYZ Position
+
+XYZ Rotation
+
+XYZ Scale
+
+XYZ Anchor
+
+Z Depth
+
+Perspective
+
+Camera
+
+FOV / Zoom
+
+Camera Animation
+
+目标：
+
+图片空间布局
+
+卡片旋转
+
+Camera Push
+
+Parallax
+
+暂时不要：
+
+Mesh
+Material
+Rigging
+Advanced Lighting
+Ray Tracing。
+
+======================================================================
+21. Desktopization
+======================================================================
+
+继续坚持：
+
+Desktopize the existing editor.
+
+Do NOT rewrite.
+
+React / TypeScript：
+
+继续作为 Editor Core。
+
+Electron：
+
+负责：
+
+Window
+File System
+Menu
+Native Dialog
+Project Lifecycle
+OS Integration
+
+完成 / 强化：
+
+Typed IPC
+
+DesktopAPI
+
+New
+
+Open
+
+Save
+
+Save As
+
+.swayframe
+
+Project Dirty State
+
+Close Protection
+
+Native Asset Import
+
+Drag & Drop
+
+Recent Projects
+
+Autosave
+
+Crash Recovery
+
+Window State
+
+Workspace State
+
+Application Menu
+
+Packaging
+
+======================================================================
+22. Desktop 项目文件
+======================================================================
+
+工程必须真正可用。
+
+Save：
+
+完整保存。
+
+Load：
+
+完整恢复。
+
+重点检查：
+
+Layers
+Properties
+Keyframes
+Curves
+Masks
+Effects
+Graph
+Parent
+Precomp
+3D
+Assets
+
+Round-trip。
+
+任何模块：
+
+保存后丢失
+
+都属于严重 Bug。
+
+======================================================================
+23. Autosave / Recovery
+======================================================================
+
+这是专业软件的重要基础。
+
+完成：
+
+Recovery Snapshot
+
+Debounce / Periodic Save
+
+Dirty Detection
+
+Crash Recovery
+
+Recover
+
+Discard
+
+保证：
+
+Autosave
+
+不会破坏正式工程。
+
+======================================================================
+24. Asset Workflow
+======================================================================
+
+完善：
+
+Native Import
+
+Explorer / Finder Drag Drop
+
+Asset Panel
+
+Canvas Drop
+
+Timeline Drop
+
+Linked Assets
+
+Missing Media
+
+Relink
+
+不要：
+
+大型图片 / 视频
+
+Base64 写入 Project JSON。
+
+======================================================================
+25. Export
+======================================================================
+
+至少保证一个可靠输出链：
+
+Composition
+
+→ Frame Evaluation
+
+→ Renderer
+
+→ PNG Sequence
+
+如果现有：
+
+MP4 / H264
+
+已稳定：
+
+继续完善。
+
+如果不稳定：
+
+不要让 Codec 问题阻塞整个冲刺。
+
+======================================================================
+26. UI Layout
+======================================================================
+
+继续向：
+
+AE 的动画工作方式
+
++
+
+Figma 的 Canvas 操作方式
+
+靠近。
+
+工作区：
+
+Top Toolbar
+
+Left Project / Layer
+
+Center Canvas
+
+Right Inspector
+
+Bottom Timeline / Graph
+
+减少：
+
+大按钮
+
+大量文字按钮
+
+永远可见的低频操作。
+
+更多使用：
+
+Icon
+
+Tooltip
+
+Context Menu
+
+Menu
+
+Shortcut
+
+Command Palette。
+
+======================================================================
+27. Design System
+======================================================================
+
+统一：
+
+Design Tokens
+
+Color
+
+Spacing
+
+Radius
+
+Typography
+
+Control Height
+
+Hover
+
+Selected
+
+Focus
+
+Disabled
+
+建立并复用：
+
+Button
+
+IconButton
+
+NumericField
+
+ScrubField
+
+Select
+
+Slider
+
+Tooltip
+
+PanelHeader
+
+SectionHeader
+
+Tabs
+
+ContextMenu
+
+Popover
+
+避免每个模块：
+
+自己画一套 UI。
+
+======================================================================
+28. Shortcut Registry
+======================================================================
+
+所有快捷键：
+
+集中管理。
+
+支持：
+
+Context。
+
+例如：
+
+Canvas
+
+Timeline
+
+Graph
+
+Text Editing
+
+Numeric Input
+
+Modal
+
+不要：
+
+每个 React Component
+
+监听 document.keydown。
+
+跨平台：
+
+macOS Cmd
+
+Windows Ctrl。
+
+======================================================================
+29. Context Menu
+======================================================================
+
+把低频操作迁移过去。
+
+Layer
+
+Keyframe
+
+Property
+
+Canvas
+
+Node
+
+Asset
+
+都可以使用。
+
+减少：
+
+工具栏永久按钮。
+
+======================================================================
+30. Command Palette
+======================================================================
+
+如果当前架构稳定：
+
+实现：
+
+Cmd/Ctrl + K
+
+搜索：
+
+Create Shape
+
+Create Text
+
+Import
+
+Pre-compose
+
+Add Effect
+
+Open Motion Curve
+
+Open Graph Editor
+
+Open Compositing Graph
+
+Fit Canvas
+
+Export
+
+但：
+
+Command Palette
+
+是补充入口。
+
+不是主 UI。
+
+======================================================================
+31. Performance Sprint
+======================================================================
+
+完成一批核心功能后：
+
+主动做性能分析。
+
+重点检查：
+
+Canvas Drag
+
+Timeline Scrub
+
+Playback
+
+Graph Editor
+
+Motion Curve
+
+Node Graph
+
+Large Layer Count
+
+Large Keyframe Count
+
+React Rerender
+
+避免：
+
+每次 pointermove
+
+序列化 Project。
+
+避免：
+
+每次 Playhead 移动
+
+重建整个 Scene。
+
+避免：
+
+Graph UI pan
+
+触发 Render Graph 重算。
+
+优化：
+
+dependency invalidation
+
+memoization
+
+selectors
+
+cache
+
+但：
+
+不要过度工程化。
+
+======================================================================
+32. React 性能规则
+======================================================================
+
+重点寻找：
+
+巨大 Context
+
+所有 Property 更新导致整个 App render
+
+Timeline 每帧重建所有 rows
+
+Canvas selection 引发无关 Inspector 重绘
+
+Node Drag 导致 Renderer 重算
+
+频繁 deep clone
+
+频繁 JSON stringify
+
+只修：
+
+明显真实问题。
+
+不要：
+
+为了理论性能
+
+整体更换前端框架。
+
+======================================================================
+33. 错误处理
+======================================================================
+
+用户层：
+
+不要展示：
+
+stack trace
+
+JSON error
+
+raw exception。
+
+使用：
+
+Toast
+Dialog
+Inline Error。
+
+开发日志：
+
+保留：
+
+技术细节。
+
+Project：
+
+加载失败
+
+不要覆盖当前工程。
+
+Renderer：
+
+单个 Effect / Node 失败
+
+尽量安全降级。
+
+======================================================================
+34. 测试重点
+======================================================================
+
+优先给核心逻辑测试。
+
+持续覆盖：
+
+Property Evaluation
+
+Linear
+
+Bezier
+
+Spring（如果存在）
+
+Motion Curve
+
+Bezier Solver
+
+Keyframe
+
+Undo / Redo
+
+Transaction
+
+Parent Transform
+
+Precomp
+
+Mask
+
+Effects
+
+Graph Validation
+
+Graph Compile
+
+Project Serialization
+
+Migration
+
+Camera Projection
+
+Desktop Save / Load
+
+Autosave
+
+Recovery
+
+不要：
+
+为了测试覆盖率数字
+
+给纯 UI markup
+
+写大量低价值测试。
+
+======================================================================
+35. 每次完成一个功能块
+======================================================================
+
+运行：
+
+lint
+
+typecheck
+
+tests
+
+build
+
+desktop build（适合时）
+
+如果：
+
+本轮改动导致失败
+
+立即修。
+
+不要：
+
+累积 50 个错误
+
+最后处理。
+
+======================================================================
+36. Git Checkpoint
+======================================================================
+
+如果 Git 可用：
+
+在稳定里程碑：
+
+创建合理 commit。
+
+例如：
+
+feat(canvas): unify transform interactions
+
+feat(timeline): add multi-keyframe drag
+
+feat(motion): improve speed graph editing
+
+feat(desktop): finish autosave recovery
+
+fix(graph): keep effect stack synchronized
+
+不要：
+
+每行 commit。
+
+也不要：
+
+一天只有一个巨大 commit。
+
+如果环境不允许 commit：
+
+在 DEV_SPRINT 中记录：
+
+checkpoint。
+
+======================================================================
+37. 不允许做的事情
+======================================================================
+
+本轮禁止：
+
+重新设计整个 Product Architecture
+
+重写 React Editor
+
+切换 UI Framework
+
+重写全部 Renderer
+
+重写 Compositing Graph
+
+训练大型 AI 模型
+
+加入生成式视频
+
+实现完整 Nuke
+
+实现 Blender 式 3D
+
+实现粒子大系统
+
+创建大量空壳功能
+
+为了未来功能写几千行暂时不用的代码
+
+复制业务逻辑到 Electron
+
+绕过 Command System。
+
+======================================================================
+38. 代码质量原则
+======================================================================
+
+允许：
+
+主动重构。
+
+但只有当它：
+
+解决真实 bug
+
+明显降低重复
+
+改善架构边界
+
+改善测试能力
+
+改善性能
+
+改善后续开发速度
+
+时进行。
+
+不要：
+
+为了“优雅”
+
+重写稳定模块。
+
+原则：
+
+Working
+→ Stable
+→ Clean
+→ Fast
+
+而不是：
+
+Perfect Architecture
+→ Maybe Working。
+
+======================================================================
+39. 高价值优先
+======================================================================
+
+如果剩余开发时间有限：
+
+优先完成：
+
+1. Canvas 操作手感
+
+2. Timeline
+
+3. Motion Curve / Speed Graph
+
+4. Undo / Transaction
+
+5. Save / Load
+
+6. Desktop Project Workflow
+
+7. Shape / Text / Mask
+
+8. Effects / Compositing Graph Integration
+
+9. Autosave / Recovery
+
+10. 2.5D
+
+这个顺序优先于：
+
+增加更多功能数量。
+
+======================================================================
+40. 一个模块什么时候算“完成”
+======================================================================
+
+不是：
+
+创建了 Component
+
+不是：
+
+创建了按钮
+
+不是：
+
+定义了 interface。
+
+必须满足：
+
+User can use it
+
+Data is real
+
+Renderer reflects it
+
+Undo works
+
+Save / Load works
+
+Tests cover core behavior
+
+UI does not break
+
+才算：
+
+完成。
+
+======================================================================
+41. 垂直切片原则
+======================================================================
+
+优先做：
+
+完整 Vertical Slice。
+
+例如：
+
+Gaussian Blur
+
+必须完成：
+
+UI
+
+→ Property
+
+→ Keyframe
+
+→ Renderer
+
+→ Graph
+
+→ Undo
+
+→ Save
+
+而不是：
+
+先创建：
+
+20 个 Effect UI
+
+然后全部没有 Renderer。
+
+另一个例子：
+
+3D Layer
+
+必须完成：
+
+UI
+
+→ Model
+
+→ Camera
+
+→ Renderer
+
+→ Save
+
+而不是：
+
+只出现：
+
+Enable 3D
+
+Checkbox。
+
+======================================================================
+42. 自主循环
+======================================================================
+
+持续执行：
+
+Inspect
+↓
+Prioritize
+↓
+Implement
+↓
+Test
+↓
+Fix
+↓
+Polish
+↓
+Checkpoint
+↓
+Next
+
+不要：
+
+每完成一个模块：
+
+停止等待用户。
+
+继续直到：
+
+达到当前环境合理执行上限
+
+或者：
+
+真正不可绕过的阻塞。
+
+======================================================================
+43. 如果额度 / 时间很多
+======================================================================
+
+不要：
+
+随意增加范围。
+
+把额外时间用于：
+
+Bug Fix
+
+UX
+
+Performance
+
+Tests
+
+Edge Cases
+
+Refactoring bad temporary code
+
+Cross-platform QA
+
+Desktop Polish
+
+这比：
+
+增加随机新功能
+
+优先级更高。
+
+======================================================================
+44. 如果发现明显架构债
+======================================================================
+
+例如：
+
+UI 直接修改 Scene
+
+Effect 直接写 Renderer State
+
+Node Graph 与 Effect Stack 双数据源
+
+Timeline 拥有第二套 Animation State
+
+Desktop Main 拥有业务数据
+
+优先修正。
+
+这些属于：
+
+长期高风险技术债。
+
+======================================================================
+45. 最终产品体验
+======================================================================
+
+当本轮冲刺结束：
+
+用户应该感受到：
+
+Swayframe
+
+不是：
+
+“Codex 不断往里面加功能的实验项目”。
+
+而是：
+
+一个越来越统一、稳定、专业的软件。
+
+所有模块应该：
+
+看起来属于同一个产品
+
+操作逻辑一致
+
+Undo 一致
+
+快捷键一致
+
+属性动画一致
+
+保存一致
+
+Renderer 一致。
+
+======================================================================
+46. 最终 Sprint Result
+======================================================================
+
+真正达到环境执行上限后：
+
+输出：
+
+# Swayframe Sprint Result
+
+## Shipped
+
+只写真正完成并可使用的功能。
+
+## Fixed
+
+Bug / Regression。
+
+## UX Improvements
+
+## Performance Improvements
+
+## Desktop Progress
+
+## Graph Integration
+
+## Tests
+
+列出实际：
+
+lint
+typecheck
+tests
+build
+desktop build
+
+结果。
+
+## Known Limitations
+
+## Blockers
+
+## Next 5 Highest-Value Tasks
+
+不要夸大完成度。
+
+未完成：
+
+明确写未完成。
+
+======================================================================
+FINAL DIRECTIVE
+======================================================================
+
+Do not optimize for code volume.
+
+Do not optimize for feature count.
+
+Optimize for:
+
+usable software
+stable architecture
+professional interaction
+complete workflows
+low regression
+future extensibility
+
+当前核心：
+
+先把 Swayframe 做成真正好用的 Motion Design 软件。
+
+AI 会在后面回来。
+
+但 AI 能有多强，
+
+首先取决于现在给它造出的：
+
+Canvas
+Timeline
+Property System
+Graph
+Renderer
+Command System
+
+到底有多强。
+
+BUILD.
+TEST.
+FIX.
+POLISH.
+REPEAT.
+
+Keep going.

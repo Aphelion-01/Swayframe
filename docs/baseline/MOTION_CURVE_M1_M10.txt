@@ -1,0 +1,1361 @@
+你现在需要在当前 Motion Design 软件中新增一个核心动画模块：
+
+======================================================================
+Motion Curve System
+专业速度曲线 / Easing 控制系统
+======================================================================
+
+它可以参考 After Effects 中 Flow、Pro Motion Curves、Motion Pro 一类工具的交互思想，
+但不要复制任何第三方插件代码、UI 美术资源或专有实现。
+
+目标不是制作一个外挂插件，而是把“专业动画速度曲线控制”变成当前软件原生动画系统的一部分。
+
+该系统未来还需要被：
+
+Human User
+AI Motion Intelligence
+AI Agent
+
+共同调用，因此必须具有明确的数据模型和 API。
+
+在开始开发之前：
+
+1. 阅读当前 Property System
+2. 阅读 Keyframe Model
+3. 阅读 Animation Evaluation
+4. 阅读 Timeline
+5. 阅读 Graph Editor
+6. 阅读 Command / Transaction / Undo 系统
+
+不得另外创建一套和现有关键帧系统互不兼容的动画系统。
+
+======================================================================
+一、核心设计思想
+======================================================================
+
+本系统分为两个层次：
+
+A. Motion Curve Editor
+面向绝大多数用户的标准化 Easing 编辑器。
+
+B. Speed Graph
+面向专业用户的真实速度曲线编辑器。
+
+不要把二者混为一谈。
+
+Motion Curve Editor 使用：
+
+Normalized Time
+0 → 1
+
+Normalized Progress
+0 → 1
+
+形成一条标准化 Cubic Bezier Easing Curve。
+
+例如：
+
+P0 = (0, 0)
+P1 = (x1, y1)
+P2 = (x2, y2)
+P3 = (1, 1)
+
+默认 Linear：
+
+cubic-bezier(0, 0, 1, 1)
+
+典型 Ease：
+
+cubic-bezier(...)
+
+曲线本身不保存：
+
+像素位置
+Scale 数值
+Rotation 数值
+
+而只描述：
+
+“在两个关键帧之间，动画进度如何随时间变化。”
+
+因此同一条 Motion Curve 可以应用到：
+
+Position
+Scale
+Rotation
+Opacity
+Color
+Effect Parameter
+Camera
+Mask Parameter
+
+等不同 Property。
+
+======================================================================
+二、核心数学模型
+======================================================================
+
+两个关键帧：
+
+K0:
+time = t0
+value = v0
+
+K1:
+time = t1
+value = v1
+
+首先得到标准化时间：
+
+u = (t - t0) / (t1 - t0)
+
+其中：
+
+0 <= u <= 1
+
+然后通过 Motion Curve：
+
+p = easing(u)
+
+得到：
+
+0~1 的动画进度 p。
+
+最终：
+
+value(t) = interpolate(v0, v1, p)
+
+对于 Number：
+
+v = v0 + (v1 - v0) * p
+
+对于 Vec2：
+
+x = x0 + (x1 - x0) * p
+y = y0 + (y1 - y0) * p
+
+对于 Vec3：
+
+同理。
+
+Color：
+
+逐通道插值，具体颜色空间沿用项目现有 Color System。
+
+注意：
+
+Temporal Easing 和 Spatial Path 必须分开。
+
+例如 Position：
+
+Motion Curve
+负责：
+
+物体什么时候快
+什么时候慢
+
+Spatial Path
+负责：
+
+物体往哪里走。
+
+修改速度曲线不应该改变运动路径的几何形状。
+
+======================================================================
+三、Motion Curve 数据结构
+======================================================================
+
+建立独立、可序列化的数据模型。
+
+建议类似：
+
+interface CubicBezierCurve {
+    type: "cubic-bezier";
+
+    x1: number;
+    y1: number;
+
+    x2: number;
+    y2: number;
+}
+
+同时预留：
+
+type MotionCurve =
+    | LinearCurve
+    | CubicBezierCurve
+    | SpringCurve
+    | BounceCurve
+    | CustomCurve;
+
+第一阶段重点实现：
+
+Linear
+Cubic Bezier
+
+不要为了 Spring/Bounce 延迟核心系统。
+
+但是接口必须能够未来增加。
+
+======================================================================
+四、Curve 应属于“关键帧区间”
+======================================================================
+
+必须认真处理 Curve 的归属。
+
+一条 Easing Curve 本质上控制：
+
+Keyframe A → Keyframe B
+
+之间的时间插值。
+
+因此不要简单把曲线作为：
+
+Property.curve
+
+否则多个 Keyframe 无法拥有不同动画节奏。
+
+设计：
+
+Keyframe Segment
+
+或 equivalent representation：
+
+Keyframe A
+      ↓
+Interpolation Segment
+      ↓
+Keyframe B
+
+Segment 中包含：
+
+temporalInterpolation
+curve
+
+例如：
+
+segment:
+{
+    fromKeyframeId,
+    toKeyframeId,
+    interpolation: "bezier",
+    curve: {
+        x1,
+        y1,
+        x2,
+        y2
+    }
+}
+
+如果现有架构已经使用：
+
+outgoing interpolation
+incoming interpolation
+
+优先兼容当前模型，不要无意义重构。
+
+======================================================================
+五、Motion Curve Editor UI
+======================================================================
+
+创建一个专业但极简的 Curve Editor。
+
+显示标准化坐标：
+
+左下：
+
+0,0
+
+右上：
+
+1,1
+
+显示：
+
+Bezier Curve
+P1 Handle
+P2 Handle
+
+用户可以直接拖动：
+
+P1
+P2
+
+实时修改：
+
+x1
+y1
+x2
+y2
+
+同时提供精确数值输入：
+
+X1
+Y1
+X2
+Y2
+
+拖动 Curve Handle 时：
+
+Canvas 动画预览
+Timeline
+Graph
+
+必须实时更新。
+
+目标是：
+
+拖动控制柄
+→
+动画立即变化
+
+不能：
+
+拖动
+→
+点击 Apply
+→
+才更新。
+
+======================================================================
+六、Bezier 编辑约束
+======================================================================
+
+为了保证合法的 timing function：
+
+默认限制：
+
+0 <= x1 <= 1
+0 <= x2 <= 1
+
+Y：
+
+允许超过：
+
+0~1
+
+例如：
+
+y > 1
+
+用于：
+
+Overshoot
+
+y < 0
+
+用于：
+
+Anticipation
+
+因此可以形成：
+
+Back
+Overshoot
+Elastic-like
+
+视觉效果。
+
+但需要保证：
+
+时间轴 X 方向保持可求值。
+
+如果实现任意 Cubic Bezier 求逆：
+
+需要根据 u 求参数 tBezier：
+
+Bx(tBezier) = u
+
+然后计算：
+
+By(tBezier)
+
+可使用：
+
+Newton-Raphson
+
+并提供：
+
+Binary Search
+
+作为数值稳定 fallback。
+
+禁止粗暴使用：
+
+BezierY(u)
+
+代替真正的：
+
+BezierY(BezierX^-1(u))
+
+否则当：
+
+x1 / x2 != 默认值
+
+时 easing 会计算错误。
+
+为 Cubic Bezier Solver 编写独立 Unit Tests。
+
+======================================================================
+七、快速控制模式
+======================================================================
+
+Curve Editor 上方或旁边增加快速控制：
+
+Ease In
+Ease Out
+Ease In-Out
+
+以及：
+
+Linear
+Easy Ease
+
+允许用户快速生成基础曲线。
+
+另外提供几个简单参数：
+
+IN
+OUT
+
+或者类似：
+
+Ease In Influence
+Ease Out Influence
+
+用户不需要理解 Cubic Bezier 也能调整动画。
+
+但是：
+
+这些 UI 参数最终仍然转换成统一 Curve Model。
+
+不要创建第二套 easing 数据。
+
+======================================================================
+八、应用模式
+======================================================================
+
+用户选中两个或多个关键帧后：
+
+可以将 Curve 以三种模式应用：
+
+Both
+Out
+In
+
+Both：
+
+同时设置选中动画区间的完整 easing。
+
+Out：
+
+主要修改离开第一个关键帧的 easing。
+
+In：
+
+主要修改进入第二个关键帧的 easing。
+
+具体数据映射必须与当前 Keyframe Interpolation Model 一致。
+
+如果架构不适合直接模拟 AE 的 incoming/outgoing velocity，
+可以先在 MotionCurve Segment 层定义清晰语义，
+再由 adapter 映射到 Speed Graph。
+
+======================================================================
+九、Reverse
+======================================================================
+
+实现：
+
+Reverse Curve
+
+例如：
+
+Ease Out
+
+反转为：
+
+Ease In
+
+数学上应真正反转 easing：
+
+reverse(u) = 1 - easing(1 - u)
+
+不要仅仅交换 preset 名称。
+
+Curve Editor 必须立即显示反转后的结果。
+
+======================================================================
+十、Mirror
+======================================================================
+
+实现：
+
+Mirror
+
+允许：
+
+Curve 左右对称
+
+或：
+
+In ↔ Out
+
+这一能力需要独立于 Reverse。
+
+确保：
+
+Reverse
+Mirror
+
+语义清晰并有测试。
+
+======================================================================
+十一、Curve Preset Library
+======================================================================
+
+建立 Motion Curve Preset Library。
+
+第一阶段至少提供：
+
+Linear
+
+Ease In
+Ease Out
+Ease In-Out
+
+Sine In
+Sine Out
+Sine In-Out
+
+Quad In
+Quad Out
+Quad In-Out
+
+Cubic In
+Cubic Out
+Cubic In-Out
+
+Quart In
+Quart Out
+Quart In-Out
+
+Quint In
+Quint Out
+Quint In-Out
+
+Expo In
+Expo Out
+Expo In-Out
+
+Back In
+Back Out
+Back In-Out
+
+Fast Out
+Smooth
+Cinematic
+UI Snappy
+
+最后几组可以使用自主设计参数。
+
+不要复制商业插件 preset 数据。
+
+======================================================================
+十二、用户自定义 Curve
+======================================================================
+
+用户可以：
+
+Save Curve
+
+输入：
+
+Name
+
+保存：
+
+curve data
+category
+createdAt
+
+支持：
+
+Rename
+Delete
+Favorite
+Duplicate
+
+Library 分类至少支持：
+
+Built-in
+Custom
+Favorites
+Recent
+
+自定义 Preset 存储必须与 Project 文件分离。
+
+因为用户的 Curve Library 应当跨项目存在。
+
+======================================================================
+十三、一键应用
+======================================================================
+
+Workflow：
+
+选择关键帧
+↓
+打开 Motion Curve
+↓
+点击 Preset
+↓
+立即应用
+
+支持：
+
+Double Click Preset
+
+快速应用。
+
+所有操作必须通过：
+
+Command System
+
+例如：
+
+ApplyMotionCurveCommand
+
+不得 UI 直接修改 Keyframe 数据。
+
+Command 必须支持：
+
+Undo
+Redo。
+
+======================================================================
+十四、Copy / Paste Curve
+======================================================================
+
+支持：
+
+Copy Easing
+
+选择另一组 Keyframes：
+
+Paste Easing
+
+只复制：
+
+Motion Curve
+
+不要复制：
+
+Time
+Value
+
+以后可以增加：
+
+Copy Motion Style
+
+但本阶段不用。
+
+======================================================================
+十五、速度可视化
+======================================================================
+
+Motion Curve Editor 下方可以显示辅助：
+
+Velocity Preview
+
+根据：
+
+p(t)
+
+计算：
+
+dp/dt
+
+并显示简化速度曲线。
+
+这样用户能同时理解：
+
+Progress Curve
+
+与：
+
+Velocity Curve
+
+之间的关系。
+
+例如：
+
+Ease Out：
+
+Progress Curve 前段陡
+后段缓
+
+对应：
+
+Velocity：
+
+开始高
+逐渐下降至 0。
+
+======================================================================
+十六、真正 Speed Graph
+======================================================================
+
+在专业 Graph Editor 中保留真正的：
+
+Speed Graph
+
+不要用 Motion Curve Editor 完全替代 Speed Graph。
+
+对于 Number Property：
+
+speed(t) = |dv/dt|
+
+对于 Vec2 Position：
+
+speed(t) = sqrt(
+    dx/dt² +
+    dy/dt²
+)
+
+正确写法：
+
+sqrt(
+    (dx/dt)^2 +
+    (dy/dt)^2
+)
+
+对于 Vec3：
+
+sqrt(
+    (dx/dt)^2 +
+    (dy/dt)^2 +
+    (dz/dt)^2
+)
+
+单位可以显示：
+
+px/s
+deg/s
+%/s
+
+具体依据 Property。
+
+Speed Graph UI：
+
+X = Time
+Y = Speed
+
+显示：
+
+Keyframe
+Incoming Handle
+Outgoing Handle
+
+允许：
+
+拖动 Y
+改变速度
+
+拖动 X
+改变 Influence
+
+======================================================================
+十七、Influence 模型
+======================================================================
+
+为 Speed Graph 建立明确：
+
+Incoming Velocity
+Outgoing Velocity
+
+Incoming Influence
+Outgoing Influence
+
+不要把：
+
+速度
+
+和：
+
+Bezier progress curve
+
+完全混在一起。
+
+如果当前 Animation Engine 内部统一使用 normalized cubic-bezier，
+建立：
+
+MotionCurve ↔ Keyframe Velocity
+
+转换层。
+
+保证：
+
+简单 Curve Editor
+
+和：
+
+Professional Speed Graph
+
+操作的是同一个动画数据体系。
+
+不要形成两个互不兼容的 Graph。
+
+======================================================================
+十八、多关键帧支持
+======================================================================
+
+支持用户：
+
+选择多个连续关键帧
+
+例如：
+
+K1
+K2
+K3
+K4
+
+应用一条 Curve。
+
+默认对每个：
+
+K1→K2
+K2→K3
+K3→K4
+
+应用同一 Easing。
+
+同时支持：
+
+只修改：
+
+selected segment。
+
+后续可以增加：
+
+Roving Keyframes
+
+本阶段不是最高优先级。
+
+======================================================================
+十九、多 Property 支持
+======================================================================
+
+用户可能同时选中：
+
+Position
+Scale
+Opacity
+
+的 Keyframes。
+
+Motion Curve 应该可以一次应用到所有兼容 Segment。
+
+例如：
+
+Position
+Scale
+Opacity
+
+共同使用：
+
+Ease Out。
+
+不得假设 Curve 只支持 Position。
+
+======================================================================
+二十、Spring / Bounce 架构预留
+======================================================================
+
+为未来：
+
+Spring
+Bounce
+Elastic
+
+建立 Curve Generator Interface。
+
+例如：
+
+interface MotionCurveGenerator {
+    generate(parameters): MotionCurve;
+}
+
+Spring：
+
+mass
+stiffness
+damping
+initialVelocity
+
+Bounce：
+
+strength
+decay
+frequency
+
+未来用户可以：
+
+调整 Bounce
+↓
+Preview
+↓
+Bake to Keyframes
+
+本阶段：
+
+只需要数据接口和类型预留。
+
+不要因为 Bounce 推迟 Cubic Bezier 核心系统。
+
+======================================================================
+二十一、Motion Curve 与 Timeline 集成
+======================================================================
+
+Timeline 中选中 Keyframes 后：
+
+Motion Curve Panel
+
+自动读取当前 Curve。
+
+如果多个 Segment：
+
+Curve 相同：
+
+显示 Curve。
+
+Curve 不同：
+
+显示：
+
+Mixed
+
+用户修改 Curve 后：
+
+全部应用。
+
+Timeline Keyframe 可以根据 easing 类型显示不同小图标，
+但不要让视觉复杂度过高。
+
+======================================================================
+二十二、实时 Motion Preview
+======================================================================
+
+Curve Editor 中加入一个极简 Motion Preview。
+
+例如：
+
+●
+
+从左：
+
+──────→
+
+移动到右。
+
+拖动 Curve Handle：
+
+小球实时按照当前 easing 运动。
+
+这个 Preview 不需要 Renderer。
+
+可以使用独立轻量 preview engine。
+
+用途：
+
+让用户不播放 Composition，
+也能立即感知：
+
+快
+慢
+缓入
+缓出
+Overshoot。
+
+======================================================================
+二十三、未来 AI 接口
+======================================================================
+
+该系统未来必须可以被：
+
+Motion Intelligence
+
+调用。
+
+因此提供 API：
+
+getMotionCurve(segmentId)
+
+applyMotionCurve(segmentIds, curve)
+
+analyzeMotionCurve(segmentId)
+
+reverseMotionCurve()
+
+saveMotionPreset()
+
+未来 Agent 可以执行：
+
+“让标题进入更有冲击力”
+
+→ Motion Intelligence
+
+→ 推荐 curve
+
+→ ApplyMotionCurveCommand
+
+而不是 Agent 模拟鼠标拖 Graph。
+
+======================================================================
+二十四、未来 Motion Intelligence 所需 Metadata
+======================================================================
+
+Curve Preset 可以预留：
+
+tags
+
+例如：
+
+smooth
+snappy
+cinematic
+soft
+energetic
+mechanical
+playful
+ui
+dramatic
+
+以及：
+
+intensity
+
+0~1
+
+以后 AI 可以根据自然语言：
+
+“柔和一点”
+
+“更有力量”
+
+“更快速”
+
+选择合适 Curve。
+
+现在无需实现 AI。
+
+但 Schema 允许未来加入这些 Metadata。
+
+======================================================================
+二十五、UI 推荐布局
+======================================================================
+
+Motion Curve Panel：
+
+┌──────────────────────────────┐
+│ Motion Curve                 │
+├──────────────────────────────┤
+│                              │
+│        Curve Editor          │
+│                              │
+│     ●────────────●           │
+│                              │
+├──────────────────────────────┤
+│ X1   Y1   X2   Y2            │
+├──────────────────────────────┤
+│ Both | Out | In | Reverse    │
+├──────────────────────────────┤
+│ Motion Preview               │
+│ ● ─────────────────────      │
+├──────────────────────────────┤
+│ Presets                      │
+│                              │
+│ Smooth   Snappy   Expo       │
+│ UI       Back     Custom     │
+└──────────────────────────────┘
+
+支持：
+
+Resizable
+
+如果当前 Desktop UI 支持 Dock：
+
+允许 Dock。
+
+不要为了完全复制 AE Panel UI 破坏当前软件视觉体系。
+
+======================================================================
+二十六、性能要求
+======================================================================
+
+Bezier Editor 拖动时：
+
+目标保持接近实时更新。
+
+不要每个 mousemove：
+
+序列化整个工程
+重建所有 Layer
+重新初始化 Renderer
+
+只 invalidate：
+
+受影响 Property
+受影响 Time Segment
+受影响 Preview
+
+避免明显卡顿。
+
+Curve Solver 应缓存合理的中间结果。
+
+======================================================================
+二十七、测试
+======================================================================
+
+必须为以下内容编写测试：
+
+CubicBezier Evaluation
+
+Bezier X inversion
+
+Linear Curve
+
+Ease In
+
+Ease Out
+
+Ease In-Out
+
+Reverse
+
+Vector Property interpolation
+
+Multi Segment application
+
+Copy / Paste Curve
+
+Apply Curve Undo
+
+Apply Curve Redo
+
+Preset serialization
+
+Invalid Curve handling
+
+重点测试：
+
+x1/x2 非对称 Curve
+
+以及：
+
+y < 0
+y > 1
+
+情况。
+
+======================================================================
+二十八、验收案例
+======================================================================
+
+CASE 1
+
+两个 Position Keyframe。
+
+Linear：
+
+物体匀速移动。
+
+应用 Ease Out：
+
+明显快速开始、缓慢结束。
+
+CASE 2
+
+Scale：
+
+0 → 100
+
+使用 Overshoot Curve：
+
+动画超过 100 后回到最终状态。
+
+如果当前 Cubic Bezier 单段模型无法真正产生回落，
+不要伪造结果；
+使用支持非单调 progress 的实现，
+或把 Overshoot 交给未来 Spring/Back Curve 类型。
+
+CASE 3
+
+Opacity：
+
+0 → 100
+
+使用 Ease In：
+
+开始变化缓慢，后期加速。
+
+CASE 4
+
+同时选中：
+
+Position
+Scale
+Opacity
+
+应用同一 Curve。
+
+三个属性动画 timing 一致。
+
+CASE 5
+
+创建自定义 Curve。
+
+Save Preset。
+
+关闭重新打开软件。
+
+Preset 仍然存在。
+
+CASE 6
+
+Apply Curve。
+
+Undo。
+
+恢复原 easing。
+
+Redo。
+
+重新应用。
+
+CASE 7
+
+修改 Curve Handle。
+
+Canvas 动画 Preview 实时更新。
+
+CASE 8
+
+打开 Speed Graph。
+
+显示真实速度变化。
+
+Ease Out：
+
+Speed Graph 应表现为：
+
+速度较高
+→
+逐渐降低
+→
+趋近 0。
+
+CASE 9
+
+Position 使用曲线路径。
+
+修改 Motion Curve。
+
+运动路径几何形状不发生变化，
+
+只改变沿路径运动的 timing。
+
+这是非常重要的验收标准。
+
+======================================================================
+二十九、开发顺序
+======================================================================
+
+严格按：
+
+M1
+CubicBezier math + tests
+
+M2
+MotionCurve data model
+
+M3
+Animation Engine integration
+
+M4
+ApplyMotionCurveCommand + Undo
+
+M5
+Curve Editor UI
+
+M6
+Realtime Preview
+
+M7
+Preset Library
+
+M8
+Timeline integration
+
+M9
+Speed Graph
+
+M10
+Copy/Paste/Reverse/Multi-selection
+
+不要同时铺开所有功能。
+
+每完成一个 Milestone：
+
+run:
+
+lint
+typecheck
+tests
+build
+
+修复问题以后再继续。
+
+======================================================================
+三十、最终目标
+======================================================================
+
+最终体验应该是：
+
+用户选择两个 Keyframe
+
+→
+
+打开 Motion Curve
+
+→
+
+拖动一条非常直观的 Curve
+
+→
+
+画面里的动画马上改变
+
+→
+
+满意后继续创作
+
+而专业用户仍然能够：
+
+切换 Speed Graph
+
+→
+
+精确调整 Velocity 和 Influence。
+
+这套 Motion Curve System 必须成为：
+
+Timeline
+Animation Engine
+Graph Editor
+未来 Motion Intelligence
+未来 AI Agent
+
+之间共享的核心动画基础设施。
+
+不要把它做成一个孤立 UI 小工具。
