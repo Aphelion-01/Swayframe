@@ -2,6 +2,7 @@ import {
   transform4,
   multiply4,
   point4,
+  cameraView,
   projectPoint,
   pointInQuad,
 } from './perspective';
@@ -135,6 +136,18 @@ export function createRenderSnapshot(
     width: composition.width,
     height: composition.height,
   };
+  const rawById = new Map(raw.map((item) => [item.source.id, item]));
+  const needs3D = new Set<string>();
+  for (const item of raw.filter((item) => item.source.editor?.is3D)) {
+    let current: RenderLayer | undefined = item;
+    while (current && !needs3D.has(current.source.id)) {
+      needs3D.add(current.source.id);
+      const parentId: string | null | undefined =
+        current.source.editor?.parentId;
+      current = parentId ? rawById.get(parentId) : undefined;
+    }
+  }
+  const projectionView = needs3D.size ? cameraView(camera) : undefined;
   const resolved = new Map<string, RenderLayer>();
   const resolve = (
     item: RenderLayer,
@@ -143,30 +156,34 @@ export function createRenderSnapshot(
     if (resolved.has(item.source.id)) return resolved.get(item.source.id)!;
     if (seen.has(item.source.id)) throw new Error('Parent cycle');
     seen.add(item.source.id);
-    const parent = raw.find(
-      (l) => l.source.id === item.source.editor?.parentId,
-    );
-    const offset = value3(item.source, 'position3D', [0, 0, 0]),
-      rotation3 = value3(item.source, 'rotation3D', [0, 0, 0]),
-      scale3 = value3(item.source, 'scale3D', [1, 1, 1]),
-      anchor3 = value3(item.source, 'anchor3D', [0, 0, 0]);
-    let world3D = transform4(
-      [
-        item.position.x - (parent ? 0 : composition.width / 2) + offset[0],
-        item.position.y - (parent ? 0 : composition.height / 2) + offset[1],
-        offset[2],
-      ],
-      [rotation3[0], rotation3[1], rotation3[2] + item.rotation],
-      [item.scale.x * scale3[0], item.scale.y * scale3[1], scale3[2]],
-      [
-        (item.anchor?.x ?? 0) + anchor3[0],
-        (item.anchor?.y ?? 0) + anchor3[1],
-        anchor3[2],
-      ],
-    );
+    const parent = item.source.editor?.parentId
+      ? rawById.get(item.source.editor.parentId)
+      : undefined;
+    const resolvedParent = parent ? resolve(parent, seen) : undefined;
+    let world3D: Matrix4 | undefined;
+    if (needs3D.has(item.source.id)) {
+      const offset = value3(item.source, 'position3D', [0, 0, 0]),
+        rotation3 = value3(item.source, 'rotation3D', [0, 0, 0]),
+        scale3 = value3(item.source, 'scale3D', [1, 1, 1]),
+        anchor3 = value3(item.source, 'anchor3D', [0, 0, 0]);
+      world3D = transform4(
+        [
+          item.position.x - (parent ? 0 : composition.width / 2) + offset[0],
+          item.position.y - (parent ? 0 : composition.height / 2) + offset[1],
+          offset[2],
+        ],
+        [rotation3[0], rotation3[1], rotation3[2] + item.rotation],
+        [item.scale.x * scale3[0], item.scale.y * scale3[1], scale3[2]],
+        [
+          (item.anchor?.x ?? 0) + anchor3[0],
+          (item.anchor?.y ?? 0) + anchor3[1],
+          anchor3[2],
+        ],
+      );
+    }
     let next = item;
     if (parent) {
-      const p = resolve(parent, seen),
+      const p = resolvedParent!,
         matrix = multiply2D(p.matrix!, item.matrix!),
         position = apply2D(p.matrix!, item.position);
       next = {
@@ -182,8 +199,8 @@ export function createRenderSnapshot(
         },
       };
     }
-    if (parent)
-      world3D = multiply4(resolve(parent, new Set()).world3D!, world3D);
+    if (world3D && resolvedParent?.world3D)
+      world3D = multiply4(resolvedParent.world3D, world3D);
     const quad = item.source.editor?.is3D
       ? (
           [
@@ -192,7 +209,9 @@ export function createRenderSnapshot(
             [item.source.width / 2, item.source.height / 2, 0],
             [-item.source.width / 2, item.source.height / 2, 0],
           ] as Point3[]
-        ).map((point) => projectPoint(point4(world3D, point), camera))
+        ).map((point) =>
+          projectPoint(point4(world3D!, point), camera, projectionView),
+        )
       : undefined;
     next = {
       ...next,

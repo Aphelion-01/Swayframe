@@ -77,6 +77,16 @@ export interface GraphExecution<T> {
   readonly output: T;
   readonly diagnostics: readonly GraphDiagnostic[];
 }
+/** Only a valid Source→Output dependency can use the renderer's direct-content path. */
+export function isIdentityGraph(graph: CompositingGraph): boolean {
+  const plan = compileGraph(graph);
+  return (
+    plan.valid &&
+    plan.nodes.length === 2 &&
+    plan.nodes[0]?.node.type === 'source' &&
+    plan.nodes[1]?.node.type === 'output'
+  );
+}
 export function executeGraph<T>(
   plan: CompiledGraph,
   time: number,

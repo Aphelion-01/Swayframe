@@ -1,4 +1,5 @@
 import { GraphExecutionCache } from '../core/compositing-cache';
+import { isIdentityGraph } from '../core/compositing-compiler';
 import { compositingSourceKey } from './compositing-source-key';
 import { renderCompositingGraph } from './compositing-graph';
 import { layerEffects } from '../core/compositing-migration';
@@ -182,8 +183,13 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
               : undefined,
           );
       };
+      const directGraph =
+        !!layer.editor?.graph &&
+        isIdentityGraph(layer.editor.graph) &&
+        item.opacity === 1 &&
+        layer.editor.blendMode === 'normal';
       const hasEffects =
-        !!layer.editor?.graph ||
+        (!!layer.editor?.graph && !directGraph) ||
         layerEffects(layer).some((e) => e.enabled) ||
         layer.editor?.masks.some((m) => m.enabled);
       if (hasEffects || layer.editor?.is3D || nested) {
@@ -307,7 +313,19 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
             padding,
           );
         else ctx.drawImage(processed, x - padding, y - padding);
-      } else draw(ctx);
+      } else {
+        this.#graphLayers.delete(layer.id);
+        const graphId = layer.editor?.graph?.id;
+        if (graphId && this.#graphDiagnostics.has(graphId)) {
+          this.#graphDiagnostics.delete(graphId);
+          window.dispatchEvent(
+            new CustomEvent('motion:graph-errors', {
+              detail: { graphId, diagnostics: [] },
+            }),
+          );
+        }
+        draw(ctx);
+      }
 
       if (input.selection.includes(layer.id)) {
         ctx.globalAlpha = 1;

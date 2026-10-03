@@ -4,7 +4,7 @@
 
 # In Progress
 
-500层/50000关键帧 CPU 求值基准与父级索引优化；最后桌面包/完整工作流验收。
+0.6.1 最终桌面包与完整工程保存/PNG导出验收。
 
 # Completed
 
@@ -21,6 +21,12 @@ V2-4：二维图层八方向缩放；默认遵循 X/Y 链接，解除后单轴�
 V2-5：双击文字自动聚焦/全选、多行 Enter 换行、Cmd/Ctrl+Enter 提交、Escape丢弃；中文输入法选字期间不触发提交和快捷键。保存重开保留换行，Undo一次恢复。
 
 V2-6：值/速度曲线滚轮鼠标中心缩放、Space/中键平移、F适应视图；切线拖动正确反算缩放坐标并冻结手势轴范围。视口不写工程，100次切线预览一条事务，输入与曲线快捷键分离。
+
+V2-7：父级索引、按三维依赖闭包计算矩阵、复用摄像机视图；500层/50000关键帧 CPU求值基准约8～13倍加速，校验值一致。
+
+V2-8：0.6.1产品版本、完整创作工程和严格round-trip；打包持续跟随最后修复更新。
+
+V2-9：默认不透明 Source→Output 直接绘制，避免离屏表面和缓存抖动；半透明/混合/遮罩/效果保留原组语义。
 
 # Next High-Value Tasks
 
@@ -49,3 +55,5 @@ V2-4：67 文件 / 178 tests，全门禁 PASS，见 `outputs/quality/V2-4.log`�
 V2-5：68 文件 / 180 tests，全门禁 PASS，见 `outputs/quality/V2-5.log`。
 
 V2-6：69 文件 / 182 tests，全门禁 PASS，见 `outputs/quality/V2-6.log`。
+
+V2-7：184 tests；V2-8：184 tests；V2-9：71文件/186 tests，全部门禁PASS。CPU基准见 `outputs/performance/README.md`。
