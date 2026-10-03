@@ -25,7 +25,12 @@ export function localTransformValues(
       const parent = snapshot.layers.find(
           (l) => l.source.id === item.source.editor?.parentId,
         ),
-        inverse = parent?.matrix ? inverse2D(parent.matrix) : null;
+        inverse = parent?.matrix ? inverse2D(parent.matrix) : null,
+        original = snapshot.layers.find((l) => l.source.id === item.source.id),
+        localScale = evaluateProperty(
+          item.source.transform.scale,
+          snapshot.time,
+        );
       return parent && inverse
         ? {
             ...item,
@@ -36,8 +41,14 @@ export function localTransformValues(
               (snapshot.layers.find((l) => l.source.id === item.source.id)
                 ?.rotation ?? item.rotation),
             scale: {
-              x: item.scale.x / parent.scale.x,
-              y: item.scale.y / parent.scale.y,
+              x:
+                original && Math.abs(original.scale.x) > 1e-12
+                  ? (localScale.x * item.scale.x) / original.scale.x
+                  : localScale.x,
+              y:
+                original && Math.abs(original.scale.y) > 1e-12
+                  ? (localScale.y * item.scale.y) / original.scale.y
+                  : localScale.y,
             },
           }
         : item;

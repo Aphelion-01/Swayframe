@@ -18,7 +18,7 @@ export function linkedAxisValues(
       : values[other]! + next - start;
   return result;
 }
-function readLink(id: string): boolean {
+export function readAxisLink(id: string): boolean {
   try {
     return localStorage.getItem(`swayframe.axis-link.${id}`) !== 'false';
   } catch {
@@ -26,8 +26,8 @@ function readLink(id: string): boolean {
   }
 }
 export function useAxisLink(id: string) {
-  const [state, setState] = useState(() => ({ id, linked: readLink(id) }));
-  const linked = state.id === id ? state.linked : readLink(id);
+  const [state, setState] = useState(() => ({ id, linked: readAxisLink(id) }));
+  const linked = state.id === id ? state.linked : readAxisLink(id);
   const toggle = () => {
     setState({ id, linked: !linked });
     try {

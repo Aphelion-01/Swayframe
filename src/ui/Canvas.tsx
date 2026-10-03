@@ -1,3 +1,5 @@
+import { resizeLayer } from '../core/resize-geometry';
+import { readAxisLink } from './axis-link';
 import { canvasSnapContext, snapCanvasDelta } from '../core/canvas-snapping';
 import type { CanvasSnapContext, SnapGuide } from '../core/canvas-snapping';
 import { useInteractionCancel } from './workspace/interaction';
@@ -14,7 +16,7 @@ import {
   transformEditCommands,
 } from '../core/transform-editing';
 import {
-  handleHit,
+  hitTransformHandle,
   worldToLayer,
   transformHandles,
 } from '../core/transform-geometry';
@@ -84,6 +86,8 @@ export function Canvas({ store }: { store: EditorStore }) {
         items: readonly RenderLayer[];
         project: unknown;
         time: number;
+        direction?: Vec2;
+        linked: boolean;
         moved?: boolean;
       }
     | undefined
@@ -288,24 +292,34 @@ export function Canvas({ store }: { store: EditorStore }) {
     return () => observer.disconnect();
   }, [c.width, c.height]);
   useEffect(() => {
-    if (ref.current) renderer.current.render(input, ref.current);
+    if (ref.current)
+      renderer.current.render(
+        input,
+        ref.current,
+        c.width / (ref.current.getBoundingClientRect().width || c.width),
+      );
   });
   useEffect(() => {
     let active = true;
     renderer.current
       .syncAssets(view.project.assets)
       .then(() => {
-        if (active && ref.current)
-          renderer.current.render(
-            createRenderSnapshot(
-              activeComposition(store.getSnapshot().project),
-              store.getSnapshot().time,
-              store.getSnapshot().selection,
-              undefined,
-              store.getSnapshot().project,
-            ),
-            ref.current,
+        if (active && ref.current) {
+          const current = store.getSnapshot();
+          const snapshot = createRenderSnapshot(
+            activeComposition(current.project),
+            current.time,
+            current.selection,
+            undefined,
+            current.project,
           );
+          renderer.current.render(
+            snapshot,
+            ref.current,
+            snapshot.width /
+              (ref.current.getBoundingClientRect().width || snapshot.width),
+          );
+        }
       })
       .catch(() => {
         if (active) store.setStatus('图片解码失败，请重新导入有效图片', true);
@@ -429,20 +443,25 @@ export function Canvas({ store }: { store: EditorStore }) {
               );
               const handle = selected
                 .map((l) =>
-                  handleHit(
+                  hitTransformHandle(
                     l,
                     p,
-                    (12 * c.width) /
+                    (8 * c.width) /
                       (event.currentTarget.getBoundingClientRect().width ||
                         c.width),
                     anchorMode,
+                    c.width /
+                      (event.currentTarget.getBoundingClientRect().width ||
+                        c.width),
                   ),
                 )
                 .find(Boolean);
               if (handle) {
                 event.currentTarget.setPointerCapture(event.pointerId);
                 gesture.current = {
-                  kind: handle,
+                  kind: handle.kind,
+                  direction: handle.direction,
+                  linked: readAxisLink(selected[0]!.source.transform.scale.id),
                   point: p,
                   items: selected,
                   project: view.project,
@@ -527,7 +546,25 @@ export function Canvas({ store }: { store: EditorStore }) {
                 });
                 return;
               }
+              if (g.project !== view.project || g.time !== view.time) {
+                gesture.current = undefined;
+                setTransformPreview(undefined);
+                return;
+              }
               g.moved = Math.hypot(p.x - g.point.x, p.y - g.point.y) > 1e-8;
+              if (g.kind === 'scale' && g.direction && g.items.length === 1) {
+                setTransformPreview([
+                  resizeLayer(
+                    g.items[0]!,
+                    g.point,
+                    p,
+                    g.direction,
+                    g.linked || event.shiftKey,
+                    event.altKey,
+                  ),
+                ]);
+                return;
+              }
               const center = g.items.reduce(
                 (v, l) => ({
                   x: v.x + l.position.x / g.items.length,
@@ -558,12 +595,14 @@ export function Canvas({ store }: { store: EditorStore }) {
                     ),
                   ),
               );
-              const angle =
+              let angle =
                 Math.atan2(p.y - screenCenter.y, p.x - screenCenter.x) -
                 Math.atan2(
                   g.point.y - screenCenter.y,
                   g.point.x - screenCenter.x,
                 );
+              if (event.shiftKey && g.kind === 'rotate')
+                angle = Math.round(angle / (Math.PI / 12)) * (Math.PI / 12);
               setTransformPreview(
                 g.items.map((l) =>
                   g.kind === 'scale'

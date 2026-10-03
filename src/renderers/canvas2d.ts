@@ -28,7 +28,7 @@ export async function assetImageBlob(asset: Asset): Promise<Blob> {
 export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
   #last = new WeakMap<
     HTMLCanvasElement,
-    { input: RenderSnapshot; assets: number }
+    { input: RenderSnapshot; assets: number; handleScale: number }
   >();
   #content = new WeakMap<
     Layer,
@@ -99,11 +99,16 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
     this.#last = new WeakMap();
     this.#content = new WeakMap();
   }
-  render(input: RenderSnapshot, target: HTMLCanvasElement): void {
+  render(
+    input: RenderSnapshot,
+    target: HTMLCanvasElement,
+    handleScale = 1,
+  ): void {
     const last = this.#last.get(target);
     if (
       last?.input === input &&
       last.assets === this.#assetVersion &&
+      last.handleScale === handleScale &&
       target.width === input.width &&
       target.height === input.height
     )
@@ -325,24 +330,29 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
     for (const item of input.layers.filter((l) =>
       input.selection.includes(l.source.id),
     ))
-      for (const handle of transformHandles(item)) {
+      for (const handle of transformHandles(item, handleScale)) {
         ctx.beginPath();
         ctx.strokeStyle = '#d4e2ff';
         ctx.fillStyle = handle.kind === 'anchor' ? '#ffd25a' : '#73a7ff';
         if (handle.kind === 'scale')
-          ctx.rect(handle.point.x - 7, handle.point.y - 7, 14, 14);
+          ctx.rect(
+            handle.point.x - 4 * handleScale,
+            handle.point.y - 4 * handleScale,
+            8 * handleScale,
+            8 * handleScale,
+          );
         else
           ctx.arc(
             handle.point.x,
             handle.point.y,
-            handle.kind === 'anchor' ? 6 : 8,
+            (handle.kind === 'anchor' ? 4 : 5) * handleScale,
             0,
             Math.PI * 2,
           );
         ctx.fill();
-        ctx.lineWidth = 2;
+        ctx.lineWidth = handleScale;
         ctx.stroke();
       }
-    this.#last.set(target, { input, assets: this.#assetVersion });
+    this.#last.set(target, { input, assets: this.#assetVersion, handleScale });
   }
 }

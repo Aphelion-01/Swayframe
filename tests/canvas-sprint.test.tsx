@@ -88,3 +88,34 @@ it('Shift 锁方向；窗口失焦取消连续交互与参考线，工程和历�
   expect(store.commands.undoStack).toHaveLength(0);
   expect(screen.queryByLabelText('画布吸附参考线')).toBeNull();
 });
+it('边与角缩放使用属性 X/Y 链接，松手一次提交；取消手柄预览不改工程', () => {
+  const { store, canvas, layer } = setup();
+  localStorage.setItem(
+    `swayframe.axis-link.${layer.transform.scale.id}`,
+    'false',
+  );
+  const before = store.getSnapshot().project;
+  fireEvent.pointerDown(canvas, { button: 0, clientX: 450, clientY: 200 });
+  for (let i = 1; i <= 100; i++)
+    fireEvent.pointerMove(canvas, { clientX: 450 + i, clientY: 200 });
+  expect(store.getSnapshot().project).toBe(before);
+  fireEvent.pointerUp(canvas);
+  let edited = activeComposition(store.getSnapshot().project).layers[0]!;
+  expect(edited.transform.scale.baseValue).toEqual({ x: 2, y: 1 });
+  expect(edited.transform.position.baseValue).toEqual({ x: 450, y: 200 });
+  expect(store.commands.undoStack).toHaveLength(1);
+  act(() => store.undo());
+  localStorage.removeItem(`swayframe.axis-link.${layer.transform.scale.id}`);
+  fireEvent.pointerDown(canvas, { button: 0, clientX: 450, clientY: 250 });
+  fireEvent.pointerMove(canvas, { clientX: 500, clientY: 300 });
+  fireEvent.pointerUp(canvas);
+  edited = activeComposition(store.getSnapshot().project).layers[0]!;
+  expect(edited.transform.scale.baseValue).toEqual({ x: 1.5, y: 1.5 });
+  act(() => store.undo());
+  fireEvent.pointerDown(canvas, { button: 0, clientX: 450, clientY: 250 });
+  fireEvent.pointerMove(canvas, { clientX: 500, clientY: 300 });
+  fireEvent.keyDown(canvas, { key: 'Escape' });
+  fireEvent.pointerUp(canvas);
+  expect(store.getSnapshot().project).toEqual(before);
+  expect(store.commands.undoStack).toHaveLength(0);
+});

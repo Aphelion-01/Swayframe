@@ -28,9 +28,15 @@ export function worldToLayer(item: RenderLayer, point: Vec2): Vec2 {
   };
 }
 export type HandleKind = 'scale' | 'rotate' | 'anchor';
+export interface TransformHandle {
+  readonly kind: HandleKind;
+  readonly point: Vec2;
+  readonly direction?: Vec2;
+}
 export function transformHandles(
   item: RenderLayer,
-): readonly { kind: HandleKind; point: Vec2 }[] {
+  uiScale = 1,
+): readonly TransformHandle[] {
   if (item.quad) {
     const q = item.quad,
       center = {
@@ -41,22 +47,43 @@ export function transformHandles(
       { kind: 'scale', point: q[2]! },
       {
         kind: 'rotate',
-        point: { x: (q[0]!.x + q[1]!.x) / 2, y: (q[0]!.y + q[1]!.y) / 2 - 45 },
+        point: {
+          x: (q[0]!.x + q[1]!.x) / 2,
+          y: (q[0]!.y + q[1]!.y) / 2 - 45 * uiScale,
+        },
       },
       { kind: 'anchor', point: center },
     ];
   }
   return [
-    {
-      kind: 'scale',
+    ...[
+      { x: 1, y: 1 },
+      { x: -1, y: -1 },
+      { x: 1, y: -1 },
+      { x: -1, y: 1 },
+      { x: 0, y: -1 },
+      { x: 1, y: 0 },
+      { x: 0, y: 1 },
+      { x: -1, y: 0 },
+    ].map((direction) => ({
+      kind: 'scale' as const,
+      direction,
       point: layerToWorld(item, {
-        x: item.source.width / 2,
-        y: item.source.height / 2,
+        x: (direction.x * item.source.width) / 2,
+        y: (direction.y * item.source.height) / 2,
       }),
-    },
+    })),
     {
       kind: 'rotate',
-      point: layerToWorld(item, { x: 0, y: -item.source.height / 2 - 45 }),
+      point: (() => {
+        const top = layerToWorld(item, { x: 0, y: -item.source.height / 2 });
+        const middle = layerToWorld(item, { x: 0, y: 0 });
+        const distance = Math.hypot(top.x - middle.x, top.y - middle.y) || 1;
+        return {
+          x: top.x + ((top.x - middle.x) / distance) * 45 * uiScale,
+          y: top.y + ((top.y - middle.y) / distance) * 45 * uiScale,
+        };
+      })(),
     },
     { kind: 'anchor', point: item.position },
   ];
@@ -67,9 +94,24 @@ export function handleHit(
   radius: number,
   includeAnchor = false,
 ): HandleKind | undefined {
-  return transformHandles(item).find(
-    (h) =>
-      (h.kind !== 'anchor' || includeAnchor) &&
-      Math.hypot(h.point.x - point.x, h.point.y - point.y) <= radius,
-  )?.kind;
+  return hitTransformHandle(item, point, radius, includeAnchor)?.kind;
+}
+export function hitTransformHandle(
+  item: RenderLayer,
+  point: Vec2,
+  radius: number,
+  includeAnchor = false,
+  uiScale = 1,
+): TransformHandle | undefined {
+  return transformHandles(item, uiScale)
+    .filter(
+      (h) =>
+        (h.kind !== 'anchor' || includeAnchor) &&
+        Math.hypot(h.point.x - point.x, h.point.y - point.y) <= radius,
+    )
+    .sort(
+      (a, b) =>
+        Math.hypot(a.point.x - point.x, a.point.y - point.y) -
+        Math.hypot(b.point.x - point.x, b.point.y - point.y),
+    )[0];
 }
