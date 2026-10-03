@@ -1,5 +1,6 @@
 import { useInteractionCancel } from './workspace/interaction';
 import { useEffect, useRef, useState } from 'react';
+import type { ChangeEvent, KeyboardEvent } from 'react';
 
 export function NumberField({
   label,
@@ -130,6 +131,7 @@ export function NumberField({
         onChange={(event) => setDraft(event.target.value)}
         onBlur={commit}
         onKeyDown={(event) => {
+          if (event.nativeEvent.isComposing) return;
           if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
             event.preventDefault();
             const next = clamp(
@@ -156,37 +158,70 @@ export function TextField({
   label,
   value,
   onCommit,
+  multiline = false,
+  autoFocus = false,
 }: {
   label: string;
   value: string;
   onCommit: (value: string) => void;
+  multiline?: boolean;
+  autoFocus?: boolean;
 }) {
   const [draft, setDraft] = useState(value);
   const cancelled = useRef(false);
+  const input = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
   useEffect(() => setDraft(value), [value]);
+  useEffect(() => {
+    if (autoFocus) {
+      input.current?.focus();
+      input.current?.select();
+    }
+  }, [autoFocus]);
+  const props = {
+    'aria-label': label,
+    value: draft,
+    ref: (el: HTMLInputElement | HTMLTextAreaElement | null) => {
+      input.current = el;
+    },
+    onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setDraft(event.target.value),
+    onBlur: () => {
+      if (cancelled.current) {
+        cancelled.current = false;
+        return;
+      }
+      if (draft !== value) onCommit(draft);
+    },
+    onKeyDown: (
+      event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
+    ) => {
+      if (event.nativeEvent.isComposing) return;
+      if (
+        event.key === 'Enter' &&
+        (!multiline || event.metaKey || event.ctrlKey)
+      ) {
+        event.preventDefault();
+        event.currentTarget.blur();
+      }
+      if (event.key === 'Escape') {
+        cancelled.current = true;
+        setDraft(value);
+        event.currentTarget.blur();
+      }
+    },
+  };
   return (
     <label className="field text-field">
       <span>{label}</span>
-      <input
-        aria-label={label}
-        value={draft}
-        onChange={(event) => setDraft(event.target.value)}
-        onBlur={() => {
-          if (cancelled.current) {
-            cancelled.current = false;
-            return;
-          }
-          if (draft !== value) onCommit(draft);
-        }}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter') event.currentTarget.blur();
-          if (event.key === 'Escape') {
-            cancelled.current = true;
-            setDraft(value);
-            event.currentTarget.blur();
-          }
-        }}
-      />
+      {multiline ? (
+        <textarea
+          {...props}
+          rows={3}
+          title="Enter 换行 · Cmd/Ctrl+Enter 提交 · Esc 取消"
+        />
+      ) : (
+        <input {...props} />
+      )}
     </label>
   );
 }

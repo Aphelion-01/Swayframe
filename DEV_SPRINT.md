@@ -4,7 +4,7 @@
 
 # In Progress
 
-文字双击编辑焦点、多行输入和中文输入法提交保护。
+Value/Speed Graph 平移缩放与缩放后切线编辑。
 
 # Completed
 
@@ -17,6 +17,8 @@ V2-2：Canvas 边缘/中心吸附、临时参考线、Shift 锁方向与 Alt 关
 V2-3：关键帧整体边界限制、播放头/关键帧/边界吸附、参考线和捕获取消；图层入出点至少一帧，播放头取消恢复起点。
 
 V2-4：二维图层八方向缩放；默认遵循 X/Y 链接，解除后单轴缩放，Shift保持比例，Alt围绕锚点；手柄按屏幕像素保持可见，旋转Shift按15°吸附。修复父级下负缩放符号丢失导致预览漂移。
+
+V2-5：双击文字自动聚焦/全选、多行 Enter 换行、Cmd/Ctrl+Enter 提交、Escape丢弃；中文输入法选字期间不触发提交和快捷键。保存重开保留换行，Undo一次恢复。
 
 # Next High-Value Tasks
 
@@ -41,3 +43,5 @@ Baseline：62 文件 / 165 tests。V2-1：166 tests；V2-2：64 文件 / 170 tes
 V2-3：66 文件 / 175 tests，全门禁 PASS，见 `outputs/quality/V2-3.log`。Git checkpoint：f90e1e4。
 
 V2-4：67 文件 / 178 tests，全门禁 PASS，见 `outputs/quality/V2-4.log`。
+
+V2-5：68 文件 / 180 tests，全门禁 PASS，见 `outputs/quality/V2-5.log`。

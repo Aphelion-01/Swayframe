@@ -190,6 +190,7 @@ export function Inspector({ store }: { store: EditorStore }) {
           <Section title="文字">
             <TextField
               label="文字内容"
+              multiline
               value={layer.text}
               onCommit={(text) => patch({ text })}
             />

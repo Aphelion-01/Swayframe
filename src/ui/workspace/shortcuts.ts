@@ -37,7 +37,7 @@ export function dispatchShortcut(
   event: KeyboardEvent,
   shortcuts: readonly Shortcut[],
 ): boolean {
-  if (event.defaultPrevented) return false;
+  if (event.defaultPrevented || event.isComposing) return false;
   const context = focusContext(event.target),
     modifier = hasPrimaryModifier(event);
   const key = event.code === 'Space' ? 'space' : event.key.toLowerCase();

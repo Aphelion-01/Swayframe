@@ -900,6 +900,8 @@ export function Canvas({ store }: { store: EditorStore }) {
             <div className="canvas-text-edit">
               <TextField
                 label="画布文字编辑"
+                multiline
+                autoFocus
                 value={layer.text}
                 onCommit={(text) =>
                   store.run('编辑文字', [
