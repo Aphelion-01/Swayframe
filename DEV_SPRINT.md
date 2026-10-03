@@ -4,7 +4,7 @@
 
 # In Progress
 
-Value/Speed Graph 平移缩放与缩放后切线编辑。
+500层/50000关键帧 CPU 求值基准与父级索引优化；最后桌面包/完整工作流验收。
 
 # Completed
 
@@ -19,6 +19,8 @@ V2-3：关键帧整体边界限制、播放头/关键帧/边界吸附、参考�
 V2-4：二维图层八方向缩放；默认遵循 X/Y 链接，解除后单轴缩放，Shift保持比例，Alt围绕锚点；手柄按屏幕像素保持可见，旋转Shift按15°吸附。修复父级下负缩放符号丢失导致预览漂移。
 
 V2-5：双击文字自动聚焦/全选、多行 Enter 换行、Cmd/Ctrl+Enter 提交、Escape丢弃；中文输入法选字期间不触发提交和快捷键。保存重开保留换行，Undo一次恢复。
+
+V2-6：值/速度曲线滚轮鼠标中心缩放、Space/中键平移、F适应视图；切线拖动正确反算缩放坐标并冻结手势轴范围。视口不写工程，100次切线预览一条事务，输入与曲线快捷键分离。
 
 # Next High-Value Tasks
 
@@ -45,3 +47,5 @@ V2-3：66 文件 / 175 tests，全门禁 PASS，见 `outputs/quality/V2-3.log`�
 V2-4：67 文件 / 178 tests，全门禁 PASS，见 `outputs/quality/V2-4.log`。
 
 V2-5：68 文件 / 180 tests，全门禁 PASS，见 `outputs/quality/V2-5.log`。
+
+V2-6：69 文件 / 182 tests，全门禁 PASS，见 `outputs/quality/V2-6.log`。

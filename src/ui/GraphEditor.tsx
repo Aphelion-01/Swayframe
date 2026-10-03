@@ -1,10 +1,12 @@
+import { IconButton } from './workspace/primitives';
+import { dispatchShortcut } from './workspace/shortcuts';
 import { useInteractionCancel } from './workspace/interaction';
 import {
   applyMotionCurveCommands,
   previewMotionCurve,
 } from '../core/motion-curve-commands';
 import { SpatialMotionEditor } from './SpatialMotionEditor';
-import { useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { Vec2, AnimValue } from '../core/core-types';
 import type { Property } from '../core/project-model';
 import { activeComposition } from '../core/project-model';
@@ -45,11 +47,69 @@ export function GraphEditor({
         which: 'out' | 'in';
         controls: { out: Vec2; in: Vec2 };
         project: unknown;
+        key: string;
+        domain: { start: number; end: number; min: number; max: number };
       }
     | undefined
   >(undefined);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [viewport, setViewport] = useState({ x: 0, y: 0, zoom: 1 });
+  const space = useRef(false);
+  const panUsed = useRef(false);
+  const [grabbing, setGrabbing] = useState(false);
+  const pan = useRef<
+    | {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+        view: typeof viewport;
+      }
+    | undefined
+  >(undefined);
+  const zoomAt = (factor: number, x = 340, y = 140) => {
+    setViewport((v) => {
+      const zoom = Math.max(0.5, Math.min(8, v.zoom * factor));
+      return {
+        x: v.x + x / v.zoom - x / zoom,
+        y: v.y + y / v.zoom - y / zoom,
+        zoom,
+      };
+    });
+  };
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const wheel = (event: WheelEvent) => {
+      if (gesture.current || pan.current) return;
+      event.preventDefault();
+      const rect = svg.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      zoomAt(
+        Math.exp(-event.deltaY * 0.002),
+        ((event.clientX - rect.left) / rect.width) * 680,
+        ((event.clientY - rect.top) / rect.height) * 280,
+      );
+    };
+    const release = (e: KeyboardEvent) => {
+      if (e.code === 'Space' || e.key === ' ') {
+        space.current = false;
+        setGrabbing(false);
+      }
+    };
+    svg.addEventListener('wheel', wheel, { passive: false });
+    window.addEventListener('keyup', release);
+    return () => {
+      svg.removeEventListener('wheel', wheel);
+      window.removeEventListener('keyup', release);
+    };
+  });
   useInteractionCancel(() => {
     gesture.current = undefined;
+    if (pan.current) setViewport(pan.current.view);
+    pan.current = undefined;
+    space.current = false;
+    setGrabbing(false);
     store.setPropertyPreviews(undefined);
   });
   const entry =
@@ -111,7 +171,6 @@ export function GraphEditor({
   const apply = (ctrl: { out: Vec2; in: Vec2 }) => {
     if (!left || !right) return;
     store.setPropertyPreviews(undefined);
-    store.setPropertyPreviews(undefined);
     try {
       store.run(
         '修改动画曲线',
@@ -168,15 +227,73 @@ export function GraphEditor({
       );
     }
   };
+  const curveKey = `${original.id}/${left?.id}/${right?.id}/${mode}/${component}`;
   const endGesture = () => {
     const g = gesture.current;
     gesture.current = undefined;
-    if (g && g.project === store.getSnapshot().project) apply(g.controls);
+    if (g && g.project === store.getSnapshot().project && g.key === curveKey)
+      apply(g.controls);
     else store.setPropertyPreviews(undefined);
   };
   return (
     <div className={embedded ? 'graph-inline' : 'modal-backdrop'}>
-      <section className="graph-dialog" aria-label="曲线编辑器">
+      <section
+        className="graph-dialog"
+        aria-label="曲线编辑器"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (
+            dispatchShortcut(e.nativeEvent, [
+              {
+                id: 'curve-pan',
+                label: '曲线平移',
+                key: 'space',
+                contexts: ['curvegraph'],
+                action: () => {
+                  space.current = true;
+                  setGrabbing(true);
+                },
+              },
+              ...['f', 'home'].map((key) => ({
+                id: `curve-fit-${key}`,
+                label: '适应曲线视图',
+                key,
+                contexts: ['curvegraph'] as const,
+                action: () => setViewport({ x: 0, y: 0, zoom: 1 }),
+              })),
+              ...['arrowleft', 'arrowright', 'arrowup', 'arrowdown'].map(
+                (key) => ({
+                  id: `curve-pan-${key}`,
+                  label: '曲线视图移动',
+                  key,
+                  contexts: ['curvegraph'] as const,
+                  action: () =>
+                    setViewport((v) => ({
+                      ...v,
+                      x:
+                        v.x +
+                        (key === 'arrowleft'
+                          ? -20
+                          : key === 'arrowright'
+                            ? 20
+                            : 0) /
+                          v.zoom,
+                      y:
+                        v.y +
+                        (key === 'arrowup'
+                          ? -20
+                          : key === 'arrowdown'
+                            ? 20
+                            : 0) /
+                          v.zoom,
+                    })),
+                }),
+              ),
+            ])
+          )
+            e.preventDefault();
+        }}
+      >
         <div className="graph-heading">
           <h2>曲线编辑器</h2>
           <button
@@ -250,13 +367,81 @@ export function GraphEditor({
             </select>
           </label>
         </div>
+        <div className="graph-view-tools">
+          <IconButton label="缩小曲线视图" onClick={() => zoomAt(1 / 1.25)}>
+            −
+          </IconButton>
+          <IconButton label="放大曲线视图" onClick={() => zoomAt(1.25)}>
+            ＋
+          </IconButton>
+          <IconButton
+            label="适应曲线视图"
+            shortcut="F"
+            onClick={() => setViewport({ x: 0, y: 0, zoom: 1 })}
+          >
+            ⛶
+          </IconButton>
+          <span>
+            {Math.round(viewport.zoom * 100)}% · 滚轮缩放 · 空格/中键平移
+          </span>
+        </div>
         <p>
           {mode === 'speed'
             ? `真实速度 · ${unit.label}`
             : '属性值 · 与标准化缓动面板独立'}
         </p>
         <svg
-          viewBox="0 0 680 280"
+          ref={svgRef}
+          viewBox={`${viewport.x} ${viewport.y} ${680 / viewport.zoom} ${280 / viewport.zoom}`}
+          preserveAspectRatio="none"
+          tabIndex={0}
+          style={{ touchAction: 'none', cursor: grabbing ? 'grab' : 'default' }}
+          onPointerDown={(e) => {
+            if (e.button === 0 && !space.current) panUsed.current = false;
+            if (e.button !== 1 && !(e.button === 0 && space.current)) return;
+            e.preventDefault();
+            e.currentTarget.focus();
+            e.currentTarget.setPointerCapture(e.pointerId);
+            const rect = e.currentTarget.getBoundingClientRect();
+            pan.current = {
+              x: e.clientX,
+              y: e.clientY,
+              width: rect.width,
+              height: rect.height,
+              view: viewport,
+            };
+          }}
+          onPointerMove={(e) => {
+            const p = pan.current;
+            if (p) {
+              panUsed.current =
+                Math.hypot(e.clientX - p.x, e.clientY - p.y) > 3;
+              setViewport({
+                ...p.view,
+                x:
+                  p.view.x -
+                  ((e.clientX - p.x) * 680) /
+                    Math.max(1, p.width) /
+                    p.view.zoom,
+                y:
+                  p.view.y -
+                  ((e.clientY - p.y) * 280) /
+                    Math.max(1, p.height) /
+                    p.view.zoom,
+              });
+            }
+          }}
+          onPointerUp={() => {
+            pan.current = undefined;
+          }}
+          onPointerCancel={() => {
+            if (pan.current) setViewport(pan.current.view);
+            pan.current = undefined;
+          }}
+          onLostPointerCapture={() => {
+            if (pan.current) setViewport(pan.current.view);
+            pan.current = undefined;
+          }}
           className="graph-svg"
           role="img"
           aria-label={mode === 'speed' ? '动画速度曲线' : '动画值曲线'}
@@ -287,9 +472,10 @@ export function GraphEditor({
                       factor
                   : valueComponent(k.value, component),
               )}
-              r="5"
+              r={5 / viewport.zoom}
               fill={k.id === left?.id ? '#ffd25a' : '#d6e4ff'}
               onClick={() => {
+                if (space.current || panUsed.current) return;
                 setSegmentId(k.id);
                 store.setTime(k.time);
                 store.selectFrame({ propertyId: p.id, keyframeId: k.id });
@@ -323,26 +509,49 @@ export function GraphEditor({
                     tabIndex={0}
                     cx={h.x}
                     cy={h.y}
-                    r="8"
+                    r={8 / viewport.zoom}
                     fill="#ffd25a"
                     style={{ cursor: 'move', touchAction: 'none' }}
                     onPointerDown={(e) => {
+                      if (e.button !== 0 || space.current || layer?.locked)
+                        return;
+                      e.stopPropagation();
+                      e.currentTarget.focus();
                       e.currentTarget.setPointerCapture(e.pointerId);
                       gesture.current = {
                         which,
                         controls,
                         project: view.project,
+                        key: curveKey,
+                        domain: { start, end, min, max },
                       };
                     }}
                     onPointerMove={(e) => {
                       const g = gesture.current;
                       if (!g || g.which !== which) return;
+                      if (g.project !== view.project || g.key !== curveKey) {
+                        gesture.current = undefined;
+                        store.setPropertyPreviews(undefined);
+                        return;
+                      }
                       const svg = e.currentTarget.ownerSVGElement!,
                         rect = svg.getBoundingClientRect(),
-                        x = ((e.clientX - rect.left) * 680) / rect.width,
-                        y = ((e.clientY - rect.top) * 280) / rect.height,
-                        time = start + ((x - 50) / 580) * (end - start),
-                        val = min + ((235 - y) / 205) * (max - min),
+                        x =
+                          viewport.x +
+                          ((e.clientX - rect.left) * 680) /
+                            Math.max(1, rect.width) /
+                            viewport.zoom,
+                        y =
+                          viewport.y +
+                          ((e.clientY - rect.top) * 280) /
+                            Math.max(1, rect.height) /
+                            viewport.zoom,
+                        time =
+                          g.domain.start +
+                          ((x - 50) / 580) * (g.domain.end - g.domain.start),
+                        val =
+                          g.domain.min +
+                          ((235 - y) / 205) * (g.domain.max - g.domain.min),
                         duration = right.time - left.time;
                       const px = Math.max(
                         0.001,
@@ -411,7 +620,14 @@ export function GraphEditor({
                       gesture.current = undefined;
                       store.setPropertyPreviews(undefined);
                     }}
+                    onLostPointerCapture={() => {
+                      if (gesture.current) {
+                        gesture.current = undefined;
+                        store.setPropertyPreviews(undefined);
+                      }
+                    }}
                     onKeyDown={(e) => {
+                      if (layer?.locked) return;
                       if (
                         [
                           'ArrowLeft',
