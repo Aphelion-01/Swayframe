@@ -27,6 +27,7 @@ import { displayName } from './labels';
 import {
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -259,27 +260,42 @@ export function Canvas({ store }: { store: EditorStore }) {
       window.removeEventListener('motion:actual-size', actual);
     };
   });
-  const evaluated = createRenderSnapshot(
-    activeComposition(store.getRenderProject()),
-    view.time,
-    view.selection,
-    view.preview,
-    store.getRenderProject(),
+  const renderProject = store.getRenderProject();
+  const evaluated = useMemo(
+    () =>
+      createRenderSnapshot(
+        activeComposition(renderProject),
+        view.time,
+        view.selection,
+        view.preview,
+        renderProject,
+      ),
+    [renderProject, view.time, view.selection, view.preview],
   );
-  const input =
-    transformPreview && gesture.current?.project === view.project
-      ? createRenderSnapshot(
-          transformPreviewComposition(
-            activeComposition(store.getRenderProject()),
-            evaluated,
-            transformPreview,
-          ),
-          view.time,
-          view.selection,
-          undefined,
-          store.getRenderProject(),
-        )
-      : evaluated;
+  const input = useMemo(
+    () =>
+      transformPreview && gesture.current?.project === view.project
+        ? createRenderSnapshot(
+            transformPreviewComposition(
+              activeComposition(renderProject),
+              evaluated,
+              transformPreview,
+            ),
+            view.time,
+            view.selection,
+            undefined,
+            renderProject,
+          )
+        : evaluated,
+    [
+      transformPreview,
+      view.project,
+      renderProject,
+      evaluated,
+      view.time,
+      view.selection,
+    ],
+  );
   useEffect(() => {
     const container = containerRef.current;
     if (!container || typeof ResizeObserver === 'undefined') return;
@@ -305,7 +321,7 @@ export function Canvas({ store }: { store: EditorStore }) {
         ref.current,
         c.width / (ref.current.getBoundingClientRect().width || c.width),
       );
-  });
+  }, [input, c.width, fitWidth, view.zoom]);
   useEffect(() => {
     let active = true;
     renderer.current

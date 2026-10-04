@@ -51,3 +51,27 @@ it('父级循环仍明确拒绝，三维依赖闭包不会死循环', () => {
     createRenderSnapshot({ ...createComposition(), layers }, 0, []),
   ).toThrow('Parent cycle');
 });
+it('选择变化复用冻结场景的求值层数组，仍返回正确的选区', async () => {
+  const { CommandSystem } = await import('../src/core/command-system');
+  const { createDefaultProject } = await import('../src/core/project-model');
+  const p = createDefaultProject();
+  const project = new CommandSystem({
+    ...p,
+    compositions: p.compositions.map((c) => ({
+      ...c,
+      layers: [createLayer('rectangle')],
+    })),
+  }).getSnapshot();
+  const c = project.compositions[0]!;
+  const first = createRenderSnapshot(c, 0, [], undefined, project);
+  const selected = createRenderSnapshot(
+    c,
+    0,
+    [c.layers[0]!.id],
+    undefined,
+    project,
+  );
+  expect(selected.layers).toBe(first.layers);
+  expect(selected.selection).toEqual([c.layers[0]!.id]);
+  expect(first.selection).toEqual([]);
+});

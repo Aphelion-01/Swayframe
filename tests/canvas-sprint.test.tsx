@@ -131,3 +131,22 @@ it('快速手柄拖动在同一事件批次松手也提交最后坐标，而非�
   expect(edited.transform.scale.baseValue).toEqual({ x: 1.5, y: 1.5 });
   expect(store.commands.undoStack).toHaveLength(1);
 });
+it('关键帧/节点选择及状态更新不调用 Canvas Renderer，图层属性变化仍渲染', async () => {
+  const { Canvas2DRenderer } = await import('../src/renderers/canvas2d');
+  const spy = vi.spyOn(Canvas2DRenderer.prototype, 'render');
+  const { store, layer } = setup();
+  await act(async () => {});
+  spy.mockClear();
+  act(() =>
+    store.selectFrames([
+      { propertyId: layer.transform.position.id, keyframeId: 'selection-only' },
+    ]),
+  );
+  act(() => store.selectGraphNodes(layer.id, []));
+  act(() => store.setStatus('状态更新'));
+  act(() => store.setTimelineZoom(2));
+  expect(spy).not.toHaveBeenCalled();
+  act(() => store.setTime(0.5));
+  expect(spy).toHaveBeenCalledTimes(1);
+  spy.mockRestore();
+});

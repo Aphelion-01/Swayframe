@@ -128,3 +128,15 @@ TextField统一支持多行和自动聚焦，中文输入法事件由字段和Sh
 ### 数值实时预览（0.6.2）
 
 NumberField 捕获编辑起始值、revision/time，输入和纵向拖动使用瞬态预览；即使曲线界面将当前值更新为预览值，提交仍和起始值比较，防止漏写命令。Enter/blur 或松手仅提交一次，取消、捕获丢失与过期不写工程。AnimatedField 联动轴只在真实2/3分量向量启用，预览显示和持久数据分离。非动画几何使用 EditorStore.setLayerPreview 的局部不可变渲染快照，持久化仍由原 layer.replace / layer.patch Command 完成，不新增动画或历史系统。
+
+## Optimization & Polish / OP-1～OP-2
+
+执行基线 `docs/baseline/OPTIMIZATION_POLISH.txt`。停止大型模块扩张；真实原生流程、Optimization Backlog 和 Performance API/React Profiler 证据驱动小批次修复。
+
+Canvas 手柄瞬态预览同时持有同步引用与 React 显示状态；松手读取同步引用，避免同批 pointermove/pointerup 提交旧值。保持一条共享 Transaction，取消/过期不提交。
+
+冻结 Composition 的帧缓存按时间保存求值数据，选择变化仅替换 selection；冻结 Layer 的局部动画结果使用 WeakMap，每层最多16帧。修改一个 Layer 不会重新求值其他不变 Layer 的二维属性，父级/三维世界变换仍正确重新解析。可变输入和位置预览绕过缓存。
+
+Canvas 按渲染工程、时间、图层选择、移动/属性/手柄预览 memo 输入；Renderer effect 只响应输入或屏幕手柄尺寸变化。关键帧选择、节点选择、状态、时间轴缩放不调用画布 Renderer。Timeline 静态轨道按工程、选区、当前关键帧 ID 与局部拖动状态缓存；播放头由父级 CSS 变量更新，添加关键帧读取 Store 当前时间，避免闭包过期。
+
+`benchmark.html` / `src/dev/polish-benchmark.tsx` 是独立开发工具，不进入生产编辑器入口。BENCH-A/B 展开全部动画轨道，C 显示20节点 Graph，D 使用1080p合成与多个实际 Blur/Color；24次 RAF 节奏交互记录 React、Canvas、帧间隔与同步响应耗时。load/save 只报告 JSON/schema CPU，不能当原生磁盘耗时或稳定发行帧率。

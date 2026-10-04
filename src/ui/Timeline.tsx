@@ -9,7 +9,14 @@ import { LayerTimeBar } from './LayerTimeBar';
 import { GraphEditor } from './GraphEditor';
 import { visibleProperties, propertyLabel } from './property-labels';
 import { interpolationLabels, displayName } from './labels';
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
+import type { CSSProperties } from 'react';
 import { command } from '../core/command-system';
 import { newId } from '../core/core-types';
 import { evaluateProperty } from '../core/animation-engine';
@@ -228,9 +235,436 @@ export function Timeline({ store }: { store: EditorStore }) {
       compositingOpen ? 'compositing' : graphOpen ? 'graph' : 'timeline',
     );
   }, [graphOpen, compositingOpen]);
+  const timelineFrames = useMemo(
+    () =>
+      c.layers.flatMap((layer) =>
+        visibleProperties(layer).flatMap(({ property }) => property.keyframes),
+      ),
+    [c],
+  );
+  const currentFrameSignature = timelineFrames
+    .filter((frame) => Math.abs(frame.time - view.time) < 1e-8)
+    .map((frame) => frame.id)
+    .join(',');
+  const currentFrameIds = useMemo(
+    () => new Set(currentFrameSignature.split(',')),
+    [currentFrameSignature],
+  );
+  // Playhead movement between keys does not rebuild static track/keyframe DOM.
+  // Commands read the live time, never the memoized row's captured time.
+  const layerRows = useMemo(
+    () =>
+      [...c.layers].reverse().map((layer) => (
+        <div className="timeline-layer" key={layer.id} data-layer={layer.id}>
+          <div className="timeline-layer-heading">
+            <button
+              className="layer-disclosure"
+              aria-label={`展开 ${displayName(layer.name)} 属性`}
+              aria-expanded={
+                expanded[layer.id] ?? view.selection.includes(layer.id)
+              }
+              onClick={() =>
+                setExpanded({
+                  ...expanded,
+                  [layer.id]: !(
+                    expanded[layer.id] ?? view.selection.includes(layer.id)
+                  ),
+                })
+              }
+            >
+              {(expanded[layer.id] ?? view.selection.includes(layer.id))
+                ? '▾'
+                : '▸'}
+            </button>
+            <button
+              className={`timeline-layer-name ${view.selection.includes(layer.id) ? 'active' : ''}`}
+              onClick={(event) => store.select(layer.id, event.shiftKey)}
+            >
+              {displayName(layer.name)}
+            </button>
+            <LayerTimeBar store={store} layer={layer} composition={c} />
+          </div>
+          {(expanded[layer.id] ?? view.selection.includes(layer.id)) && (
+            <>
+              <button
+                className="transform-disclosure"
+                aria-expanded={transforms[layer.id] ?? true}
+                onClick={() =>
+                  setTransforms({
+                    ...transforms,
+                    [layer.id]: !(transforms[layer.id] ?? true),
+                  })
+                }
+              >
+                {(transforms[layer.id] ?? true) ? '▾' : '▸'} 变换与动画属性
+              </button>
+              {(transforms[layer.id] ?? true) &&
+                visibleProperties(layer)
+                  .filter(
+                    ({ key, property }) =>
+                      key.startsWith('transform.') ||
+                      property.keyframes.length > 0 ||
+                      view.frames.some((ref) => ref.propertyId === property.id),
+                  )
+                  .filter(
+                    ({ key, property }) =>
+                      view.propertyFilter === 'all' ||
+                      `transform.${view.propertyFilter}` === key ||
+                      (view.propertyFilter === 'animated' &&
+                        property.keyframes.length > 0),
+                  )
+                  .map(({ key, property }) => {
+                    const current = property.keyframes.find((frame) =>
+                      currentFrameIds.has(frame.id),
+                    );
+                    return (
+                      <div
+                        key={key}
+                        className="timeline-row"
+                        role="group"
+                        aria-label={`${displayName(layer.name)} ${propertyLabel(key, layer)} 轨道`}
+                      >
+                        <div className="property-name">
+                          <button
+                            className={`animation-switch ${property.keyframes.length ? 'enabled' : ''}`}
+                            aria-label={`${property.keyframes.length ? '关闭' : '开启'} ${displayName(layer.name)} ${propertyLabel(key, layer)} 动画`}
+                            title="开启动画后，修改数值会自动记录关键帧；关闭会保留当前值并移除该属性动画"
+                            disabled={layer.locked}
+                            onClick={() =>
+                              store.togglePropertyAnimation(property.id)
+                            }
+                          >
+                            ⏱
+                          </button>
+                          <span>{propertyLabel(key, layer)}</span>
+                          <button
+                            aria-label={`添加 ${displayName(layer.name)} ${propertyLabel(key, layer)} 关键帧`}
+                            disabled={!!current || layer.locked}
+                            onClick={() =>
+                              store.run('添加关键帧', [
+                                command({
+                                  type: 'keyframe.add',
+                                  propertyId: property.id,
+                                  keyframe: {
+                                    id: newId(),
+                                    time: store.getSnapshot().time,
+                                    value: evaluateProperty(
+                                      property,
+                                      store.getSnapshot().time,
+                                    ),
+                                    interpolation: { type: 'linear' },
+                                  },
+                                }),
+                              ])
+                            }
+                          >
+                            ◇
+                          </button>
+                          <button
+                            aria-label={`删除 ${displayName(layer.name)} ${propertyLabel(key, layer)} 关键帧`}
+                            disabled={!current || layer.locked}
+                            onClick={() =>
+                              store.run('删除关键帧', [
+                                command({
+                                  type: 'keyframe.delete',
+                                  propertyId: property.id,
+                                  keyframeId: current!.id,
+                                }),
+                              ])
+                            }
+                          >
+                            −
+                          </button>
+                        </div>
+                        <div
+                          className="keyframe-track"
+                          onClick={(event) => {
+                            const r =
+                              event.currentTarget.getBoundingClientRect();
+                            store.setPlaying(false);
+                            store.setTime(
+                              Math.round(
+                                ((event.clientX - r.left) / r.width) *
+                                  c.duration *
+                                  c.fps,
+                              ) / c.fps,
+                            );
+                          }}
+                        >
+                          <span
+                            className="track-playhead"
+                            style={{ left: 'var(--timeline-playhead)' }}
+                          />
+                          {property.keyframes.map((frame) => (
+                            <button
+                              key={frame.id}
+                              data-easing={frame.interpolation.type}
+                              data-property={property.id}
+                              data-frame={frame.id}
+                              onContextMenu={(event) => {
+                                event.preventDefault();
+                                if (
+                                  !view.frames.some(
+                                    (ref) => ref.keyframeId === frame.id,
+                                  )
+                                )
+                                  store.selectFrame({
+                                    propertyId: property.id,
+                                    keyframeId: frame.id,
+                                  });
+                                setKeyMenu({
+                                  x: event.clientX,
+                                  y: event.clientY,
+                                });
+                              }}
+                              className={`keyframe-diamond ${current?.id === frame.id ? 'current' : ''} ${view.frames.some((ref) => ref.keyframeId === frame.id) ? 'selected' : ''}`}
+                              style={{
+                                left: `${((frame.time + (frameDrag && view.frames.some((ref) => ref.keyframeId === frame.id) ? frameDrag.delta : 0)) / c.duration) * 100}%`,
+                              }}
+                              aria-label={`关键帧 ${displayName(layer.name)} ${propertyLabel(key, layer)} ${frame.time.toFixed(3)} 秒`}
+                              title={`${frame.time} 秒 · ${interpolationLabels[frame.interpolation.type]}`}
+                              onPointerDown={(event) => {
+                                if (event.button !== 0 || layer.locked) return;
+                                event.stopPropagation();
+                                event.preventDefault();
+                                store.setPlaying(false);
+                                if (
+                                  event.shiftKey ||
+                                  !view.frames.some(
+                                    (ref) => ref.keyframeId === frame.id,
+                                  )
+                                )
+                                  store.selectFrame(
+                                    {
+                                      propertyId: property.id,
+                                      keyframeId: frame.id,
+                                    },
+                                    event.shiftKey,
+                                  );
+                                event.currentTarget.setPointerCapture(
+                                  event.pointerId,
+                                );
+                                dragRef.current = {
+                                  id: frame.id,
+                                  x: event.clientX,
+                                  width:
+                                    event.currentTarget.parentElement!.getBoundingClientRect()
+                                      .width,
+                                  delta: 0,
+                                  snapshot: view.project,
+                                  duplicate: event.altKey,
+                                  times: c.layers
+                                    .flatMap(visibleProperties)
+                                    .flatMap(({ property: p }) =>
+                                      p.keyframes
+                                        .filter((k) =>
+                                          store
+                                            .getSnapshot()
+                                            .frames.some(
+                                              (ref) => ref.keyframeId === k.id,
+                                            ),
+                                        )
+                                        .map((k) => k.time),
+                                    ),
+                                  targets: [
+                                    0,
+                                    c.duration,
+                                    store.getSnapshot().time,
+                                    ...c.layers
+                                      .flatMap(visibleProperties)
+                                      .flatMap(({ property: p }) =>
+                                        p.keyframes
+                                          .filter(
+                                            (k) =>
+                                              !store
+                                                .getSnapshot()
+                                                .frames.some(
+                                                  (ref) =>
+                                                    ref.keyframeId === k.id,
+                                                ),
+                                          )
+                                          .map((k) => k.time),
+                                      ),
+                                  ],
+                                };
+                              }}
+                              onPointerMove={(event) => {
+                                const drag = dragRef.current;
+                                if (!drag || drag.id !== frame.id) return;
+                                if (
+                                  drag.snapshot !== store.getSnapshot().project
+                                ) {
+                                  dragRef.current = undefined;
+                                  setFrameDrag(undefined);
+                                  return;
+                                }
+                                const result = snapTimeDelta(
+                                  drag.times,
+                                  ((event.clientX - drag.x) /
+                                    Math.max(1, drag.width)) *
+                                    c.duration,
+                                  c.duration,
+                                  c.fps,
+                                  drag.targets,
+                                  snapping && !event.metaKey && !event.ctrlKey
+                                    ? (8 / Math.max(1, drag.width)) * c.duration
+                                    : -1,
+                                );
+                                drag.delta = result.delta;
+                                setFrameDrag({
+                                  id: frame.id,
+                                  ...result,
+                                });
+                              }}
+                              onPointerUp={(event) => {
+                                event.stopPropagation();
+                                const drag = dragRef.current;
+                                dragRef.current = undefined;
+                                setFrameDrag(undefined);
+                                if (
+                                  drag &&
+                                  drag.snapshot === store.getSnapshot().project
+                                ) {
+                                  if (Math.abs(drag.delta) > 1e-8) {
+                                    if (drag.duplicate) {
+                                      const commands = view.frames.map(
+                                        (ref) => {
+                                          const property =
+                                            visibleProperties(layer).find(
+                                              (entry) =>
+                                                entry.property.id ===
+                                                ref.propertyId,
+                                            )?.property ??
+                                            c.layers
+                                              .flatMap(visibleProperties)
+                                              .find(
+                                                (entry) =>
+                                                  entry.property.id ===
+                                                  ref.propertyId,
+                                              )?.property;
+                                          const source =
+                                            property?.keyframes.find(
+                                              (k) => k.id === ref.keyframeId,
+                                            );
+                                          if (!source)
+                                            throw new Error('关键帧不存在');
+                                          return command({
+                                            type: 'keyframe.add',
+                                            propertyId: ref.propertyId,
+                                            keyframe: {
+                                              ...source,
+                                              id: newId(),
+                                              time: source.time + drag.delta,
+                                            },
+                                          });
+                                        },
+                                      );
+                                      store.run('拖动复制关键帧', commands);
+                                    } else store.moveSelectedFrames(drag.delta);
+                                  } else store.setTime(frame.time);
+                                } else if (drag)
+                                  store.setStatus(
+                                    '工程已变化，关键帧拖动已取消',
+                                    true,
+                                  );
+                              }}
+                              onPointerCancel={() => {
+                                dragRef.current = undefined;
+                                setFrameDrag(undefined);
+                              }}
+                              onLostPointerCapture={() => {
+                                dragRef.current = undefined;
+                                setFrameDrag(undefined);
+                              }}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                store.setPlaying(false);
+                                if (event.detail === 0) {
+                                  store.selectFrame(
+                                    {
+                                      propertyId: property.id,
+                                      keyframeId: frame.id,
+                                    },
+                                    event.shiftKey,
+                                  );
+                                  store.setTime(frame.time);
+                                }
+                              }}
+                            >
+                              <span className="diamond-shape" />
+                            </button>
+                          ))}
+                        </div>
+                        <details className="track-options">
+                          <summary title="插值设置">⋯</summary>
+                          <select
+                            aria-label={`插值 ${displayName(layer.name)} ${propertyLabel(key, layer)}`}
+                            value={current?.interpolation.type ?? 'linear'}
+                            disabled={!current || layer.locked}
+                            onChange={(event) => {
+                              const type = event.target.value;
+                              const interpolation: Interpolation =
+                                type === 'spring'
+                                  ? {
+                                      type,
+                                      stiffness: 170,
+                                      damping: 18,
+                                      mass: 1,
+                                    }
+                                  : type === 'bezier'
+                                    ? {
+                                        type,
+                                        out: { x: 0.42, y: 0 },
+                                        in: { x: 0.58, y: 1 },
+                                      }
+                                    : type === 'hold'
+                                      ? { type: 'hold' }
+                                      : { type: 'linear' };
+                              store.run('修改插值', [
+                                command({
+                                  type: 'keyframe.update',
+                                  propertyId: property.id,
+                                  keyframeId: current!.id,
+                                  patch: { interpolation },
+                                }),
+                              ]);
+                            }}
+                          >
+                            <option value="linear">线性</option>
+                            <option value="hold">保持</option>
+                            <option value="bezier">贝塞尔曲线</option>
+                            <option value="spring">弹簧</option>
+                          </select>
+                        </details>
+                      </div>
+                    );
+                  })}
+            </>
+          )}
+        </div>
+      )),
+    [
+      c,
+      view.project,
+      view.selection,
+      view.frames,
+      view.propertyFilter,
+      expanded,
+      transforms,
+      frameDrag,
+      snapping,
+      currentFrameIds,
+      store,
+    ],
+  );
   const playhead = `${(view.time / c.duration) * 100}%`;
   return (
-    <section className="timeline-panel" aria-label="时间轴" tabIndex={0}>
+    <section
+      className="timeline-panel"
+      style={{ '--timeline-playhead': playhead } as CSSProperties}
+      aria-label="时间轴"
+      tabIndex={0}
+    >
       <div className="timeline-toolbar">
         <div className="playback-controls">
           <button
@@ -490,435 +924,7 @@ export function Timeline({ store }: { store: EditorStore }) {
                   添加图层后，点击秒表开启动画，或点击 ◇ 添加关键帧。
                 </p>
               )}
-              {[...c.layers].reverse().map((layer) => (
-                <div
-                  className="timeline-layer"
-                  key={layer.id}
-                  data-layer={layer.id}
-                >
-                  <div className="timeline-layer-heading">
-                    <button
-                      className="layer-disclosure"
-                      aria-label={`展开 ${displayName(layer.name)} 属性`}
-                      aria-expanded={
-                        expanded[layer.id] ?? view.selection.includes(layer.id)
-                      }
-                      onClick={() =>
-                        setExpanded({
-                          ...expanded,
-                          [layer.id]: !(
-                            expanded[layer.id] ??
-                            view.selection.includes(layer.id)
-                          ),
-                        })
-                      }
-                    >
-                      {(expanded[layer.id] ?? view.selection.includes(layer.id))
-                        ? '▾'
-                        : '▸'}
-                    </button>
-                    <button
-                      className={`timeline-layer-name ${view.selection.includes(layer.id) ? 'active' : ''}`}
-                      onClick={(event) =>
-                        store.select(layer.id, event.shiftKey)
-                      }
-                    >
-                      {displayName(layer.name)}
-                    </button>
-                    <LayerTimeBar store={store} layer={layer} composition={c} />
-                  </div>
-                  {(expanded[layer.id] ??
-                    view.selection.includes(layer.id)) && (
-                    <>
-                      <button
-                        className="transform-disclosure"
-                        aria-expanded={transforms[layer.id] ?? true}
-                        onClick={() =>
-                          setTransforms({
-                            ...transforms,
-                            [layer.id]: !(transforms[layer.id] ?? true),
-                          })
-                        }
-                      >
-                        {(transforms[layer.id] ?? true) ? '▾' : '▸'}{' '}
-                        变换与动画属性
-                      </button>
-                      {(transforms[layer.id] ?? true) &&
-                        visibleProperties(layer)
-                          .filter(
-                            ({ key, property }) =>
-                              key.startsWith('transform.') ||
-                              property.keyframes.length > 0 ||
-                              view.frames.some(
-                                (ref) => ref.propertyId === property.id,
-                              ),
-                          )
-                          .filter(
-                            ({ key, property }) =>
-                              view.propertyFilter === 'all' ||
-                              `transform.${view.propertyFilter}` === key ||
-                              (view.propertyFilter === 'animated' &&
-                                property.keyframes.length > 0),
-                          )
-                          .map(({ key, property }) => {
-                            const current = property.keyframes.find(
-                              (frame) =>
-                                Math.abs(frame.time - view.time) < 1e-8,
-                            );
-                            return (
-                              <div
-                                key={key}
-                                className="timeline-row"
-                                role="group"
-                                aria-label={`${displayName(layer.name)} ${propertyLabel(key, layer)} 轨道`}
-                              >
-                                <div className="property-name">
-                                  <button
-                                    className={`animation-switch ${property.keyframes.length ? 'enabled' : ''}`}
-                                    aria-label={`${property.keyframes.length ? '关闭' : '开启'} ${displayName(layer.name)} ${propertyLabel(key, layer)} 动画`}
-                                    title="开启动画后，修改数值会自动记录关键帧；关闭会保留当前值并移除该属性动画"
-                                    disabled={layer.locked}
-                                    onClick={() =>
-                                      store.togglePropertyAnimation(property.id)
-                                    }
-                                  >
-                                    ⏱
-                                  </button>
-                                  <span>{propertyLabel(key, layer)}</span>
-                                  <button
-                                    aria-label={`添加 ${displayName(layer.name)} ${propertyLabel(key, layer)} 关键帧`}
-                                    disabled={!!current || layer.locked}
-                                    onClick={() =>
-                                      store.run('添加关键帧', [
-                                        command({
-                                          type: 'keyframe.add',
-                                          propertyId: property.id,
-                                          keyframe: {
-                                            id: newId(),
-                                            time: view.time,
-                                            value: evaluateProperty(
-                                              property,
-                                              view.time,
-                                            ),
-                                            interpolation: { type: 'linear' },
-                                          },
-                                        }),
-                                      ])
-                                    }
-                                  >
-                                    ◇
-                                  </button>
-                                  <button
-                                    aria-label={`删除 ${displayName(layer.name)} ${propertyLabel(key, layer)} 关键帧`}
-                                    disabled={!current || layer.locked}
-                                    onClick={() =>
-                                      store.run('删除关键帧', [
-                                        command({
-                                          type: 'keyframe.delete',
-                                          propertyId: property.id,
-                                          keyframeId: current!.id,
-                                        }),
-                                      ])
-                                    }
-                                  >
-                                    −
-                                  </button>
-                                </div>
-                                <div
-                                  className="keyframe-track"
-                                  onClick={(event) => {
-                                    const r =
-                                      event.currentTarget.getBoundingClientRect();
-                                    store.setPlaying(false);
-                                    store.setTime(
-                                      Math.round(
-                                        ((event.clientX - r.left) / r.width) *
-                                          c.duration *
-                                          c.fps,
-                                      ) / c.fps,
-                                    );
-                                  }}
-                                >
-                                  <span
-                                    className="track-playhead"
-                                    style={{ left: playhead }}
-                                  />
-                                  {property.keyframes.map((frame) => (
-                                    <button
-                                      key={frame.id}
-                                      data-easing={frame.interpolation.type}
-                                      data-property={property.id}
-                                      data-frame={frame.id}
-                                      onContextMenu={(event) => {
-                                        event.preventDefault();
-                                        if (
-                                          !view.frames.some(
-                                            (ref) =>
-                                              ref.keyframeId === frame.id,
-                                          )
-                                        )
-                                          store.selectFrame({
-                                            propertyId: property.id,
-                                            keyframeId: frame.id,
-                                          });
-                                        setKeyMenu({
-                                          x: event.clientX,
-                                          y: event.clientY,
-                                        });
-                                      }}
-                                      className={`keyframe-diamond ${current?.id === frame.id ? 'current' : ''} ${view.frames.some((ref) => ref.keyframeId === frame.id) ? 'selected' : ''}`}
-                                      style={{
-                                        left: `${((frame.time + (frameDrag && view.frames.some((ref) => ref.keyframeId === frame.id) ? frameDrag.delta : 0)) / c.duration) * 100}%`,
-                                      }}
-                                      aria-label={`关键帧 ${displayName(layer.name)} ${propertyLabel(key, layer)} ${frame.time.toFixed(3)} 秒`}
-                                      title={`${frame.time} 秒 · ${interpolationLabels[frame.interpolation.type]}`}
-                                      onPointerDown={(event) => {
-                                        if (event.button !== 0 || layer.locked)
-                                          return;
-                                        event.stopPropagation();
-                                        event.preventDefault();
-                                        store.setPlaying(false);
-                                        if (
-                                          event.shiftKey ||
-                                          !view.frames.some(
-                                            (ref) =>
-                                              ref.keyframeId === frame.id,
-                                          )
-                                        )
-                                          store.selectFrame(
-                                            {
-                                              propertyId: property.id,
-                                              keyframeId: frame.id,
-                                            },
-                                            event.shiftKey,
-                                          );
-                                        event.currentTarget.setPointerCapture(
-                                          event.pointerId,
-                                        );
-                                        dragRef.current = {
-                                          id: frame.id,
-                                          x: event.clientX,
-                                          width:
-                                            event.currentTarget.parentElement!.getBoundingClientRect()
-                                              .width,
-                                          delta: 0,
-                                          snapshot: view.project,
-                                          duplicate: event.altKey,
-                                          times: c.layers
-                                            .flatMap(visibleProperties)
-                                            .flatMap(({ property: p }) =>
-                                              p.keyframes
-                                                .filter((k) =>
-                                                  store
-                                                    .getSnapshot()
-                                                    .frames.some(
-                                                      (ref) =>
-                                                        ref.keyframeId === k.id,
-                                                    ),
-                                                )
-                                                .map((k) => k.time),
-                                            ),
-                                          targets: [
-                                            0,
-                                            c.duration,
-                                            store.getSnapshot().time,
-                                            ...c.layers
-                                              .flatMap(visibleProperties)
-                                              .flatMap(({ property: p }) =>
-                                                p.keyframes
-                                                  .filter(
-                                                    (k) =>
-                                                      !store
-                                                        .getSnapshot()
-                                                        .frames.some(
-                                                          (ref) =>
-                                                            ref.keyframeId ===
-                                                            k.id,
-                                                        ),
-                                                  )
-                                                  .map((k) => k.time),
-                                              ),
-                                          ],
-                                        };
-                                      }}
-                                      onPointerMove={(event) => {
-                                        const drag = dragRef.current;
-                                        if (!drag || drag.id !== frame.id)
-                                          return;
-                                        if (
-                                          drag.snapshot !==
-                                          store.getSnapshot().project
-                                        ) {
-                                          dragRef.current = undefined;
-                                          setFrameDrag(undefined);
-                                          return;
-                                        }
-                                        const result = snapTimeDelta(
-                                          drag.times,
-                                          ((event.clientX - drag.x) /
-                                            Math.max(1, drag.width)) *
-                                            c.duration,
-                                          c.duration,
-                                          c.fps,
-                                          drag.targets,
-                                          snapping &&
-                                            !event.metaKey &&
-                                            !event.ctrlKey
-                                            ? (8 / Math.max(1, drag.width)) *
-                                                c.duration
-                                            : -1,
-                                        );
-                                        drag.delta = result.delta;
-                                        setFrameDrag({
-                                          id: frame.id,
-                                          ...result,
-                                        });
-                                      }}
-                                      onPointerUp={(event) => {
-                                        event.stopPropagation();
-                                        const drag = dragRef.current;
-                                        dragRef.current = undefined;
-                                        setFrameDrag(undefined);
-                                        if (
-                                          drag &&
-                                          drag.snapshot ===
-                                            store.getSnapshot().project
-                                        ) {
-                                          if (Math.abs(drag.delta) > 1e-8) {
-                                            if (drag.duplicate) {
-                                              const commands = view.frames.map(
-                                                (ref) => {
-                                                  const property =
-                                                    visibleProperties(
-                                                      layer,
-                                                    ).find(
-                                                      (entry) =>
-                                                        entry.property.id ===
-                                                        ref.propertyId,
-                                                    )?.property ??
-                                                    c.layers
-                                                      .flatMap(
-                                                        visibleProperties,
-                                                      )
-                                                      .find(
-                                                        (entry) =>
-                                                          entry.property.id ===
-                                                          ref.propertyId,
-                                                      )?.property;
-                                                  const source =
-                                                    property?.keyframes.find(
-                                                      (k) =>
-                                                        k.id === ref.keyframeId,
-                                                    );
-                                                  if (!source)
-                                                    throw new Error(
-                                                      '关键帧不存在',
-                                                    );
-                                                  return command({
-                                                    type: 'keyframe.add',
-                                                    propertyId: ref.propertyId,
-                                                    keyframe: {
-                                                      ...source,
-                                                      id: newId(),
-                                                      time:
-                                                        source.time +
-                                                        drag.delta,
-                                                    },
-                                                  });
-                                                },
-                                              );
-                                              store.run(
-                                                '拖动复制关键帧',
-                                                commands,
-                                              );
-                                            } else
-                                              store.moveSelectedFrames(
-                                                drag.delta,
-                                              );
-                                          } else store.setTime(frame.time);
-                                        } else if (drag)
-                                          store.setStatus(
-                                            '工程已变化，关键帧拖动已取消',
-                                            true,
-                                          );
-                                      }}
-                                      onPointerCancel={() => {
-                                        dragRef.current = undefined;
-                                        setFrameDrag(undefined);
-                                      }}
-                                      onLostPointerCapture={() => {
-                                        dragRef.current = undefined;
-                                        setFrameDrag(undefined);
-                                      }}
-                                      onClick={(event) => {
-                                        event.stopPropagation();
-                                        store.setPlaying(false);
-                                        if (event.detail === 0) {
-                                          store.selectFrame(
-                                            {
-                                              propertyId: property.id,
-                                              keyframeId: frame.id,
-                                            },
-                                            event.shiftKey,
-                                          );
-                                          store.setTime(frame.time);
-                                        }
-                                      }}
-                                    >
-                                      <span className="diamond-shape" />
-                                    </button>
-                                  ))}
-                                </div>
-                                <details className="track-options">
-                                  <summary title="插值设置">⋯</summary>
-                                  <select
-                                    aria-label={`插值 ${displayName(layer.name)} ${propertyLabel(key, layer)}`}
-                                    value={
-                                      current?.interpolation.type ?? 'linear'
-                                    }
-                                    disabled={!current || layer.locked}
-                                    onChange={(event) => {
-                                      const type = event.target.value;
-                                      const interpolation: Interpolation =
-                                        type === 'spring'
-                                          ? {
-                                              type,
-                                              stiffness: 170,
-                                              damping: 18,
-                                              mass: 1,
-                                            }
-                                          : type === 'bezier'
-                                            ? {
-                                                type,
-                                                out: { x: 0.42, y: 0 },
-                                                in: { x: 0.58, y: 1 },
-                                              }
-                                            : type === 'hold'
-                                              ? { type: 'hold' }
-                                              : { type: 'linear' };
-                                      store.run('修改插值', [
-                                        command({
-                                          type: 'keyframe.update',
-                                          propertyId: property.id,
-                                          keyframeId: current!.id,
-                                          patch: { interpolation },
-                                        }),
-                                      ]);
-                                    }}
-                                  >
-                                    <option value="linear">线性</option>
-                                    <option value="hold">保持</option>
-                                    <option value="bezier">贝塞尔曲线</option>
-                                    <option value="spring">弹簧</option>
-                                  </select>
-                                </details>
-                              </div>
-                            );
-                          })}
-                    </>
-                  )}
-                </div>
-              ))}
+              {layerRows}
             </div>
           </div>
         </div>

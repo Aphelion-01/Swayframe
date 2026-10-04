@@ -142,3 +142,27 @@ it('图层时间条越界拖动保持有效范围；右键不会启动移动', (
   act(() => store.undo());
   expect(store.getSnapshot().project).toEqual(before);
 });
+it('播放头更新不重建轨道，新增关键帧仍读取实时播放头；命中关键帧时刷新控件', () => {
+  const { store, position } = setup();
+  const track = document.querySelector('.keyframe-track')!;
+  const key = track.querySelector('[data-frame]');
+  act(() => store.setTime(0.3));
+  act(() => store.setTime(0.6));
+  expect(track.querySelector('[data-frame]')).toBe(key);
+  expect(document.querySelector('.timeline-panel')).toHaveStyle(
+    '--timeline-playhead: 12%',
+  );
+  fireEvent.click(screen.getByRole('button', { name: /添加 .* 位置 关键帧/ }));
+  expect(
+    activeComposition(
+      store.getSnapshot().project,
+    ).layers[0]!.transform.position.keyframes.some((f) => f.time === 0.6),
+  ).toBe(true);
+  act(() => store.setTime(1));
+  expect(
+    screen.getByRole('button', { name: /添加 .* 位置 关键帧/ }),
+  ).toBeDisabled();
+  expect(
+    document.querySelector(`[data-frame="${position.keyframes[0]!.id}"]`),
+  ).toHaveClass('current');
+});

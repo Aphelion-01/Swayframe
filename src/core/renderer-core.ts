@@ -57,6 +57,7 @@ const frameCache = new WeakMap<
   Composition,
   { project?: Project; frames: Map<string, RenderSnapshot> }
 >();
+const layerFrameCache = new WeakMap<Layer, Map<number, RenderLayer>>();
 export function createRenderSnapshot(
   composition: Composition,
   time: Seconds,
@@ -64,7 +65,7 @@ export function createRenderSnapshot(
   preview?: PositionPreview,
   project?: Project,
 ): RenderSnapshot {
-  const key = JSON.stringify([time, selection]);
+  const key = String(time);
   let cache = frameCache.get(composition);
   const canCache = !preview && Object.isFrozen(composition);
   if (canCache) {
@@ -73,9 +74,19 @@ export function createRenderSnapshot(
       frameCache.set(composition, cache);
     }
     const found = cache.frames.get(key);
-    if (found) return found;
+    if (found)
+      return found.selection === selection ||
+        (found.selection.length === selection.length &&
+          found.selection.every((id, i) => id === selection[i]))
+        ? found
+        : { ...found, selection };
   }
   const raw: RenderLayer[] = composition.layers.map((source) => {
+    const layerCanCache = !preview && Object.isFrozen(source);
+    const cached = layerCanCache
+      ? layerFrameCache.get(source)?.get(time)
+      : undefined;
+    if (cached) return cached;
     const position =
       source.id === preview?.layerId
         ? preview.position
@@ -86,7 +97,7 @@ export function createRenderSnapshot(
         : { x: 0, y: 0 },
       scale = evaluateProperty(source.transform.scale, time),
       rotation = evaluateProperty(source.transform.rotation, time);
-    return {
+    const item: RenderLayer = {
       source,
       position,
       anchor,
@@ -102,6 +113,16 @@ export function createRenderSnapshot(
         time < (source.editor?.outPoint ?? 3600),
       localTime: time - (source.editor?.startTime ?? 0),
     };
+    if (layerCanCache) {
+      let frames = layerFrameCache.get(source);
+      if (!frames) {
+        frames = new Map();
+        layerFrameCache.set(source, frames);
+      }
+      frames.set(time, item);
+      if (frames.size > 16) frames.delete(frames.keys().next().value!);
+    }
+    return item;
   });
   const cameras = [...composition.layers]
     .reverse()
