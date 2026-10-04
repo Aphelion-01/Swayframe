@@ -114,3 +114,13 @@ core/compositing-graph、registry、operations、compiler、cache、service 与 
 节点像素签名排除坐标、名称与 metadata。参数变化只失效自身及下游，源变化传播依赖。每层节点缓存最多 64 项/32 MB，最多保留 4 个图层源表面，源表面总量最多 32 MB；缓存别名不重复计字节，删除节点清理，像素逐出后保留签名版本。该上限不包含当前帧临时工作表面。默认最少 128px padding 保持常用模糊参数调整的 Source 尺寸稳定，超过已有 padding 的空间效果会重建 Source。
 
 节点视口与选择只属于 UI Preferences，节点坐标属于工程但不影响像素。单实例锁在指定 userData 后获取，独立测试 profile 不再转发工程到用户旧版本窗口。CG 阶段门禁和自动测试/真实 GUI 的证据边界见 COMPOSITING_GRAPH_ACCEPTANCE.md。
+
+## 自主冲刺 V2 / Swayframe 0.6.1
+
+执行基线 `docs/baseline/DEV_SPRINT_V2.txt`，Project schema 保持0.5.0。拖动控制器捕获工程与播放头时间，过期手势不能写到其他时刻；共享取消钩子同时处理Escape与窗口失焦。Canvas/Timeline吸附仅调整预览输入，松手仍提交原Command/Transaction。参考线与视口不持久化到Scene，移动/缩放/关键帧批量交互保持一次历史。
+
+八方向缩放使用原世界逆矩阵，围绕相对边/角或锚点计算。X/Y链接偏好复用属性面板存储。父级子层按原局部缩放与世界缩放的增量比例转换，避免负缩放符号被世界矩阵分解丢失。选择手柄大小由屏幕比例传给Renderer，不影响导出内容。
+
+TextField统一支持多行和自动聚焦，中文输入法事件由字段和Shortcut Registry共同保护。Value/Speed Graph视口仅属UI，切线拖动反算当前视口且固定本次手势的轴范围；空间路径字段仍不改变。
+
+帧求值使用父级ID索引，world3D只计算投影图层及祖先，摄像机视图每帧复用。默认不透明、正常混合的Source→Output图层直接绘制；含遮罩、效果、半透明、其他混合、预合成和3D仍走原离屏路径，避免改变组语义。CPU基准与Canvas分配回归单独记录，不以CPU基准等同实际预览帧率。

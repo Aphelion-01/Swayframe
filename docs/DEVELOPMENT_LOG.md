@@ -60,3 +60,10 @@ QA 修复原生菜单缺少 Select All 导致数字输入追加、相对 CLI 工
 CG-0→CG-12 按顺序完成模型、注册表、共享命令、迁移、编译器、基础节点与 Merge/Mask、交互、参数动画、效果栈派生、缓存和 Agent 接口。每阶段包含 typecheck、lint、tests、Web build、desktop build，原始日志见 outputs/quality/CG-*.log。最终 62 个测试文件、165 项测试通过。
 
 真实网页确认曝光像素改变、模糊边缘扩散及 0s/1s 的半径动画轨道。桌面发现并修复独立 userData 获取单实例锁过晚，以及严格 CSP 阻止内嵌图片 fetch 两个问题，增加回归测试。修复 evaluator 故障回退污染下游缓存、旧 Hue/Saturation 缺少明度参数，以及自动插入节点坐标重叠。最终安装包重新构建，测试与本机 GUI 证据分别记录，不把 Windows 交叉打包当实机验收。
+
+
+## 2026-10-04 — 高强度自主冲刺 V2 / Swayframe 0.6.1
+
+V2-1～V2-10 按高价值顺序完成连续交互保护、Canvas 吸附、Timeline 范围/吸附、八方向缩放、多行文字和 IME、值/速度图视口、CPU 求值优化、完整工程与桌面发布、默认图直接绘制、原生最终 QA。沿用 Command/Transaction/Property/Graph；未重写架构。阶段日志见 outputs/quality/V2-*.log。新增 21 项核心与交互回归，最终 71 文件 / 186 tests。
+
+500 层 / 50000 关键帧的核心 CPU 求值中位数优化约 8～13 倍，校验值一致；不代表浏览器端整体 FPS。无效果不透明图层减少离屏绘制，半透明与混合保留原组语义。独立最终 macOS app 实测完整工程显示、0.5s 动画、文字一次 Undo/Redo、原生保存重开及三帧 PNG；磁盘除了指定文字内容其余数据一致，单帧与序列首帧像素相同。两平台包成功构建；Windows、签名与 Logo 仍按边界记录。结果见 SPRINT_RESULT.md 和 outputs/sprint-v2/QA.md。

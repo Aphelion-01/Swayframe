@@ -4,7 +4,7 @@
 
 # In Progress
 
-0.6.1 最终桌面包与完整工程保存/PNG导出验收。
+本轮完成，无挂起开发；已交付 0.6.1，下一轮按下列高价值任务推进。
 
 # Completed
 
@@ -28,13 +28,15 @@ V2-8：0.6.1产品版本、完整创作工程和严格round-trip；打包持续�
 
 V2-9：默认不透明 Source→Output 直接绘制，避免离屏表面和缓存抖动；半透明/混合/遮罩/效果保留原组语义。
 
+V2-10：最终原生工程重开、文字 Undo/Redo、完整数据一致性、PNG 与三帧序列像素验收通过。安装包重新构建，证据见 `outputs/sprint-v2/QA.md`。
+
 # Next High-Value Tasks
 
-1. 连续拖动过期/取消保护，保证一次 Undo。
-2. Canvas 构图吸附与临时参考线。
-3. Timeline 关键帧吸附、时间边界与快捷操作。
-4. 文字直接编辑与输入焦点回归。
-5. 完整保存/导出和桌面包更新。
+1. 多行文字的自动测量、文字框边界与画布内编辑浮层。
+2. 大工程真实播放/拖动帧耗时测量，定位 React/Canvas 耗时。
+3. Windows 实机安装、重开、导出、DPI 与文件关联验收。
+4. 父级剪切/负缩放组合下的选框、锚点与多选变换回归。
+5. Linked Asset 跨目录迁移、重链接和恢复流程的原生 GUI 回归。
 
 # Known Regressions
 
@@ -48,7 +50,7 @@ V2-9：默认不透明 Source→Output 直接绘制，避免离屏表面和缓�
 
 Baseline：62 文件 / 165 tests。V2-1：166 tests；V2-2：64 文件 / 170 tests。typecheck、lint、tests、Web build、desktop build PASS，见 `outputs/quality/sprint-v2-interactions.log` 与 `V2-2.log`。
 
-V2-3：66 文件 / 175 tests，全门禁 PASS，见 `outputs/quality/V2-3.log`。Git checkpoint：f90e1e4。
+V2-3：66 文件 / 175 tests，全门禁 PASS，见 `outputs/quality/V2-3.log`。Git checkpoint：56a07f2。
 
 V2-4：67 文件 / 178 tests，全门禁 PASS，见 `outputs/quality/V2-4.log`。
 
@@ -57,3 +59,5 @@ V2-5：68 文件 / 180 tests，全门禁 PASS，见 `outputs/quality/V2-5.log`�
 V2-6：69 文件 / 182 tests，全门禁 PASS，见 `outputs/quality/V2-6.log`。
 
 V2-7：184 tests；V2-8：184 tests；V2-9：71文件/186 tests，全部门禁PASS。CPU基准见 `outputs/performance/README.md`。
+
+V2-10：71 文件 / 186 tests，typecheck、lint、tests、Web build、desktop build 全部 PASS；原生完整工程保存重开与 PNG 像素验收 PASS。

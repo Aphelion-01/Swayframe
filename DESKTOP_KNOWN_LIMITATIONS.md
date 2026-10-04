@@ -11,3 +11,8 @@
 - 生产依赖审计为 0 项漏洞。构建工具依赖树有 http-cache-semantics 通告（npm audit 开发树 8 项 high）；registry 未提供公告建议的修复版本，未强制降级或虚构修复，发布前继续复核。
 
 当前没有阻止 macOS Beta 本地调试的外部依赖。Logo、签名与 Windows 环境是完整发行验收缺口。
+
+
+## 0.6.1 增量状态（2026-10-04）
+
+当前产品为 0.6.1 / autonomous-sprint-v2，schema 0.5.0。上文 0.5 为历史验收边界；本次修复内嵌图片在严格 CSP 下解码和独立 userData 单实例锁顺序，增加完整节点/遮罩/父级/预合成/2.5D 工程的原生保存重开与 PNG 像素对照。最终 71 文件 / 186 tests；原始证据见 outputs/sprint-v2/QA.md。macOS 和 Windows 安装包已更新。签名、Logo、Windows 实机等发行缺口仍存在，未以交叉打包替代实机验证。
