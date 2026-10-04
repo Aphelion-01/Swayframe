@@ -105,3 +105,50 @@ describe('Project lifecycle', () => {
     f.service.dispose();
   });
 });
+it('另存为使用当前工程路径作为对话框默认路径，成功后更新路径，取消保留原路径', async () => {
+  const f = fixture();
+  await f.service.save();
+  vi.mocked(f.api.project.saveAs).mockResolvedValueOnce(null);
+  expect(await f.service.save(true)).toBe(false);
+  expect(f.service.path).toBe('/tmp/test.swayframe');
+  expect(f.api.project.saveAs).toHaveBeenLastCalledWith(
+    f.store.save(),
+    '/tmp/test.swayframe',
+  );
+  vi.mocked(f.api.project.saveAs).mockResolvedValueOnce({
+    path: '/tmp/copy.swayframe',
+    saved: true,
+  });
+  expect(await f.service.save(true)).toBe(true);
+  expect(f.service.path).toBe('/tmp/copy.swayframe');
+  f.service.dispose();
+});
+it('相同冻结工程只序列化一次，预览不进入保存，提交/Undo后输出正确内容', async () => {
+  const io = await import('../src/core/project-io');
+  const serialize = vi.spyOn(io, 'saveProject');
+  const store = new EditorStore(createDefaultProject());
+  const first = store.save();
+  for (let i = 0; i < 50; i++) {
+    store.setTime(i / 30);
+    store.save();
+  }
+  expect(serialize).toHaveBeenCalledTimes(1);
+  const layer = createLayer('rectangle');
+  store.run('新增', [
+    command({
+      type: 'layer.create',
+      compositionId: store.getSnapshot().project.activeCompositionId,
+      layer,
+    }),
+  ]);
+  const second = store.save();
+  store.save();
+  expect(second).not.toBe(first);
+  expect(serialize).toHaveBeenCalledTimes(2);
+  store.setLayerPreview({ ...layer, width: 900 });
+  expect(store.save()).toBe(second);
+  store.undo();
+  expect(store.save()).toBe(first);
+  expect(serialize).toHaveBeenCalledTimes(3);
+  serialize.mockRestore();
+});

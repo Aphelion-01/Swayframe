@@ -20,8 +20,8 @@ const desktop: DesktopAPI = {
     open: (path) => call({ method: 'project.open', path }),
     save: (data, path) =>
       call({ method: 'project.save', data, path, saveAs: false }),
-    saveAs: (data) =>
-      call({ method: 'project.save', data, path: null, saveAs: true }),
+    saveAs: (data, path) =>
+      call({ method: 'project.save', data, path: path ?? null, saveAs: true }),
   },
   dialog: {
     openFile: (options) => call({ method: 'dialog.open', options }),

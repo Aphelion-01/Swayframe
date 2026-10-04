@@ -219,7 +219,7 @@ export interface DesktopAPI {
     newProject(): Promise<void>;
     open(path?: string): Promise<OpenProjectResult | null>;
     save(data: string, path: string | null): Promise<SaveResult | null>;
-    saveAs(data: string): Promise<SaveResult | null>;
+    saveAs(data: string, path?: string | null): Promise<SaveResult | null>;
   };
   dialog: {
     openFile(options: DialogOptions): Promise<string[]>;

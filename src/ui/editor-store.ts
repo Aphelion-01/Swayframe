@@ -64,6 +64,8 @@ export class EditorStore {
   readonly motionCurveClipboard = new MotionCurveClipboard();
   #view: EditorView;
   #renderPreview?: Project;
+  #serializedProject?: Project;
+  #serializedData = '';
   #listeners = new Set<() => void>();
   #layerClipboard: readonly Layer[] = [];
   #assetClipboard: readonly Asset[] = [];
@@ -550,7 +552,12 @@ export class EditorStore {
     }
   }
   save(): string {
-    return saveProject(this.commands.getSnapshot());
+    const project = this.commands.getSnapshot();
+    if (this.#serializedProject !== project) {
+      this.#serializedData = saveProject(project);
+      this.#serializedProject = project;
+    }
+    return this.#serializedData;
   }
   valueCommand(propertyId: ID, value: unknown): Command {
     return editPropertyCommand(

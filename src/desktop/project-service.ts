@@ -170,7 +170,7 @@ export class ProjectService {
     try {
       const data = this.store.save();
       const result = await (saveAs
-        ? this.api.project.saveAs(data)
+        ? this.api.project.saveAs(data, this.path)
         : this.api.project.save(data, this.path));
       if (!result?.saved) return false;
       this.path = result.path;
