@@ -225,7 +225,19 @@ export class AgentOrchestrator {
           signal,
         );
         this.live(signal);
-        const raw = JSON.stringify(data);
+        const image =
+          call.name === 'renderFrame' &&
+          data &&
+          typeof data === 'object' &&
+          'image' in data &&
+          typeof data.image === 'string'
+            ? data.image
+            : undefined;
+        const raw = JSON.stringify(
+          image
+            ? { ...(data as Record<string, unknown>), image: undefined }
+            : data,
+        );
         messages.push({
           role: 'tool',
           toolCallId: call.id,
@@ -238,6 +250,12 @@ export class AgentOrchestrator {
                 })
               : raw,
         });
+        if (image)
+          messages.push({
+            role: 'user',
+            content: 'Rendered frame from ' + call.name,
+            images: [image],
+          });
         this.set({
           toolCalls: [
             ...this.state.toolCalls,
@@ -325,6 +343,7 @@ export class AgentOrchestrator {
         const result = await this.runtime.verify(draft.getSnapshot(), signal);
         this.live(signal);
         after = result.image;
+        this.set({ verification: result.message });
         if (result.ok) break;
         if (!result.refinement || iteration >= settings.agent.maxRefinements)
           throw new Error(result.message || '渲染验证未通过');

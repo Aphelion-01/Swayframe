@@ -34,6 +34,7 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
       assets: number;
       handleScale: number;
       drawHandles: boolean;
+      outputScale: number;
     }
   >();
   #content = new WeakMap<
@@ -110,26 +111,34 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
     target: HTMLCanvasElement,
     handleScale = 1,
     drawHandles = true,
+    outputScale = 1,
   ): void {
+    if (!Number.isFinite(outputScale) || outputScale <= 0 || outputScale > 1)
+      throw new Error('渲染缩放无效');
+    const width = Math.max(1, Math.round(input.width * outputScale));
+    const height = Math.max(1, Math.round(input.height * outputScale));
     const last = this.#last.get(target);
     if (
       last?.input === input &&
       last.assets === this.#assetVersion &&
       last.handleScale === handleScale &&
       last.drawHandles === drawHandles &&
-      target.width === input.width &&
-      target.height === input.height
+      last.outputScale === outputScale &&
+      target.width === width &&
+      target.height === height
     )
       return;
     const ctx = target.getContext('2d');
     if (!ctx) return;
-    if (target.width !== input.width) target.width = input.width;
-    if (target.height !== input.height) target.height = input.height;
+    if (target.width !== width) target.width = width;
+    if (target.height !== height) target.height = height;
+    ctx.save();
     ctx.clearRect(0, 0, target.width, target.height);
     ctx.fillStyle = input.backgroundColor
       ? cssColor(input.backgroundColor)
       : '#111827';
     ctx.fillRect(0, 0, target.width, target.height);
+    if (outputScale !== 1) ctx.scale(outputScale, outputScale);
     const live = new Set(
       input.project?.compositions.flatMap((c) => c.layers.map((l) => l.id)) ??
         input.layers.map((l) => l.source.id),
@@ -378,11 +387,13 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
         ctx.lineWidth = handleScale;
         ctx.stroke();
       }
+    ctx.restore();
     this.#last.set(target, {
       input,
       assets: this.#assetVersion,
       handleScale,
       drawHandles,
+      outputScale,
     });
   }
 }

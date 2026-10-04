@@ -227,6 +227,22 @@ export function AgentPanel({
           ))}
         </details>
       )}
+      {session.verification && (
+        <p className="agent-verification">{session.verification}</p>
+      )}
+      {session.beforeSnapshot && session.afterSnapshot && (
+        <details className="agent-preview">
+          <summary>查看修改前后</summary>
+          <figure>
+            <img src={session.beforeSnapshot} alt="修改前" />
+            <figcaption>修改前</figcaption>
+          </figure>
+          <figure>
+            <img src={session.afterSnapshot} alt="修改后" />
+            <figcaption>修改后</figcaption>
+          </figure>
+        </details>
+      )}
       <div className="agent-input">
         <textarea
           aria-label="Agent 需求"

@@ -61,6 +61,7 @@ export interface AgentSession {
   changes: AgentChangeSet | null;
   error: string | null;
   response: string;
+  verification?: string;
   beforeSnapshot?: string;
   afterSnapshot?: string;
 }

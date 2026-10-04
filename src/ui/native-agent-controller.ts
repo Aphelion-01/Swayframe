@@ -1,3 +1,11 @@
+import { z } from 'zod';
+import { idSchema } from '../core/project-schema';
+import { AIError } from '../ai/contracts';
+import {
+  AgentSnapshotRenderer,
+  VisualIntelligenceService,
+  visualDiagnostics,
+} from '../agent/vision';
 import { registerCompositingTools } from '../agent/compositing-tools';
 import { skillsFor } from '../agent/skills';
 import type { AgentSkill } from '../agent/skills';
@@ -41,18 +49,103 @@ export function createNativeAgent(
       })),
     };
   };
+  const snapshotRenderer =
+    typeof CanvasRenderingContext2D !== 'undefined'
+      ? new AgentSnapshotRenderer()
+      : undefined;
+  const intelligence = new VisualIntelligenceService(manager);
+  if (snapshotRenderer)
+    registry.register(
+      'renderFrame',
+      '真实合成预览，最长边720像素；不会含选择框',
+      z
+        .object({
+          compositionId: idSchema.optional(),
+          time: z.number().nonnegative().optional(),
+          scale: z.number().positive().max(1).optional(),
+        })
+        .strict(),
+      'READ',
+      {
+        read: async (ctx, args, signal) => {
+          const result = await snapshotRenderer.render(
+            ctx.project,
+            args.time ?? ctx.time,
+            signal,
+            args.compositionId,
+            args.scale,
+          );
+          return manager.getSnapshot().settings.privacy.sendRenderPreview
+            ? result
+            : {
+                width: result.width,
+                height: result.height,
+                privacy: '预览发送已关闭',
+              };
+        },
+      },
+    );
   let captured = input();
   const skills = skillsFor(manager.storage);
   let skillId = 'auto';
   let chosen: AgentSkill | undefined;
   const allowed = () => chosen?.allowedTools;
+  let goal = '';
   const runtime: AgentRuntimePort = {
+    ...(snapshotRenderer
+      ? {
+          render: async (project, signal) =>
+            (await snapshotRenderer.render(project, captured.time, signal))
+              .image,
+          verify: async (project, signal) => {
+            const diagnostics = visualDiagnostics(project, captured.time);
+            const { image } = await snapshotRenderer.render(
+              project,
+              captured.time,
+              signal,
+            );
+            if (!manager.getSnapshot().settings.privacy.sendRenderPreview)
+              return {
+                ok: true,
+                message: '本地渲染通过；隐私设置禁止发送预览，未做模型视觉检查',
+                image,
+              };
+            try {
+              manager.resolve('vision');
+            } catch (e) {
+              if (e instanceof AIError && e.code === 'setup')
+                return {
+                  ok: true,
+                  message: '本地渲染通过；未配置视觉模型，未做模型视觉检查',
+                  image,
+                };
+              throw e;
+            }
+            const proposal = await intelligence.suggest(
+              image,
+              {
+                goal,
+                context: engine.build({ ...captured, project }, 8000),
+                diagnostics,
+                tools: registry.definitions(allowed()),
+              },
+              signal,
+            );
+            return {
+              ...proposal,
+              image,
+              refinement: proposal.refinement ?? undefined,
+            };
+          },
+        }
+      : {}),
     project: store.commands.getSnapshot,
     setSkill: (id) => {
       if (id !== 'auto') skills.choose('', id);
       skillId = id;
     },
     context: (prompt) => {
+      goal = prompt;
       captured = input();
       chosen = skills.choose(
         prompt,
