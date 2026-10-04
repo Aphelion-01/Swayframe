@@ -28,6 +28,11 @@ export interface PositionPreview {
 }
 export interface RenderLayer {
   readonly source: Layer;
+  readonly localTransform?: {
+    readonly position: Vec2;
+    readonly scale: Vec2;
+    readonly rotation: number;
+  };
   readonly position: Vec2;
   readonly anchor?: Vec2;
   readonly matrix?: Matrix2D;

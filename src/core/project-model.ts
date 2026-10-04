@@ -1,3 +1,5 @@
+import { accentAt } from './layer-accent';
+import type { LayerAccentId } from './layer-accent';
 import { createGraph } from './compositing-registry';
 import type { CompositingGraph } from './compositing-graph';
 import { newId } from './core-types';
@@ -55,6 +57,7 @@ export interface LayerBase {
   readonly transform: Transform;
   readonly editor?: LayerEditor;
   readonly semantic?: SemanticMetadata;
+  readonly ui?: { readonly accentColorId?: LayerAccentId };
   readonly width: number;
   readonly height: number;
 }
@@ -118,7 +121,7 @@ export interface Composition {
   readonly backgroundColor?: Color;
 }
 export interface Project {
-  readonly schemaVersion: '0.5.0';
+  readonly schemaVersion: '0.6.0';
   readonly id: ID;
   readonly name: string;
   readonly compositions: readonly Composition[];
@@ -160,7 +163,7 @@ export function createDefaultProject(
   composition = createComposition(),
 ): Project {
   return {
-    schemaVersion: '0.5.0',
+    schemaVersion: '0.6.0',
     id: newId(),
     name: '未命名工程',
     compositions: [composition],
@@ -235,12 +238,17 @@ function createLegacyLayer(
   if (!options.assetId) throw new Error('图片图层必须引用素材编号');
   return { ...base, type: 'image', assetId: options.assetId };
 }
+let nextLayerAccent = 0;
 export function createLayer(
   kind: LayerKind,
   options: Parameters<typeof createLegacyLayer>[1] = {},
 ): Layer {
   const layer = createLegacyLayer(kind, options);
-  return { ...layer, editor: createLayerEditor(layer) };
+  return {
+    ...layer,
+    editor: createLayerEditor(layer),
+    ui: { accentColorId: accentAt(nextLayerAccent++) },
+  };
 }
 export function activeComposition(project: Project): Composition {
   const composition = project.compositions.find(

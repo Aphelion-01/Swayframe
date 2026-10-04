@@ -18,8 +18,22 @@ export function compositingSourceKey(
         time,
       );
     if (Array.isArray(value)) return value.map(pixelData);
+    const data =
+      'transform' in value && 'type' in value && 'ui' in value
+        ? {
+            ...value,
+            ui:
+              value.ui && typeof value.ui === 'object'
+                ? Object.fromEntries(
+                    Object.entries(value.ui).filter(
+                      ([key]) => key !== 'accentColorId',
+                    ),
+                  )
+                : {},
+          }
+        : value;
     return Object.fromEntries(
-      Object.entries(value)
+      Object.entries(data)
         .filter(
           ([k]) =>
             !['name', 'semantic', 'metadata'].includes(k) &&

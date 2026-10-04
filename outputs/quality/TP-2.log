@@ -1,0 +1,108 @@
+Stage TP-2
+Started: 2026-10-04T14:46:52.851Z
+
+$ npm run typecheck
+
+> motion-system@0.7.0 typecheck
+> tsc --noEmit
+
+
+Exit: 0
+
+$ npm run lint
+
+> motion-system@0.7.0 lint
+> eslint . && prettier --check src tests scripts apps *.json *.ts *.html *.cjs build/*.json docs/ARCHITECTURE.md
+
+Checking formatting...
+All matched files use Prettier code style!
+
+Exit: 0
+
+$ npm test
+
+> motion-system@0.7.0 test
+> vitest run
+
+
+ RUN  v5.0.3 /Users/aphelion-01/Documents/Codex/2026-10-03/referenced-chatgpt-conversation-this-is-an
+
+
+ Test Files  76 passed (76)
+      Tests  209 passed (209)
+   Start at  22:46:56
+   Duration  4.48s (tests 52%, import 18%, environment 15%, transform 14%, worker 1%)
+
+    Isolate  76 workers spawned · ~145ms startup each (spawn + environment, per file)
+             at least ~1.08s faster with isolate: false — reuses workers across files instead of one per file
+
+
+Exit: 0
+
+$ npm run build
+
+> motion-system@0.7.0 build
+> tsc --noEmit && vite build
+
+vite v7.3.6 building client environment for production...
+transforming...
+✓ 233 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                       0.48 kB │ gzip:   0.30 kB
+dist/assets/zip.worker-CXToe_8y.js    1.23 kB
+dist/assets/index-B-5r6Im7.css       51.37 kB │ gzip:   9.64 kB
+dist/assets/vendor-CvZGagPv.js      108.11 kB │ gzip:  31.59 kB
+dist/assets/index-Lo3CIUgl.js       483.28 kB │ gzip: 155.06 kB
+✓ built in 943ms
+node_modules/zod/v4/core/regexes.js (74:0): A comment
+
+"/** Anchors a pattern source. The interpolation lives here rather than at the call site because
+ * esbuild will not drop a `@__PURE__` call whose own argument interpolates a variable, but it
+ * will drop `anchor(dateSource)`. Keeping it inline pinned `date` into every bundle. */"
+
+in "node_modules/zod/v4/core/regexes.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+node_modules/zod/v4/core/util.js (400:0): A comment
+
+"// Wrapped in a `@__PURE__` IIFE: esbuild never tree-shakes a top-level initializer that contains a member access on `Number`, so the bare object literal survived into every bundle."
+
+in "node_modules/zod/v4/core/util.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+
+Exit: 0
+
+$ npm run desktop:build
+
+> motion-system@0.7.0 desktop:build
+> npm run build && node scripts/desktop/build.mjs
+
+
+> motion-system@0.7.0 build
+> tsc --noEmit && vite build
+
+vite v7.3.6 building client environment for production...
+transforming...
+✓ 233 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                       0.48 kB │ gzip:   0.30 kB
+dist/assets/zip.worker-CXToe_8y.js    1.23 kB
+dist/assets/index-B-5r6Im7.css       51.37 kB │ gzip:   9.64 kB
+dist/assets/vendor-CvZGagPv.js      108.11 kB │ gzip:  31.59 kB
+dist/assets/index-Lo3CIUgl.js       483.28 kB │ gzip: 155.06 kB
+✓ built in 910ms
+node_modules/zod/v4/core/regexes.js (74:0): A comment
+
+"/** Anchors a pattern source. The interpolation lives here rather than at the call site because
+ * esbuild will not drop a `@__PURE__` call whose own argument interpolates a variable, but it
+ * will drop `anchor(dateSource)`. Keeping it inline pinned `date` into every bundle. */"
+
+in "node_modules/zod/v4/core/regexes.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+node_modules/zod/v4/core/util.js (400:0): A comment
+
+"// Wrapped in a `@__PURE__` IIFE: esbuild never tree-shakes a top-level initializer that contains a member access on `Number`, so the bare object literal survived into every bundle."
+
+in "node_modules/zod/v4/core/util.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+
+Exit: 0
+
+PASS: typecheck / lint / unit + integration tests / Web build / desktop build

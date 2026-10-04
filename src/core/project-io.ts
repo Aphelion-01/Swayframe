@@ -1,3 +1,4 @@
+import { accentAt } from './layer-accent';
 import { migrateLayerGraph } from './compositing-migration';
 import { createProperty, createLayerEditor } from './project-model';
 import { projectSchema as legacySchema } from './legacy-project-schema';
@@ -29,7 +30,8 @@ export function migrateProject(raw: unknown): Project {
     raw.schemaVersion !== '0.2.0' &&
     raw.schemaVersion !== '0.3.0' &&
     raw.schemaVersion !== '0.4.0' &&
-    raw.schemaVersion !== '0.5.0'
+    raw.schemaVersion !== '0.5.0' &&
+    raw.schemaVersion !== '0.6.0'
   )
     throw new ProjectFileError(
       'UNSUPPORTED_VERSION',
@@ -50,7 +52,7 @@ export function migrateProject(raw: unknown): Project {
       );
     candidate = {
       ...legacy.data,
-      schemaVersion: '0.5.0',
+      schemaVersion: '0.6.0',
       compositions: legacy.data.compositions.map((c) => ({
         ...c,
         layers: c.layers.map((l) => ({
@@ -63,10 +65,11 @@ export function migrateProject(raw: unknown): Project {
   if (
     raw.schemaVersion === '0.2.0' ||
     raw.schemaVersion === '0.3.0' ||
-    raw.schemaVersion === '0.4.0'
+    raw.schemaVersion === '0.4.0' ||
+    raw.schemaVersion === '0.5.0'
   )
-    candidate = { ...raw, schemaVersion: '0.5.0' };
-  if (raw.schemaVersion !== '0.5.0')
+    candidate = { ...raw, schemaVersion: '0.6.0' };
+  if (raw.schemaVersion !== '0.5.0' && raw.schemaVersion !== '0.6.0')
     candidate = upgradeLegacyEffects(candidate);
   const parsed = projectSchema.safeParse(candidate);
   if (!parsed.success) {
@@ -87,7 +90,13 @@ export function migrateProject(raw: unknown): Project {
     ...parsed.data,
     compositions: parsed.data.compositions.map((c) => ({
       ...c,
-      layers: c.layers.map(migrateLayerGraph),
+      layers: c.layers.map((layer, index) =>
+        migrateLayerGraph(
+          raw.schemaVersion === '0.6.0' || layer.ui
+            ? layer
+            : { ...layer, ui: { accentColorId: accentAt(index) } },
+        ),
+      ),
     })),
   });
 }

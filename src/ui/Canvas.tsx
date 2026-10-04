@@ -1,7 +1,17 @@
+import { TransformOverlay } from './TransformOverlay';
+import { TransformControls } from './TransformControls';
+import { createTextMeasurer } from '../renderers/content-bounds';
+import { createTransformContext } from '../core/transform-resolvers';
+import { transformGizmo } from '../core/transform-gizmo';
+import {
+  pointerTransformOperation,
+  transformItems,
+} from '../core/transform-operations';
+import { constrainedMove } from '../core/transform-gizmo';
+import type { TransformContext } from '../core/transform-context';
 import { Icon } from './workspace/icons';
 import { sameVisualProject } from '../core/render-invalidation';
 import type { Project } from '../core/project-model';
-import { resizeLayer } from '../core/resize-geometry';
 import { readAxisLink } from './axis-link';
 import { canvasSnapContext, snapCanvasDelta } from '../core/canvas-snapping';
 import type { CanvasSnapContext, SnapGuide } from '../core/canvas-snapping';
@@ -77,6 +87,8 @@ export function Canvas({ store }: { store: EditorStore }) {
   const moveSnap = useRef<
     | {
         context: CanvasSnapContext;
+        transform: TransformContext;
+        axis?: 'x' | 'y';
         start: Vec2;
         project: unknown;
         time: number;
@@ -86,6 +98,8 @@ export function Canvas({ store }: { store: EditorStore }) {
   const gesture = useRef<
     | {
         kind: HandleKind;
+        context?: TransformContext;
+        settings: unknown;
         point: Vec2;
         items: readonly RenderLayer[];
         project: unknown;
@@ -106,10 +120,20 @@ export function Canvas({ store }: { store: EditorStore }) {
     latestTransformPreview.current = items;
     updateTransformPreview(items);
   };
+  const [measureVersion, setMeasureVersion] = useState(0);
   const view = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const c = activeComposition(view.project);
   const ref = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    store.textMeasure = createTextMeasurer(
+      ref.current?.getContext('2d') ?? null,
+    );
+    setMeasureVersion((version) => version + 1);
+    return () => {
+      store.textMeasure = undefined;
+    };
+  }, [store]);
   const pan = useRef<
     | {
         x: number;
@@ -289,7 +313,9 @@ export function Canvas({ store }: { store: EditorStore }) {
   );
   const input = useMemo(
     () =>
-      transformPreview && gesture.current?.project === view.project
+      transformPreview &&
+      gesture.current?.project === view.project &&
+      gesture.current?.settings === view.transformSettings
         ? createRenderSnapshot(
             transformPreviewComposition(
               activeComposition(renderProject),
@@ -305,11 +331,30 @@ export function Canvas({ store }: { store: EditorStore }) {
     [
       transformPreview,
       transformPreview ? view.project : undefined,
+      transformPreview ? view.transformSettings : undefined,
       renderProject,
       evaluated,
       view.time,
       view.selection,
     ],
+  );
+  const transformContext = useMemo(
+    () =>
+      createTransformContext(
+        input,
+        view.selection,
+        view.transformSettings,
+        store.textMeasure,
+      ),
+    [input, view.selection, view.transformSettings, measureVersion, store],
+  );
+  const spatialSelection = [
+    ...transformContext.initialTransforms.values(),
+  ].some((item) => item.source.editor?.is3D);
+  const uiScale = c.width / Math.max(1, fitWidth || c.width) / view.zoom;
+  const gizmo = useMemo(
+    () => transformGizmo(transformContext, uiScale, store.textMeasure),
+    [transformContext, uiScale, store],
   );
   useEffect(() => {
     const container = containerRef.current;
@@ -335,8 +380,9 @@ export function Canvas({ store }: { store: EditorStore }) {
         input,
         ref.current,
         c.width / (ref.current.getBoundingClientRect().width || c.width),
+        spatialSelection,
       );
-  }, [input, c.width, fitWidth, view.zoom]);
+  }, [input, c.width, fitWidth, view.zoom, spatialSelection]);
   useEffect(() => {
     let active = true;
     renderer.current
@@ -356,6 +402,11 @@ export function Canvas({ store }: { store: EditorStore }) {
             ref.current,
             snapshot.width /
               (ref.current.getBoundingClientRect().width || snapshot.width),
+            snapshot.layers.some(
+              (item) =>
+                snapshot.selection.includes(item.source.id) &&
+                item.source.editor?.is3D === true,
+            ),
           );
         }
       })
@@ -398,6 +449,7 @@ export function Canvas({ store }: { store: EditorStore }) {
           {displayName(c.name)}
         </span>
         <div className="viewport-tools">
+          <TransformControls store={store} disabled={spatialSelection} />
           <button
             aria-pressed={anchorMode}
             onClick={() => setAnchorMode(!anchorMode)}
@@ -485,31 +537,66 @@ export function Canvas({ store }: { store: EditorStore }) {
               const selected = input.layers.filter(
                 (l) => view.selection.includes(l.source.id) && !l.source.locked,
               );
-              const handle = selected
-                .map((l) =>
-                  hitTransformHandle(
-                    l,
-                    p,
-                    (8 * c.width) /
-                      (event.currentTarget.getBoundingClientRect().width ||
-                        c.width),
-                    anchorMode,
-                    c.width /
-                      (event.currentTarget.getBoundingClientRect().width ||
-                        c.width),
-                  ),
-                )
-                .find(Boolean);
+              const handle = spatialSelection
+                ? selected
+                    .map((l) =>
+                      hitTransformHandle(
+                        l,
+                        p,
+                        8 * uiScale,
+                        anchorMode,
+                        uiScale,
+                      ),
+                    )
+                    .find(Boolean)
+                : [
+                    ...(anchorMode
+                      ? selected.map((l) => ({
+                          kind: 'anchor' as const,
+                          point: l.position,
+                        }))
+                      : []),
+                    ...gizmo.handles,
+                  ]
+                    .filter(
+                      (h) =>
+                        Math.hypot(h.point.x - p.x, h.point.y - p.y) <=
+                        8 * uiScale,
+                    )
+                    .sort(
+                      (a, b) =>
+                        Math.hypot(a.point.x - p.x, a.point.y - p.y) -
+                        Math.hypot(b.point.x - p.x, b.point.y - p.y),
+                    )[0];
               if (handle) {
                 event.currentTarget.setPointerCapture(event.pointerId);
+                store.setPlaying(false);
+                if (handle.kind === 'move') {
+                  store.beginDrag(selected[0]!.source.id, p);
+                  moveSnap.current = {
+                    start: p,
+                    project: view.project,
+                    time: view.time,
+                    transform: store.getDragTransformContext()!,
+                    axis: handle.axis,
+                    context: canvasSnapContext(evaluated, view.selection),
+                  };
+                  return;
+                }
                 gesture.current = {
                   kind: handle.kind,
-                  direction: handle.direction,
+                  direction:
+                    'direction' in handle ? handle.direction : undefined,
                   linked: readAxisLink(selected[0]!.source.transform.scale.id),
                   point: p,
                   items: selected,
                   project: view.project,
                   time: view.time,
+                  context:
+                    spatialSelection || handle.kind === 'anchor'
+                      ? undefined
+                      : transformContext,
+                  settings: view.transformSettings,
                 };
                 setTransformPreview(selected);
                 return;
@@ -525,6 +612,7 @@ export function Canvas({ store }: { store: EditorStore }) {
                     start: p,
                     project: store.getSnapshot().project,
                     time: store.getSnapshot().time,
+                    transform: store.getDragTransformContext()!,
                     context: canvasSnapContext(
                       evaluated,
                       store.getSnapshot().selection,
@@ -566,15 +654,19 @@ export function Canvas({ store }: { store: EditorStore }) {
                   return;
                 }
                 const delta = { x: p.x - move.start.x, y: p.y - move.start.y };
-                const axis = event.shiftKey
-                  ? Math.abs(delta.x) >= Math.abs(delta.y)
-                    ? 'x'
-                    : 'y'
-                  : undefined;
+                const constrained = constrainedMove(
+                  move.transform,
+                  delta,
+                  event.shiftKey,
+                  move.axis,
+                );
+                const axis = constrained.worldAxis;
                 const snapped = snapCanvasDelta(
                   move.context,
-                  delta,
-                  snapping && !event.altKey
+                  constrained.delta,
+                  snapping &&
+                    !event.altKey &&
+                    (!constrained.axis || axis !== undefined)
                     ? (6 * c.width) /
                         Math.max(
                           1,
@@ -596,17 +688,43 @@ export function Canvas({ store }: { store: EditorStore }) {
                 return;
               }
               g.moved = Math.hypot(p.x - g.point.x, p.y - g.point.y) > 1e-8;
-              if (g.kind === 'scale' && g.direction && g.items.length === 1) {
-                setTransformPreview([
-                  resizeLayer(
-                    g.items[0]!,
+              if (g.settings !== view.transformSettings) {
+                gesture.current = undefined;
+                setTransformPreview(undefined);
+                return;
+              }
+              if (g.context) {
+                try {
+                  const context =
+                    event.altKey && g.kind === 'scale'
+                      ? createTransformContext(
+                          g.context.snapshot,
+                          g.context.selectedLayerIds,
+                          { ...g.context.settings, pivotMode: 'anchor' },
+                          store.textMeasure,
+                        )
+                      : g.context;
+                  let operation = pointerTransformOperation(
+                    context,
+                    g.kind as 'scale' | 'rotate',
                     g.point,
                     p,
                     g.direction,
                     g.linked || event.shiftKey,
-                    event.altKey,
-                  ),
-                ]);
+                  );
+                  if (operation.kind === 'rotate' && event.shiftKey)
+                    operation = {
+                      ...operation,
+                      angle: Math.round(operation.angle / 15) * 15,
+                    };
+                  setTransformPreview(transformItems(context, operation));
+                } catch (error) {
+                  setTransformPreview(undefined);
+                  store.setStatus(
+                    error instanceof Error ? error.message : '无法计算变换',
+                    true,
+                  );
+                }
                 return;
               }
               const center = g.items.reduce(
@@ -798,7 +916,8 @@ export function Canvas({ store }: { store: EditorStore }) {
                 g.moved &&
                 latestTransformPreview.current &&
                 g.project === store.getSnapshot().project &&
-                g.time === store.getSnapshot().time
+                g.time === store.getSnapshot().time &&
+                g.settings === store.getSnapshot().transformSettings
               ) {
                 const commands = transformEditCommands(
                   view.project,
@@ -861,6 +980,16 @@ export function Canvas({ store }: { store: EditorStore }) {
               setSnapGuides([]);
             }}
           />
+          {!spatialSelection && view.selection.length > 0 && (
+            <TransformOverlay
+              store={store}
+              context={transformContext}
+              gizmo={gizmo}
+              uiScale={uiScale}
+              anchorMode={anchorMode}
+              canvas={ref}
+            />
+          )}
           {snapGuides.length > 0 && (
             <svg
               className="canvas-snap-guides"

@@ -120,11 +120,14 @@ it('旧版严格验证后迁移，保留实体身份与曲线', () => {
     ...p,
     schemaVersion: '0.1.0',
     compositions: [
-      { ...p.compositions[0]!, layers: [{ ...layer, editor: undefined }] },
+      {
+        ...p.compositions[0]!,
+        layers: [{ ...layer, editor: undefined, ui: undefined }],
+      },
     ],
   };
   const loaded = loadProject(JSON.stringify(raw));
-  expect(loaded.schemaVersion).toBe('0.5.0');
+  expect(loaded.schemaVersion).toBe('0.6.0');
   expect(loaded.compositions[0]!.layers[0]!.id).toBe(layer.id);
   expect(
     loaded.compositions[0]!.layers[0]!.editor?.properties.fill,

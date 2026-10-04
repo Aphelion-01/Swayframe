@@ -29,7 +29,12 @@ export async function assetImageBlob(asset: Asset): Promise<Blob> {
 export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
   #last = new WeakMap<
     HTMLCanvasElement,
-    { input: RenderSnapshot; assets: number; handleScale: number }
+    {
+      input: RenderSnapshot;
+      assets: number;
+      handleScale: number;
+      drawHandles: boolean;
+    }
   >();
   #content = new WeakMap<
     Layer,
@@ -104,12 +109,14 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
     input: RenderSnapshot,
     target: HTMLCanvasElement,
     handleScale = 1,
+    drawHandles = true,
   ): void {
     const last = this.#last.get(target);
     if (
       last?.input === input &&
       last.assets === this.#assetVersion &&
       last.handleScale === handleScale &&
+      last.drawHandles === drawHandles &&
       target.width === input.width &&
       target.height === input.height
     )
@@ -345,7 +352,7 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
       }
       ctx.restore();
     }
-    for (const item of input.layers.filter((l) =>
+    for (const item of (drawHandles ? input.layers : []).filter((l) =>
       input.selection.includes(l.source.id),
     ))
       for (const handle of transformHandles(item, handleScale)) {
@@ -371,6 +378,11 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
         ctx.lineWidth = handleScale;
         ctx.stroke();
       }
-    this.#last.set(target, { input, assets: this.#assetVersion, handleScale });
+    this.#last.set(target, {
+      input,
+      assets: this.#assetVersion,
+      handleScale,
+      drawHandles,
+    });
   }
 }

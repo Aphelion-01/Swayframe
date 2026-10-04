@@ -1,0 +1,2469 @@
+你现在需要对 Swayframe 做两项高优先级体验升级：
+
+======================================================================
+Task A
+Transform Orientation + Transform Pivot System
+======================================================================
+
+以及：
+
+======================================================================
+Task B
+Layer / Property Visual Readability System
+交替底色 + Layer Accent
+======================================================================
+
+这两项都属于编辑器基础体验能力。
+
+当前不要扩展：
+
+Motion Blur
+新的 Effect
+新的 AI 功能
+新的 3D 功能
+新的 Graph Node
+
+本轮只把：
+
+Transform Control
+
+和：
+
+Layer / Property Readability
+
+做扎实。
+
+
+######################################################################
+PART A
+TRANSFORM ORIENTATION + PIVOT SYSTEM
+######################################################################
+
+======================================================================
+1. 设计目标
+======================================================================
+
+当前 Swayframe 的 Transform 行为过于固定。
+
+用户进行：
+
+Move
+Scale
+Rotate
+
+时，
+
+需要能够明确控制：
+
+A.
+变换轴使用什么坐标系。
+
+B.
+变换围绕哪个 Pivot 进行。
+
+这两个概念必须严格区分。
+
+不要混成一个 Dropdown。
+
+
+======================================================================
+2. 两个独立概念
+======================================================================
+
+建立：
+
+Transform Orientation
+
+和：
+
+Transform Pivot
+
+两个独立系统。
+
+
+Transform Orientation：
+
+Global
+Local
+Parent
+View
+
+以后可以扩展：
+
+Normal
+Custom Orientation
+
+
+Transform Pivot：
+
+Anchor
+
+Object Center
+
+Bounding Box Center
+
+Selection Center
+
+Individual Origins
+
+Custom Pivot
+
+
+不要因为第一版功能较少，
+把它们写死成几个 if。
+
+
+======================================================================
+3. Transform Orientation 定义
+======================================================================
+
+GLOBAL
+
+使用 Composition / World 坐标。
+
+例如：
+
+X：
+
+始终表示世界水平轴。
+
+
+LOCAL
+
+使用对象自己的旋转坐标。
+
+例如：
+
+一个对象 Rotation = 45°。
+
+Local X：
+
+沿对象自身横向。
+
+
+PARENT
+
+如果 Layer 有 Parent：
+
+使用 Parent Transform 坐标。
+
+如果没有 Parent：
+
+fallback：
+
+Global。
+
+
+VIEW
+
+使用当前 Viewer / Camera View 坐标。
+
+2D 环境中：
+
+通常等价于 Screen Space。
+
+2.5D / Camera 模式：
+
+使用 Camera View Orientation。
+
+
+======================================================================
+4. Transform Pivot 定义
+======================================================================
+
+ANCHOR
+
+使用 Layer 自己现有：
+
+Anchor Point。
+
+这是传统动画软件行为。
+
+
+OBJECT CENTER
+
+使用对象本身几何中心。
+
+注意：
+
+它和 Anchor Point 不一定相同。
+
+
+BOUNDING BOX CENTER
+
+使用当前对象视觉 Bounding Box 中心。
+
+例如：
+
+Shape
+Text
+Image
+
+都应使用实际 Bounds。
+
+
+SELECTION CENTER
+
+多选对象时：
+
+计算整个 Selection Bounding Box：
+
+minX
+minY
+maxX
+maxY
+
+Pivot：
+
+center(selection bounds)
+
+
+INDIVIDUAL ORIGINS
+
+多选时：
+
+每个对象围绕自己的 Pivot 独立 Transform。
+
+例如：
+
+同时 Scale 3 个对象。
+
+Selection Center：
+
+三者围绕共同中心放大。
+
+Individual Origins：
+
+三者分别原地放大。
+
+
+CUSTOM PIVOT
+
+允许用户在 Canvas 设置一个临时 Transform Pivot。
+
+第一版可以：
+
+不写入 Layer Anchor。
+
+它属于：
+
+Transform Interaction State
+
+而不是：
+
+Layer Property。
+
+以后可以扩展成：
+
+Transform Cursor。
+
+
+======================================================================
+5. 非常重要：
+Pivot ≠ Anchor
+======================================================================
+
+不要为了实现：
+
+Object Center
+
+直接修改：
+
+Layer.anchorPoint。
+
+例如：
+
+用户临时选择：
+
+Pivot = Object Center
+
+进行一次 Scale。
+
+操作完成后：
+
+Layer Anchor
+
+仍然保持原值。
+
+Transform Pivot 是：
+
+“本次 Transform 如何计算”
+
+Anchor 是：
+
+“Layer 持久属性”。
+
+两者必须分离。
+
+
+======================================================================
+6. 底层状态
+======================================================================
+
+建议建立：
+
+interface TransformInteractionSettings {
+    orientation: TransformOrientation;
+    pivotMode: TransformPivotMode;
+    customPivot?: Vec2 | Vec3;
+}
+
+例如：
+
+type TransformOrientation =
+    | "global"
+    | "local"
+    | "parent"
+    | "view";
+
+type TransformPivotMode =
+    | "anchor"
+    | "object-center"
+    | "bounds-center"
+    | "selection-center"
+    | "individual-origins"
+    | "custom";
+
+这些设置优先属于：
+
+Editor / Workspace State。
+
+不要默认写进 Project Scene。
+
+用户切换工程：
+
+可以沿用自己的编辑习惯。
+
+
+======================================================================
+7. Transform Operation Context
+======================================================================
+
+不要让：
+
+Move Tool
+Scale Tool
+Rotate Tool
+
+分别自己计算 Pivot。
+
+建立统一：
+
+TransformContext。
+
+例如：
+
+interface TransformContext {
+
+    selectedLayerIds: LayerId[];
+
+    orientation: TransformOrientation;
+
+    pivotMode: TransformPivotMode;
+
+    pivot: Vec2 | Vec3;
+
+    basis: TransformBasis;
+
+    initialTransforms: Map<
+        LayerId,
+        TransformSnapshot
+    >;
+}
+
+所有：
+
+Move
+Scale
+Rotate
+
+共享。
+
+
+======================================================================
+8. Pivot Resolver
+======================================================================
+
+建立：
+
+resolveTransformPivot(...)
+
+例如：
+
+resolveTransformPivot(
+    selection,
+    pivotMode,
+    scene,
+    time
+)
+
+→ Vec2 / Vec3
+
+
+ANCHOR：
+
+单选：
+
+当前 Layer Anchor world position。
+
+
+OBJECT CENTER：
+
+Layer geometry center。
+
+
+BOUNDS CENTER：
+
+Layer world bounding box center。
+
+
+SELECTION CENTER：
+
+所有选中 Layer Bounds union center。
+
+
+INDIVIDUAL ORIGINS：
+
+不返回一个公共中心。
+
+返回：
+
+Map<LayerId, Pivot>
+
+
+CUSTOM：
+
+使用当前 customPivot。
+
+
+======================================================================
+9. Orientation Resolver
+======================================================================
+
+建立：
+
+resolveTransformBasis(...)
+
+根据：
+
+orientation
+
+返回：
+
+basis vectors / matrix。
+
+不要在 UI 里写坐标计算。
+
+
+GLOBAL：
+
+world axes
+
+
+LOCAL：
+
+layer local transform basis
+
+
+PARENT：
+
+parent basis
+
+
+VIEW：
+
+camera / screen basis
+
+
+======================================================================
+10. Scale 数学
+======================================================================
+
+Scale 必须真正围绕 Pivot 进行。
+
+对于单个对象：
+
+原 world position：
+
+P
+
+Pivot：
+
+C
+
+Scale factor：
+
+S
+
+新的位置：
+
+P' = C + S * (P - C)
+
+然后：
+
+Layer 自身 Scale
+
+也同时改变。
+
+
+对于 2D：
+
+分别：
+
+sx
+sy
+
+
+对于 Uniform Scale：
+
+sx = sy。
+
+
+关键：
+
+改变 Scale 时，
+
+如果 Pivot 不等于 Anchor，
+
+Position 通常也必须补偿。
+
+不能只改：
+
+layer.scale
+
+否则视觉中心不会保持不动。
+
+
+======================================================================
+11. Rotate 数学
+======================================================================
+
+Rotation 同理。
+
+原位置：
+
+P
+
+Pivot：
+
+C
+
+旋转矩阵：
+
+R
+
+新的 Position：
+
+P' = C + R(P - C)
+
+然后：
+
+Layer Rotation
+
+增加：
+
+Δθ。
+
+
+多选 Selection Center：
+
+所有 Layer 围绕公共 C 旋转。
+
+
+Individual Origins：
+
+每个 Layer：
+
+只改变自己 Rotation
+
+位置不绕公共中心移动。
+
+
+======================================================================
+12. Move + Orientation
+======================================================================
+
+Move 一般不依赖 Pivot，
+
+但依赖：
+
+Orientation。
+
+例如：
+
+Local X Move：
+
+沿对象自身 X 方向。
+
+Global X Move：
+
+沿 World X。
+
+因此：
+
+Orientation
+
+必须覆盖：
+
+Move
+Scale
+Rotate。
+
+Pivot 主要影响：
+
+Scale
+Rotate。
+
+
+======================================================================
+13. 多选行为
+======================================================================
+
+必须重点完成：
+
+Multi-selection Transform。
+
+例如：
+
+选中：
+
+A
+B
+C
+
+
+Pivot = Selection Center
+
+Scale：
+
+整个布局一起缩放。
+
+
+Pivot = Individual Origins
+
+Scale：
+
+每个对象原地缩放。
+
+
+Pivot = Selection Center
+
+Rotate：
+
+三者围绕整体中心旋转。
+
+
+Pivot = Individual Origins
+
+Rotate：
+
+三者分别自转。
+
+
+======================================================================
+14. UI 设计
+======================================================================
+
+不要照搬 Blender 大型 Dropdown。
+
+Swayframe 保持简洁。
+
+
+Canvas Toolbar：
+
+Orientation:
+[ Global ▼ ]
+
+Pivot:
+[ Center ▼ ]
+
+
+建议视觉：
+
+小图标
++
+当前模式
+
+不要显示长说明文字。
+
+
+可选项：
+
+Orientation
+
+Global
+Local
+Parent
+View
+
+
+Pivot
+
+Anchor
+Object Center
+Selection Center
+Individual Origins
+Custom
+
+
+Bounding Box Center：
+
+如果 Object Center 和 Bounds Center
+当前实现结果基本相同，
+
+第一版可只显示：
+
+Center
+
+内部使用：
+
+Bounding Box Center。
+
+
+======================================================================
+15. Inspector Property 辅助入口
+======================================================================
+
+在：
+
+Position
+Scale
+Rotation
+
+右侧可以显示轻量当前 Transform Context。
+
+例如：
+
+Scale          100% 100%    ◉ Center
+
+Rotation       0°            ◉ Center
+
+但不要给每个 Property 保存不同 Pivot。
+
+默认：
+
+使用当前 Editor Transform Pivot。
+
+
+如果 UI 太拥挤：
+
+属性行只显示：
+
+Pivot icon
+
+点击显示当前设置。
+
+Canvas Toolbar：
+
+仍然是主入口。
+
+
+======================================================================
+16. Modifier Keys
+======================================================================
+
+保留成熟设计软件的快速操作方式。
+
+例如：
+
+Alt / Option + Scale
+
+可以临时切换：
+
+当前 Pivot
+↔
+Object / Selection Center
+
+但：
+
+不要把 Modifier 作为唯一入口。
+
+UI 必须可见。
+
+
+Shift：
+
+Uniform Scale
+
+
+Alt / Option：
+
+临时 Center Scale
+
+具体行为：
+
+与当前软件已有 Modifier 冲突时，
+优先保持一致。
+
+
+======================================================================
+17. Custom Pivot
+======================================================================
+
+V1 只需要基础实现。
+
+用户选择：
+
+Custom Pivot
+
+Canvas 显示：
+
+Pivot Handle。
+
+可以拖动。
+
+
+拖动 Pivot：
+
+只修改：
+
+TransformInteractionSettings.customPivot
+
+不修改：
+
+Layer Anchor。
+
+
+Esc：
+
+取消当前 Pivot Drag。
+
+
+未来可以增加：
+
+Snap
+Set to Cursor
+Set to Selection。
+
+
+======================================================================
+18. Canvas 视觉反馈
+======================================================================
+
+当前 Pivot 必须可视化。
+
+例如：
+
+Anchor：
+
+小十字 / 圆点。
+
+Selection Center：
+
+显示在 Selection Bounds 中心。
+
+
+Custom Pivot：
+
+单独图标。
+
+
+Orientation：
+
+Transform Handle 方向
+应真实反映：
+
+Global
+Local
+Parent
+View。
+
+
+例如：
+
+对象 Rotation = 45°。
+
+Global：
+
+Transform axes
+仍水平 / 垂直。
+
+
+Local：
+
+axes
+跟随对象旋转 45°。
+
+
+======================================================================
+19. Selection Bounding Box
+======================================================================
+
+多选时建立统一：
+
+Selection Bounds。
+
+不要简单：
+
+average(layer.position)
+
+作为 Selection Center。
+
+正确方法：
+
+计算：
+
+所有对象实际 World Bounds
+
+union
+
+然后：
+
+center。
+
+
+======================================================================
+20. Text / Shape / Image Bounds
+======================================================================
+
+确保：
+
+Text
+
+Shape
+
+Image
+
+都能提供：
+
+getWorldBounds(time)
+
+
+如果当前已有：
+
+BoundingBox
+
+系统：
+
+复用。
+
+
+不要在 Transform Tool
+重新计算另一套 Bounds。
+
+
+======================================================================
+21. Parent Transform
+======================================================================
+
+Parent Orientation
+
+必须考虑：
+
+父层：
+
+Rotation
+Scale
+Position。
+
+
+如果存在嵌套：
+
+Grandparent
+→ Parent
+→ Child
+
+basis 应由：
+
+World Transform Matrix
+
+正确计算。
+
+
+======================================================================
+22. Precomp
+======================================================================
+
+Precomp Layer：
+
+Transform Pivot
+
+和普通 Layer 一样工作。
+
+
+Object Center：
+
+Precomp Bounds Center。
+
+
+不要把内部 Precomp Layer
+参与外部 Selection Bounds。
+
+
+======================================================================
+23. 2.5D 预留
+======================================================================
+
+即使当前主要是 2D，
+
+数据结构必须允许：
+
+Vec3
+
+和：
+
+3D Transform Basis。
+
+
+以后：
+
+Global
+Local
+Parent
+View
+
+可以自然用于：
+
+XYZ。
+
+
+不要未来重新设计。
+
+
+======================================================================
+24. Command / Undo
+======================================================================
+
+Transform 操作：
+
+必须沿用：
+
+Preview
+→
+Commit
+
+模式。
+
+
+一次 Scale Drag：
+
+无论产生多少 pointermove，
+
+只有：
+
+1 个 Undo Step。
+
+
+多选 Scale：
+
+所有 Layer Transform 修改
+
+属于：
+
+一个 Transaction。
+
+
+Custom Pivot Drag：
+
+如果属于 Editor State，
+
+无需进入 Project Undo。
+
+如果未来 Custom Pivot 保存入 Project：
+
+再决定。
+
+
+======================================================================
+25. Transform Acceptance Test
+======================================================================
+
+CASE A1
+
+创建 Rectangle。
+
+Anchor 在左上。
+
+Pivot：
+
+Anchor。
+
+Scale 200%。
+
+左上视觉位置保持不变。
+
+
+CASE A2
+
+同一 Rectangle。
+
+Pivot：
+
+Object Center。
+
+Scale 200%。
+
+对象中心保持不变。
+
+
+CASE A3
+
+Pivot：
+
+Selection Center。
+
+选择两个相距较远 Layer。
+
+Scale 200%。
+
+两者之间距离同步扩大。
+
+
+CASE A4
+
+同样两个 Layer。
+
+Pivot：
+
+Individual Origins。
+
+Scale 200%。
+
+每个 Layer 原位置中心不移动。
+
+
+CASE A5
+
+对象 Rotation = 45°。
+
+Orientation：
+
+Global。
+
+Move X：
+
+水平移动。
+
+
+CASE A6
+
+Orientation：
+
+Local。
+
+Move X：
+
+沿对象旋转后的局部 X 移动。
+
+
+CASE A7
+
+Child Layer。
+
+Orientation：
+
+Parent。
+
+Transform Handles：
+
+与 Parent Basis 对齐。
+
+
+CASE A8
+
+Custom Pivot。
+
+将 Pivot 拖到对象左边。
+
+Rotate。
+
+对象围绕 Custom Pivot 转动。
+
+
+CASE A9
+
+Undo：
+
+一次完整 Scale Drag
+
+一步恢复。
+
+
+CASE A10
+
+保存 Project。
+
+Transform Orientation / Pivot
+
+如果属于 Workspace Settings：
+
+不污染 Scene Serialization。
+
+
+
+######################################################################
+PART B
+LAYER / PROPERTY VISUAL READABILITY
+######################################################################
+
+======================================================================
+26. 设计目标
+======================================================================
+
+当前 Layer / Property UI：
+
+所有行背景和视觉权重过于接近。
+
+当：
+
+Layer 数量增加
+
+Property 展开
+
+Keyframe 增加
+
+Timeline 较密
+
+时，
+
+用户很容易串行。
+
+
+本轮增加：
+
+Subtle Zebra Striping
+
++
+
+Layer Accent
+
++
+
+Clear Hierarchy
+
+
+目标：
+
+提高阅读速度。
+
+不是：
+
+增加花哨颜色。
+
+
+======================================================================
+27. 禁止彩虹时间轴
+======================================================================
+
+禁止：
+
+Position 蓝色
+
+Scale 绿色
+
+Rotation 黄色
+
+Opacity 紫色
+
+
+Property Type：
+
+不要绑定强烈颜色。
+
+
+颜色主要承担：
+
+Selection
+
+Layer identity
+
+Status
+
+Error
+
+等语义。
+
+
+======================================================================
+28. Zebra Row System
+======================================================================
+
+建立两种轻微不同的 Row Background。
+
+例如：
+
+rowA
+
+rowB
+
+
+两者亮度差：
+
+非常小。
+
+
+不要硬编码具体十六进制值。
+
+使用：
+
+Design Tokens。
+
+例如：
+
+--timeline-row-a
+
+--timeline-row-b
+
+
+推荐：
+
+rowA
+
+≈ panel background
+
+
+rowB
+
+≈ panel background + 轻微亮度变化
+
+
+必须保证：
+
+深色主题下清楚但克制。
+
+
+======================================================================
+29. Zebra 逻辑
+======================================================================
+
+不要简单根据 DOM index。
+
+应该根据：
+
+Visible Row Index
+
+计算。
+
+
+例如：
+
+Layer A
+
+Property 1
+
+Property 2
+
+Layer B
+
+
+当前实际可见：
+
+0
+1
+2
+3
+
+依次：
+
+A
+B
+A
+B。
+
+
+Collapse 后：
+
+重新计算 Visible Rows。
+
+
+避免：
+
+隐藏行仍影响 Zebra。
+
+
+======================================================================
+30. Layer Header 行
+======================================================================
+
+Layer Row
+
+应比 Property Row
+
+略有更明确背景。
+
+
+例如：
+
+Layer Header：
+
+比普通 Property：
+
+稍高对比度。
+
+
+但不要：
+
+每个 Layer Header
+
+变成巨大 Card。
+
+
+保持：
+
+专业高密度 Timeline。
+
+
+======================================================================
+31. Layer Accent
+======================================================================
+
+为 Layer 提供轻量：
+
+Accent Color。
+
+
+表现形式：
+
+Timeline / Layer Panel 左侧
+
+一个：
+
+2~4px
+
+窄色条
+
+或：
+
+小 Color Chip。
+
+
+不要：
+
+整行背景填满强烈颜色。
+
+
+例如：
+
+│ Rectangle
+
+│ Text
+
+│ Image
+
+
+Accent 只是：
+
+快速视觉定位。
+
+
+======================================================================
+32. Layer Accent Color 来源
+======================================================================
+
+可以建立默认调色板：
+
+Accent 1
+
+Accent 2
+
+Accent 3
+
+Accent 4
+
+Accent 5
+
+Accent 6
+
+
+新建 Layer：
+
+循环分配。
+
+
+例如：
+
+Layer 1：
+
+Accent 1
+
+
+Layer 2：
+
+Accent 2
+
+
+Layer 3：
+
+Accent 3
+
+
+但：
+
+色彩饱和度降低。
+
+适合 Dark UI。
+
+
+不要：
+
+鲜红
+鲜绿
+荧光色
+
+充满整个 Timeline。
+
+
+======================================================================
+33. Layer Accent 持久化
+======================================================================
+
+Layer Accent：
+
+属于 Project Data。
+
+因为它代表：
+
+用户工程中 Layer Identity。
+
+
+例如：
+
+interface Layer {
+    ...
+    ui?: {
+        accentColorId?: string;
+    }
+}
+
+
+如果不希望污染 Core Layer：
+
+可以建立：
+
+LayerMetadata。
+
+
+保存 / 加载：
+
+必须保持。
+
+
+======================================================================
+34. 用户修改 Layer Color
+======================================================================
+
+Layer Context Menu：
+
+Layer Color
+→
+
+None
+Accent 1
+Accent 2
+Accent 3
+Accent 4
+Accent 5
+Accent 6
+
+
+不要第一版做：
+
+完整 Color Picker。
+
+
+以后可以扩展。
+
+
+======================================================================
+35. Selection Color
+======================================================================
+
+非常重要。
+
+Selection：
+
+必须优先于：
+
+Zebra
+Layer Accent。
+
+
+例如：
+
+Selected Row
+
+使用：
+
+Accent UI Selection Color。
+
+
+Layer Accent：
+
+仍通过：
+
+左侧色条
+
+保留。
+
+
+不要：
+
+Selection 后
+
+整行显示 Layer Accent 色。
+
+
+======================================================================
+36. Hover
+======================================================================
+
+Hover：
+
+必须清楚。
+
+
+层级：
+
+Normal
+
+↓
+
+Hover
+
+↓
+
+Selected
+
+
+三者必须：
+
+肉眼可区分。
+
+
+不要：
+
+Hover 和 Selection
+
+颜色几乎一样。
+
+
+======================================================================
+37. Property Hierarchy
+======================================================================
+
+Property Row
+
+通过：
+
+Indentation
+
+Icon
+
+Typography
+
+建立层级。
+
+
+例如：
+
+▾ Rectangle
+
+    ▾ Transform
+
+        Position
+
+        Scale
+
+        Rotation
+
+        Opacity
+
+
+不要完全依赖颜色。
+
+
+颜色只是辅助。
+
+
+层级主要依赖：
+
+缩进
+
+字重
+
+图标
+
+spacing。
+
+
+======================================================================
+38. Animated Property
+======================================================================
+
+有 Keyframe 的 Property：
+
+可以使用：
+
+轻微状态 Indicator。
+
+
+例如：
+
+Keyframe Diamond Active
+
+而不是：
+
+整行变蓝。
+
+
+当前 Playhead 上存在 Keyframe：
+
+Diamond：
+
+强调。
+
+
+Property 被动画：
+
+Stopwatch / Diamond：
+
+Active。
+
+
+不要让颜色语义冲突。
+
+
+======================================================================
+39. Graph / Timeline 对齐
+======================================================================
+
+Timeline 左侧 Property Row
+
+与右侧 Track Row
+
+必须共享：
+
+相同 Zebra Background。
+
+
+例如：
+
+左边 Position 是 rowB
+
+右边 Position Keyframe Track
+
+也必须：
+
+rowB。
+
+
+不要：
+
+左右两边条纹错位。
+
+
+======================================================================
+40. Layer Panel 同步
+======================================================================
+
+如果当前：
+
+Left Layer Panel
+
+和：
+
+Timeline Layer Rows
+
+是两个不同视图，
+
+尽量让：
+
+Layer Accent
+
+一致。
+
+
+Rectangle：
+
+无论：
+
+Layer Panel
+
+Timeline
+
+Canvas Selection UI
+
+都使用：
+
+同一个 Layer Accent Identity。
+
+
+但 Canvas 不要：
+
+把对象描边完全改成 Layer Color
+
+除非设计需要。
+
+
+Selection Outline
+
+优先使用：
+
+Editor Selection Color。
+
+
+======================================================================
+41. Compositing Graph 可复用 Layer Accent
+======================================================================
+
+如果：
+
+Graph Node
+
+代表某个 Layer Source，
+
+可以使用：
+
+对应 Layer Accent
+
+作为：
+
+非常轻微的身份标记。
+
+
+但普通 Effect Node：
+
+不要自动获得 Layer Color。
+
+
+避免：
+
+Graph 变彩虹。
+
+
+======================================================================
+42. Color Accessibility
+======================================================================
+
+用户不能仅通过颜色
+
+识别层级或状态。
+
+
+例如：
+
+Selection
+
+还必须有：
+
+background
+border
+focus
+icon state
+
+
+Layer Accent：
+
+只是辅助。
+
+
+Zebra：
+
+也不能是唯一层级提示。
+
+
+保证：
+
+低色觉敏感用户
+
+仍然能使用。
+
+
+======================================================================
+43. Theme Token
+======================================================================
+
+新增统一 Tokens。
+
+例如：
+
+timeline.row.primary
+
+timeline.row.alternate
+
+timeline.row.hover
+
+timeline.row.selected
+
+timeline.layer.header
+
+timeline.group.header
+
+layerAccent.1
+layerAccent.2
+layerAccent.3
+layerAccent.4
+layerAccent.5
+layerAccent.6
+
+
+不要：
+
+在 Component 中：
+
+"#181B22"
+
+
+重复出现。
+
+
+======================================================================
+44. Inspector 可读性
+======================================================================
+
+Zebra 不一定直接应用到整个 Inspector。
+
+Inspector 优先：
+
+Section hierarchy。
+
+
+但：
+
+密集 Property List
+
+可以使用：
+
+very subtle alternating rows。
+
+
+保持：
+
+Canvas
+Timeline
+Inspector
+
+视觉语言一致。
+
+
+======================================================================
+45. Visual Density
+======================================================================
+
+优化时不要：
+
+为了区分行
+
+把每行高度增大很多。
+
+
+Swayframe 是：
+
+专业创作工具。
+
+
+Timeline：
+
+需要保持：
+
+高信息密度。
+
+
+目标：
+
+可读性提高
+
+但：
+
+同屏内容数量
+
+基本不下降。
+
+
+======================================================================
+46. Layer Row Acceptance
+======================================================================
+
+CASE B1
+
+10 个 Layer。
+
+Timeline：
+
+能够快速区分相邻 Layer。
+
+
+CASE B2
+
+展开：
+
+Position
+Scale
+Rotation
+Opacity
+
+背景轻微交替。
+
+用户可以：
+
+水平追踪到右侧 Keyframe。
+
+
+CASE B3
+
+Collapse / Expand Layer。
+
+Zebra：
+
+重新正确排列。
+
+
+CASE B4
+
+Layer Accent：
+
+Layer Panel
+
+Timeline
+
+保持一致。
+
+
+CASE B5
+
+修改 Layer Color。
+
+保存：
+
+.swayframe
+
+重新打开。
+
+Accent：
+
+保持。
+
+
+CASE B6
+
+Select Layer。
+
+Selection Style：
+
+明显优先于 Zebra。
+
+
+CASE B7
+
+Hover Row。
+
+Hover：
+
+与 Selection 区别明确。
+
+
+CASE B8
+
+Dark Theme：
+
+颜色克制。
+
+不出现：
+
+彩虹 Timeline。
+
+
+CASE B9
+
+100 个 Property Row。
+
+视觉保持清晰。
+
+没有明显性能问题。
+
+
+CASE B10
+
+改变 UI Theme / Design Token：
+
+不需要修改 Timeline Component 逻辑。
+
+
+
+######################################################################
+PART C
+IMPLEMENTATION ORDER
+######################################################################
+
+======================================================================
+47. 开发顺序
+======================================================================
+
+严格执行：
+
+TP-0
+
+审计当前 Transform Pipeline。
+
+检查：
+
+Position
+Scale
+Rotation
+Anchor
+Bounds
+Multi-selection
+Parent Transform
+Canvas Handles
+Undo
+
+
+TP-1
+
+建立：
+
+TransformOrientation
+
+TransformPivotMode
+
+TransformInteractionSettings
+
+
+TP-2
+
+实现：
+
+Pivot Resolver
+
+Orientation Resolver
+
+
+TP-3
+
+重构：
+
+Move
+Scale
+Rotate
+
+统一 TransformContext
+
+
+TP-4
+
+实现：
+
+Object Center
+
+Selection Center
+
+Individual Origins
+
+
+TP-5
+
+实现：
+
+Global
+Local
+Parent
+View
+
+
+TP-6
+
+Canvas Toolbar
+
+Orientation
+Pivot
+
+
+TP-7
+
+Canvas Pivot Visualization
+
+Custom Pivot
+
+
+TP-8
+
+Multi-selection Tests
+
+Undo Tests
+
+
+然后：
+
+VR-0
+
+审计当前：
+
+Layer Panel
+Timeline Rows
+Property Rows
+Design Tokens
+
+
+VR-1
+
+建立：
+
+Zebra Tokens
+
+
+VR-2
+
+Visible Row Index
+
+
+VR-3
+
+Timeline Left / Right Row Sync
+
+
+VR-4
+
+Layer Accent Model
+
+
+VR-5
+
+Layer Accent UI
+
+
+VR-6
+
+Context Menu：
+
+Layer Color
+
+
+VR-7
+
+Save / Load
+
+
+VR-8
+
+Accessibility / Polish / Performance
+
+
+======================================================================
+48. 不允许破坏现有系统
+======================================================================
+
+本轮必须保持：
+
+Property(t)
+
+Keyframe
+
+Motion Curve
+
+Graph Editor
+
+Compositing Graph
+
+Command System
+
+Undo / Redo
+
+Project Save / Load
+
+Selection Sync
+
+继续正常工作。
+
+
+不要为了 Transform Pivot：
+
+重新设计整个 Transform Model。
+
+
+优先：
+
+Incremental Extension。
+
+
+======================================================================
+49. 每阶段质量门禁
+======================================================================
+
+每完成一个阶段：
+
+lint
+
+typecheck
+
+tests
+
+build
+
+desktop build
+
+
+发现：
+
+Regression
+
+立即修复。
+
+
+不要：
+
+两个功能全部写完
+
+最后一起排错。
+
+
+======================================================================
+50. 最终重点验收
+======================================================================
+
+最终必须实际演示以下场景：
+
+
+SCENE 1
+
+创建 Rectangle。
+
+Anchor 在左上。
+
+
+Pivot = Anchor
+
+Scale 200%。
+
+左上保持。
+
+
+Undo。
+
+
+Pivot = Center
+
+Scale 200%。
+
+中心保持。
+
+
+证明：
+
+功能不是 UI 假开关。
+
+
+SCENE 2
+
+创建两个 Layer。
+
+多选。
+
+
+Selection Center：
+
+Scale / Rotate
+
+围绕整体中心。
+
+
+Individual Origins：
+
+各自 Transform。
+
+
+SCENE 3
+
+创建 Rotation = 45° Layer。
+
+
+Global X
+
+和：
+
+Local X
+
+操作结果明显不同。
+
+
+SCENE 4
+
+Timeline：
+
+展开多个 Layer
+
+和多个 Property。
+
+
+确认：
+
+Zebra
+
+Layer Accent
+
+Selection
+
+Hover
+
+Hierarchy
+
+全部清晰。
+
+
+SCENE 5
+
+保存工程。
+
+关闭。
+
+重新打开。
+
+
+Layer Accent：
+
+保持。
+
+
+Transform Settings：
+
+按既定 Workspace / Project 归属正确恢复。
+
+
+======================================================================
+FINAL DIRECTIVE
+======================================================================
+
+Task A 的目标不是：
+
+增加一个“中心缩放”按钮。
+
+而是：
+
+建立 Swayframe 第一代真正完整的：
+
+Transform Orientation + Pivot System。
+
+
+Task B 的目标不是：
+
+把 Timeline 变彩色。
+
+而是：
+
+使用克制的视觉层级：
+
+Zebra
+Layer Accent
+Selection
+Hierarchy
+
+提升复杂工程的可读性。
+
+
+优先：
+
+正确数学
+
+正确数据归属
+
+正确 Undo
+
+正确 Multi-selection
+
+正确 UI Feedback
+
+正确 Save / Load
+
+不要只完成外观。
+
+Implement the interaction,
+not just the controls.

@@ -88,7 +88,7 @@ it('Shift 锁方向；窗口失焦取消连续交互与参考线，工程和历�
   expect(store.commands.undoStack).toHaveLength(0);
   expect(screen.queryByLabelText('画布吸附参考线')).toBeNull();
 });
-it('边与角缩放使用属性 X/Y 链接，松手一次提交；取消手柄预览不改工程', () => {
+it('边与角缩放遵循当前锚点支点和属性 X/Y 链接，松手一次提交；取消手柄预览不改工程', () => {
   const { store, canvas, layer } = setup();
   localStorage.setItem(
     `swayframe.axis-link.${layer.transform.scale.id}`,
@@ -101,8 +101,8 @@ it('边与角缩放使用属性 X/Y 链接，松手一次提交；取消手柄�
   expect(store.getSnapshot().project).toBe(before);
   fireEvent.pointerUp(canvas);
   let edited = activeComposition(store.getSnapshot().project).layers[0]!;
-  expect(edited.transform.scale.baseValue).toEqual({ x: 2, y: 1 });
-  expect(edited.transform.position.baseValue).toEqual({ x: 450, y: 200 });
+  expect(edited.transform.scale.baseValue).toEqual({ x: 3, y: 1 });
+  expect(edited.transform.position.baseValue).toEqual({ x: 400, y: 200 });
   expect(store.commands.undoStack).toHaveLength(1);
   act(() => store.undo());
   localStorage.removeItem(`swayframe.axis-link.${layer.transform.scale.id}`);
@@ -110,7 +110,7 @@ it('边与角缩放使用属性 X/Y 链接，松手一次提交；取消手柄�
   fireEvent.pointerMove(canvas, { clientX: 500, clientY: 300 });
   fireEvent.pointerUp(canvas);
   edited = activeComposition(store.getSnapshot().project).layers[0]!;
-  expect(edited.transform.scale.baseValue).toEqual({ x: 1.5, y: 1.5 });
+  expect(edited.transform.scale.baseValue).toEqual({ x: 2, y: 2 });
   act(() => store.undo());
   fireEvent.pointerDown(canvas, { button: 0, clientX: 450, clientY: 250 });
   fireEvent.pointerMove(canvas, { clientX: 500, clientY: 300 });
@@ -128,7 +128,7 @@ it('快速手柄拖动在同一事件批次松手也提交最后坐标，而非�
     fireEvent.pointerUp(canvas);
   });
   const edited = activeComposition(store.getSnapshot().project).layers[0]!;
-  expect(edited.transform.scale.baseValue).toEqual({ x: 1.5, y: 1.5 });
+  expect(edited.transform.scale.baseValue).toEqual({ x: 2, y: 2 });
   expect(store.commands.undoStack).toHaveLength(1);
 });
 it('关键帧/节点选择及状态更新不调用 Canvas Renderer，图层属性变化仍渲染', async () => {

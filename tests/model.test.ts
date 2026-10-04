@@ -8,7 +8,7 @@ import {
 describe('Project Model', () => {
   it('创建任务书规定的合成并持久化稳定 ID', () => {
     const project = createDefaultProject();
-    expect(project.schemaVersion).toBe('0.5.0');
+    expect(project.schemaVersion).toBe('0.6.0');
     expect(project.compositions[0]).toMatchObject({
       width: 1920,
       height: 1080,

@@ -1,3 +1,4 @@
+import { transformPropertyEdit } from './transform-property-edit';
 import { Icon } from './workspace/icons';
 import type { AnimValue, Vec2 } from '../core/core-types';
 import type { Property } from '../core/project-model';
@@ -34,14 +35,17 @@ export function AnimatedField({
     value = evaluateProperty(property, time),
     current = property.keyframes.some((k) => Math.abs(k.time - time) < 1e-8);
   const edit = (value: AnimValue) => {
+    if (transformPropertyEdit(store, property.id, value, true)) return;
     store.setPropertyPreview(undefined);
     return store.run(`修改${label}`, [store.valueCommand(property.id, value)]);
   };
-  const preview = (value: AnimValue) =>
+  const preview = (value: AnimValue) => {
+    if (transformPropertyEdit(store, property.id, value, false)) return;
     store.setPropertyPreview({
       id: property.id,
       property: { ...property, baseValue: value, keyframes: [] },
     });
+  };
   const cancel = () => store.setPropertyPreview(undefined);
   const vector =
     !color &&
@@ -64,7 +68,14 @@ export function AnimatedField({
   const shown =
     propertyPreview?.id === property.id
       ? evaluateProperty(propertyPreview.property, time)
-      : value;
+      : store.getSnapshot().propertyPreviews?.find((p) => p.id === property.id)
+        ? evaluateProperty(
+            store
+              .getSnapshot()
+              .propertyPreviews!.find((p) => p.id === property.id)!,
+            time,
+          )
+        : value;
   const hex = (a: readonly number[]) =>
     '#' +
     a

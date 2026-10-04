@@ -1,3 +1,4 @@
+import { layerColorActions } from './layer-color-actions';
 import { command } from '../../core/command-system';
 import { activeComposition, createLayer } from '../../core/project-model';
 import {
@@ -24,6 +25,12 @@ export function layerActions(
     }
   };
   return [
+    {
+      label: '图层颜色',
+      disabled: !layer,
+      children: layerColorActions(store),
+      action: () => {},
+    },
     {
       label: '复制图层',
       shortcut: '⌘D',

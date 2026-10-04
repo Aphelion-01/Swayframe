@@ -1,4 +1,4 @@
-# Swayframe 0.7.0
+# Swayframe 0.8.0
 
 简体中文本地动效编辑器，支持人工完成 2D 与平面 3D 动画。当前节点模块基线为 `docs/baseline/COMPOSITING_GRAPH_CG0_CG12.txt`，桌面基线为 `docs/baseline/DESKTOP_D0_D10.txt`，前一轮编辑器基线为 `docs/baseline/MOTION_EDITOR_PHASE_A_I.txt`；历史 V0.1 基线保留用于追溯。
 
@@ -58,7 +58,7 @@ GIF 作为静态图片；未提供视频解码、MP4 导出、完整三维建模
 
 选择图层后，底部切换到“合成节点”，用“＋ 添加节点”或 Tab 搜索。默认 Source→Output；Exposure、Gaussian Blur 等自动插入连接，选中节点后在右侧调整参数、启用动画。空格拖动平移、滚轮以鼠标为中心缩放、F/Home 适应、Shift 多选、框选、Cmd/Ctrl+D 复制、Delete 删除；右键提供连接与节点操作。参数与时间轴/曲线共用，改一次可撤销，节点移动一次对应一次历史。
 
-线性效果栈与节点图共享同一数据；存在分支时效果面板提示使用节点图。Merge 支持 A/B/Mask、覆盖/正片叠底/滤色/相加，Source 为前景、Solid 可作背景。工程保存 schema 0.5.0，兼容旧效果栈迁移。
+线性效果栈与节点图共享同一数据；存在分支时效果面板提示使用节点图。Merge 支持 A/B/Mask、覆盖/正片叠底/滤色/相加，Source 为前景、Solid 可作背景。工程保存 schema 0.6.0，兼容旧效果栈及0.5工程迁移。
 
 验收示例位于 `outputs/compositing/`：source、linear、merge 与 legacy-effects.swayframe；运行 `node scripts/compositing-fixtures.mjs` 可重新生成。原始设计与验收分别见 `COMPOSITING_GRAPH_DESIGN.md` 和 `COMPOSITING_GRAPH_ACCEPTANCE.md`。当前产品包为 `release/Swayframe-0.6.3-arm64.dmg` 与 `release/Swayframe Setup 0.6.3.exe`。自主冲刺状态见 `DEV_SPRINT.md`。
 
@@ -88,3 +88,5 @@ GIF 作为静态图片；未提供视频解码、MP4 导出、完整三维建模
 统一中性暗色、16px SVG 图标与紧凑控制体系。上方全局菜单/工具栏，左侧项目/图层/助手，中央画布，右侧属性，下方时间轴/曲线/节点；面板尺寸与折叠仍独立保存。属性数值继续实时预览和纵向拖动，X/Y 链接只出现于向量。助手切换保留草稿与 Proposal，不占据常驻聊天区。
 
 三个改造批次全门禁通过，最终76文件/209 tests。macOS arm64原生保存重开严格一致，0.5秒PNG与0.6.3验收帧字节一致；Windows x64只完成交叉打包。审查与限制见 `docs/ui-redesign/RESULT.md`，真实截图和验证数据见 `outputs/ui-redesign/`。开发环境 `/ui-review.html` 可用真实编辑器检查五种窗口尺寸，不进入产品入口。
+
+本轮新增独立轴向与支点控制、二维多选变换、可拖动自定义支点、可见行条纹与持久图层色标。工程格式0.6.0兼容旧版本；变换偏好只存工作区。执行基线和阶段记录见 `docs/transform-readability/`；`transform-review.html` 为独立开发验收入口。

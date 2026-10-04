@@ -1,5 +1,6 @@
+import type { LayerAccentId } from '../../core/layer-accent';
 import { shortcutLabel } from '../../desktop/platform';
-import { useEffect, useEffectEvent, useRef } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 export function IconButton({
   label,
@@ -96,6 +97,9 @@ export interface MenuItem {
   action: () => void;
   disabled?: boolean;
   shortcut?: string;
+  children?: MenuItem[];
+  checked?: boolean;
+  accent?: LayerAccentId;
 }
 export function ContextMenu({
   items,
@@ -109,6 +113,8 @@ export function ContextMenu({
   onClose: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const [submenu, setSubmenu] = useState<MenuItem[]>();
+  const shownItems = submenu ?? items;
   useEffect(() => {
     ref.current
       ?.querySelector<HTMLButtonElement>('button:not(:disabled)')
@@ -118,7 +124,7 @@ export function ContextMenu({
     };
     window.addEventListener('pointerdown', close);
     return () => window.removeEventListener('pointerdown', close);
-  }, [onClose]);
+  }, [onClose, submenu]);
   return (
     <div
       ref={ref}
@@ -128,7 +134,12 @@ export function ContextMenu({
         left: Math.max(4, Math.min(x, window.innerWidth - 225)),
         top: Math.max(
           4,
-          Math.min(y, window.innerHeight - items.length * 30 - 12),
+          Math.min(
+            y,
+            window.innerHeight -
+              (shownItems.length + (submenu ? 1 : 0)) * 30 -
+              12,
+          ),
         ),
       }}
       onKeyDown={(event) => {
@@ -153,18 +164,48 @@ export function ContextMenu({
         }
       }}
     >
-      {items.map((item) => (
+      {submenu && (
+        <button role="menuitem" onClick={() => setSubmenu(undefined)}>
+          ‹ 返回图层操作
+        </button>
+      )}
+      {shownItems.map((item) => (
         <button
-          role="menuitem"
+          role={item.checked === undefined ? 'menuitem' : 'menuitemradio'}
+          aria-checked={item.checked}
+          aria-haspopup={item.children ? 'menu' : undefined}
           key={item.label}
           disabled={item.disabled}
           onClick={() => {
+            if (item.children) {
+              setSubmenu(item.children);
+              return;
+            }
             item.action();
             onClose();
           }}
         >
-          <span>{item.label}</span>
-          <kbd>{shortcutLabel(item.shortcut)}</kbd>
+          <span>
+            {item.accent && (
+              <span
+                className="layer-accent-chip"
+                data-accent={item.accent}
+                aria-hidden="true"
+              />
+            )}
+            {item.label}
+          </span>
+          <kbd
+            aria-hidden={
+              item.children || item.checked !== undefined ? true : undefined
+            }
+          >
+            {item.children
+              ? '›'
+              : item.checked
+                ? '✓'
+                : shortcutLabel(item.shortcut)}
+          </kbd>
         </button>
       ))}
     </div>

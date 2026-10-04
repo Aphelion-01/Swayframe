@@ -1,3 +1,4 @@
+import { LayerAccentChip } from './LayerAccentChip';
 import { Icon } from './workspace/icons';
 import { useEditorSlice } from './use-editor-slice';
 import { AssetsPanel } from './AssetsPanel';
@@ -224,6 +225,7 @@ export function LayerPanel({ store }: { store: EditorStore }) {
                       setName(layer.name);
                     }}
                   >
+                    <LayerAccentChip layer={layer} />
                     <span className="layer-symbol">
                       <Icon
                         name={

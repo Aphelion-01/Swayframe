@@ -1,3 +1,4 @@
+import { layoutText } from '../core/text-geometry';
 import type { AnimValue, Color } from '../core/core-types';
 import type { Layer } from '../core/project-model';
 import { evaluateProperty } from '../core/animation-engine';
@@ -113,32 +114,15 @@ export function drawContent(
     }
   } else if (layer.type === 'text') {
     const size = layerValue(layer, 'fontSize', time, layer.fontSize) as number,
-      tracking = layerValue(layer, 'tracking', time, 0) as number,
-      lineHeight = layerValue(layer, 'lineHeight', time, 1.2) as number;
-    ctx.font = `${layerValue(layer, 'fontWeight', time, 400)} ${size}px ${layer.fontFamily}`;
+      weight = layerValue(layer, 'fontWeight', time, 400) as number;
+    ctx.font = `${weight} ${size}px ${layer.fontFamily}`;
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
-    const lines = layer.text.split('\n');
-    lines.forEach((line, i) => {
-      const chars = Array.from(line),
-        width =
-          chars.reduce((sum, ch) => sum + ctx.measureText(ch).width, 0) +
-          Math.max(0, chars.length - 1) * tracking;
-      let cursor =
-        layer.editor?.textAlign === 'center'
-          ? -width / 2
-          : layer.editor?.textAlign === 'right'
-            ? layer.width / 2 - width
-            : x;
-      for (const ch of chars) {
-        ctx.fillText(
-          ch,
-          cursor,
-          (i - (lines.length - 1) / 2) * size * lineHeight,
-        );
-        cursor += ctx.measureText(ch).width + tracking;
-      }
-    });
+    for (const glyph of layoutText(layer, time, (_layer, _time, char) => ({
+      width: ctx.measureText(char).width,
+    }))) {
+      ctx.fillText(glyph.char, glyph.x, glyph.y);
+    }
   } else if (layer.type === 'image') {
     if (image) ctx.drawImage(image, x, y, layer.width, layer.height);
     else {

@@ -1,6 +1,6 @@
 # Swayframe 架构
 
-当前优化执行基线：`docs/baseline/OPTIMIZATION_POLISH.txt`。以下保留历史阶段约束与后续授权；本轮仅修复和优化现有功能。
+当前执行基线：`docs/baseline/TRANSFORM_READABILITY.txt`。本轮仅扩展变换控制与图层/属性可读性，以下保留历史阶段约束与后续授权。
 
 第一阶段历史基线：`docs/baseline/Codex_第一阶段开发任务书_V0.1_重新输出.docx`。正文提取与 SHA-256 同目录保存。用户已授权按 T0 → T10 顺序连续实施全部任务。
 
@@ -165,3 +165,15 @@ Tabs共用方向键/Home/End与roving focus；Modal共用焦点圈定、Escape/�
 GraphEditor的SVG测量当前屏幕大小，文字与ellipse手柄按viewBox、屏幕像素和zoom反向补偿，曲线使用non-scaling-stroke；时间/值域及pointer反算不变。节点标题34px、端口行26px保留原连线几何，只统一中性背景、分类色、端口/连线/选中层级。
 
 助手切换标签采用隐藏而非卸载，保留草稿和Proposal；工具栏入口可展开左面板。Proposal仍须用户显式应用并经既有Transaction/快照过期校验。`ui-review.html`仅为开发验收入口，以实际编辑器iframe检查窗口尺寸，不注入Scene或替代产品入口。
+
+## Transform Orientation / Pivot / Visual Readability · 0.8.0
+
+最新本轮基线 `docs/baseline/TRANSFORM_READABILITY.txt`，严格TP-0→TP-8→VR-0→VR-8。未新增AI、Effect、Graph Node或3D模块。
+
+`transform-context`定义工作区设置与不可变手势快照；`transform-resolvers`注册表分别解析轴向与支点；`layer-bounds`计算Text glyph、Shape曲线极值、Image/Precomp外部frame的实际几何World Bounds；效果发光/模糊外扩不进入几何支点。`text-geometry`由文字绘制和测量共享。`transform-operations`以世界矩阵绕pivot变换，并相对目标父层逆算本地TRS，选中父子不重复施加。现有工程TRS不能表示的剪切明确拒绝，避免近似变形。二维View等同屏幕轴，Camera axes3D预留；三维选择保留既有手势并禁用新二维控件。
+
+Canvas轴向移动、Scale/Rotate与Inspector多选Scale/Rotate共用Context；属性预览不写Scene，松手/确认通过`transform-editing`构建所有必要Position/Scale/Rotation补偿命令，一次Transaction。Anchor始终保持原属性，Custom Pivot拖动只改工作区状态并支持Esc恢复。`swayframe.transform-settings.v1`保存习惯，工程切换沿用，JSON工程不含这些设置。
+
+`timeline-visible-rows`先按实际展开/筛选计算Layer/Group/Property行序，整行和sticky名称共用底色变量；selection > hover > zebra，身份色只显示3px标记，动画用秒表/菱形状态。静态轨道memo保留，播放头CSS变量更新不重建100属性行。`LayerAccentChip`跨面板复用身份，UI tokens负责全部颜色。Layer.ui.accentColorId属于工程，0.6.0严格枚举校验，0.1～0.5迁移分配默认色标，新建层循环分配。修改色标经layer.replace Transaction，可撤销；色标排除出视觉失效及Precomp源缓存，未知ui字段仍导致失效。
+
+`transform-review.html`和`src/dev/transform-fixtures.ts`为独立开发工具，不进入生产入口。质量门禁与真实交互证据见本轮验收记录。

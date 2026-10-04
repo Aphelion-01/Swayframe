@@ -1,3 +1,6 @@
+import { layerActions } from './workspace/layer-actions';
+import { LayerAccentChip } from './LayerAccentChip';
+import { timelineVisibleRows } from './timeline-visible-rows';
 import { Icon } from './workspace/icons';
 import { snapTimeDelta } from '../core/timeline-snapping';
 import { CompositingGraphPanel } from './CompositingGraph';
@@ -52,6 +55,7 @@ export function Timeline({ store }: { store: EditorStore }) {
     endX: number;
     endY: number;
   }>();
+  const [layerMenu, setLayerMenu] = useState<{ x: number; y: number }>();
   const [keyMenu, setKeyMenu] = useState<{ x: number; y: number }>();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [transforms, setTransforms] = useState<Record<string, boolean>>({});
@@ -166,6 +170,7 @@ export function Timeline({ store }: { store: EditorStore }) {
     if (rulerDrag.current) store.setTime(rulerDrag.current.time);
     rulerDrag.current = undefined;
     setKeyMenu(undefined);
+    setLayerMenu(undefined);
   });
   const easingSegments = () => {
     const selected = store.getSnapshot().frames;
@@ -260,66 +265,73 @@ export function Timeline({ store }: { store: EditorStore }) {
   // Commands read the live time, never the memoized row's captured time.
   const layerRows = useMemo(
     () =>
-      [...c.layers].reverse().map((layer) => (
-        <div className="timeline-layer" key={layer.id} data-layer={layer.id}>
-          <div className="timeline-layer-heading">
-            <button
-              className="layer-disclosure"
-              aria-label={`展开 ${displayName(layer.name)} 属性`}
-              aria-expanded={
-                expanded[layer.id] ?? view.selection.includes(layer.id)
-              }
-              onClick={() =>
-                setExpanded({
-                  ...expanded,
-                  [layer.id]: !(
-                    expanded[layer.id] ?? view.selection.includes(layer.id)
-                  ),
-                })
-              }
+      timelineVisibleRows(
+        c.layers,
+        view.selection,
+        expanded,
+        transforms,
+        view.propertyFilter,
+        view.frames,
+      ).map(
+        ({ layer, headerIndex, groupIndex, open, groupOpen, properties }) => (
+          <div className="timeline-layer" key={layer.id} data-layer={layer.id}>
+            <div
+              className="timeline-layer-heading"
+              onContextMenu={(event) => {
+                event.preventDefault();
+                if (!view.selection.includes(layer.id)) store.select(layer.id);
+                setLayerMenu({ x: event.clientX, y: event.clientY });
+              }}
+              data-row-index={headerIndex}
+              data-zebra={headerIndex % 2 ? 'b' : 'a'}
+              data-selected={view.selection.includes(layer.id)}
             >
-              {(expanded[layer.id] ?? view.selection.includes(layer.id))
-                ? '▾'
-                : '▸'}
-            </button>
-            <button
-              className={`timeline-layer-name ${view.selection.includes(layer.id) ? 'active' : ''}`}
-              onClick={(event) => store.select(layer.id, event.shiftKey)}
-            >
-              {displayName(layer.name)}
-            </button>
-            <LayerTimeBar store={store} layer={layer} composition={c} />
-          </div>
-          {(expanded[layer.id] ?? view.selection.includes(layer.id)) && (
-            <>
               <button
-                className="transform-disclosure"
-                aria-expanded={transforms[layer.id] ?? true}
+                className="layer-disclosure"
+                aria-label={`展开 ${displayName(layer.name)} 属性`}
+                aria-expanded={
+                  expanded[layer.id] ?? view.selection.includes(layer.id)
+                }
                 onClick={() =>
-                  setTransforms({
-                    ...transforms,
-                    [layer.id]: !(transforms[layer.id] ?? true),
+                  setExpanded({
+                    ...expanded,
+                    [layer.id]: !(
+                      expanded[layer.id] ?? view.selection.includes(layer.id)
+                    ),
                   })
                 }
               >
-                {(transforms[layer.id] ?? true) ? '▾' : '▸'} 变换与动画属性
+                {(expanded[layer.id] ?? view.selection.includes(layer.id))
+                  ? '▾'
+                  : '▸'}
               </button>
-              {(transforms[layer.id] ?? true) &&
-                visibleProperties(layer)
-                  .filter(
-                    ({ key, property }) =>
-                      key.startsWith('transform.') ||
-                      property.keyframes.length > 0 ||
-                      view.frames.some((ref) => ref.propertyId === property.id),
-                  )
-                  .filter(
-                    ({ key, property }) =>
-                      view.propertyFilter === 'all' ||
-                      `transform.${view.propertyFilter}` === key ||
-                      (view.propertyFilter === 'animated' &&
-                        property.keyframes.length > 0),
-                  )
-                  .map(({ key, property }) => {
+              <button
+                className={`timeline-layer-name ${view.selection.includes(layer.id) ? 'active' : ''}`}
+                onClick={(event) => store.select(layer.id, event.shiftKey)}
+              >
+                <LayerAccentChip layer={layer} />
+                {displayName(layer.name)}
+              </button>
+              <LayerTimeBar store={store} layer={layer} composition={c} />
+            </div>
+            {open && (
+              <>
+                <button
+                  className="transform-disclosure"
+                  data-row-index={groupIndex}
+                  data-zebra={groupIndex! % 2 ? 'b' : 'a'}
+                  aria-expanded={transforms[layer.id] ?? true}
+                  onClick={() =>
+                    setTransforms({
+                      ...transforms,
+                      [layer.id]: !(transforms[layer.id] ?? true),
+                    })
+                  }
+                >
+                  {(transforms[layer.id] ?? true) ? '▾' : '▸'} 变换与动画属性
+                </button>
+                {groupOpen &&
+                  properties.map(({ key, property, rowIndex }) => {
                     const current = property.keyframes.find((frame) =>
                       currentFrameIds.has(frame.id),
                     );
@@ -327,6 +339,11 @@ export function Timeline({ store }: { store: EditorStore }) {
                       <div
                         key={key}
                         className="timeline-row"
+                        data-row-index={rowIndex}
+                        data-zebra={rowIndex % 2 ? 'b' : 'a'}
+                        data-selected={view.frames.some(
+                          (ref) => ref.propertyId === property.id,
+                        )}
                         role="group"
                         aria-label={`${displayName(layer.name)} ${propertyLabel(key, layer)} 轨道`}
                       >
@@ -344,6 +361,14 @@ export function Timeline({ store }: { store: EditorStore }) {
                           </button>
                           <span>{propertyLabel(key, layer)}</span>
                           <button
+                            className={
+                              current ? 'current-key-indicator' : undefined
+                            }
+                            title={
+                              current
+                                ? '当前时间已有关键帧'
+                                : '在当前时间添加关键帧'
+                            }
                             aria-label={`添加 ${displayName(layer.name)} ${propertyLabel(key, layer)} 关键帧`}
                             disabled={!!current || layer.locked}
                             onClick={() =>
@@ -645,10 +670,11 @@ export function Timeline({ store }: { store: EditorStore }) {
                       </div>
                     );
                   })}
-            </>
-          )}
-        </div>
-      )),
+              </>
+            )}
+          </div>
+        ),
+      ),
     [
       c,
       view.project,
@@ -1008,6 +1034,15 @@ export function Timeline({ store }: { store: EditorStore }) {
           />
         </label>
       </div>
+      {layerMenu && (
+        <ContextMenu
+          {...layerMenu}
+          items={layerActions(store, () =>
+            window.dispatchEvent(new Event('motion:rename')),
+          )}
+          onClose={() => setLayerMenu(undefined)}
+        />
+      )}
       {keyMenu && (
         <ContextMenu
           {...keyMenu}

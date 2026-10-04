@@ -107,3 +107,7 @@ UI-2 / Visual Polish：属性向量压缩X/Y标签、标量消除重复标签，
 UI-3 / Professional Software Feel：修复曲线空状态提示被旧规则隐藏；助手内容保持挂载，切换标签不丢草稿/Proposal，入口展开折叠面板；启动/导出/设置/路径/恢复/About统一克制视觉与焦点关闭行为。209 tests，全门禁PASS。
 
 真实窗口1280×720/1440×900/1920×1080/2560×1440/620×720截图；原生0.7.0打开复杂工程→保存A→重开→另存B，JSON严格相等；0.5秒PNG SHA-256与旧版相同。原生旋转输入25即时预览，Enter一次历史，Undo恢复0。证据outputs/ui-redesign/verification.json。未验证Windows实机和长期使用；官方frontend-skill当前官方仓库不存在，项目Skill已创建、实际使用并通过校验。
+
+## 2026-10-05 · Transform / Readability 0.8.0
+
+TP-0→TP-8与VR-0→VR-8完成，逐阶段lint/typecheck/tests/Web build/desktop build通过，最终227 tests / 81 files。独立轴向/支点、共享Context/Bounds、二维多选变换、临时Custom Pivot、可见行条纹、持久六色色标/None与菜单均实现。真实UI与原生退出重开通过，旧工程0.500秒PNG与0.7.0逐字节一致。实际验收及数学边界见 `TRANSFORM_READABILITY_RESULT.md`；未新增AI、Effect、Graph Node或3D功能。

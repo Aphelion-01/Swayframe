@@ -1088,3 +1088,181 @@ button.danger:hover:not(:disabled) {
   width: auto;
   background: transparent;
 }
+
+.transform-controls {
+  display: flex;
+  gap: var(--space-4);
+}
+.transform-controls label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.transform-controls select {
+  min-width: 62px;
+  max-width: 95px;
+  padding: 0 var(--space-2);
+  font-size: 11px;
+}
+.transform-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+.transform-overlay rect,
+.transform-overlay circle {
+  stroke: var(--accent);
+  fill: var(--background-primary);
+  vector-effect: non-scaling-stroke;
+  stroke-width: 1.5;
+}
+.transform-box {
+  fill: none;
+  stroke: var(--accent);
+  vector-effect: non-scaling-stroke;
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+.transform-axis line {
+  stroke: var(--text-secondary);
+  vector-effect: non-scaling-stroke;
+  stroke-width: 1.5;
+}
+.transform-axis text {
+  fill: var(--text-secondary);
+}
+.transform-axis.axis-x line {
+  stroke: var(--axis-x);
+}
+.transform-axis.axis-y line {
+  stroke: var(--axis-y);
+}
+.transform-overlay .anchor-marker {
+  fill: var(--warning);
+}
+
+.pivot-marker circle,
+.pivot-marker path {
+  fill: none;
+  stroke: var(--warning);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+.transform-overlay .custom-pivot-handle {
+  pointer-events: all;
+  cursor: move;
+  fill: transparent;
+  stroke: var(--warning);
+  stroke-width: 1;
+}
+.transform-overlay .custom-pivot-handle:focus-visible {
+  outline: none;
+  stroke-width: 3;
+}
+.canvas-caption .viewport-tools {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+@media (max-width: 1000px) {
+  .canvas-caption .composition-meta {
+    display: none;
+  }
+  .canvas-caption .composition-caption {
+    max-width: 110px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+}
+
+/* Visible-row bands share one surface across sticky labels and tracks. */
+.timeline-body [data-row-index] {
+  --row-background: var(--timeline-row-a);
+  background: var(--row-background);
+}
+.timeline-body [data-zebra='b'] {
+  --row-background: var(--timeline-row-b);
+}
+.timeline-layer-heading[data-zebra='a'] {
+  --row-background: var(--timeline-header-a);
+}
+.timeline-layer-heading[data-zebra='b'] {
+  --row-background: var(--timeline-header-b);
+}
+.timeline-body [data-row-index]:hover {
+  --row-background: var(--timeline-row-hover);
+}
+.timeline-body [data-row-index][data-selected='true'] {
+  --row-background: var(--timeline-row-selected);
+}
+.timeline-body .property-name,
+.timeline-layer-heading > .timeline-layer-name,
+.timeline-layer-heading > .timeline-layer-name.active,
+.timeline-layer-heading > .layer-disclosure {
+  background: var(--row-background);
+}
+.timeline-layer-heading > .layer-disclosure {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+.timeline-layer-heading > .timeline-layer-name {
+  font-weight: 600;
+}
+.timeline-body .transform-disclosure {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border-radius: 0;
+  padding-left: 30px;
+  font-size: var(--font-metadata);
+  color: var(--text-secondary);
+}
+.timeline-body .property-name {
+  padding-left: 42px;
+}
+.timeline-body .property-name > span {
+  color: var(--text-secondary);
+}
+.property-name .current-key-indicator:disabled {
+  color: var(--accent-primary);
+  opacity: 1;
+}
+.timeline-row[data-selected='true'] {
+  box-shadow: inset 2px 0 var(--accent-primary);
+}
+
+.layer-accent-chip {
+  display: inline-block;
+  width: 3px;
+  height: 14px;
+  flex: none;
+  margin-right: var(--space-compact);
+  vertical-align: middle;
+  background: var(--layer-identity-color, transparent);
+}
+.layer-accent-chip[data-accent='accent-1'] {
+  --layer-identity-color: var(--layer-accent-1);
+}
+.layer-accent-chip[data-accent='accent-2'] {
+  --layer-identity-color: var(--layer-accent-2);
+}
+.layer-accent-chip[data-accent='accent-3'] {
+  --layer-identity-color: var(--layer-accent-3);
+}
+.layer-accent-chip[data-accent='accent-4'] {
+  --layer-identity-color: var(--layer-accent-4);
+}
+.layer-accent-chip[data-accent='accent-5'] {
+  --layer-identity-color: var(--layer-accent-5);
+}
+.layer-accent-chip[data-accent='accent-6'] {
+  --layer-identity-color: var(--layer-accent-6);
+}
+/* Respect workspace resizing instead of the legacy 240px scroll cap. */
+.timeline-scroll {
+  max-height: none;
+}

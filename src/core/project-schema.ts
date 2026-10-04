@@ -1,3 +1,4 @@
+import { layerAccentIds } from './layer-accent';
 import { createGraphSchema } from './compositing-graph-schema';
 import { effectDefinitions } from './effect-model';
 import { z } from 'zod';
@@ -214,6 +215,10 @@ const layerBase = {
   transform: transformSchema,
   editor: editorSchema.optional(),
   semantic: semanticSchema.optional(),
+  ui: z
+    .object({ accentColorId: z.enum(layerAccentIds).optional() })
+    .strict()
+    .optional(),
 };
 export const layerSchema = z.discriminatedUnion('type', [
   z
@@ -296,7 +301,7 @@ export const compositionSchema = z
   .strict();
 export const projectSchema = z
   .object({
-    schemaVersion: z.literal('0.5.0'),
+    schemaVersion: z.literal('0.6.0'),
     id: idSchema,
     name: z.string().min(1).max(200),
     compositions: z.array(compositionSchema).min(1).max(100),

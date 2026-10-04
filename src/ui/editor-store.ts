@@ -1,9 +1,21 @@
+import type { TextMeasure } from '../core/text-geometry';
+import { createTransformContext } from '../core/transform-resolvers';
+import { transformItems } from '../core/transform-operations';
+import type { TransformContext } from '../core/transform-context';
+import {
+  readTransformSettings,
+  writeTransformSettings,
+} from './transform-settings';
+import type { TransformInteractionSettings } from '../core/transform-context';
 import { MotionCurveClipboard } from '../core/motion-curve-operations';
 import { projectWithPropertyPreviews } from '../core/property-preview';
 import { createRenderSnapshot } from '../core/renderer-core';
 import { inverse2D } from '../core/matrix2d';
 import type { Matrix2D } from '../core/matrix2d';
-import { deleteLayerCommands } from '../core/transform-editing';
+import {
+  transformEditCommands,
+  deleteLayerCommands,
+} from '../core/transform-editing';
 import { parentCommands } from '../core/composition-editing';
 import { displayName } from './labels';
 import {
@@ -37,6 +49,7 @@ import { loadProject, saveProject } from '../core/project-io';
 
 export interface EditorView {
   readonly project: Project;
+  readonly transformSettings: TransformInteractionSettings;
   readonly time: Seconds;
   readonly playing: boolean;
   readonly selection: readonly ID[];
@@ -61,6 +74,7 @@ export interface EditorView {
 }
 export class EditorStore {
   readonly commands: CommandSystem;
+  textMeasure?: TextMeasure;
   readonly motionCurveClipboard = new MotionCurveClipboard();
   #view: EditorView;
   #renderPreview?: Project;
@@ -72,6 +86,7 @@ export class EditorStore {
   #frameClipboard: readonly CopiedFrame[] = [];
   #drag?: {
     layerId: ID;
+    context: TransformContext;
     pointer: Vec2;
     position: Vec2;
     others: readonly { layerId: ID; position: Vec2 }[];
@@ -84,6 +99,7 @@ export class EditorStore {
     this.commands = new CommandSystem(project);
     this.#view = {
       project: this.commands.getSnapshot(),
+      transformSettings: readTransformSettings(),
       time: 0,
       playing: false,
       selection: [],
@@ -140,6 +156,18 @@ export class EditorStore {
   #set(patch: Partial<EditorView>): void {
     this.#view = { ...this.#view, ...patch };
     for (const listener of this.#listeners) listener();
+  }
+  setTransformSettings(
+    patch: Partial<TransformInteractionSettings>,
+    persist = true,
+  ): void {
+    this.cancelDrag();
+    const settings = Object.freeze({
+      ...this.#view.transformSettings,
+      ...patch,
+    });
+    if (persist) writeTransformSettings(settings);
+    this.#set({ transformSettings: settings });
   }
   setPropertyPreview(preview: EditorView['propertyPreview']): void {
     this.#renderPreview = preview
@@ -413,6 +441,46 @@ export class EditorStore {
     }
   }
   nudge(dx: number, dy: number): void {
+    const snapshot = createRenderSnapshot(
+        activeComposition(this.#view.project),
+        this.#view.time,
+        this.#view.selection,
+        undefined,
+        this.#view.project,
+      ),
+      context = createTransformContext(
+        snapshot,
+        this.#view.selection,
+        this.#view.transformSettings,
+        this.textMeasure,
+      );
+    if (
+      ![...context.initialTransforms.values()].some(
+        (l) => l.source.editor?.is3D,
+      )
+    ) {
+      try {
+        const delta = {
+          x: context.basis.x.x * dx + context.basis.y.x * dy,
+          y: context.basis.x.y * dx + context.basis.y.y * dy,
+        };
+        const commands = transformEditCommands(
+          this.#view.project,
+          snapshot,
+          transformItems(context, { kind: 'move', delta }),
+          'move',
+          this.#view.time,
+          this.#view.autoKeyframes,
+        );
+        if (commands.length) this.run('微调图层位置', commands);
+      } catch (error) {
+        this.setStatus(
+          error instanceof Error ? error.message : '无法计算变换',
+          true,
+        );
+      }
+      return;
+    }
     const c = activeComposition(this.#view.project);
     const commands = c.layers
       .filter((l) => this.#view.selection.includes(l.id) && !l.locked)
@@ -567,6 +635,9 @@ export class EditorStore {
       value,
     );
   }
+  getDragTransformContext(): TransformContext | undefined {
+    return this.#drag?.context;
+  }
   beginDrag(layerId: ID, pointer: Vec2): void {
     this.cancelDrag();
     if (!this.#view.selection.includes(layerId)) this.select(layerId);
@@ -626,6 +697,12 @@ export class EditorStore {
     );
     this.#drag = {
       layerId: root.id,
+      context: createTransformContext(
+        snapshot,
+        this.#view.selection,
+        this.#view.transformSettings,
+        this.textMeasure,
+      ),
       pointer,
       vectors,
       position: evaluateProperty(root.transform.position, this.#view.time),
@@ -651,6 +728,37 @@ export class EditorStore {
     const drag = this.#drag;
     if (drag.snapshot !== this.#view.project || drag.time !== this.#view.time) {
       this.cancelDrag();
+      return;
+    }
+    if (
+      ![...drag.context.initialTransforms.values()].some((item) => item.quad)
+    ) {
+      try {
+        const items = transformItems(drag.context, {
+          kind: 'move',
+          delta: {
+            x: pointer.x - drag.pointer.x,
+            y: pointer.y - drag.pointer.y,
+          },
+        });
+        const values = items.map((item) => ({
+          layerId: item.source.id,
+          position: item.localTransform!.position,
+        }));
+        const primary = values.find((item) => item.layerId === drag.layerId)!;
+        this.#set({
+          preview: {
+            ...primary,
+            others: values.filter((item) => item.layerId !== primary.layerId),
+          },
+        });
+      } catch (error) {
+        this.cancelDrag();
+        this.setStatus(
+          error instanceof Error ? error.message : '无法计算变换',
+          true,
+        );
+      }
       return;
     }
     const move = (id: string, p: Vec2): Vec2 => {
@@ -703,6 +811,15 @@ export class EditorStore {
           const other = activeComposition(this.#view.project).layers.find(
             (l) => l.id === item.layerId,
           )!;
+          const previous = evaluateProperty(
+            other.transform.position,
+            drag.time,
+          );
+          if (
+            Math.abs(previous.x - item.position.x) < 1e-9 &&
+            Math.abs(previous.y - item.position.y) < 1e-9
+          )
+            return [];
           return animationEdit(
             this.#view.project,
             other.transform.position.id,

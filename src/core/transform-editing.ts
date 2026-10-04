@@ -13,6 +13,7 @@ export function localTransformValues(
   const ids = new Set(items.map((i) => i.source.id));
   return items
     .filter((item) => {
+      if (item.localTransform) return true;
       let parent = item.source.editor?.parentId;
       while (parent) {
         if (ids.has(parent)) return false;
@@ -22,6 +23,7 @@ export function localTransformValues(
       return true;
     })
     .map((item) => {
+      if (item.localTransform) return { ...item, ...item.localTransform };
       const parent = snapshot.layers.find(
           (l) => l.source.id === item.source.editor?.parentId,
         ),
@@ -106,7 +108,7 @@ export function transformEditCommands(
   project: Project,
   snapshot: RenderSnapshot,
   items: readonly RenderLayer[],
-  kind: HandleKind,
+  kind: HandleKind | 'move',
   time: number,
   auto: boolean,
 ): Command[] {
@@ -127,7 +129,15 @@ export function transformEditCommands(
           item.anchor,
         ),
       );
-    else if (kind === 'scale')
+    if (
+      (kind === 'scale' || item.localTransform) &&
+      (Math.abs(
+        item.scale.x - evaluateProperty(old.source.transform.scale, time).x,
+      ) > 1e-9 ||
+        Math.abs(
+          item.scale.y - evaluateProperty(old.source.transform.scale, time).y,
+        ) > 1e-9)
+    )
       commands.push(
         ...animationEdit(
           project,
@@ -136,7 +146,12 @@ export function transformEditCommands(
           item.scale,
         ),
       );
-    else if (kind === 'rotate')
+    if (
+      (kind === 'rotate' || item.localTransform) &&
+      Math.abs(
+        item.rotation - evaluateProperty(old.source.transform.rotation, time),
+      ) > 1e-9
+    )
       commands.push(
         ...animationEdit(
           project,
@@ -145,7 +160,10 @@ export function transformEditCommands(
           item.rotation,
         ),
       );
-    if (item.position.x !== oldPosition.x || item.position.y !== oldPosition.y)
+    if (
+      Math.abs(item.position.x - oldPosition.x) > 1e-9 ||
+      Math.abs(item.position.y - oldPosition.y) > 1e-9
+    )
       commands.push(
         ...animationEdit(
           project,
