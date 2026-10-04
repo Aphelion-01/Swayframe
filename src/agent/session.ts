@@ -90,8 +90,10 @@ export interface AgentRuntimePort {
   project(): Project;
   context(prompt: string): unknown;
   tools(): readonly ToolDefinition[];
+  readTools?(): readonly ToolDefinition[];
   permission(tool: string, args: unknown): ToolPermission;
   validate(plan: AgentPlan): void;
+  inspect?(tool: string, args: unknown, signal: AbortSignal): Promise<unknown>;
   begin(project: Project): AgentTransactionPort;
   verify?(
     project: Project,

@@ -12,8 +12,11 @@ ProviderManager为应用服务，设置/用量/Skills/历史独立于Project，�
 
 - A2全门禁通过：238 tests / 85 files。结构化Plan、ASSIST/AGENT、运行时危险操作确认、Stop、受限验证循环及过期工程拒绝。
 
+- A3全门禁通过：240 tests / 86 files。相关工程摘要、选区属性和预算控制，素材不发送路径或内嵌内容。
+- A4全门禁通过：242 tests / 87 files。12个typed读取工具；规划读取最多4轮/12次，动态读取后才提交Plan。
+
 ## In Progress
-- A3：Context Engine / Summary / Selection。
+- A5：核心写工具；后续A6原子事务整合。
 
 ## Blockers
 - 真实第三方API验收需用户自行配置凭证，不阻塞Mock与协议测试。
