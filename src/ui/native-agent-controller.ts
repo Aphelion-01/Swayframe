@@ -1,3 +1,5 @@
+import { skillsFor } from '../agent/skills';
+import type { AgentSkill } from '../agent/skills';
 import { getAIApplication } from '../ai/application';
 import type { AIProviderManager } from '../ai/provider-manager';
 import { AgentOrchestrator } from '../agent/orchestrator';
@@ -37,25 +39,46 @@ export function createNativeAgent(
     };
   };
   let captured = input();
+  const skills = skillsFor(manager.storage);
+  let skillId = 'auto';
+  let chosen: AgentSkill | undefined;
+  const allowed = () => chosen?.allowedTools;
   const runtime: AgentRuntimePort = {
     project: store.commands.getSnapshot,
-    context: () => {
-      captured = input();
-      return engine.build(
-        captured,
-        manager.getSnapshot().settings.agent.contextCharacters,
-      );
+    setSkill: (id) => {
+      if (id !== 'auto') skills.choose('', id);
+      skillId = id;
     },
-    tools: () => registry.definitions(),
-    readTools: () => registry.readDefinitions(),
-    permission: (name, args) => registry.permission(name, args),
-    validate: (plan) => registry.validatePlan(plan),
+    context: (prompt) => {
+      captured = input();
+      chosen = skills.choose(
+        prompt,
+        skillId === 'auto'
+          ? manager.getSnapshot().settings.agent.defaultSkill
+          : skillId,
+      );
+      return {
+        ...engine.build(
+          captured,
+          manager.getSnapshot().settings.agent.contextCharacters,
+        ),
+        skill: { id: chosen.id, instructions: chosen.instructions },
+      };
+    },
+    tools: () => registry.definitions(allowed()),
+    readTools: () =>
+      registry
+        .readDefinitions()
+        .filter((t) => !allowed() || allowed()!.includes(t.name)),
+    permission: (name, args) => registry.permission(name, args, allowed()),
+    validate: (plan) => registry.validatePlan(plan, allowed()),
     inspect: (name, args, signal) =>
       registry.read(
         name,
         args,
         { ...captured, project: captured.project },
         signal,
+        allowed(),
       ),
     begin: (project, authorization) => {
       if (project !== captured.project) throw Error('工程上下文已变化');
@@ -85,6 +108,7 @@ export function createNativeAgent(
         project,
         captured,
         authorization?.destructiveConfirmed ?? false,
+        allowed(),
       );
     },
   };

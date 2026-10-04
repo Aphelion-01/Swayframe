@@ -1,3 +1,4 @@
+import { SkillSettings } from './SkillSettings';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { getAIApplication } from '../../ai/application';
 import { AIError, providerSchema } from '../../ai/contracts';
@@ -209,7 +210,11 @@ export function AISettings({
             关闭
           </button>
         </header>
-        <Tabs items={['服务', '模型']} value={tab} onChange={setTab} />
+        <Tabs
+          items={['服务', '模型', 'Skills']}
+          value={tab}
+          onChange={setTab}
+        />
         <div className="ai-settings-body">
           {!state.ready ? (
             <p role="status">正在读取设置…</p>
@@ -311,6 +316,7 @@ export function AISettings({
                     ))}
                   </>
                 ))}
+              {tab === 'Skills' && <SkillSettings manager={manager} />}
               {tab === '模型' && (
                 <>
                   {!state.settings.providers.length && (

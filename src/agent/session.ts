@@ -48,6 +48,7 @@ export interface AgentChangeSet {
 }
 export interface AgentSession {
   sessionId: string;
+  skillId: string;
   activeProjectId: string | null;
   conversation: readonly { role: 'user' | 'assistant'; content: string }[];
   selectedContext: unknown;
@@ -67,6 +68,7 @@ export const emptySession = (
   mode: 'ASSIST' | 'AGENT' = 'AGENT',
 ): AgentSession => ({
   sessionId: newId(),
+  skillId: 'auto',
   activeProjectId: null,
   conversation: [],
   selectedContext: null,
@@ -90,6 +92,7 @@ export interface AgentRuntimePort {
   project(): Project;
   context(prompt: string): unknown;
   tools(): readonly ToolDefinition[];
+  setSkill?(id: string): void;
   readTools?(): readonly ToolDefinition[];
   permission(tool: string, args: unknown): ToolPermission;
   validate(plan: AgentPlan): void;

@@ -40,7 +40,22 @@ export class AgentOrchestrator {
   setMode(mode: 'ASSIST' | 'AGENT') {
     if (this.running) throw new Error('请先停止当前任务');
     this.modeChanged = true;
-    this.set({ mode, pendingConfirmation: false });
+    this.set({
+      mode,
+      status: 'idle',
+      currentPlan: null,
+      pendingConfirmation: false,
+    });
+  }
+  setSkill(id: string) {
+    if (this.running) throw new Error('请先停止当前任务');
+    this.runtime.setSkill?.(id);
+    this.set({
+      skillId: id,
+      status: 'idle',
+      currentPlan: null,
+      pendingConfirmation: false,
+    });
   }
   get running() {
     return (
@@ -73,8 +88,10 @@ export class AgentOrchestrator {
       ...this.state.conversation,
       { role: 'user' as const, content: prompt.trim() },
     ].slice(-20);
+    const skillId = this.state.skillId;
     this.set({
       ...emptySession(mode),
+      skillId,
       conversation,
       status: 'thinking',
       activeProjectId: this.base.id,

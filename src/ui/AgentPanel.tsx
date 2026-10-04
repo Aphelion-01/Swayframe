@@ -1,3 +1,4 @@
+import { skillsFor } from '../agent/skills';
 import { useState, useSyncExternalStore } from 'react';
 import { getAIApplication } from '../ai/application';
 import type { AIProviderManager } from '../ai/provider-manager';
@@ -32,6 +33,8 @@ export function AgentPanel({
   const [prompt, setPrompt] = useState('');
   const [error, setError] = useState('');
   const c = activeComposition(view.project);
+  const skills = skillsFor(manager.storage);
+  const skillState = useSyncExternalStore(skills.subscribe, skills.getSnapshot);
   const selected = c.layers.filter((l) => view.selection.includes(l.id));
   let provider: string | undefined;
   let configured = false;
@@ -73,6 +76,24 @@ export function AgentPanel({
           <option value="ASSIST">辅助</option>
         </select>
       </div>
+      <label className="agent-skill">
+        Skill{' '}
+        <select
+          aria-label="Agent Skill"
+          value={session.skillId}
+          disabled={agent.running}
+          onChange={(e) => agent.setSkill(e.target.value)}
+        >
+          <option value="auto">自动</option>
+          {skillState.skills
+            .filter((s) => s.enabled)
+            .map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+        </select>
+      </label>
       <div className="agent-provider">
         <span title={provider}>{provider ?? '尚未配置 AI 服务'}</span>
         <button
