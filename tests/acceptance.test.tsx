@@ -1,6 +1,9 @@
+import { bridgeFor } from '../src/ui/agent-controller';
+import { DEMO_PROMPT } from '../src/core/agent-contracts';
 // @vitest-environment jsdom
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -134,11 +137,16 @@ describe('A-01～A-09 用户流程集成验收', () => {
     expect(reopened.commands.undoStack).toHaveLength(0);
     expect(reopened.save()).toBe(saved);
   });
-  it('A-06 / A-07：Agent 演示一项历史、整体撤销、重做后仍可手改', () => {
+  it('A-06 / A-07：既有Agent Bridge仍保留一项历史、整体撤销、重做后可手改', () => {
     const store = start();
     const before = store.commands.getSnapshot();
     fireEvent.click(screen.getByRole('tab', { name: '助手' }));
-    fireEvent.click(screen.getByRole('button', { name: '生成入场动画 ↗' }));
+    act(() => {
+      const result = bridgeFor(store).runDemo(DEMO_PROMPT);
+      if (!result.ok) throw new Error(result.error);
+      store.select(result.layerId!);
+      store.setTime(1);
+    });
     expect(store.commands.undoStack).toHaveLength(1);
     expect(screen.getByLabelText('位置 X')).toHaveValue(960);
     const generated = store.commands.getSnapshot();

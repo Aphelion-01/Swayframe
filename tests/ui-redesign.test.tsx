@@ -117,7 +117,7 @@ it('助手入口显示已折叠左面板，选区和Scene保持，面板尺寸�
     'aria-selected',
     'true',
   );
-  expect(screen.getByRole('textbox', { name: '助手提示词' })).toBeVisible();
+  expect(screen.getByRole('textbox', { name: 'Agent 需求' })).toBeVisible();
   expect(store.getSnapshot().project).toBe(project);
   expect(store.commands.undoStack).toHaveLength(0);
 });
@@ -128,14 +128,14 @@ it('切换工作区保留助手草稿和待审建议，生成建议不修改Scen
   fireEvent.click(screen.getByRole('button', { name: '创建 矩形' }));
   const before = store.getSnapshot().project;
   fireEvent.click(screen.getByRole('tab', { name: '助手' }));
-  fireEvent.change(screen.getByRole('textbox', { name: '助手提示词' }), {
+  fireEvent.change(screen.getByRole('textbox', { name: 'Agent 需求' }), {
     target: { value: '保留的提示词' },
   });
   fireEvent.click(screen.getByRole('button', { name: '布局建议' }));
   await screen.findByRole('button', { name: '应用建议' });
   fireEvent.click(screen.getByRole('tab', { name: '图层' }));
   fireEvent.click(screen.getByRole('tab', { name: '助手' }));
-  expect(screen.getByRole('textbox', { name: '助手提示词' })).toHaveValue(
+  expect(screen.getByRole('textbox', { name: 'Agent 需求' })).toHaveValue(
     '保留的提示词',
   );
   expect(screen.getByRole('button', { name: '应用建议' })).toBeVisible();

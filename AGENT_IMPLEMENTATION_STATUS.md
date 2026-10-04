@@ -15,8 +15,12 @@ ProviderManager为应用服务，设置/用量/Skills/历史独立于Project，�
 - A3全门禁通过：240 tests / 86 files。相关工程摘要、选区属性和预算控制，素材不发送路径或内嵌内容。
 - A4全门禁通过：242 tests / 87 files。12个typed读取工具；规划读取最多4轮/12次，动态读取后才提交Plan。
 
+- A5全门禁通过：245 tests / 88 files。Layer/Transform/Text/Shape/Animation/MotionCurve/Effect工具复用共享命令；非授权素材拒绝。
+- A6全门禁通过：248 tests / 89 files。隔离事务、500命令上限、一次提交/Undo、Stop丢弃、当前工程冲突拒绝、保存重开。
+- A7全门禁通过：251 tests / 90 files。真实Agent面板、配置入口、计划、Activity、确认/Stop/Undo；实测浏览器无Provider状态，Mock面板→原生Controller→真实Scene/Renderer输入测试通过。已修正首次ASSIST被默认模式覆盖的问题。
+
 ## In Progress
-- A5：核心写工具；后续A6原子事务整合。
+- A8：内置/用户 Skill 与设置管理。
 
 ## Blockers
 - 真实第三方API验收需用户自行配置凭证，不阻塞Mock与协议测试。

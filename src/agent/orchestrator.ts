@@ -12,6 +12,7 @@ import type {
 import type { Project } from '../core/project-model';
 export class AgentOrchestrator {
   private state: AgentSession = emptySession();
+  private modeChanged = false;
   private listeners = new Set<() => void>();
   private controller: AbortController | undefined;
   private draft: AgentTransactionPort | undefined;
@@ -38,6 +39,7 @@ export class AgentOrchestrator {
   }
   setMode(mode: 'ASSIST' | 'AGENT') {
     if (this.running) throw new Error('请先停止当前任务');
+    this.modeChanged = true;
     this.set({ mode, pendingConfirmation: false });
   }
   get running() {
@@ -66,8 +68,7 @@ export class AgentOrchestrator {
     this.base = this.runtime.project();
     this.draft = undefined;
     const settings = this.settings();
-    const mode =
-      this.state.status === 'idle' ? settings.agent.mode : this.state.mode;
+    const mode = this.modeChanged ? this.state.mode : settings.agent.mode;
     const conversation = [
       ...this.state.conversation,
       { role: 'user' as const, content: prompt.trim() },
@@ -247,18 +248,22 @@ export class AgentOrchestrator {
       throw new Error('任务已停止');
     this.set({ pendingConfirmation: false });
     try {
-      await this.execute(plan, this.controller.signal);
+      await this.execute(plan, this.controller.signal, true);
     } catch (error) {
       this.fail(error, this.controller.signal);
     }
   }
-  private async execute(plan: AgentPlan, signal: AbortSignal) {
+  private async execute(
+    plan: AgentPlan,
+    signal: AbortSignal,
+    destructiveConfirmed = false,
+  ) {
     this.live(signal);
     if (!this.base) throw new Error('工程上下文丢失');
     if (this.runtime.project() !== this.base)
       throw new Error('工程已被修改，请重新生成计划');
     this.runtime.validate(plan);
-    const draft = this.runtime.begin(this.base);
+    const draft = this.runtime.begin(this.base, { destructiveConfirmed });
     this.draft = draft;
     this.set({ status: 'executing' });
     let before: string | undefined;

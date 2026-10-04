@@ -257,7 +257,7 @@ export function LayerPanel({ store }: { store: EditorStore }) {
       <div className="assistant-workspace" hidden={tab !== '助手'}>
         <div className="panel-heading">
           <h2>创作助手</h2>
-          <span className="metadata">本地演示</span>
+          <span className="metadata">当前工程</span>
         </div>
         <AgentPanel store={store} />
         <ProposalPanel store={store} />

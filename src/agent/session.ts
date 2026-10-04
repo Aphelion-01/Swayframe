@@ -94,7 +94,10 @@ export interface AgentRuntimePort {
   permission(tool: string, args: unknown): ToolPermission;
   validate(plan: AgentPlan): void;
   inspect?(tool: string, args: unknown, signal: AbortSignal): Promise<unknown>;
-  begin(project: Project): AgentTransactionPort;
+  begin(
+    project: Project,
+    authorization?: { destructiveConfirmed: boolean },
+  ): AgentTransactionPort;
   verify?(
     project: Project,
     signal: AbortSignal,

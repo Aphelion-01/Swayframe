@@ -1,9 +1,13 @@
+import type { TransformInteractionSettings } from '../core/transform-context';
+import type { TextMeasure } from '../core/text-geometry';
 import { z } from 'zod';
 import type { Command } from '../core/command-system';
 import type { Project } from '../core/project-model';
 import type { ToolDefinition } from '../ai/contracts';
 import type { AgentPlan, ToolPermission } from './session';
 export interface AgentToolContext {
+  transform?: TransformInteractionSettings;
+  measure?: TextMeasure;
   project: Project;
   time: number;
   selection: readonly string[];
@@ -18,6 +22,10 @@ interface RegisteredTool {
     args: unknown,
     signal: AbortSignal,
   ) => unknown | Promise<unknown>;
+  workspace?: (
+    context: AgentToolContext,
+    args: unknown,
+  ) => Partial<TransformInteractionSettings>;
   compile?: (context: AgentToolContext, args: unknown) => readonly Command[];
 }
 export class AgentToolError extends Error {
@@ -45,6 +53,10 @@ export class AgentToolRegistry {
         args: T,
         signal: AbortSignal,
       ) => unknown | Promise<unknown>;
+      workspace?: (
+        context: AgentToolContext,
+        args: T,
+      ) => Partial<TransformInteractionSettings>;
       compile?: (context: AgentToolContext, args: T) => readonly Command[];
     },
   ) {
@@ -60,6 +72,12 @@ export class AgentToolRegistry {
       description,
       schema,
       permission,
+      ...(handler.workspace
+        ? {
+            workspace: (context: AgentToolContext, args: unknown) =>
+              handler.workspace!(context, args as T),
+          }
+        : {}),
       ...(handler.read
         ? {
             read: (context, args, signal) =>
@@ -80,6 +98,13 @@ export class AgentToolRegistry {
         description: t.description,
         parameters: z.toJSONSchema(t.schema) as Record<string, unknown>,
       }));
+  }
+  readDefinitions(): ToolDefinition[] {
+    return this.definitions(
+      [...this.tools.values()]
+        .filter((t) => t.permission === 'READ')
+        .map((t) => t.name),
+    );
   }
   private parsed(name: string, args: unknown, allowed?: readonly string[]) {
     const tool = this.tools.get(name);
@@ -123,6 +148,15 @@ export class AgentToolRegistry {
         error instanceof Error ? error.message : '读取工具失败',
       );
     }
+  }
+  workspacePatch(
+    name: string,
+    args: unknown,
+    context: AgentToolContext,
+    allowed?: readonly string[],
+  ) {
+    const parsed = this.parsed(name, args, allowed);
+    return parsed.tool.workspace?.(context, parsed.args);
   }
   compile(
     name: string,
