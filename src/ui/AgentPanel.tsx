@@ -1,3 +1,5 @@
+import { importAgentReference } from '../agent/references';
+import type { ReferenceMode } from '../agent/references';
 import { skillsFor } from '../agent/skills';
 import { useState, useSyncExternalStore } from 'react';
 import { getAIApplication } from '../ai/application';
@@ -31,6 +33,7 @@ export function AgentPanel({
   const ai = useSyncExternalStore(manager.subscribe, manager.getSnapshot);
   const view = useEditorSlice(store, ['project', 'selection']);
   const [prompt, setPrompt] = useState('');
+  const [importing, setImporting] = useState(false);
   const [error, setError] = useState('');
   const c = activeComposition(view.project);
   const skills = skillsFor(manager.storage);
@@ -243,6 +246,81 @@ export function AgentPanel({
           </figure>
         </details>
       )}
+      <div className="agent-references">
+        <label className="ai-file">
+          {importing ? '正在读取参考…' : '添加参考'}
+          <input
+            aria-label="添加 Agent 参考"
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif,video/*"
+            disabled={
+              agent.running || importing || session.references.length >= 2
+            }
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = '';
+              if (!file) return;
+              setImporting(true);
+              void importAgentReference(file, new AbortController().signal)
+                .then((ref) =>
+                  agent.setReferences(
+                    [...agent.getSnapshot().references, ref],
+                    agent.getSnapshot().referenceMode,
+                  ),
+                )
+                .catch((e) =>
+                  setError(e instanceof Error ? e.message : '导入失败'),
+                )
+                .finally(() => setImporting(false));
+            }}
+          />
+        </label>
+        {session.references.length > 0 && (
+          <select
+            aria-label="参考模式"
+            value={session.referenceMode}
+            disabled={agent.running}
+            onChange={(e) =>
+              agent.setReferences(
+                session.references,
+                e.target.value as ReferenceMode,
+              )
+            }
+          >
+            <option value="overall">整体参考</option>
+            <option value="layout-only">仅布局</option>
+            <option value="color-only">仅颜色</option>
+            <option value="typography-only">仅字体</option>
+            <option value="shape-only">仅形状</option>
+          </select>
+        )}
+        {session.references.map((ref) => (
+          <span className="agent-reference-chip" key={ref.id}>
+            {ref.name}
+            {ref.kind === 'gif-first-frame'
+              ? ' · 首帧'
+              : ref.kind === 'video-samples'
+                ? ' · 3帧'
+                : ''}
+            <button
+              aria-label={'移除参考 ' + ref.name}
+              disabled={agent.running}
+              onClick={() =>
+                agent.setReferences(
+                  session.references.filter((r) => r.id !== ref.id),
+                  session.referenceMode,
+                )
+              }
+            >
+              ×
+            </button>
+          </span>
+        ))}
+        {session.references.length > 0 &&
+          !ai.settings.privacy.sendReferences && (
+            <small>隐私设置已禁止发送参考</small>
+          )}
+      </div>
       <div className="agent-input">
         <textarea
           aria-label="Agent 需求"
@@ -271,7 +349,9 @@ export function AgentPanel({
           <small>Enter 发送 · Shift+Enter 换行</small>
           <button
             className="primary"
-            disabled={!configured || !prompt.trim() || agent.running}
+            disabled={
+              !configured || !prompt.trim() || agent.running || importing
+            }
             onClick={submit}
           >
             发送

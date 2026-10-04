@@ -1,3 +1,4 @@
+import type { AgentReference, ReferenceMode } from './references';
 import { z } from 'zod';
 import { newId } from '../core/core-types';
 import type { Project } from '../core/project-model';
@@ -49,6 +50,8 @@ export interface AgentChangeSet {
 export interface AgentSession {
   sessionId: string;
   skillId: string;
+  references: readonly AgentReference[];
+  referenceMode: ReferenceMode;
   activeProjectId: string | null;
   conversation: readonly { role: 'user' | 'assistant'; content: string }[];
   selectedContext: unknown;
@@ -70,6 +73,8 @@ export const emptySession = (
 ): AgentSession => ({
   sessionId: newId(),
   skillId: 'auto',
+  references: [],
+  referenceMode: 'overall',
   activeProjectId: null,
   conversation: [],
   selectedContext: null,
@@ -94,6 +99,10 @@ export interface AgentRuntimePort {
   context(prompt: string): unknown;
   tools(): readonly ToolDefinition[];
   setSkill?(id: string): void;
+  setReferences?(
+    references: readonly AgentReference[],
+    mode: ReferenceMode,
+  ): void;
   readTools?(): readonly ToolDefinition[];
   permission(tool: string, args: unknown): ToolPermission;
   validate(plan: AgentPlan): void;

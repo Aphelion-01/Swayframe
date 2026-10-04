@@ -1,3 +1,5 @@
+import { referenceToolScope } from '../agent/references';
+import type { AgentReference, ReferenceMode } from '../agent/references';
 import { z } from 'zod';
 import { idSchema } from '../core/project-schema';
 import { AIError } from '../ai/contracts';
@@ -89,7 +91,16 @@ export function createNativeAgent(
   const skills = skillsFor(manager.storage);
   let skillId = 'auto';
   let chosen: AgentSkill | undefined;
-  const allowed = () => chosen?.allowedTools;
+  let references: readonly AgentReference[] = [];
+  let referenceMode: ReferenceMode = 'overall';
+  const allowed = () =>
+    referenceToolScope(
+      registry,
+      chosen?.allowedTools,
+      references.length && manager.getSnapshot().settings.privacy.sendReferences
+        ? referenceMode
+        : undefined,
+    );
   let goal = '';
   const runtime: AgentRuntimePort = {
     ...(snapshotRenderer
@@ -140,6 +151,10 @@ export function createNativeAgent(
         }
       : {}),
     project: store.commands.getSnapshot,
+    setReferences: (value, mode) => {
+      references = value;
+      referenceMode = mode;
+    },
     setSkill: (id) => {
       if (id !== 'auto') skills.choose('', id);
       skillId = id;
@@ -159,6 +174,15 @@ export function createNativeAgent(
           manager.getSnapshot().settings.agent.contextCharacters,
         ),
         skill: { id: chosen.id, instructions: chosen.instructions },
+        references: manager.getSnapshot().settings.privacy.sendReferences
+          ? references.map((r) => ({
+              id: r.id,
+              name: r.name,
+              kind: r.kind,
+              frames: r.frames.length,
+            }))
+          : [],
+        referenceMode: references.length ? referenceMode : undefined,
       };
     },
     tools: () => registry.definitions(allowed()),

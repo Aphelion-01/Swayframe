@@ -25,8 +25,10 @@ ProviderManager为应用服务，设置/用量/Skills/历史独立于Project，�
 
 - A10全门禁通过：260 tests / 93 files。共享Canvas2D真实低分辨率渲染、renderFrame、视觉结构化Proposal、前后预览、受限修正；缺视觉模型/禁止发送时如实显示本地检查。
 
+- A11全门禁通过：263 tests / 94 files。用户选择图片/GIF首帧/视频3帧、参考chips/移除和五种模式；Layout-only权限限制、隐私关闭不发送像素、无Project Asset写入。
+
 ## In Progress
-- A11：外部参考与模式范围。
+- A12：Failover、Usage、Routing、Privacy 设置。
 
 ## Blockers
 - 真实第三方API验收需用户自行配置凭证，不阻塞Mock与协议测试。
