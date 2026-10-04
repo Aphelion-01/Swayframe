@@ -1,4 +1,4 @@
-# Swayframe 0.6.2
+# Swayframe 0.6.3
 
 简体中文本地动效编辑器，支持人工完成 2D 与平面 3D 动画。当前节点模块基线为 `docs/baseline/COMPOSITING_GRAPH_CG0_CG12.txt`，桌面基线为 `docs/baseline/DESKTOP_D0_D10.txt`，前一轮编辑器基线为 `docs/baseline/MOTION_EDITOR_PHASE_A_I.txt`；历史 V0.1 基线保留用于追溯。
 
@@ -11,7 +11,7 @@ npm ci
 npm run dev
 ```
 
-打开终端显示的本地地址。运行 `node scripts/gate.mjs V2-11` 完成 typecheck、lint、tests、build；生产预览使用 `npm run build` 和 `npm run preview`。
+打开终端显示的本地地址。运行 `node scripts/gate.mjs OP-6` 完成 typecheck、lint、tests、build；生产预览使用 `npm run build` 和 `npm run preview`。
 
 ## 桌面启动与打包
 
@@ -60,7 +60,7 @@ GIF 作为静态图片；未提供视频解码、MP4 导出、完整三维建模
 
 线性效果栈与节点图共享同一数据；存在分支时效果面板提示使用节点图。Merge 支持 A/B/Mask、覆盖/正片叠底/滤色/相加，Source 为前景、Solid 可作背景。工程保存 schema 0.5.0，兼容旧效果栈迁移。
 
-验收示例位于 `outputs/compositing/`：source、linear、merge 与 legacy-effects.swayframe；运行 `node scripts/compositing-fixtures.mjs` 可重新生成。原始设计与验收分别见 `COMPOSITING_GRAPH_DESIGN.md` 和 `COMPOSITING_GRAPH_ACCEPTANCE.md`。当前产品包为 `release/Swayframe-0.6.2-arm64.dmg` 与 `release/Swayframe Setup 0.6.2.exe`。自主冲刺状态见 `DEV_SPRINT.md`。
+验收示例位于 `outputs/compositing/`：source、linear、merge 与 legacy-effects.swayframe；运行 `node scripts/compositing-fixtures.mjs` 可重新生成。原始设计与验收分别见 `COMPOSITING_GRAPH_DESIGN.md` 和 `COMPOSITING_GRAPH_ACCEPTANCE.md`。当前产品包为 `release/Swayframe-0.6.3-arm64.dmg` 与 `release/Swayframe Setup 0.6.3.exe`。自主冲刺状态见 `DEV_SPRINT.md`。
 
 ## 自主冲刺 V2
 
@@ -74,3 +74,10 @@ GIF 作为静态图片；未提供视频解码、MP4 导出、完整三维建模
 ## 实时数值编辑（0.6.2）
 
 直接在属性数值上向上拖动增大、向下拖动减小；Shift 大步长、Alt 小步长，点击可输入。输入和方向键立即预览，松手或 Enter 提交，Esc 取消。链接的 X/Y 数值同步预览，每次编辑仅一条历史；非 X/Y 数值、颜色和四分量区域不显示链接按钮。原属性名称的横向拖动继续可用。验收见 outputs/NUMERIC_EDIT_UPDATE.md。
+
+
+## Optimization & Polish（0.6.3）
+
+本轮停止大型功能扩张，完成真实创作流程、快速缩放修复、静态时间轴/按层求值缓存、图布局渲染隔离、稳定取消监听、面板订阅缩减及另存为/序列化优化。204 tests，全质量门禁通过。
+
+结果与边界见 `OPTIMIZATION_RESULT.md`；实际测量、原生 A/B round-trip 和截图见 `outputs/optimization/`。开发服务器打开 `/benchmark.html`，点击“运行性能基准”可复测 BENCH-A～D；开发Profiler数值不等同于发行版性能。工程仍只由 Command/Transaction 修改。

@@ -1,6 +1,8 @@
-# V0.1 架构
+# Swayframe 架构
 
-唯一执行基线：`docs/baseline/Codex_第一阶段开发任务书_V0.1_重新输出.docx`。正文提取与 SHA-256 同目录保存。用户已授权按 T0 → T10 顺序连续实施全部任务。
+当前优化执行基线：`docs/baseline/OPTIMIZATION_POLISH.txt`。以下保留历史阶段约束与后续授权；本轮仅修复和优化现有功能。
+
+第一阶段历史基线：`docs/baseline/Codex_第一阶段开发任务书_V0.1_重新输出.docx`。正文提取与 SHA-256 同目录保存。用户已授权按 T0 → T10 顺序连续实施全部任务。
 
 ## 不可违反的约束
 

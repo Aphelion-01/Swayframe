@@ -4,7 +4,7 @@
 
 # In Progress
 
-OP-2：完成缩放批处理修复、静态时间轴/Canvas订阅隔离和按层求值缓存，正在 before/after 对比。
+本轮 OP-1～OP-6 完成，0.6.3代码与两平台安装包一致；204 tests 全门禁PASS。当前待优化项见 Optimization Backlog。
 
 # Completed
 
@@ -32,15 +32,14 @@ V2-10：最终原生工程重开、文字 Undo/Redo、完整数据一致性、PN
 
 # Next High-Value Tasks
 
-1. 多行文字的自动测量、文字框边界与画布内编辑浮层。
-2. 大工程真实播放/拖动帧耗时测量，定位 React/Canvas 耗时。
-3. Windows 实机安装、重开、导出、DPI 与文件关联验收。
-4. 父级剪切/负缩放组合下的选框、锚点与多选变换回归。
-5. Linked Asset 跨目录迁移、重链接和恢复流程的原生 GUI 回归。
+1. 节点布局提交的Command校验与Timeline工程变更重建开销，继续细分Profile。
+2. BENCH-D发行版持续播放与原生磁盘load/save测量。
+3. Windows实机安装、输入、DPI、重开和导出。
+4. 长时间资源/恢复测试与已有文字边界细节优化。
 
 # Known Regressions
 
-未发现门禁回归；Canvas 过期手势、Timeline 越界预览与捕获取消已修复。
+当前功能门禁75文件/204tests通过；完整原生A/B严格相等，0.5秒PNG与旧版验收字节相同。性能改善以两轮空闲采样区间为准，BENCH-D不宣称加速。
 
 # Blockers
 
@@ -66,10 +65,18 @@ V2-11：按用户反馈改为数值本身纵向拖动、输入/方向键实时�
 
 ## Optimization Backlog
 
-- [P0] OP-01：原生 0.6.2 角点拖动后增加一条历史，但缩放与画面保持原值。属性缩放正常。证据：outputs/optimization/use-scale.jpg。已确认 React 批处理导致松手读取旧预览；OP-1 使用同步手势引用提交，新增失败→通过回归。193 tests 全门禁通过。
-- [P1] OP-02：Canvas 每次 React 渲染均重新求值并调用 renderer，选择时间轴关键帧或节点 UI 操作也会影响 Canvas 订阅。已测每24次选择调用24次Renderer（多为缓存命中），OP-2改为0次。1000关键帧播放头更新 before中位15.6ms；after正在测量。
-- [P2] OP-03：原生另存为已命名工程仍默认“未命名.swayframe”，增加重新命名步骤。本轮 A→B 真实操作可复现。
-- [P2] OP-04：数值连续输入一次出现 1250→50，可能是输入工具时序。暂为待复核观察，未确认软件缺陷。
+- [P0] OP-01 已修复：快速缩放松手读取旧预览。失败→通过回归；原生100%→148.663%，一次Undo/Redo对称。
+- [P1] OP-02 已修复：关键帧/节点选择、状态与时间轴缩放的无效Canvas调用；静态轨道及不变Layer复用；大工程面板只订阅实际字段。
+- [P1] OP-05 已修复：Graph布局持久化触发画布求值/渲染；纯布局/Undo零调用，参数/连线仍失效。
+- [P1] 待优化：1000关键帧工程节点布局提交的整体UI响应仍约17～19ms。Renderer已隔离，需继续拆测Command校验和轨道重建，不能只优化Canvas。
+- [P1] 待复核：BENCH-D播放头响应before 2.7～5.8ms、after 3.9～5.1ms，区间重叠；尚无稳定加速结论。发行版、长时间播放和原生磁盘IO需另测。
+- [P1] 外部验证缺口：Windows实机安装/DPI/输入/导出，当前只完成x64交叉打包。
+- [P2] OP-03 已修复：另存为默认“未命名”；现保留当前路径/文件名，取消不改变工程路径。
+- [P2] 已有发行限制：默认Electron图标、未签名，正式品牌资源/发行签名仍待准备。
+
+### QA观察（非已确认产品缺陷）
+
+OP-04：旧原生输入自动化一次出现1250→50，本轮准确预览1250并Escape恢复，未复现。保留观察，不把工具输入时序误判为产品缺陷。
 
 真实使用记录：新建工程/合成、矩形/文字、移动/缩放/旋转、两位置关键帧、Ease Out、Value/Speed Graph、椭圆遮罩/曝光、父级、父子联合预合成、Blur 节点参数、图片导入、A 保存关闭重开、B 另存与 PNG 导出。A/B JSON 严格相等。父子未同时选中时拒绝预合成符合现有保护规则。
 
@@ -85,3 +92,7 @@ OP-5：移动预览只使受影响图层的局部求值失效，其他图层复�
 
 OP-6：真实Profile进一步定位App/Toolbar/LayerPanel跟随播放头更新的无效订阅；按实际使用字段切分订阅，避免Scene/选择不变时重建这些面板。
 OP-6：204 tests全门禁PASS。隔离基准首轮BENCH-B：播放头15.2ms→6.5ms、画布拖动13.3ms→2.4ms。BENCH-D拖动5.6ms→2.0ms；其播放头CPU响应仍高于旧版（2.7ms→5.1ms），帧间隔16.7ms未变，保留性能待复核，不能宣称所有场景加速。
+
+最终原生验收：full-A保存→关闭→最终包重开→full-B另存，2合成/11图层/1素材严格相等；含Shape/Text/Mask/Effects/Keyframes/MotionCurve/Graph/Parent/Precomp/Camera/Asset。0秒和0.5秒PNG真实导出成功；0.5秒PNG SHA-256与旧版验收帧完全相同。记录：outputs/optimization/native-roundtrip.json。
+
+代码检查点：316dd40、785fecb、482f405、fc41058、ea94cec、163c8b0。当前本轮完成，继续优化目标见OPTIMIZATION_RESULT.md。
