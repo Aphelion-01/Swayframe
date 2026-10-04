@@ -140,3 +140,7 @@ Canvas 手柄瞬态预览同时持有同步引用与 React 显示状态；松手
 Canvas 按渲染工程、时间、图层选择、移动/属性/手柄预览 memo 输入；Renderer effect 只响应输入或屏幕手柄尺寸变化。关键帧选择、节点选择、状态、时间轴缩放不调用画布 Renderer。Timeline 静态轨道按工程、选区、当前关键帧 ID 与局部拖动状态缓存；播放头由父级 CSS 变量更新，添加关键帧读取 Store 当前时间，避免闭包过期。
 
 `benchmark.html` / `src/dev/polish-benchmark.tsx` 是独立开发工具，不进入生产编辑器入口。BENCH-A/B 展开全部动画轨道，C 显示20节点 Graph，D 使用1080p合成与多个实际 Blur/Color；24次 RAF 节奏交互记录 React、Canvas、帧间隔与同步响应耗时。load/save 只报告 JSON/schema CPU，不能当原生磁盘耗时或稳定发行帧率。
+
+OP-3：Canvas 对 committed Project 做精确结构比较，只排除 GraphNode 的 position/name/metadata；引用相同的分支立即返回。布局提交/Undo仍持久化为Command，但渲染复用上一视觉工程；参数、启用、端口/连接、其他未知字段、素材与嵌套合成均失效。属性/移动预览绕过此比较，避免每pointermove全工程遍历。渲染缓存只供单向读取，操作仍引用当前Store工程，不成为另一业务状态。
+
+取消监听器使用 React Effect Event 获取最新回调，每组件只注册一次 blur/motion:cancel，卸载成对清理；持续输入不反复解绑注册。帧缓存保留最新选区包装，等值选区（Command订阅重新过滤数组）仍返回稳定快照。

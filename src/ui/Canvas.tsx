@@ -1,3 +1,5 @@
+import { sameVisualProject } from '../core/render-invalidation';
+import type { Project } from '../core/project-model';
 import { resizeLayer } from '../core/resize-geometry';
 import { readAxisLink } from './axis-link';
 import { canvasSnapContext, snapCanvasDelta } from '../core/canvas-snapping';
@@ -260,7 +262,19 @@ export function Canvas({ store }: { store: EditorStore }) {
       window.removeEventListener('motion:actual-size', actual);
     };
   });
-  const renderProject = store.getRenderProject();
+  const rawRenderProject = store.getRenderProject();
+  const lastVisualProject = useRef<Project | undefined>(undefined);
+  const renderProject = useMemo(() => {
+    const previous = lastVisualProject.current;
+    if (
+      rawRenderProject === view.project &&
+      previous &&
+      sameVisualProject(previous, rawRenderProject)
+    )
+      return previous;
+    lastVisualProject.current = rawRenderProject;
+    return rawRenderProject;
+  }, [rawRenderProject, view.project]);
   const evaluated = useMemo(
     () =>
       createRenderSnapshot(
@@ -289,7 +303,7 @@ export function Canvas({ store }: { store: EditorStore }) {
         : evaluated,
     [
       transformPreview,
-      view.project,
+      transformPreview ? view.project : undefined,
       renderProject,
       evaluated,
       view.time,

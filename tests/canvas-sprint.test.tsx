@@ -150,3 +150,32 @@ it('关键帧/节点选择及状态更新不调用 Canvas Renderer，图层属�
   expect(spy).toHaveBeenCalledTimes(1);
   spy.mockRestore();
 });
+it('节点布局提交与撤销不调用 Renderer，节点参数修改及撤销仍更新画面', async () => {
+  const { Canvas2DRenderer } = await import('../src/renderers/canvas2d');
+  const { patchGraphNode } = await import('../src/core/compositing-operations');
+  const { command } = await import('../src/core/command-system');
+  const spy = vi.spyOn(Canvas2DRenderer.prototype, 'render');
+  const { store, layer } = setup();
+  await act(async () => {});
+  spy.mockClear();
+  const c = activeComposition(store.getSnapshot().project),
+    graph = c.layers[0]!.editor!.graph!;
+  act(() =>
+    store.run('节点布局', [
+      command({
+        type: 'graph.replace',
+        compositionId: c.id,
+        layerId: layer.id,
+        graph: patchGraphNode(graph, graph.nodes[0]!.id, {
+          position: { x: 300, y: 100 },
+        }),
+      }),
+    ]),
+  );
+  expect(spy).not.toHaveBeenCalled();
+  act(() => store.undo());
+  expect(spy).not.toHaveBeenCalled();
+  act(() => store.setTime(1));
+  expect(spy).toHaveBeenCalledTimes(1);
+  spy.mockRestore();
+});

@@ -75,3 +75,27 @@ it('选择变化复用冻结场景的求值层数组，仍返回正确的选区'
   expect(selected.selection).toEqual([c.layers[0]!.id]);
   expect(first.selection).toEqual([]);
 });
+it('选区从空变为图层后，重复的等值选区仍保持整个帧快照引用', async () => {
+  const { CommandSystem } = await import('../src/core/command-system');
+  const { createDefaultProject } = await import('../src/core/project-model');
+  const p = createDefaultProject();
+  const frozen = new CommandSystem({
+    ...p,
+    compositions: p.compositions.map((c) => ({
+      ...c,
+      layers: [createLayer('rectangle')],
+    })),
+  }).getSnapshot();
+  const c = frozen.compositions[0]!;
+  createRenderSnapshot(c, 0, [], undefined, frozen);
+  const selected = createRenderSnapshot(
+    c,
+    0,
+    [c.layers[0]!.id],
+    undefined,
+    frozen,
+  );
+  expect(createRenderSnapshot(c, 0, [c.layers[0]!.id], undefined, frozen)).toBe(
+    selected,
+  );
+});

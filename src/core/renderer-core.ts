@@ -74,12 +74,17 @@ export function createRenderSnapshot(
       frameCache.set(composition, cache);
     }
     const found = cache.frames.get(key);
-    if (found)
-      return found.selection === selection ||
+    if (found) {
+      if (
+        found.selection === selection ||
         (found.selection.length === selection.length &&
           found.selection.every((id, i) => id === selection[i]))
-        ? found
-        : { ...found, selection };
+      )
+        return found;
+      const selected = { ...found, selection };
+      cache!.frames.set(key, selected);
+      return selected;
+    }
   }
   const raw: RenderLayer[] = composition.layers.map((source) => {
     const layerCanCache = !preview && Object.isFrozen(source);
