@@ -1,3 +1,4 @@
+import { agentLibraryFor } from '../agent/library';
 import { importAgentReference } from '../agent/references';
 import type { ReferenceMode } from '../agent/references';
 import { skillsFor } from '../agent/skills';
@@ -38,6 +39,12 @@ export function AgentPanel({
   const c = activeComposition(view.project);
   const skills = skillsFor(manager.storage);
   const skillState = useSyncExternalStore(skills.subscribe, skills.getSnapshot);
+  const library = agentLibraryFor(manager.storage);
+  const libraryState = useSyncExternalStore(
+    library.subscribe,
+    library.getSnapshot,
+  );
+  const [presetName, setPresetName] = useState('');
   const selected = c.layers.filter((l) => view.selection.includes(l.id));
   let provider: string | undefined;
   let configured = false;
@@ -248,6 +255,95 @@ export function AgentPanel({
           </figure>
         </details>
       )}
+      <details className="agent-library">
+        <summary>会话历史与动画预设</summary>
+        {libraryState.error && <p role="alert">{libraryState.error}</p>}
+        <button
+          disabled={agent.running}
+          onClick={() => agent.restoreConversation([])}
+        >
+          新会话
+        </button>
+        <button
+          disabled={agent.running}
+          onClick={() => {
+            void library.clear(view.project.id).catch(() => {});
+            agent.restoreConversation([]);
+          }}
+        >
+          清除当前工程历史
+        </button>
+        {libraryState.history
+          .filter((h) => h.projectId === view.project.id)
+          .slice(-10)
+          .reverse()
+          .map((h) => (
+            <button
+              key={h.id}
+              disabled={agent.running}
+              title={h.summary}
+              onClick={() => agent.restoreConversation(h.conversation)}
+            >
+              {h.conversation
+                .find((m) => m.role === 'user')
+                ?.content.slice(0, 30) ?? '历史会话'}
+            </button>
+          ))}
+        <label>
+          动画预设名称
+          <input
+            aria-label="Agent 动画预设名称"
+            value={presetName}
+            maxLength={100}
+            onChange={(e) => setPresetName(e.target.value)}
+          />
+        </label>
+        <button
+          disabled={agent.running || !selected[0] || !presetName.trim()}
+          onClick={() => {
+            try {
+              void library
+                .savePreset(selected[0]!, presetName)
+                .then(() => setPresetName(''))
+                .catch((e) =>
+                  setError(e instanceof Error ? e.message : '预设保存失败'),
+                );
+            } catch (e) {
+              setError(e instanceof Error ? e.message : '预设保存失败');
+            }
+          }}
+        >
+          保存当前图层动画为预设
+        </button>
+        <small>
+          保存实际属性数值、关键帧和曲线；应用时沿用预设的绝对时间与数值。
+        </small>
+        {libraryState.presets.map((p) => (
+          <div key={p.id}>
+            <span>{p.name}</span>
+            <button
+              disabled={agent.running}
+              onClick={() => {
+                setPrompt(
+                  '使用动画预设 ' +
+                    p.name +
+                    '，presetId=' +
+                    p.id +
+                    '，应用到当前选中的图层',
+                );
+              }}
+            >
+              用于下次请求
+            </button>
+            <button
+              disabled={agent.running}
+              onClick={() => void library.deletePreset(p.id).catch(() => {})}
+            >
+              删除预设
+            </button>
+          </div>
+        ))}
+      </details>
       <div className="agent-references">
         <label className="ai-file">
           {importing ? '正在读取参考…' : '添加参考'}

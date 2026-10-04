@@ -159,10 +159,9 @@ export class NativeAIService {
         });
       case 'ai.data.read':
         try {
-          const raw = await fs.readFile(
-            this.file(request.key + '.json'),
-            'utf8',
-          );
+          const file = this.file(request.key + '.json');
+          if ((await fs.stat(file)).size > 4000000) return null;
+          const raw = await fs.readFile(file, 'utf8');
           if (raw.length > 4000000) return null;
           return JSON.parse(raw);
         } catch {

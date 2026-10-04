@@ -1,3 +1,4 @@
+import { agentLibraryFor, registerPresetTools } from '../agent/library';
 import { referenceToolScope } from '../agent/references';
 import type { AgentReference, ReferenceMode } from '../agent/references';
 import { z } from 'zod';
@@ -36,6 +37,8 @@ export function createNativeAgent(
       ),
       engine,
     );
+  const library = agentLibraryFor(manager.storage);
+  registerPresetTools(registry, library);
   const input = () => {
     const view = store.getSnapshot();
     return {
@@ -237,6 +240,20 @@ export function createNativeAgent(
     manager,
     () => manager.getSnapshot().settings,
   );
+  let previousSession = '';
+  agent.subscribe(() => {
+    const session = agent.getSnapshot();
+    if (
+      ['completed', 'failed', 'cancelled'].includes(session.status) &&
+      session.sessionId !== previousSession
+    ) {
+      previousSession = session.sessionId;
+      if (manager.getSnapshot().settings.privacy.saveHistory)
+        void library
+          .record(store.commands.getSnapshot(), session)
+          .catch(() => {});
+    }
+  });
   return { agent, registry, runtime };
 }
 export function nativeAgentFor(store: EditorStore) {

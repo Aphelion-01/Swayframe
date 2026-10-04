@@ -59,6 +59,19 @@ export class AgentOrchestrator {
       pendingConfirmation: false,
     });
   }
+  restoreConversation(conversation: AgentSession['conversation']) {
+    if (this.running) throw Error('请先停止当前任务');
+    this.controller?.abort();
+    this.set({
+      ...emptySession(this.state.mode),
+      skillId: this.state.skillId,
+      conversation: conversation
+        .slice(-20)
+        .map((m) => ({ ...m, content: m.content.slice(0, 2000) })),
+      references: this.state.references,
+      referenceMode: this.state.referenceMode,
+    });
+  }
   setReferences(references: readonly AgentReference[], mode: ReferenceMode) {
     if (this.running) throw Error('请先停止当前任务');
     if (
