@@ -1,3 +1,5 @@
+import { ApplicationSettings } from './ai/AISettings';
+import './ai/ai.css';
 import { dropAssets } from './asset-import';
 import { useEditorSlice } from './use-editor-slice';
 import { Canvas } from './Canvas';
@@ -40,6 +42,7 @@ export function App({ store }: { store: EditorStore }) {
         }}
       >
         <Toolbar store={store} />
+        <ApplicationSettings />
         <Workspace
           left={<LayerPanel store={store} />}
           center={<Canvas store={store} />}

@@ -1,6 +1,6 @@
 # 架构入口
 
-完整规范见 `docs/ARCHITECTURE.md`。当前执行基线为 `docs/baseline/TRANSFORM_READABILITY.txt`，按 TP-0→TP-8→VR-0→VR-8 完成轴向、支点与图层/属性可读性。GUI与Agent仍共享Command System，业务修改通过Transaction；之前基线保留用于追溯。
+完整规范见 `docs/ARCHITECTURE.md`。上一轮执行基线为 `docs/baseline/TRANSFORM_READABILITY.txt`，按 TP-0→TP-8→VR-0→VR-8 完成轴向、支点与图层/属性可读性。GUI与Agent仍共享Command System，业务修改通过Transaction；之前基线保留用于追溯。
 
 GUI 与 Agent 共用 Command System；复杂操作走 Transaction；Intelligence 仅输出 Proposal。Electron Shell 只增加文件、窗口、菜单、持久化和平台服务，React 与核心不导入 Node/Electron。
 
@@ -10,3 +10,5 @@ GUI 与 Agent 共用 Command System；复杂操作走 Transaction；Intelligence
 
 
 当前UI执行基线为 `docs/baseline/FULL_UI_REDESIGN.txt`，0.7.0已完成三轮改造。设计tokens、共享图标/焦点/键盘组件及工作区偏好边界见 `docs/ARCHITECTURE.md`；审查与验证见 `docs/ui-redesign/RESULT.md`。Project schema仍为0.5.0。
+
+当前执行基线：`docs/baseline/NATIVE_AI_AGENT_V1.txt`。Agent独立应用服务、结构化Tool与共享Command/Transaction闭环；进度见AGENT_IMPLEMENTATION_STATUS.md。

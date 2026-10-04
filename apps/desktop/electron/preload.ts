@@ -1,3 +1,5 @@
+import { AIError } from '../../../src/ai/contracts';
+import type { AIErrorCode } from '../../../src/ai/contracts';
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import type {
   DesktopAPI,
@@ -9,11 +11,36 @@ async function call<T>(request: DesktopRequest): Promise<T> {
     ok: boolean;
     value: T;
     error?: string;
+    code?: AIErrorCode;
   };
-  if (!reply.ok) throw new Error(reply.error ?? '原生操作失败，请查看日志。');
+  if (!reply.ok) {
+    if (reply.code)
+      throw new AIError(reply.code, reply.error ?? 'AI 服务操作未完成');
+    throw new Error(reply.error ?? '原生操作失败，请查看日志。');
+  }
   return reply.value;
 }
 const desktop: DesktopAPI = {
+  ai: {
+    loadSettings: () => call({ method: 'ai.settings.load' }),
+    saveSettings: (settings) => call({ method: 'ai.settings.save', settings }),
+    setCredentials: (providerId, credentials) =>
+      call({ method: 'ai.credentials.set', providerId, credentials }),
+    removeCredentials: (providerId) =>
+      call({ method: 'ai.credentials.remove', providerId }),
+    hasCredentials: (providerId) =>
+      call({ method: 'ai.credentials.has', providerId }),
+    storageStatus: () => call({ method: 'ai.storage.status' }),
+    readData: (key) => call({ method: 'ai.data.read', key }),
+    writeData: (key, data) =>
+      call({ method: 'ai.data.write', key, data: JSON.stringify(data) }),
+    chat: (providerId, requestId, request) =>
+      call({ method: 'ai.chat', providerId, requestId, request }),
+    cancel: (requestId) => call({ method: 'ai.cancel', requestId }),
+    chunks: (requestId) => call({ method: 'ai.chunks', requestId }),
+    models: (providerId) => call({ method: 'ai.models', providerId }),
+    test: (providerId) => call({ method: 'ai.test', providerId }),
+  },
   textEdit: (action) => call({ method: 'edit.text', action }),
   project: {
     newProject: () => call({ method: 'project.new' }),

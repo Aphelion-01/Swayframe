@@ -1,3 +1,4 @@
+import { NativeAIService } from './ai-service';
 import { Worker } from 'node:worker_threads';
 import { app, dialog } from 'electron';
 import type { BrowserWindow } from 'electron';
@@ -14,6 +15,11 @@ export class NativeServices {
   startupPath: string | null = null;
   readonly persistence = new DesktopPersistence(app.getPath('userData'));
   readonly assets = new NativeAssets(this.grants);
+  readonly ai = new NativeAIService(
+    app.getPath('userData'),
+    undefined,
+    !app.isPackaged,
+  );
   constructor(readonly window: BrowserWindow) {}
   hydrate(data: string): string {
     const project = loadProject(data);
@@ -36,6 +42,10 @@ export class NativeServices {
     installMenu(this.window, recents);
   }
   async dispatch(request: DesktopRequest): Promise<unknown> {
+    if (request.method.startsWith('ai.'))
+      return this.ai.dispatch(
+        request as import('../../../src/ai/desktop-contracts').AIRequest,
+      );
     switch (request.method) {
       case 'window.close':
         await this.allowClose();

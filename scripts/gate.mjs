@@ -3,7 +3,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 
 const stage = process.argv[2];
 if (
-  !/^(?:T(?:[0-9]|10)|Phase_[A-I]|M(?:[1-9]|10)|D(?:[0-9]|10)|UX-(?:[1-9]|10)|CG-(?:[0-9]|1[0-2])|V2-[1-9][0-9]*|OP-[1-9][0-9]*|UI-[1-9][0-9]*|TP-[0-8]|VR-[0-8])$/.test(
+  !/^(?:T(?:[0-9]|10)|Phase_[A-I]|M(?:[1-9]|10)|D(?:[0-9]|10)|UX-(?:[1-9]|10)|CG-(?:[0-9]|1[0-2])|V2-[1-9][0-9]*|OP-[1-9][0-9]*|UI-[1-9][0-9]*|TP-[0-8]|VR-[0-8]|A(?:[0-9]|1[0-4]))$/.test(
     stage ?? '',
   )
 )
@@ -23,7 +23,8 @@ for (const args of [
   stage.startsWith('OP-') ||
   stage.startsWith('UI-') ||
   stage.startsWith('TP-') ||
-  stage.startsWith('VR-')
+  stage.startsWith('VR-') ||
+  stage.startsWith('A')
     ? [['run', 'desktop:build']]
     : []),
 ]) {
@@ -34,5 +35,5 @@ for (const args of [
   process.stderr.write(result.stderr ?? '');
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
-log += `\nPASS: typecheck / lint / unit + integration tests / Web build${(stage.startsWith('D') && stage !== 'D0') || stage.startsWith('CG-') || stage.startsWith('V2-') || stage.startsWith('OP-') || stage.startsWith('UI-') || stage.startsWith('TP-') || stage.startsWith('VR-') ? ' / desktop build' : ''}\n`;
+log += `\nPASS: typecheck / lint / unit + integration tests / Web build${(stage.startsWith('D') && stage !== 'D0') || stage.startsWith('CG-') || stage.startsWith('V2-') || stage.startsWith('OP-') || stage.startsWith('UI-') || stage.startsWith('TP-') || stage.startsWith('VR-') || stage.startsWith('A') ? ' / desktop build' : ''}\n`;
 writeFileSync(`outputs/quality/${stage}.log`, log);

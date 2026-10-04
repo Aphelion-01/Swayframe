@@ -1,0 +1,4348 @@
+你现在需要在当前 Swayframe（简称 SF）项目中，
+正式实装第一代：
+
+======================================================================
+Swayframe Native AI Agent V1
+======================================================================
+
+这是今晚的最高优先级任务。
+
+不要把它做成：
+
+聊天机器人
+外挂面板
+AE 插件移植版
+Prompt → 一次性生成器
+
+而要把 AI Agent 作为：
+
+Swayframe 核心架构中的一级系统。
+
+======================================================================
+最重要背景
+======================================================================
+
+此前曾经设计和实现过一套：
+
+After Effects AI Motion Design Agent
+
+其中已经验证过一些值得保留的产品思想：
+
+- Agent 读取当前工程
+- Agent 理解用户需求
+- Agent 选择 Skill
+- Agent 规划动画 / 设计方案
+- 用户可以让 Agent 执行
+- Agent 执行后检查结果
+- 支持第三方 API
+- API Token / Usage 管理
+- API 自动切换
+- 用户自定义 Skill
+- 用户保存满意效果
+- 支持外部图片 / 视频 / GIF / 序列帧作为参考
+- Agent 可以结合工程和参考素材进行布局、配色、层级、运动设计判断
+
+但是：
+
+======================================================================
+不要直接复制 AE Agent 架构。
+======================================================================
+
+AE 版本质上是：
+
+External Agent
+→
+Plugin Bridge
+→
+After Effects
+
+Swayframe 不一样。
+
+SF 本身就是宿主。
+
+因此最终架构应该是：
+
+                    User
+                     │
+                     ▼
+               Agent Interface
+                     │
+                     ▼
+              Agent Orchestrator
+                     │
+        ┌────────────┼─────────────┐
+        │            │             │
+ Project Context   Skills     Intelligence
+        │            │             │
+        └────────────┼─────────────┘
+                     │
+                 Agent Tools
+                     │
+                     ▼
+                Command API
+                     │
+                     ▼
+             Command / Transaction
+                     │
+                     ▼
+             Project / Scene Model
+                     │
+          ┌──────────┴──────────┐
+          │                     │
+      Animation             Graph
+       Engine             Compiler
+          │                     │
+          └──────────┬──────────┘
+                     │
+                 Renderer
+                     │
+                     ▼
+             Visual Verification
+
+
+所有 Agent 修改：
+
+必须直接通过 Swayframe 自己的：
+
+Command
+Transaction
+Property<T>
+Scene
+Graph
+Renderer
+
+完成。
+
+禁止 Agent：
+
+模拟鼠标点击 GUI
+
+禁止：
+
+通过 DOM selector 修改软件
+
+禁止：
+
+直接修改 Project JSON
+
+禁止：
+
+绕过 Undo / Redo。
+
+
+======================================================================
+0. 今晚执行规则
+======================================================================
+
+这是一次：
+
+Full Autonomous Implementation Sprint。
+
+不要停下来询问用户：
+
+“是否继续？”
+
+“应该选择哪个方案？”
+
+“你更喜欢 A 还是 B？”
+
+“是否允许我实现下一阶段？”
+
+对于所有：
+
+可逆
+局部
+工程性
+UI性
+内部实现性
+
+问题：
+
+自行选择：
+
+最合理
+最稳定
+最易扩展
+
+的方案。
+
+如果遇到：
+
+某个模块阻塞
+
+不要停止整个任务。
+
+记录到：
+
+AGENT_BLOCKERS.md
+
+然后继续实现其他模块。
+
+只有以下真正不可绕过问题：
+
+需要真实 API Key
+
+需要第三方付费凭证
+
+需要用户账户授权
+
+才允许留下：
+
+Runtime Placeholder / Setup Required。
+
+即使如此：
+
+系统本身仍然必须完整实现。
+
+不要因为没有真实 API Key：
+
+停止开发。
+
+
+======================================================================
+1. 今晚的完成定义
+======================================================================
+
+“完成 AI Agent”
+
+不是：
+
+出现一个聊天框。
+
+必须形成完整闭环：
+
+User Request
+
+↓
+
+Agent understands current project
+
+↓
+
+Agent receives structured context
+
+↓
+
+Agent selects appropriate Skills / Tools
+
+↓
+
+Agent creates a Plan
+
+↓
+
+Agent executes commands
+
+↓
+
+Swayframe scene actually changes
+
+↓
+
+Timeline / Properties / Graph update
+
+↓
+
+Renderer produces result
+
+↓
+
+Agent can inspect rendered result
+
+↓
+
+Agent can refine result
+
+↓
+
+User can Undo
+
+↓
+
+Project can Save / Load
+
+↓
+
+Usage / API information is recorded
+
+这才叫：
+
+Agent V1 Complete。
+
+
+======================================================================
+2. 开始前快速审计
+======================================================================
+
+首先阅读现有：
+
+Scene Model
+
+Project Model
+
+Property<T>
+
+Keyframe
+
+Animation Engine
+
+Command System
+
+Transaction
+
+Undo / Redo
+
+Timeline
+
+Canvas
+
+Inspector
+
+Compositing Graph
+
+Graph Compiler
+
+Renderer
+
+DesktopAPI
+
+Settings
+
+User Preferences
+
+Asset System
+
+Serialization
+
+现有 AI / Agent 相关代码
+
+此前 AE Agent 相关代码如果存在于仓库：
+
+可以阅读思想
+
+但不要复制不适合 SF 的 Plugin Bridge 架构。
+
+
+创建：
+
+AGENT_IMPLEMENTATION_STATUS.md
+
+只记录：
+
+Architecture
+
+Completed
+
+In Progress
+
+Blockers
+
+Tests
+
+不要写长篇设计论文。
+
+快速完成架构确认后：
+
+立即编码。
+
+
+######################################################################
+PART I
+AI PROVIDER / API MANAGEMENT
+######################################################################
+
+======================================================================
+3. API Manager 必须属于 Settings
+======================================================================
+
+AI Provider 管理：
+
+绝对不能放在 Agent Chat Panel 自己内部。
+
+它属于：
+
+Swayframe Settings。
+
+
+设置入口：
+
+Settings
+    └ AI
+        ├ Providers
+        ├ Models
+        ├ Routing
+        ├ Usage
+        ├ Skills
+        ├ Agent
+        └ Privacy
+
+
+API 系统作为：
+
+Application Service
+
+存在。
+
+Agent：
+
+只能调用：
+
+AIProviderManager
+
+不能自己保存 Key。
+
+
+======================================================================
+4. Provider Abstraction
+======================================================================
+
+建立：
+
+AIProvider
+
+统一接口。
+
+例如：
+
+interface AIProvider {
+    id: string;
+
+    name: string;
+
+    capabilities: ProviderCapabilities;
+
+    listModels(): Promise<ModelInfo[]>;
+
+    testConnection(): Promise<ConnectionResult>;
+
+    chat(request: ChatRequest): Promise<ChatResponse>;
+
+    streamChat?(
+        request: ChatRequest
+    ): AsyncIterable<ChatChunk>;
+
+    vision?(
+        request: VisionRequest
+    ): Promise<VisionResponse>;
+}
+
+不要：
+
+Agent 代码直接：
+
+fetch OpenAI
+
+或者：
+
+fetch Gemini
+
+或者：
+
+fetch Claude。
+
+
+统一：
+
+Agent
+
+↓
+
+AIProviderManager
+
+↓
+
+Provider Adapter。
+
+
+======================================================================
+5. 第一代 Provider
+======================================================================
+
+优先实现：
+
+OpenAI-compatible Provider
+
+作为通用基础。
+
+允许：
+
+API Base URL
+
+API Key
+
+Model
+
+Custom Headers（必要时）
+
+这样可以兼容：
+
+多数 OpenAI-compatible 服务。
+
+
+如果现有项目已经有：
+
+OpenAI
+
+Anthropic
+
+Gemini
+
+适配器：
+
+保留并统一进 Provider Manager。
+
+
+不要为了增加 Provider 数量：
+
+延迟 Agent 核心。
+
+
+======================================================================
+6. Provider Settings
+======================================================================
+
+Settings → AI → Providers
+
+支持：
+
+Add Provider
+
+Edit
+
+Delete
+
+Enable / Disable
+
+Set Default
+
+Test Connection
+
+
+字段：
+
+Provider Name
+
+Provider Type
+
+Base URL
+
+API Key
+
+Default Model
+
+
+API Key：
+
+必须隐藏显示。
+
+
+禁止：
+
+API Key 写入：
+
+.swayframe
+
+Project File
+
+Agent Conversation
+
+logs
+
+crash report。
+
+
+======================================================================
+7. Secret Storage
+======================================================================
+
+Desktop 版本：
+
+API Key 优先使用：
+
+OS Secure Storage
+
+Electron safeStorage
+
+或者当前项目已有安全 Secret Store。
+
+
+禁止：
+
+明文 LocalStorage。
+
+
+如果开发环境无法使用 Secure Storage：
+
+提供：
+
+development-only fallback
+
+同时明确标记。
+
+
+Production：
+
+不得明文存储。
+
+
+======================================================================
+8. Model Registry
+======================================================================
+
+建立：
+
+ModelRegistry。
+
+
+记录：
+
+model id
+
+provider
+
+display name
+
+capabilities
+
+
+至少区分：
+
+text
+
+reasoning
+
+vision
+
+image
+
+embedding
+
+future video
+
+
+Agent V1 主要需要：
+
+Text / Reasoning
+
++
+
+Vision。
+
+
+不要假设：
+
+所有 Model 都支持图片。
+
+
+======================================================================
+9. Task Routing
+======================================================================
+
+Settings：
+
+AI → Routing
+
+
+允许用户设置：
+
+General Agent Model
+
+Vision Model
+
+Planning Model
+
+
+第一版可以：
+
+Planning = General Agent
+
+但结构预留。
+
+
+例如：
+
+agent.general
+
+agent.vision
+
+agent.reasoning
+
+
+未来可以：
+
+不同任务自动选择不同模型。
+
+
+======================================================================
+10. Provider Failover
+======================================================================
+
+实现：
+
+Provider fallback。
+
+
+例如：
+
+Primary Provider
+
+↓
+
+timeout / rate limit / provider error
+
+↓
+
+Fallback Provider
+
+
+不要对：
+
+用户 Prompt 错误
+
+进行无限重试。
+
+
+建立：
+
+Retry Policy
+
+Exponential Backoff
+
+Provider Health State。
+
+
+用户设置：
+
+Auto failover
+
+ON / OFF。
+
+
+======================================================================
+11. Usage Tracking
+======================================================================
+
+记录：
+
+input tokens
+
+output tokens
+
+total tokens
+
+model
+
+provider
+
+timestamp
+
+task type
+
+
+如果 Provider 返回：
+
+cost information
+
+可以记录。
+
+
+如果没有：
+
+不要假装精确费用。
+
+
+Settings → AI → Usage：
+
+显示：
+
+Today
+
+This Session
+
+Total
+
+
+可按：
+
+Provider
+
+Model
+
+查看。
+
+
+不要：
+
+每个 Token
+
+都写 Project File。
+
+
+Usage 属于：
+
+User Application Data。
+
+
+======================================================================
+12. Token / Budget Guard
+======================================================================
+
+允许用户设置：
+
+Soft Limit
+
+例如：
+
+Daily Token Warning。
+
+
+达到：
+
+80%
+
+提示。
+
+
+达到：
+
+100%
+
+根据设置：
+
+Warn
+
+或：
+
+Stop Agent Auto Execution。
+
+
+不要硬编码价格。
+
+
+======================================================================
+13. Provider Status UI
+======================================================================
+
+Agent Panel 可以显示：
+
+当前：
+
+Provider
+
+Model
+
+Connection Status
+
+
+但是：
+
+不能在那里编辑完整 API 设置。
+
+
+点击：
+
+Manage
+
+跳转：
+
+Settings → AI。
+
+
+######################################################################
+PART II
+AGENT CORE
+######################################################################
+
+======================================================================
+14. Agent Orchestrator
+======================================================================
+
+建立：
+
+AgentOrchestrator。
+
+
+职责：
+
+接收 User Intent
+
+获取 Project Context
+
+选择 Skill
+
+选择 Model
+
+生成 Plan
+
+调用 Tools
+
+管理 Transaction
+
+请求 Render Verification
+
+必要时 Refinement
+
+生成结果说明。
+
+
+AgentOrchestrator：
+
+绝对不能：
+
+直接修改 Scene。
+
+
+所有写操作：
+
+Agent Tool
+
+↓
+
+Command System。
+
+
+======================================================================
+15. Agent Session
+======================================================================
+
+建立：
+
+AgentSession。
+
+
+包含：
+
+sessionId
+
+conversation
+
+activeProjectId
+
+selectedContext
+
+currentPlan
+
+toolCalls
+
+usage
+
+status
+
+
+status：
+
+idle
+
+thinking
+
+planning
+
+executing
+
+verifying
+
+completed
+
+failed
+
+cancelled
+
+
+用户可以：
+
+Stop Agent。
+
+
+Stop：
+
+必须尽快中断：
+
+模型请求
+
+后续 Tool Calls
+
+Verification loop。
+
+
+======================================================================
+16. Human-first 模式
+======================================================================
+
+Agent V1 提供两种模式：
+
+ASSIST
+
+和：
+
+AGENT。
+
+
+ASSIST：
+
+只分析
+
+只建议
+
+只生成 Plan
+
+不修改工程。
+
+
+AGENT：
+
+可以执行 Tool / Command。
+
+
+默认：
+
+AGENT
+
+执行大型操作前：
+
+显示 Plan Preview。
+
+
+同时提供设置：
+
+Auto Apply Safe Changes。
+
+
+例如：
+
+创建一个 Shape
+
+修改 Position
+
+添加关键帧
+
+可以被认为：
+
+safe。
+
+
+删除大量 Layer
+
+Replace Composition
+
+批量重构 Graph
+
+属于：
+
+destructive。
+
+
+Destructive Action：
+
+即使 Auto Apply 开启
+
+也应该：
+
+创建清晰 Confirmation。
+
+
+但：
+
+这是软件运行时的用户保护，
+
+不是 Codex 开发时询问用户。
+
+
+======================================================================
+17. Plan
+======================================================================
+
+Agent 在较复杂任务执行前：
+
+生成：
+
+AgentPlan。
+
+
+例如：
+
+用户：
+
+“让标题从左侧快速进入，
+最后有一点回弹，
+并给背景做轻微模糊。”
+
+
+Plan：
+
+1.
+修改 Title Position animation
+
+2.
+应用 Snappy / Back-style Motion Curve
+
+3.
+为 Background 添加 Blur
+
+4.
+Render Preview
+
+5.
+检查最终画面
+
+
+Plan 必须：
+
+结构化。
+
+
+不要只保存 Markdown。
+
+
+例如：
+
+interface AgentPlan {
+    id: string;
+
+    goal: string;
+
+    steps: AgentPlanStep[];
+
+    risk: "low" | "medium" | "high";
+}
+
+
+======================================================================
+18. Tool Call
+======================================================================
+
+Agent 必须使用：
+
+Structured Tool Calls。
+
+
+不要：
+
+让 LLM 输出：
+
+“请创建一个 Rectangle”
+
+然后程序用 Regex 解析。
+
+
+工具使用：
+
+JSON Schema
+
+或当前 Agent Framework 的：
+
+typed function calling。
+
+
+######################################################################
+PART III
+PROJECT CONTEXT ENGINE
+######################################################################
+
+======================================================================
+19. Project Context
+======================================================================
+
+不要把整个 Project JSON
+
+每次全部塞给 LLM。
+
+
+建立：
+
+ProjectContextEngine。
+
+
+根据当前任务：
+
+生成：
+
+relevant structured context。
+
+
+例如包含：
+
+Project metadata
+
+active composition
+
+current time
+
+selected layers
+
+visible layers
+
+relevant properties
+
+keyframes
+
+effects
+
+graph
+
+canvas bounds
+
+camera
+
+assets
+
+recent commands。
+
+
+======================================================================
+20. Selection Context
+======================================================================
+
+如果用户当前选中：
+
+Title Layer
+
+然后说：
+
+“让它快一点”
+
+
+Agent 应优先理解：
+
+“它”
+
+=
+
+当前 selected Layer / Animation。
+
+
+不要让用户重复：
+
+Layer 名称。
+
+
+Context 包含：
+
+selection
+
+current property
+
+current time
+
+current composition。
+
+
+======================================================================
+21. Scene Summary
+======================================================================
+
+建立：
+
+SceneSummary。
+
+
+例如：
+
+Composition:
+1920x1080
+5 seconds
+30fps
+
+Layers:
+1 Background image
+2 Title text
+3 Subtitle text
+4 Shape decoration
+
+Selected:
+Title
+
+Title:
+position animated
+0s (-200,540)
+1s (960,540)
+
+这样比：
+
+整个 JSON
+
+更适合 LLM。
+
+
+======================================================================
+22. Context Budget
+======================================================================
+
+Context Engine：
+
+必须控制 Token。
+
+
+优先：
+
+Summary
+
+其次：
+
+Selected Objects
+
+其次：
+
+Relevant Dependencies。
+
+
+不要：
+
+100 Layer
+
+全部完整展开。
+
+
+如果 Agent Tool 需要更多信息：
+
+通过：
+
+inspectLayer
+
+inspectProperty
+
+inspectGraph
+
+动态查询。
+
+
+######################################################################
+PART IV
+AGENT TOOL SYSTEM
+######################################################################
+
+======================================================================
+23. Tool Registry
+======================================================================
+
+建立：
+
+AgentToolRegistry。
+
+
+Agent Tool：
+
+必须：
+
+typed
+
+schema validated
+
+permission aware。
+
+
+至少实现以下工具族。
+
+
+======================================================================
+24. Read Tools
+======================================================================
+
+inspectProject()
+
+inspectComposition()
+
+listLayers()
+
+inspectLayer(layerId)
+
+inspectSelection()
+
+inspectProperty(...)
+
+inspectKeyframes(...)
+
+inspectEffects(...)
+
+inspectGraph(...)
+
+inspectAssets()
+
+getCurrentTime()
+
+getCanvasInfo()
+
+
+这些工具：
+
+只读。
+
+
+======================================================================
+25. Layer Tools
+======================================================================
+
+createLayer()
+
+deleteLayer()
+
+duplicateLayer()
+
+renameLayer()
+
+reorderLayer()
+
+setLayerVisibility()
+
+setParent()
+
+createPrecomp()
+
+
+必须走：
+
+Command System。
+
+
+======================================================================
+26. Transform Tools
+======================================================================
+
+setPosition()
+
+setScale()
+
+setRotation()
+
+setAnchor()
+
+setOpacity()
+
+setTransformPivot()
+
+setTransformOrientation()
+
+
+如果 Transform Pivot System 已经存在：
+
+直接复用。
+
+
+======================================================================
+27. Animation Tools
+======================================================================
+
+addKeyframe()
+
+deleteKeyframe()
+
+moveKeyframe()
+
+setKeyframeValue()
+
+setInterpolation()
+
+applyMotionCurve()
+
+copyEasing()
+
+reverseEasing()
+
+
+未来 Agent：
+
+应该直接理解：
+
+Motion Curve。
+
+
+======================================================================
+28. Shape Tools
+======================================================================
+
+createRectangle()
+
+createEllipse()
+
+createPolygon()
+
+createStar()
+
+createPath()
+
+setFill()
+
+setStroke()
+
+
+如果现有 Command API 已存在：
+
+Agent Tool 只是：
+
+Adapter。
+
+
+不要复制业务逻辑。
+
+
+======================================================================
+29. Text Tools
+======================================================================
+
+createText()
+
+setTextContent()
+
+setFont()
+
+setFontSize()
+
+setTextColor()
+
+setTextAlignment()
+
+setTracking()
+
+setLeading()
+
+
+======================================================================
+30. Effect Tools
+======================================================================
+
+addEffect()
+
+removeEffect()
+
+setEffectParameter()
+
+enableEffect()
+
+reorderEffect()
+
+
+如果 Effect Stack 已经映射到：
+
+Compositing Graph：
+
+必须：
+
+走统一底层。
+
+
+======================================================================
+31. Graph Tools
+======================================================================
+
+inspectGraph()
+
+createNode()
+
+deleteNode()
+
+connectNodes()
+
+disconnectEdge()
+
+setNodeParameter()
+
+enableNode()
+
+
+不要：
+
+Agent 直接：
+
+graph.nodes.push。
+
+
+======================================================================
+32. Mask Tools
+======================================================================
+
+createMask()
+
+setMaskMode()
+
+setMaskPath()
+
+setMaskFeather()
+
+setMaskOpacity()
+
+setMaskExpansion()
+
+
+======================================================================
+33. Composition Tools
+======================================================================
+
+createComposition()
+
+setCompositionSize()
+
+setDuration()
+
+setFPS()
+
+openComposition()
+
+
+危险操作：
+
+deleteComposition
+
+必须合理标记。
+
+
+======================================================================
+34. Asset Tools
+======================================================================
+
+inspectAssets()
+
+createLayerFromAsset()
+
+replaceAssetReference()
+
+
+Agent V1：
+
+不要让 LLM
+
+任意读取用户磁盘。
+
+
+只能：
+
+通过 Asset System
+
+访问用户已经导入 / 授权的素材。
+
+
+======================================================================
+35. Tool Permission
+======================================================================
+
+Tool 分：
+
+READ
+
+WRITE
+
+DESTRUCTIVE。
+
+
+READ：
+
+自动允许。
+
+
+WRITE：
+
+Agent Mode 允许。
+
+
+DESTRUCTIVE：
+
+需要：
+
+Plan / Confirmation
+
+或者当前 Session 明确授权。
+
+
+例如：
+
+deleteLayer
+
+deleteComposition
+
+replaceLargeGraph。
+
+
+######################################################################
+PART V
+COMMAND / TRANSACTION / UNDO
+######################################################################
+
+======================================================================
+36. 所有 Agent 写操作必须可 Undo
+======================================================================
+
+这是绝对要求。
+
+
+用户：
+
+“做一个文字入场动画。”
+
+
+Agent 可能：
+
+创建 2 个 keyframe
+
+设置 position
+
+设置 motion curve。
+
+
+这些操作：
+
+应该属于：
+
+一个 Agent Transaction。
+
+
+用户：
+
+Ctrl/Cmd + Z
+
+一次：
+
+撤销整个 Agent 操作。
+
+
+不要：
+
+Undo 7 次。
+
+
+======================================================================
+37. Agent Transaction
+======================================================================
+
+建立：
+
+AgentTransaction。
+
+
+执行前：
+
+Begin Transaction
+
+
+所有 Tool Commands
+
+加入同一个 Transaction。
+
+
+Verification 成功：
+
+Commit。
+
+
+Execution Error：
+
+Rollback。
+
+
+用户 Stop：
+
+根据状态：
+
+Rollback uncommitted changes。
+
+
+======================================================================
+38. Agent Diff
+======================================================================
+
+Agent 执行前 / 后：
+
+建立：
+
+AgentChangeSet。
+
+
+例如：
+
+Modified:
+Title.position
+Title.keyframes
+Background.effects
+
+
+Added:
+Gaussian Blur
+
+
+Deleted:
+None
+
+
+UI 可以显示：
+
+Changes。
+
+
+以后可以用于：
+
+Selective Accept。
+
+
+V1 至少：
+
+保留结构。
+
+
+######################################################################
+PART VI
+SKILL SYSTEM
+######################################################################
+
+======================================================================
+39. Skill 概念
+======================================================================
+
+继承 AE Agent 中：
+
+Skill
+
+的思想。
+
+
+Skill 不是：
+
+普通 Prompt Bookmark。
+
+
+Skill 描述：
+
+Agent 在特定任务中的：
+
+专业行为。
+
+
+例如：
+
+Motion Design
+
+Layout
+
+Typography
+
+Color
+
+Animation Polish
+
+Logo Animation
+
+Kinetic Typography
+
+Reference Matching。
+
+
+======================================================================
+40. Skill Definition
+======================================================================
+
+例如：
+
+interface AgentSkill {
+    id: string;
+
+    name: string;
+
+    description: string;
+
+    instructions: string;
+
+    allowedTools?: string[];
+
+    requiredCapabilities?: string[];
+
+    tags?: string[];
+
+    source:
+        "builtin"
+        | "user";
+}
+
+
+第一版：
+
+Skill 主要是：
+
+Instructions
+
++
+
+Tool Scope。
+
+
+不要让用户 Skill：
+
+直接执行任意 JS。
+
+
+======================================================================
+41. Built-in Skills
+======================================================================
+
+至少内置：
+
+General Motion Designer
+
+Animation Polish
+
+Layout Assistant
+
+Typography Assistant
+
+Color Assistant
+
+Motion Curve Specialist
+
+Compositing Assistant
+
+Reference Analysis
+
+
+不要：
+
+内置 100 个 Skill。
+
+
+先做少量高质量 Skill。
+
+
+======================================================================
+42. Skill Manager
+======================================================================
+
+Settings:
+
+AI
+→
+Skills
+
+
+用户可以：
+
+View
+
+Enable / Disable
+
+Create
+
+Edit
+
+Duplicate
+
+Delete User Skill
+
+
+Builtin Skill：
+
+不可删除
+
+但可以 Disable。
+
+
+======================================================================
+43. User Skill
+======================================================================
+
+允许：
+
+Name
+
+Description
+
+Instructions
+
+Allowed Tools
+
+
+保存到：
+
+User Application Data。
+
+
+不要：
+
+写 Project。
+
+
+未来可支持：
+
+Import / Export。
+
+
+V1 如果容易：
+
+支持 JSON Export / Import。
+
+
+======================================================================
+44. Skill Selection
+======================================================================
+
+Agent 可以：
+
+自动选择 Skill。
+
+
+也允许用户：
+
+手动指定。
+
+
+Agent UI：
+
+Skill:
+
+Auto ▼
+
+
+例如：
+
+Auto
+
+Motion Design
+
+Layout
+
+Typography
+
+Compositing。
+
+
+######################################################################
+PART VII
+INTELLIGENCE SERVICES
+######################################################################
+
+======================================================================
+45. Agent ≠ Intelligence Services
+======================================================================
+
+保持之前设计思想。
+
+
+Agent：
+
+负责：
+
+协调。
+
+
+Intelligence：
+
+负责：
+
+专业分析。
+
+
+例如：
+
+Layout Intelligence
+
+Color Intelligence
+
+Typography Intelligence
+
+Motion Intelligence
+
+Reference Intelligence。
+
+
+V1 不需要训练模型。
+
+
+第一版可以：
+
+LLM / Vision
+
++
+
+规则
+
++
+
+现有 Scene Analysis
+
+实现。
+
+
+======================================================================
+46. Intelligence Provider Interface
+======================================================================
+
+建立：
+
+IntelligenceService。
+
+
+例如：
+
+analyzeLayout()
+
+analyzeColor()
+
+analyzeTypography()
+
+analyzeMotion()
+
+analyzeReference()
+
+
+输出：
+
+Proposal。
+
+
+例如：
+
+LayoutProposal
+
+MotionProposal
+
+ColorProposal。
+
+
+Intelligence Service：
+
+不能直接修改 Scene。
+
+
+只能：
+
+返回建议。
+
+
+Agent 决定：
+
+是否转换为：
+
+Commands。
+
+
+######################################################################
+PART VIII
+EXTERNAL REFERENCE INTELLIGENCE
+######################################################################
+
+======================================================================
+47. 外部参考
+======================================================================
+
+继承之前 AE Agent V0.3 的能力。
+
+
+用户可以添加：
+
+Static Image
+
+Video
+
+GIF
+
+Image Sequence
+
+
+作为：
+
+Agent Reference。
+
+
+Reference：
+
+不是普通 Layer。
+
+
+它属于：
+
+Agent Context / Reference Library。
+
+
+======================================================================
+48. Static Reference
+======================================================================
+
+分析：
+
+Composition
+
+Grid
+
+Alignment
+
+Whitespace
+
+Visual Weight
+
+Element Proportion
+
+Color Palette
+
+Typography Style
+
+Shape Language
+
+Hierarchy
+
+
+用户可以指定：
+
+Layout Only
+
+Color Only
+
+Typography Only
+
+Shape Only
+
+Overall。
+
+
+======================================================================
+49. Motion Reference
+======================================================================
+
+如果用户提供：
+
+Video / GIF / Sequence
+
+
+未来 / 如果当前环境可实现：
+
+抽取 Representative Frames。
+
+
+分析：
+
+Timing
+
+Rhythm
+
+Motion Direction
+
+Transition Style
+
+Acceleration
+
+Stagger
+
+Scale Dynamics。
+
+
+V1：
+
+即使无法完整视频理解，
+
+至少：
+
+支持关键帧 / sampled frame
+
+交给 Vision Model。
+
+
+======================================================================
+50. Reference UI
+======================================================================
+
+Agent Panel：
+
+可以添加：
+
+Reference Chips。
+
+
+例如：
+
+[ reference.png × ]
+
+[ motion.gif × ]
+
+
+用户 Prompt：
+
+“只参考这个图的排版。”
+
+
+Agent Context：
+
+必须记录：
+
+reference mode。
+
+
+######################################################################
+PART IX
+VISUAL PERCEPTION / VERIFICATION
+######################################################################
+
+======================================================================
+51. Agent 必须能够“看”
+======================================================================
+
+Agent 不能只读取：
+
+Layer JSON。
+
+
+必须能够请求：
+
+当前 Composition Render。
+
+
+建立：
+
+renderAgentSnapshot()
+
+
+返回：
+
+当前 Frame
+
+或：
+
+Preview Image。
+
+
+Agent 可以：
+
+发送给 Vision Model。
+
+
+======================================================================
+52. Render Snapshot Tool
+======================================================================
+
+renderFrame({
+    compositionId,
+    time,
+    scale
+})
+
+
+默认：
+
+Agent 使用较低分辨率：
+
+例如：
+
+512 / 720 equivalent
+
+避免：
+
+每次都 4K。
+
+
+======================================================================
+53. Visual Verification
+======================================================================
+
+复杂操作执行后：
+
+Agent：
+
+Render
+
+↓
+
+Vision Check
+
+↓
+
+Evaluate
+
+
+例如检查：
+
+元素是否出界
+
+文字是否遮挡
+
+主体是否过小
+
+颜色是否异常
+
+是否出现空白画面
+
+Animation start/end 是否合理。
+
+
+======================================================================
+54. Verification Loop
+======================================================================
+
+限制：
+
+最大 Refinement Iterations。
+
+
+例如：
+
+2。
+
+
+不要：
+
+Agent 无限：
+
+修改
+
+→ Render
+
+→ 修改。
+
+
+Settings：
+
+Max Agent Refinements。
+
+
+默认：
+
+2。
+
+
+======================================================================
+55. Before / After
+======================================================================
+
+保存：
+
+Before Snapshot
+
+After Snapshot
+
+
+Agent UI：
+
+允许：
+
+查看前后。
+
+
+不要把高分辨率图片：
+
+永久写进 Project。
+
+
+Session 结束：
+
+可以清理 Cache。
+
+
+######################################################################
+PART X
+AGENT UI
+######################################################################
+
+======================================================================
+56. Agent 入口
+======================================================================
+
+Agent 是：
+
+Swayframe 核心 Workspace Panel。
+
+
+不要做成：
+
+浮动插件窗口。
+
+
+建议：
+
+右侧可停靠 Panel
+
+或：
+
+右侧 Sidebar Tab。
+
+
+例如：
+
+Inspector
+
+Agent
+
+
+或者：
+
+Properties | Agent
+
+
+允许：
+
+Resize
+
+Collapse。
+
+
+======================================================================
+57. Agent Panel
+======================================================================
+
+界面至少包括：
+
+Conversation
+
+Context
+
+References
+
+Plan
+
+Changes
+
+Status
+
+Input
+
+
+不要：
+
+做成巨大 ChatGPT Clone。
+
+
+Swayframe 仍然以：
+
+Canvas
+
+Timeline
+
+为视觉中心。
+
+
+======================================================================
+58. Prompt Input
+======================================================================
+
+底部：
+
+Agent Input。
+
+
+支持：
+
+Enter
+
+Shift+Enter
+
+
+Context Chips：
+
+Selected Layer
+
+Current Composition
+
+Reference
+
+Skill
+
+
+例如：
+
+[ Title ]
+
+[ Composition 1 ]
+
+[ reference.png ]
+
+
+用户一眼知道：
+
+Agent 当前看到什么。
+
+
+======================================================================
+59. Agent Response
+======================================================================
+
+Agent Response：
+
+尽量简短。
+
+
+重点显示：
+
+Plan
+
+Executing
+
+Completed
+
+Changes
+
+
+不要：
+
+每次输出 1000 字分析。
+
+
+例如：
+
+Plan
+
+✓ Animate title entrance
+
+✓ Apply easing
+
+✓ Blur background
+
+✓ Verify composition
+
+
+======================================================================
+60. Tool Activity
+======================================================================
+
+允许展开：
+
+Activity。
+
+
+显示：
+
+Inspect Layer
+
+Add Keyframe
+
+Apply Motion Curve
+
+Add Blur
+
+Render Preview
+
+
+默认：
+
+折叠。
+
+
+普通用户：
+
+不用看全部 Tool JSON。
+
+
+======================================================================
+61. Stop Button
+======================================================================
+
+Agent 执行中：
+
+必须显示：
+
+Stop。
+
+
+点击：
+
+Abort model
+
+停止新 Tool Call
+
+Rollback 未提交 Transaction。
+
+
+======================================================================
+62. Apply / Undo
+======================================================================
+
+完成后：
+
+显示：
+
+Done
+
+
+并允许：
+
+Undo Agent Changes。
+
+
+本质：
+
+调用：
+
+History Undo。
+
+
+不要：
+
+另外建立一套 Undo。
+
+
+======================================================================
+63. Regenerate / Refine
+======================================================================
+
+支持：
+
+Refine。
+
+
+例如：
+
+用户：
+
+“再快一点。”
+
+
+Agent：
+
+自动带入：
+
+上一轮 context
+
+和：
+
+current scene。
+
+
+不要：
+
+重新从零理解。
+
+
+######################################################################
+PART XI
+AGENT HISTORY
+######################################################################
+
+======================================================================
+64. Conversation Persistence
+======================================================================
+
+Agent History：
+
+默认属于：
+
+User Session / Application Data。
+
+
+不要默认把：
+
+完整 Prompt / Response
+
+写进：
+
+.swayframe。
+
+
+Project 可以：
+
+保存轻量 Agent Metadata
+
+例如：
+
+Last Agent Modification Id。
+
+
+如果用户需要：
+
+未来再支持：
+
+Project-bound Agent History。
+
+
+======================================================================
+65. Effect / Result Saving
+======================================================================
+
+继承之前 AE Agent：
+
+用户保存满意效果
+
+的思想。
+
+
+增加：
+
+Save Result as Preset / Skill
+
+
+例如：
+
+Agent 做好：
+
+Title Entrance Animation。
+
+
+用户点击：
+
+Save as Motion Preset。
+
+
+保存：
+
+Property / Keyframe / Curve
+
+而不是：
+
+保存聊天记录。
+
+
+未来：
+
+Agent 可以：
+
+调用用户自己的 Preset。
+
+
+######################################################################
+PART XII
+SETTINGS
+######################################################################
+
+======================================================================
+66. Settings → AI
+======================================================================
+
+必须真正成为完整设置区。
+
+
+AI
+
+Providers
+
+Models
+
+Routing
+
+Agent
+
+Skills
+
+Usage
+
+Privacy
+
+
+而不是：
+
+Agent Panel 右上角一个 API Key Input。
+
+
+======================================================================
+67. Agent Settings
+======================================================================
+
+至少：
+
+Default Mode
+
+Assist / Agent
+
+
+Auto Apply Safe Changes
+
+
+Confirm Destructive Changes
+
+
+Max Refinement Iterations
+
+
+Enable Visual Verification
+
+
+Streaming Response
+
+
+Default Skill
+
+
+Default Provider / Model。
+
+
+======================================================================
+68. Privacy
+======================================================================
+
+显示清楚：
+
+Agent 可能发送：
+
+Prompt
+
+Scene Summary
+
+Rendered Preview
+
+Reference Images
+
+
+给：
+
+当前 AI Provider。
+
+
+提供：
+
+Send Render Preview
+
+ON / OFF
+
+
+Send External Reference
+
+ON / OFF。
+
+
+如果用户关闭：
+
+Agent 必须尊重。
+
+
+######################################################################
+PART XIII
+SECURITY
+######################################################################
+
+======================================================================
+69. 不允许 Arbitrary Execution
+======================================================================
+
+Agent V1 禁止：
+
+Shell
+
+Terminal
+
+eval
+
+Function constructor
+
+任意 JS execution
+
+任意 Node.js execution
+
+
+Agent：
+
+只能调用：
+
+registered Agent Tools。
+
+
+======================================================================
+70. File Security
+======================================================================
+
+Agent 不能：
+
+任意浏览磁盘。
+
+
+只能访问：
+
+Project Assets
+
+User-selected References
+
+explicitly authorized files。
+
+
+======================================================================
+71. Prompt Injection
+======================================================================
+
+外部 Reference Metadata
+
+Asset Filename
+
+Project Text Layer
+
+全部属于：
+
+untrusted data。
+
+
+不能把：
+
+文件内容
+
+当：
+
+System Instruction。
+
+
+Tool 权限：
+
+永远由：
+
+Application
+
+决定。
+
+
+######################################################################
+PART XIV
+FAILURE HANDLING
+######################################################################
+
+======================================================================
+72. Model Failure
+======================================================================
+
+处理：
+
+timeout
+
+network
+
+rate limit
+
+invalid key
+
+model unavailable
+
+malformed tool call
+
+
+UI：
+
+显示可理解错误。
+
+
+不要：
+
+崩 App。
+
+
+======================================================================
+73. Tool Failure
+======================================================================
+
+Tool 执行失败：
+
+返回：
+
+structured error。
+
+
+Agent：
+
+可以：
+
+调整 Plan。
+
+
+如果：
+
+严重失败：
+
+Rollback Transaction。
+
+
+======================================================================
+74. Provider Missing
+======================================================================
+
+如果用户没有配置 Provider：
+
+Agent Panel：
+
+显示：
+
+Set up AI Provider
+
+
+按钮：
+
+跳转：
+
+Settings → AI → Providers。
+
+
+不要：
+
+Agent Panel 自己放 Key。
+
+
+######################################################################
+PART XV
+AGENT + EXISTING SWAYFRAME SYSTEMS
+######################################################################
+
+======================================================================
+75. Canvas
+======================================================================
+
+Agent 创建 / 修改对象后：
+
+Canvas：
+
+立即同步。
+
+
+Selection：
+
+合理更新。
+
+
+======================================================================
+76. Timeline
+======================================================================
+
+Agent 创建 Keyframe：
+
+Timeline：
+
+立即显示。
+
+
+Agent 不能：
+
+拥有隐藏 Animation。
+
+
+======================================================================
+77. Motion Curve
+======================================================================
+
+Agent 可以：
+
+读
+
+写
+
+分析：
+
+Motion Curve。
+
+
+例如：
+
+“让动画更有冲击力”
+
+Agent：
+
+可以：
+
+选择 / 生成合适 Easing。
+
+
+======================================================================
+78. Graph Editor
+======================================================================
+
+Agent 修改：
+
+Keyframe Timing
+
+Speed
+
+
+必须：
+
+Graph Editor
+
+同步。
+
+
+======================================================================
+79. Compositing Graph
+======================================================================
+
+Agent 可以：
+
+直接结构化创建：
+
+Nodes
+
+Edges
+
+Parameters。
+
+
+例如：
+
+用户：
+
+“人物保持清晰，
+背景虚一点，
+整体偏冷。”
+
+
+Agent 可以：
+
+建立：
+
+Mask / existing separation
+
+↓
+
+Blur
+
+↓
+
+Merge
+
+↓
+
+Color
+
+
+而不是：
+
+模拟 UI 点击。
+
+
+======================================================================
+80. Transform System
+======================================================================
+
+Agent 必须理解：
+
+Orientation
+
+Pivot。
+
+
+例如：
+
+“围绕整体中心放大这些图层”
+
+Agent：
+
+使用：
+
+Selection Center。
+
+
+======================================================================
+81. Desktop
+======================================================================
+
+AI Settings：
+
+属于：
+
+Desktop User Preferences。
+
+
+Secret：
+
+属于：
+
+Secure Storage。
+
+
+Agent：
+
+不能：
+
+阻塞 Electron Main Thread。
+
+
+######################################################################
+PART XVI
+PERFORMANCE
+######################################################################
+
+======================================================================
+82. Agent 不允许冻结 UI
+======================================================================
+
+LLM Request：
+
+async。
+
+
+Vision：
+
+async。
+
+
+Render Verification：
+
+Background / non-blocking。
+
+
+Agent Thinking：
+
+不能：
+
+锁死 Canvas。
+
+
+用户执行 Agent 时：
+
+仍然可以：
+
+查看工程。
+
+
+如果需要防止冲突：
+
+只锁定：
+
+当前 Agent Transaction
+
+相关修改。
+
+
+======================================================================
+83. Context Cache
+======================================================================
+
+可以缓存：
+
+Scene Summary
+
+Layer Summary
+
+Render Snapshot
+
+
+但：
+
+Scene 修改后：
+
+正确 invalidate。
+
+
+不要：
+
+每个 Prompt：
+
+重新 serialize 整个 Project。
+
+
+======================================================================
+84. Streaming
+======================================================================
+
+如果 Provider 支持：
+
+stream。
+
+
+Agent UI：
+
+可以渐进显示：
+
+Response。
+
+
+但：
+
+Tool Plan
+
+必须结构完整后：
+
+再执行。
+
+
+不要：
+
+解析半段 JSON。
+
+
+######################################################################
+PART XVII
+TESTING
+######################################################################
+
+======================================================================
+85. 必须测试
+======================================================================
+
+至少覆盖：
+
+Provider Manager
+
+Provider Settings
+
+Secret abstraction
+
+Provider failover
+
+Usage tracking
+
+Model routing
+
+Agent Session
+
+Agent Plan
+
+Tool Registry
+
+Tool validation
+
+Read Tool
+
+Write Tool
+
+Destructive Tool
+
+Command integration
+
+Agent Transaction
+
+Rollback
+
+Undo
+
+Context Engine
+
+Selection Context
+
+Scene Summary
+
+Skill Registry
+
+User Skill
+
+Graph Tool
+
+Animation Tool
+
+Render Snapshot
+
+Verification iteration limit
+
+Stop Agent
+
+Project save after Agent edits
+
+Agent edits after Undo
+
+API failure handling
+
+No-provider state。
+
+
+======================================================================
+86. Mock AI Provider
+======================================================================
+
+必须建立：
+
+MockAIProvider。
+
+
+测试和开发：
+
+不能依赖：
+
+真实 API。
+
+
+Mock：
+
+可以返回：
+
+固定 Tool Plan。
+
+
+这样：
+
+CI
+
+不需要：
+
+API Key。
+
+
+######################################################################
+PART XVIII
+VERTICAL ACCEPTANCE TESTS
+######################################################################
+
+======================================================================
+87. CASE 1
+======================================================================
+
+用户：
+
+选中一个 Rectangle。
+
+
+输入：
+
+“让它从左边快速滑入，
+最后稍微慢下来。”
+
+
+Agent：
+
+读取 Selection
+
+↓
+
+读取 Position
+
+↓
+
+创建 Keyframes
+
+↓
+
+应用 Motion Curve
+
+↓
+
+Canvas / Timeline 更新
+
+↓
+
+Render Verification
+
+↓
+
+完成。
+
+
+Undo：
+
+一次：
+
+撤销整个 Agent 修改。
+
+
+======================================================================
+88. CASE 2
+======================================================================
+
+用户：
+
+“创建一个标题：
+HELLO SWAYFRAME，
+放在画面中心。”
+
+
+Agent：
+
+Create Text
+
+Set Content
+
+Set Position
+
+
+Canvas：
+
+显示。
+
+
+======================================================================
+89. CASE 3
+======================================================================
+
+用户：
+
+“把标题做得更有设计感。”
+
+
+Agent：
+
+读取：
+
+Text
+
+Scene
+
+Canvas Render
+
+
+使用：
+
+Typography Skill
+
++
+
+Layout Intelligence
+
+
+修改：
+
+Font size
+
+Tracking
+
+Position
+
+Color
+
+
+Render Verification。
+
+
+======================================================================
+90. CASE 4
+======================================================================
+
+用户：
+
+“给背景加轻微高斯模糊。”
+
+
+Agent：
+
+通过：
+
+Effect / Compositing Graph Tool
+
+
+添加：
+
+Blur。
+
+
+不是：
+
+模拟点击 Effect UI。
+
+
+======================================================================
+91. CASE 5
+======================================================================
+
+用户：
+
+“这些对象围绕整体中心放大 120%。”
+
+
+Agent：
+
+使用：
+
+Selection Center Pivot
+
+执行 Multi Transform。
+
+
+======================================================================
+92. CASE 6
+======================================================================
+
+用户提供：
+
+reference.png
+
+
+输入：
+
+“只参考这个图的排版，
+不要复制颜色。”
+
+
+Agent：
+
+Reference Mode：
+
+Layout Only。
+
+
+Vision：
+
+分析。
+
+
+输出：
+
+Layout Proposal。
+
+
+执行：
+
+Layer Position / Scale。
+
+
+======================================================================
+93. CASE 7
+======================================================================
+
+Provider A：
+
+模拟 Rate Limit。
+
+
+Auto Failover：
+
+切换：
+
+Provider B。
+
+
+任务继续。
+
+
+UI：
+
+显示：
+
+Provider switched。
+
+
+======================================================================
+94. CASE 8
+======================================================================
+
+用户没有 API Key。
+
+
+Agent Panel：
+
+不崩溃。
+
+
+显示：
+
+Configure AI Provider。
+
+
+点击：
+
+进入：
+
+Settings → AI。
+
+
+======================================================================
+95. CASE 9
+======================================================================
+
+Agent 执行中：
+
+用户点击：
+
+Stop。
+
+
+后续 Tool Calls：
+
+停止。
+
+
+未 Commit：
+
+Rollback。
+
+
+======================================================================
+96. CASE 10
+======================================================================
+
+Agent 完成修改。
+
+
+保存：
+
+project.swayframe。
+
+
+关闭。
+
+
+重新打开。
+
+
+Agent 修改产生的：
+
+Layer
+
+Property
+
+Keyframes
+
+Effects
+
+Graph
+
+全部保持。
+
+
+无需 Agent History：
+
+工程也能正确运行。
+
+
+######################################################################
+PART XIX
+EXECUTION ORDER TONIGHT
+######################################################################
+
+======================================================================
+97. 今晚必须按此顺序推进
+======================================================================
+
+A0
+
+Audit
+
+找到现有 AI / Settings / Command 接口。
+
+
+A1
+
+Provider Manager
+
+Settings
+
+Secure Key Storage
+
+Model Registry
+
+Mock Provider
+
+
+A2
+
+Agent Core
+
+Session
+
+Orchestrator
+
+Plan
+
+Cancellation
+
+
+A3
+
+Context Engine
+
+Project Summary
+
+Selection Context
+
+
+A4
+
+Tool Registry
+
+Read Tools
+
+
+A5
+
+核心 Write Tools
+
+Layer
+
+Transform
+
+Animation
+
+Text
+
+Shape
+
+Effects
+
+
+A6
+
+Command / Transaction Integration
+
+One Agent Action = One Undo
+
+
+A7
+
+Agent UI
+
+Panel
+
+Input
+
+Context Chips
+
+Plan
+
+Activity
+
+Stop
+
+
+A8
+
+Skill System
+
+Built-in
+
+User Skill
+
+Settings
+
+
+A9
+
+Compositing Graph Tools
+
+Mask
+
+Effect
+
+Graph Integration
+
+
+A10
+
+Vision
+
+Render Snapshot
+
+Visual Verification
+
+
+A11
+
+External Reference
+
+Static Image
+
+Video / GIF sampled support if practical
+
+
+A12
+
+Provider Failover
+
+Usage
+
+Routing
+
+Privacy
+
+
+A13
+
+Autosave / Project / Desktop Integration
+
+
+A14
+
+Full Acceptance Tests
+
+Polish
+
+Performance
+
+Bug Fix
+
+
+不要：
+
+A3 做完
+
+就停止汇报。
+
+
+立即：
+
+A4。
+
+
+一直推进。
+
+
+======================================================================
+98. 每阶段质量门禁
+======================================================================
+
+每个主要阶段：
+
+运行：
+
+lint
+
+typecheck
+
+tests
+
+build
+
+desktop build
+
+
+如果本阶段引入：
+
+error
+
+先修。
+
+
+然后继续。
+
+
+======================================================================
+99. 不允许半成品 UI
+======================================================================
+
+如果一个按钮：
+
+没有真实功能
+
+不要显示。
+
+
+如果某项暂时未实现：
+
+隐藏
+
+或者：
+
+明确 Disabled。
+
+
+不要：
+
+假按钮
+
+Mock 面板
+
+TODO UI。
+
+
+======================================================================
+100. 不允许只搭架构
+======================================================================
+
+今晚结束时：
+
+不能只有：
+
+Provider Interface
+
+Agent Interface
+
+Tool Interface
+
+Skill Interface。
+
+
+必须至少完成：
+
+真实 Vertical Slice。
+
+
+也就是说：
+
+真实 Prompt
+
+↓
+
+真实 Agent
+
+↓
+
+真实 Tool
+
+↓
+
+真实 Command
+
+↓
+
+真实 Scene Change
+
+↓
+
+真实 Renderer
+
+↓
+
+真实 Undo。
+
+
+======================================================================
+101. 不允许追求功能数量
+======================================================================
+
+如果时间有限：
+
+优先：
+
+完整
+
+稳定
+
+可执行
+
+
+而不是：
+
+30 个 Tool
+
+全部半成品。
+
+
+最重要 Tool：
+
+Selection
+
+Layer
+
+Transform
+
+Text
+
+Shape
+
+Animation
+
+Motion Curve
+
+Effect
+
+Graph
+
+Render。
+
+
+======================================================================
+102. Git Checkpoints
+======================================================================
+
+如果当前 Git 工作流允许：
+
+在稳定阶段：
+
+commit。
+
+
+例如：
+
+feat(ai): add provider manager and settings
+
+feat(agent): implement orchestrator and tool registry
+
+feat(agent): connect commands and transactions
+
+feat(agent): add native agent panel
+
+feat(agent): add skills and references
+
+feat(agent): add visual verification
+
+fix(agent): harden cancellation and rollback
+
+
+不要：
+
+一个巨大 commit。
+
+
+######################################################################
+PART XX
+FINAL DELIVERY
+######################################################################
+
+======================================================================
+103. 今晚只有达到执行环境上限才停止
+======================================================================
+
+不要：
+
+实现一部分以后：
+
+问用户下一步。
+
+
+持续执行：
+
+Inspect
+
+↓
+
+Implement
+
+↓
+
+Test
+
+↓
+
+Fix
+
+↓
+
+Integrate
+
+↓
+
+Polish
+
+↓
+
+Next
+
+
+直到：
+
+当前执行环境真正无法继续
+
+或：
+
+所有 Agent V1 核心部分完成。
+
+
+======================================================================
+104. 最终报告
+======================================================================
+
+最终输出：
+
+# Swayframe AI Agent V1 Result
+
+
+## Working End-to-End Flows
+
+真实可运行流程。
+
+
+## Provider / API System
+
+完成状态。
+
+
+## Agent Core
+
+完成状态。
+
+
+## Tools
+
+列出：
+
+真正可用 Tool。
+
+
+## Skills
+
+完成状态。
+
+
+## Vision / Reference
+
+完成状态。
+
+
+## Settings
+
+完成状态。
+
+
+## Security
+
+完成状态。
+
+
+## Undo / Transaction
+
+完成状态。
+
+
+## Tests
+
+实际结果：
+
+lint
+
+typecheck
+
+unit tests
+
+integration tests
+
+build
+
+desktop build
+
+
+## Incomplete
+
+必须诚实。
+
+
+## Blockers
+
+仅真实外部阻塞。
+
+
+## Next Highest-value Work
+
+
+======================================================================
+FINAL ARCHITECTURE PRINCIPLE
+======================================================================
+
+Swayframe AI Agent 不是：
+
+Chatbot attached to an editor.
+
+
+它应该是：
+
+A native intelligent control layer
+over Swayframe's existing structured editing engine.
+
+
+用户：
+
+可以手动编辑。
+
+
+AI：
+
+可以使用完全相同的底层能力。
+
+
+Human UI
+
+和：
+
+AI Agent
+
+最终汇合到：
+
+                Commands
+                    │
+                    ▼
+               Scene Model
+                    │
+             Property<T>
+                    │
+        ┌───────────┴────────────┐
+        │                        │
+   Animation Engine        Compositing Graph
+        │                        │
+        └───────────┬────────────┘
+                    │
+                Renderer
+
+
+因此：
+
+任何 Agent 能做到的操作
+
+原则上：
+
+用户也能够手动修改。
+
+
+任何 Agent 做出的修改：
+
+用户都可以：
+
+查看
+
+编辑
+
+继续修改
+
+Undo
+
+保存。
+
+
+这就是：
+
+Human-first
++
+AI-native。
+
+
+Do not build an AI plugin.
+
+Do not build a chatbot.
+
+Build Swayframe's native Agent layer.
+
+
+EXECUTE.
+
+DO NOT WAIT FOR USER QUESTIONS.
+
+KEEP BUILDING UNTIL THE AGENT WORKS END TO END.

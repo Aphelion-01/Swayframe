@@ -1,3 +1,4 @@
+import { AIError } from '../../../src/ai/contracts';
 import { app, dialog, ipcMain } from 'electron';
 import type { BrowserWindow } from 'electron';
 import { requestSchema } from '../../../src/desktop/contracts';
@@ -55,14 +56,21 @@ export function installIPC(
           throw new Error('Service not connected');
       }
     } catch (error) {
-      void log?.(
-        error instanceof ProjectFileError ? 'Project' : 'FileIO',
-        error instanceof Error ? error.message : String(error),
-      );
+      if (!(
+        typeof raw === 'object' &&
+        raw !== null &&
+        'method' in raw &&
+        String(raw.method).startsWith('ai.')
+      ))
+        void log?.(
+          error instanceof ProjectFileError ? 'Project' : 'FileIO',
+          error instanceof Error ? error.message : String(error),
+        );
       return {
         ok: false,
+        code: error instanceof AIError ? error.code : undefined,
         error:
-          error instanceof ProjectFileError
+          error instanceof AIError || error instanceof ProjectFileError
             ? error.message
             : '原生操作未完成，请检查文件权限或日志后重试。',
       };

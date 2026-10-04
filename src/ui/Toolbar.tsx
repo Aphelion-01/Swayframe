@@ -303,6 +303,11 @@ export function Toolbar({ store }: { store: EditorStore }) {
     return () => window.removeEventListener('motion:export', open);
   }, []);
   const paletteCommands = [
+    {
+      label: '设置 · AI 服务',
+      keywords: 'settings provider model API',
+      action: () => window.dispatchEvent(new Event('swayframe:ai-settings')),
+    },
     ...(['rectangle', 'ellipse', 'text', 'path', 'null'] as const).map(
       (kind) => ({
         label: `创建 ${layerKindLabels[kind]}`,
@@ -411,6 +416,13 @@ export function Toolbar({ store }: { store: EditorStore }) {
               }}
             >
               合成设置
+            </button>
+            <button
+              onClick={() =>
+                window.dispatchEvent(new Event('swayframe:ai-settings'))
+              }
+            >
+              设置 · AI
             </button>
             <hr />
             {(

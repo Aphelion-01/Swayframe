@@ -1,3 +1,5 @@
+import { aiRequestSchemas } from '../ai/desktop-contracts';
+import type { DesktopAIAPI } from '../ai/desktop-contracts';
 import { z } from 'zod';
 export const pathSchema = z
   .string()
@@ -112,6 +114,7 @@ export const actionSchema = z.enum([
 ]);
 const dataSchema = z.string().max(20_000_000);
 export const requestSchema = z.discriminatedUnion('method', [
+  ...aiRequestSchemas,
   z
     .object({
       method: z.literal('edit.text'),
@@ -212,6 +215,7 @@ export const requestSchema = z.discriminatedUnion('method', [
 ]);
 export type DesktopRequest = z.infer<typeof requestSchema>;
 export interface DesktopAPI {
+  ai?: DesktopAIAPI;
   textEdit(
     action: 'undo' | 'redo' | 'cut' | 'copy' | 'paste' | 'delete' | 'selectAll',
   ): Promise<void>;
