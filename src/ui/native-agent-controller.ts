@@ -1,3 +1,4 @@
+import { registerCompositingTools } from '../agent/compositing-tools';
 import { skillsFor } from '../agent/skills';
 import type { AgentSkill } from '../agent/skills';
 import { getAIApplication } from '../ai/application';
@@ -20,7 +21,9 @@ export function createNativeAgent(
 ) {
   const engine = new ProjectContextEngine(),
     registry = registerReadTools(
-      registerAnimationTools(registerCoreWriteTools(new AgentToolRegistry())),
+      registerCompositingTools(
+        registerAnimationTools(registerCoreWriteTools(new AgentToolRegistry())),
+      ),
       engine,
     );
   const input = () => {

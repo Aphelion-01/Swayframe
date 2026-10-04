@@ -21,8 +21,10 @@ ProviderManager为应用服务，设置/用量/Skills/历史独立于Project，�
 
 - A8全门禁通过：254 tests / 91 files。8个内置Skill，用户创建/修改/停用/复制/导入导出；工具白名单执行约束。切换模式/Skill会取消旧待确认计划。
 
+- A9全门禁通过：257 tests / 92 files。共享Graph节点/连接/参数、六个可渲染Mask工具、合成管理和已导入素材引用；保存与单步Undo验证。
+
 ## In Progress
-- A9：Graph/Mask/Composition/Asset 工具。
+- A10：真实渲染快照、视觉Proposal与受限验证。
 
 ## Blockers
 - 真实第三方API验收需用户自行配置凭证，不阻塞Mock与协议测试。
