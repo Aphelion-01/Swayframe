@@ -195,6 +195,22 @@ export function Inspector({ store }: { store: EditorStore }) {
               onCommit={(text) => patch({ text })}
             />
             <NumberField
+              revision={layer}
+              time={view.time}
+              onPreview={(fontSize) => {
+                const property = layer.editor?.properties.fontSize;
+                if (property)
+                  store.setPropertyPreview({
+                    id: property.id,
+                    property: {
+                      ...property,
+                      baseValue: fontSize,
+                      keyframes: [],
+                    },
+                  });
+                else store.setLayerPreview({ ...layer, fontSize });
+              }}
+              onCancel={() => store.setPropertyPreview(undefined)}
               label="字号"
               value={
                 layer.editor?.properties.fontSize
@@ -261,6 +277,16 @@ export function Inspector({ store }: { store: EditorStore }) {
             onCommit={(visualRole) => semantic({ visualRole })}
           />
           <NumberField
+            revision={layer}
+            time={view.time}
+            step={0.01}
+            onPreview={(importance) =>
+              store.setLayerPreview({
+                ...layer,
+                semantic: { ...layer.semantic, importance },
+              })
+            }
+            onCancel={() => store.setLayerPreview()}
             label="重要程度"
             value={layer.semantic?.importance ?? 0.5}
             min={0}

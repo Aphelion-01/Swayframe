@@ -124,3 +124,7 @@ core/compositing-graph、registry、operations、compiler、cache、service 与 
 TextField统一支持多行和自动聚焦，中文输入法事件由字段和Shortcut Registry共同保护。Value/Speed Graph视口仅属UI，切线拖动反算当前视口且固定本次手势的轴范围；空间路径字段仍不改变。
 
 帧求值使用父级ID索引，world3D只计算投影图层及祖先，摄像机视图每帧复用。默认不透明、正常混合的Source→Output图层直接绘制；含遮罩、效果、半透明、其他混合、预合成和3D仍走原离屏路径，避免改变组语义。CPU基准与Canvas分配回归单独记录，不以CPU基准等同实际预览帧率。
+
+### 数值实时预览（0.6.2）
+
+NumberField 捕获编辑起始值、revision/time，输入和纵向拖动使用瞬态预览；即使曲线界面将当前值更新为预览值，提交仍和起始值比较，防止漏写命令。Enter/blur 或松手仅提交一次，取消、捕获丢失与过期不写工程。AnimatedField 联动轴只在真实2/3分量向量启用，预览显示和持久数据分离。非动画几何使用 EditorStore.setLayerPreview 的局部不可变渲染快照，持久化仍由原 layer.replace / layer.patch Command 完成，不新增动画或历史系统。

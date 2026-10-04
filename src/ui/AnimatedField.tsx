@@ -42,14 +42,28 @@ export function AnimatedField({
       property: { ...property, baseValue: value, keyframes: [] },
     });
   const cancel = () => store.setPropertyPreview(undefined);
-  const vector = typeof value !== 'number' && !color;
+  const vector =
+    !color &&
+    typeof value !== 'number' &&
+    (!Array.isArray(value) || value.length === 2 || value.length === 3);
   const updateAxis = (index: number, next: number): AnimValue => {
     const values = Array.isArray(value)
       ? value
       : [(value as Vec2).x, (value as Vec2).y];
-    const result = linkedAxisValues(values, index, next, linked, linkMode);
+    const result = linkedAxisValues(
+      values,
+      index,
+      next,
+      vector && linked,
+      linkMode,
+    );
     return Array.isArray(value) ? result : { x: result[0]!, y: result[1]! };
   };
+  const propertyPreview = store.getSnapshot().propertyPreview;
+  const shown =
+    propertyPreview?.id === property.id
+      ? evaluateProperty(propertyPreview.property, time)
+      : value;
   const hex = (a: readonly number[]) =>
     '#' +
     a
@@ -102,6 +116,7 @@ export function AnimatedField({
           time={time}
           label={`${label}${unit}`}
           value={value * factor}
+          previewValue={typeof shown === 'number' ? shown * factor : undefined}
           min={min}
           max={max}
           onPreview={(n) => preview(n / factor)}
@@ -153,6 +168,9 @@ export function AnimatedField({
                 key={i}
                 label={`${label} ${['X', 'Y', 'Z', 'A'][i] ?? i + 1}${unit}`}
                 value={v * factor}
+                previewValue={
+                  Array.isArray(shown) ? shown[i]! * factor : undefined
+                }
                 min={min}
                 max={max}
                 onPreview={(n) => preview(updateAxis(i, n / factor))}
@@ -172,6 +190,7 @@ export function AnimatedField({
               key={k}
               label={`${label} ${k.toUpperCase()}${unit}`}
               value={(value as Vec2)[k] * factor}
+              previewValue={(shown as Vec2)[k] * factor}
               onPreview={(n) =>
                 preview(updateAxis(k === 'x' ? 0 : 1, n / factor))
               }

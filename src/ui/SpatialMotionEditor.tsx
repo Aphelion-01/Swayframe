@@ -45,6 +45,30 @@ export function SpatialMotionEditor({
           (['x', 'y'] as const).map((axis) => (
             <NumberField
               key={side + axis}
+              revision={property}
+              time={store.getSnapshot().time}
+              onPreview={(v) =>
+                store.setPropertyPreview({
+                  id: property.id,
+                  property: {
+                    ...property,
+                    keyframes: property.keyframes.map((keyframe) =>
+                      keyframe.id === (side === 'out' ? left.id : right.id)
+                        ? {
+                            ...keyframe,
+                            [side === 'out'
+                              ? 'spatialOutgoing'
+                              : 'spatialIncoming']: {
+                              ...controls[side],
+                              [axis]: v,
+                            },
+                          }
+                        : keyframe,
+                    ),
+                  },
+                })
+              }
+              onCancel={() => store.setPropertyPreview(undefined)}
               label={`路径${side === 'out' ? '出' : '入'}点 ${axis.toUpperCase()}`}
               value={controls[side][axis]}
               onCommit={(v) =>

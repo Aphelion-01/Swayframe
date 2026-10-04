@@ -1,7 +1,7 @@
 export const ProductMetadata = Object.freeze({
   name: 'Swayframe',
   displayName: 'Swayframe',
-  version: '0.6.1',
+  version: '0.6.2',
   company: 'Copyright holder pending',
   website: null,
   applicationId: 'com.swayframe.editor',

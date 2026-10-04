@@ -212,6 +212,20 @@ export function PathEditor({
           {(['X', 'Y'] as const).map((label, i) => (
             <NumberField
               key={label}
+              revision={property}
+              time={view.time}
+              onPreview={(v) => {
+                const offset = Math.min(selected, value.length / 6 - 1) * 6;
+                const data = movePathPoint(value, offset / 6, {
+                  x: i === 0 ? v : value[offset]!,
+                  y: i === 1 ? v : value[offset + 1]!,
+                });
+                store.setPropertyPreview({
+                  id: property.id,
+                  property: { ...property, baseValue: data, keyframes: [] },
+                });
+              }}
+              onCancel={() => store.setPropertyPreview(undefined)}
               label={`${title}选中点 ${label}`}
               value={
                 value[Math.min(selected, value.length / 6 - 1) * 6 + i] ?? 0

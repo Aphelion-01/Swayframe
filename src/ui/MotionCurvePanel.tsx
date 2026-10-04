@@ -367,6 +367,11 @@ export function MotionCurvePanel({
           {(['x1', 'y1', 'x2', 'y2'] as const).map((key) => (
             <NumberField
               key={key}
+              revision={project}
+              time={store.getSnapshot().time}
+              step={0.01}
+              onPreview={(v) => preview({ ...c, [key]: v })}
+              onCancel={cancel}
               label={key.toUpperCase()}
               value={c[key]}
               min={key.startsWith('x') ? 0 : -10}
@@ -380,6 +385,16 @@ export function MotionCurvePanel({
           {(['out', 'in'] as const).map((side) => (
             <NumberField
               key={side}
+              revision={project}
+              time={store.getSnapshot().time}
+              onPreview={(v) =>
+                preview(
+                  side === 'out'
+                    ? { ...c, x1: v / 100 }
+                    : { ...c, x2: 1 - v / 100 },
+                )
+              }
+              onCancel={cancel}
               label={side === 'out' ? '出影响（%）' : '入影响（%）'}
               value={(side === 'out' ? c.x1 : 1 - c.x2) * 100}
               min={0}

@@ -154,6 +154,24 @@ export class EditorStore {
       : undefined;
     this.#set({ propertyPreviews: properties, propertyPreview: undefined });
   }
+  /** Transient geometry/text preview; persistent changes still use Commands. */
+  setLayerPreview(layer?: Layer): void {
+    const project = this.#view.project;
+    this.#renderPreview = layer
+      ? {
+          ...project,
+          compositions: project.compositions.map((c) =>
+            c.layers.some((l) => l.id === layer.id)
+              ? {
+                  ...c,
+                  layers: c.layers.map((l) => (l.id === layer.id ? layer : l)),
+                }
+              : c,
+          ),
+        }
+      : undefined;
+    this.#set({ propertyPreview: undefined, propertyPreviews: undefined });
+  }
   getRenderProject(): Project {
     return this.#renderPreview ?? this.#view.project;
   }

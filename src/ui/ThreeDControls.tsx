@@ -61,6 +61,20 @@ export function ThreeDControls({
             max={100000}
           />
           <NumberField
+            revision={editor.properties.cameraZoom}
+            time={view.time}
+            onPreview={(v) => {
+              const property = editor.properties.cameraZoom!;
+              store.setPropertyPreview({
+                id: property.id,
+                property: {
+                  ...property,
+                  baseValue: c.height / (2 * Math.tan((v * Math.PI) / 360)),
+                  keyframes: [],
+                },
+              });
+            }}
+            onCancel={() => store.setPropertyPreview(undefined)}
             label="摄像机视角（°）"
             value={
               (2 *

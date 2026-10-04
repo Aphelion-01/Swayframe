@@ -14,6 +14,7 @@ export function NumberField({
   onCancel,
   revision,
   time,
+  previewValue,
 }: {
   label: string;
   value: number;
@@ -26,43 +27,162 @@ export function NumberField({
   onCancel?: () => void;
   revision?: unknown;
   time?: number;
+  previewValue?: number;
 }) {
   const format = (v: number) => String(Number(v.toFixed(3)));
   const [draft, setDraft] = useState(format(value));
-  useEffect(() => setDraft(format(value)), [value]);
-  const cancelBlur = useRef(false);
+  const draftRef = useRef(draft);
+  const updateDraft = (text: string) => {
+    draftRef.current = text;
+    setDraft(text);
+  };
   const input = useRef<HTMLInputElement>(null);
+  const cancelBlur = useRef(false);
+  const editing = useRef<
+    { revision: unknown; time: number | undefined; initial: number } | undefined
+  >(undefined);
   const drag = useRef<
     | {
-        x: number;
+        coordinate: number;
         start: number;
+        initial: number;
         next: number;
+        vertical: boolean;
+        moved: boolean;
         revision: unknown;
         time: number | undefined;
       }
     | undefined
   >(undefined);
   const clamp = (v: number) => Math.min(max, Math.max(min, v));
+  const valid = (text: string) =>
+    text.trim() !== '' &&
+    Number.isFinite(Number(text)) &&
+    Number(text) >= min &&
+    Number(text) <= max;
   const cancel = () => {
     drag.current = undefined;
-    setDraft(format(value));
+    editing.current = undefined;
+    updateDraft(format(value));
     onCancel?.();
   };
+  const stale = (capture: { revision: unknown; time: number | undefined }) =>
+    capture.revision !== revision || capture.time !== time;
+  useEffect(() => {
+    if (!editing.current && !drag.current)
+      updateDraft(format(previewValue ?? value));
+  }, [value, previewValue]);
+  useEffect(() => {
+    const capture = drag.current ?? editing.current;
+    if (capture && stale(capture)) {
+      cancelBlur.current = true;
+      cancel();
+    }
+  }, [revision, time]);
+  const cancelRef = useRef(onCancel);
+  cancelRef.current = onCancel;
+  useEffect(
+    () => () => {
+      if (drag.current || editing.current) cancelRef.current?.();
+    },
+    [],
+  );
   useInteractionCancel(() => {
-    if (drag.current) cancel();
+    if (drag.current || editing.current) {
+      cancelBlur.current = true;
+      cancel();
+    }
   });
   const commit = () => {
+    if (drag.current) return;
     if (cancelBlur.current) {
       cancelBlur.current = false;
       return;
     }
-    const next = Number(draft);
-    if (!draft.trim() || !Number.isFinite(next) || next < min || next > max) {
-      setDraft(format(value));
+    const capture = editing.current;
+    editing.current = undefined;
+    if (capture && stale(capture)) {
+      cancel();
+      return;
+    }
+    const text = draftRef.current;
+    onCancel?.();
+    if (!valid(text)) {
+      updateDraft(format(value));
       onError(`${label}：请输入范围内的有效数值`);
       return;
     }
-    if (Math.abs(next - value) > 1e-8) onCommit(next);
+    const next = Number(text);
+    if (Math.abs(next - (capture?.initial ?? value)) > 1e-8) onCommit(next);
+  };
+  const beginDrag = (
+    event: React.PointerEvent<HTMLElement>,
+    vertical: boolean,
+  ) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    if (!vertical) event.currentTarget.focus();
+    cancelBlur.current = false;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    const start = valid(draftRef.current) ? Number(draftRef.current) : value;
+    drag.current = {
+      coordinate: vertical ? event.clientY : event.clientX,
+      start,
+      initial: value,
+      next: start,
+      vertical,
+      moved: false,
+      revision,
+      time,
+    };
+  };
+  const moveDrag = (event: React.PointerEvent<HTMLElement>) => {
+    const d = drag.current;
+    if (!d) return;
+    if (stale(d)) {
+      cancel();
+      return;
+    }
+    const delta = d.vertical
+      ? d.coordinate - event.clientY
+      : event.clientX - d.coordinate;
+    if (!d.moved && Math.abs(delta) < 3) return;
+    d.moved = true;
+    event.preventDefault();
+    d.next = clamp(
+      d.start + delta * step * (event.shiftKey ? 10 : event.altKey ? 0.1 : 1),
+    );
+    updateDraft(format(d.next));
+    onPreview?.(d.next);
+  };
+  const endDrag = () => {
+    const d = drag.current;
+    drag.current = undefined;
+    if (!d) return;
+    if (stale(d)) {
+      cancel();
+      return;
+    }
+    if (!d.moved) {
+      if (d.vertical) {
+        input.current?.focus();
+        input.current?.select();
+      }
+      return;
+    }
+    editing.current = undefined;
+    onCancel?.();
+    if (Math.abs(d.next - d.initial) > 1e-8) onCommit(d.next);
+    cancelBlur.current = true;
+    input.current?.blur();
+  };
+  const dragEvents = {
+    onPointerMove: moveDrag,
+    onPointerUp: endDrag,
+    onPointerCancel: cancel,
+    onLostPointerCapture: () => {
+      if (drag.current) cancel();
+    },
   };
   return (
     <label className="field">
@@ -74,76 +194,53 @@ export function NumberField({
           input.current?.focus();
           input.current?.select();
         }}
-        onPointerDown={(event) => {
-          if (event.button !== 0) return;
-          event.preventDefault();
-          event.currentTarget.focus();
-          event.currentTarget.setPointerCapture(event.pointerId);
-          drag.current = {
-            x: event.clientX,
-            start: value,
-            next: value,
-            revision,
-            time,
-          };
-        }}
-        onPointerMove={(event) => {
-          const d = drag.current;
-          if (!d) return;
-          if (d.revision !== revision || d.time !== time) {
-            cancel();
-            return;
-          }
-          d.next = clamp(
-            d.start +
-              (event.clientX - d.x) *
-                step *
-                (event.shiftKey ? 10 : event.altKey ? 0.1 : 1),
-          );
-          setDraft(format(d.next));
-          onPreview?.(d.next);
-        }}
-        onPointerUp={() => {
-          const d = drag.current;
-          drag.current = undefined;
-          if (d && (d.revision !== revision || d.time !== time)) {
-            cancel();
-            return;
-          }
-          if (d && Math.abs(d.next - d.start) > 1e-8) {
-            onCancel?.();
-            onCommit(d.next);
-          } else onCancel?.();
-        }}
-        onPointerCancel={cancel}
-        onLostPointerCapture={() => {
-          if (drag.current) cancel();
-        }}
+        onPointerDown={(event) => beginDrag(event, false)}
+        {...dragEvents}
       >
         {label}
       </span>
       <input
         ref={input}
+        className="scrub-value"
         aria-label={label}
+        title="向上拖动增大 · 向下拖动减小 · 点击输入 · Shift 大步长 · Alt 小步长"
         type="number"
         step="any"
         value={draft}
-        onChange={(event) => setDraft(event.target.value)}
+        onPointerDown={(event) => beginDrag(event, true)}
+        {...dragEvents}
+        onFocus={() => {
+          cancelBlur.current = false;
+        }}
+        onChange={(event) => {
+          cancelBlur.current = false;
+          editing.current ??= { revision, time, initial: value };
+          const text = event.target.value;
+          updateDraft(text);
+          if (valid(text)) onPreview?.(Number(text));
+          else onCancel?.();
+        }}
         onBlur={commit}
         onKeyDown={(event) => {
           if (event.nativeEvent.isComposing) return;
           if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
             event.preventDefault();
+            editing.current ??= { revision, time, initial: value };
             const next = clamp(
-              Number(draft) +
+              (valid(draftRef.current) ? Number(draftRef.current) : value) +
                 (event.key === 'ArrowUp' ? 1 : -1) *
                   step *
                   (event.shiftKey ? 10 : event.altKey ? 0.1 : 1),
             );
-            setDraft(format(next));
-            onCommit(next);
+            updateDraft(format(next));
+            onPreview?.(next);
           }
-          if (event.key === 'Enter') event.currentTarget.blur();
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            commit();
+            cancelBlur.current = true;
+            event.currentTarget.blur();
+          }
           if (event.key === 'Escape') {
             cancelBlur.current = true;
             cancel();
@@ -154,6 +251,7 @@ export function NumberField({
     </label>
   );
 }
+
 export function TextField({
   label,
   value,

@@ -209,22 +209,36 @@ export function GraphEditor({
   const editSpeed = (
     field: 'outSpeed' | 'inSpeed' | 'outInfluence' | 'inInfluence',
     value: number,
+    preview = false,
   ) => {
     if (speed && left && right) {
       const n = {
         ...speed,
         [field]: field.includes('Speed') ? value / factor : value,
       };
-      apply(
-        controlsFromSpeed(
-          left,
-          right,
-          n.outInfluence,
-          n.inInfluence,
-          n.outSpeed,
-          n.inSpeed,
-        ),
+      const controls = controlsFromSpeed(
+        left,
+        right,
+        n.outInfluence,
+        n.inInfluence,
+        n.outSpeed,
+        n.inSpeed,
       );
+      if (preview)
+        store.setPropertyPreviews(
+          previewMotionCurve(
+            view.project,
+            [`${original.id}/${left.id}/${right.id}`],
+            {
+              type: 'cubic-bezier',
+              x1: controls.out.x,
+              y1: controls.out.y,
+              x2: controls.in.x,
+              y2: controls.in.y,
+            },
+          ),
+        );
+      else apply(controls);
     }
   };
   const curveKey = `${original.id}/${left?.id}/${right?.id}/${mode}/${component}`;
@@ -714,6 +728,10 @@ export function GraphEditor({
               ).map(([field, label]) => (
                 <NumberField
                   key={field}
+                  revision={original}
+                  time={view.time}
+                  onPreview={(v) => editSpeed(field, v, true)}
+                  onCancel={() => store.setPropertyPreviews(undefined)}
                   label={label}
                   value={speed[field] * (field.includes('Speed') ? factor : 1)}
                   min={field.includes('Influence') ? 0.1 : 0}

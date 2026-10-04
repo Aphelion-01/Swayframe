@@ -4,7 +4,7 @@
 
 # In Progress
 
-本轮完成，无挂起开发；已交付 0.6.1，下一轮按下列高价值任务推进。
+本轮完成，无挂起开发；已交付 0.6.2，下一轮按下列高价值任务推进。
 
 # Completed
 
@@ -61,3 +61,5 @@ V2-6：69 文件 / 182 tests，全门禁 PASS，见 `outputs/quality/V2-6.log`�
 V2-7：184 tests；V2-8：184 tests；V2-9：71文件/186 tests，全部门禁PASS。CPU基准见 `outputs/performance/README.md`。
 
 V2-10：71 文件 / 186 tests，typecheck、lint、tests、Web build、desktop build 全部 PASS；原生完整工程保存重开与 PNG 像素验收 PASS。
+
+V2-11：按用户反馈改为数值本身纵向拖动、输入/方向键实时预览，只有实际 XY 向量显示链接图标。字号/尺寸/时间/摄像机/曲线/空间路径数值也接入瞬态预览。72 文件 / 192 tests，全门禁 PASS；网页实测旋转输入无需失焦、纵向拖动一次撤销。见 outputs/NUMERIC_EDIT_UPDATE.md。

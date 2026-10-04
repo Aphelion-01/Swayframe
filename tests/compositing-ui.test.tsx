@@ -1,7 +1,13 @@
 import { layerEffects } from '../src/core/compositing-migration';
 // @vitest-environment jsdom
 import { afterEach, beforeAll, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from '@testing-library/react';
 import { App } from '../src/ui/App';
 import { EditorStore } from '../src/ui/editor-store';
 import {
@@ -20,7 +26,7 @@ it('GUI 遮罩、羽化动画与效果排序均进入共享命令历史', () => 
   fireEvent.click(screen.getByText('效果与遮罩'));
   fireEvent.click(screen.getByRole('button', { name: '添加椭圆遮罩' }));
   fireEvent.click(screen.getByRole('button', { name: '开启遮罩1羽化动画' }));
-  store.setTime(1);
+  act(() => store.setTime(1));
   fireEvent.change(screen.getByLabelText('遮罩1羽化'), {
     target: { value: '12' },
   });

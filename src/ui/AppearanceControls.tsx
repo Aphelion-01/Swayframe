@@ -40,6 +40,10 @@ export function AppearanceControls({
         {(['width', 'height'] as const).map((key) => (
           <NumberField
             key={key}
+            revision={layer}
+            time={store.getSnapshot().time}
+            onPreview={(n) => store.setLayerPreview({ ...layer, [key]: n })}
+            onCancel={() => store.setLayerPreview()}
             label={key === 'width' ? '图层宽度' : '图层高度'}
             value={layer[key]}
             min={1}

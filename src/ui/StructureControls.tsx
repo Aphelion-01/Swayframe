@@ -57,10 +57,20 @@ export function StructureControls({
       </label>
       <div className="field-grid">
         <NumberField
+          revision={layer}
+          time={view.time}
+          step={1 / c.fps}
+          onPreview={(n) =>
+            store.setLayerPreview({
+              ...layer,
+              editor: { ...editor, inPoint: n },
+            })
+          }
+          onCancel={() => store.setLayerPreview()}
           label="图层入点"
           value={editor.inPoint}
           min={0}
-          max={c.duration}
+          max={Math.min(c.duration, editor.outPoint) - 1 / c.fps}
           onCommit={(n) =>
             run('修改入点', () => [
               command({
@@ -73,9 +83,19 @@ export function StructureControls({
           onError={(m) => store.setStatus(m, true)}
         />
         <NumberField
+          revision={layer}
+          time={view.time}
+          step={1 / c.fps}
+          onPreview={(n) =>
+            store.setLayerPreview({
+              ...layer,
+              editor: { ...editor, outPoint: n },
+            })
+          }
+          onCancel={() => store.setLayerPreview()}
           label="图层出点"
           value={Math.min(c.duration, editor.outPoint)}
-          min={0}
+          min={editor.inPoint + 1 / c.fps}
           max={c.duration}
           onCommit={(n) =>
             run('修改出点', () => [
