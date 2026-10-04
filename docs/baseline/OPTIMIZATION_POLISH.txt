@@ -1,0 +1,1811 @@
+从现在开始，不再进入大规模功能扩张阶段。
+
+请进入：
+
+======================================================================
+Swayframe Optimization & Polish Sprint
+持续优化冲刺模式
+======================================================================
+
+当前目标不是继续堆新功能。
+
+当前目标是：
+
+对已经存在的 Swayframe 进行系统性的：
+
+体验优化
+交互优化
+性能优化
+架构优化
+稳定性优化
+视觉一致性优化
+工作流优化
+Bug 修复
+边界情况修复
+
+最终目标：
+
+把“已经能用的功能”
+推进到：
+
+“用户愿意长期使用的功能”。
+
+======================================================================
+一、核心原则
+======================================================================
+
+从现在开始遵循：
+
+Polish before expansion.
+
+除非修复现有系统必须，
+否则不要主动增加新的大型功能模块。
+
+不要优先：
+
+增加 Effect 数量
+增加 Node 数量
+增加面板
+增加 AI 功能
+增加新的 3D 功能
+增加新的工具类型
+
+优先：
+
+把现有功能：
+
+做顺
+做稳
+做快
+做一致。
+
+======================================================================
+二、第一步：真实使用当前软件
+======================================================================
+
+先不要直接修改代码。
+
+以真实用户视角完整走一遍：
+
+新建 Project
+
+→ 创建 Composition
+
+→ 创建 Shape
+
+→ 创建 Text
+
+→ 移动 / 缩放 / 旋转
+
+→ 添加 Keyframe
+
+→ 修改 Motion Curve
+
+→ 打开 Speed / Value Graph
+
+→ 添加 Mask
+
+→ 添加 Effect
+
+→ Parenting
+
+→ Precomp
+
+→ 使用 Compositing Graph
+
+→ 导入素材
+
+→ Save
+
+→ Close
+
+→ Reopen
+
+→ Export
+
+在整个流程中主动寻找：
+
+不自然的操作
+
+多余点击
+
+功能难找
+
+UI 层级混乱
+
+交互不一致
+
+鼠标手感差
+
+误操作
+
+不必要等待
+
+状态不同步
+
+Undo 不合理
+
+数据丢失
+
+性能卡顿
+
+视觉不统一
+
+然后按照影响大小排序。
+
+不要只通过阅读代码判断体验。
+
+======================================================================
+三、建立 Optimization Backlog
+======================================================================
+
+在：
+
+DEV_SPRINT.md
+
+增加：
+
+## Optimization Backlog
+
+只记录真实发现的问题。
+
+每项使用：
+
+[P0]
+[P1]
+[P2]
+
+P0：
+
+Crash
+Data Loss
+Undo Error
+Save Error
+Render Error
+严重交互错误
+
+P1：
+
+明显影响高频工作流
+
+例如：
+
+Canvas 拖动卡顿
+Timeline 难操作
+Keyframe 选择异常
+Zoom 手感不好
+Inspector 更新延迟
+
+P2：
+
+视觉
+Spacing
+Tooltip
+微交互
+低频 Edge Case
+
+然后：
+
+从 P0 → P1 → P2
+
+持续处理。
+
+不要随机优化。
+
+======================================================================
+四、重点优化 Canvas
+======================================================================
+
+重点体验：
+
+Selection
+
+Move
+
+Scale
+
+Rotate
+
+Anchor
+
+Marquee
+
+Multi-selection
+
+Pan
+
+Zoom
+
+Snap
+
+Mouse Cursor
+
+Hover
+
+Bounding Box
+
+Handle Hit Area
+
+检查：
+
+拖动是否跟手
+
+是否有延迟
+
+是否跳动
+
+是否容易误选
+
+Handle 是否太难点
+
+缩放是否围绕鼠标
+
+Canvas 是否会意外选择网页文字
+
+Selection 是否和 Layer / Timeline 同步
+
+Alt / Shift Modifier 是否稳定
+
+连续 Drag：
+
+必须只有一个 Undo Step。
+
+重点优化：
+
+“手感”。
+
+不要只看功能是否存在。
+
+======================================================================
+五、Timeline 优化
+======================================================================
+
+这是本轮最高优先级之一。
+
+真实测试：
+
+100 个 Keyframe
+
+多个 Layer
+
+多属性动画。
+
+重点检查：
+
+Playhead Drag
+
+Keyframe Drag
+
+Multi-keyframe Drag
+
+Marquee
+
+Timeline Zoom
+
+Timeline Pan
+
+Snap
+
+Expand / Collapse
+
+Property Filter
+
+Layer Selection
+
+Current Time
+
+In / Out Point
+
+问题包括：
+
+拖动是否卡
+
+命中区域是否太小
+
+Keyframe 是否容易误选
+
+多选是否符合直觉
+
+Zoom 是否跳动
+
+Timeline 是否出现 layout shift
+
+滚动是否丢位置
+
+播放时是否整个 Timeline 重渲染
+
+持续优化。
+
+======================================================================
+六、Motion Curve / Graph Editor 优化
+======================================================================
+
+重点验证：
+
+Curve Handles
+
+Bezier Editing
+
+Speed Graph
+
+Value Graph
+
+Zoom / Pan
+
+Selection
+
+Realtime Preview
+
+检查：
+
+Handle 是否难拖
+
+曲线是否跳动
+
+数值和图形是否同步
+
+Canvas Preview 是否实时
+
+Speed Graph 是否真的表示速度
+
+Position temporal easing 是否会改变 spatial path
+
+Preset 切换是否流畅
+
+Undo 是否正确
+
+Copy / Paste Easing 是否正确
+
+重点优化：
+
+专业动画师真正连续使用时的体验。
+
+======================================================================
+七、Inspector 优化
+======================================================================
+
+检查：
+
+Property Row
+
+Numeric Field
+
+Scrub Input
+
+Slider
+
+Color Picker
+
+Dropdown
+
+Keyframe Button
+
+重点：
+
+spacing
+
+alignment
+
+hit area
+
+focus
+
+keyboard
+
+scrubbing
+
+commit
+
+cancel
+
+不要存在：
+
+不同 Property 使用完全不同的交互。
+
+统一：
+
+Enter
+
+Esc
+
+Arrow
+
+Shift
+
+Alt / Option
+
+Tab Navigation。
+
+======================================================================
+八、Compositing Graph 优化
+======================================================================
+
+Graph V0.1 已经存在后：
+
+不要继续疯狂增加 Node。
+
+优先优化：
+
+Node Drag
+
+Graph Pan
+
+Graph Zoom
+
+Port Connection
+
+Auto Connect
+
+Insert Node
+
+Delete Node
+
+Multi-select
+
+Marquee
+
+Node Search
+
+Inspector Sync
+
+Timeline Parameter Sync
+
+Effect Stack Sync
+
+重点确认：
+
+Graph UI 操作
+
+不会错误触发 Renderer 重算。
+
+Graph Pan：
+
+不应该重新 Render。
+
+Node Move：
+
+不应该改变最终画面。
+
+只有：
+
+参数变化
+连接变化
+
+才影响 Render。
+
+======================================================================
+九、Effect Stack / Graph 一致性
+======================================================================
+
+主动寻找：
+
+Effect Stack
+
+和：
+
+Compositing Graph
+
+是否可能产生：
+
+不同步
+
+重复数据
+
+顺序错误
+
+参数不同
+
+删除不同步
+
+Undo 不同步。
+
+如果存在：
+
+优先修复。
+
+长期原则：
+
+Single Source of Truth。
+
+不要用事件互相同步两个独立状态。
+
+======================================================================
+十、Undo / Redo Audit
+======================================================================
+
+系统性检查整个应用。
+
+测试：
+
+Move Layer
+
+Scale
+
+Rotate
+
+Change Property
+
+Scrub Number
+
+Move Keyframe
+
+Edit Curve
+
+Move Graph Node
+
+Connect Node
+
+Add Effect
+
+Delete Effect
+
+Change Mask
+
+Parent Layer
+
+Precomp
+
+确保：
+
+每个用户意图
+
+对应：
+
+合理数量的 Undo。
+
+例如：
+
+一次拖动
+
+=
+
+一次 Undo。
+
+复杂操作：
+
+Insert Node
+
+Pre-compose
+
+=
+
+一个 Transaction。
+
+重点寻找：
+
+Undo 后 UI 没恢复
+
+Undo 后 Renderer 不恢复
+
+Redo 不对称
+
+Selection 不恢复
+
+等问题。
+
+======================================================================
+十一、性能优化
+======================================================================
+
+开始真实 Profile。
+
+不要凭感觉优化。
+
+使用：
+
+React Profiler
+
+Performance API
+
+Browser / Electron DevTools
+
+必要的自定义 timing
+
+观察：
+
+Canvas Interaction
+
+Timeline Scrub
+
+Playback
+
+Graph Drag
+
+Property Editing
+
+Large Project
+
+重点寻找：
+
+unnecessary rerender
+
+expensive selector
+
+deep clone
+
+JSON stringify
+
+full project serialization
+
+full scene rebuild
+
+full graph compile
+
+full timeline layout
+
+每次 pointermove
+不允许做大型工作。
+
+======================================================================
+十二、建立性能基准
+======================================================================
+
+建立几个开发 Benchmark Scenario。
+
+例如：
+
+BENCH-A
+
+50 Layers
+
+200 Keyframes
+
+
+BENCH-B
+
+100 Layers
+
+1000 Keyframes
+
+
+BENCH-C
+
+Graph:
+
+20 Nodes
+
+
+BENCH-D
+
+1080p Composition
+
+多个 Blur / Color Effect
+
+
+记录：
+
+interaction latency
+
+frame time
+
+render time
+
+project load time
+
+save time
+
+不要为了数字漂亮作弊。
+
+只作为开发回归基准。
+
+======================================================================
+十三、增量更新
+======================================================================
+
+检查当前架构。
+
+目标：
+
+修改：
+
+Layer A Position
+
+不应该导致：
+
+所有 Layer 全部重新 Evaluate。
+
+修改：
+
+Blur Radius
+
+不应该重新：
+
+解析整个 Project。
+
+Graph Node 参数改变：
+
+只 invalidate：
+
+当前 Node
+
++
+
+Downstream。
+
+Timeline selection：
+
+不能触发 Renderer。
+
+Panel resize：
+
+不能触发 Scene Evaluation。
+
+尽可能建立合理 dependency invalidation。
+
+======================================================================
+十四、Playback
+======================================================================
+
+重点优化：
+
+Play
+
+Pause
+
+Scrub
+
+Frame Advance
+
+Loop
+
+Timeline 和 Canvas 同步。
+
+检查：
+
+掉帧
+
+时间漂移
+
+播放停止后位置异常
+
+高负载时 UI Freeze。
+
+优先：
+
+保持 UI responsive。
+
+如果某帧来不及：
+
+可以采用合理 frame dropping
+
+而不是：
+
+整个 UI 被阻塞。
+
+======================================================================
+十五、Desktop Experience
+======================================================================
+
+继续把网页感减少。
+
+检查：
+
+Window Title
+
+Menu
+
+Native Dialog
+
+Drag & Drop
+
+Recent Projects
+
+Save State
+
+Autosave
+
+Recovery
+
+Keyboard Shortcuts
+
+Focus
+
+Window Resize
+
+Full Screen
+
+High DPI
+
+确保：
+
+像 Desktop Creative Tool
+
+而不是：
+
+网页套壳。
+
+======================================================================
+十六、启动体验
+======================================================================
+
+优化：
+
+App Launch
+
+Start Screen
+
+Recent Projects
+
+Open Project
+
+不要：
+
+启动后空白数秒。
+
+如果存在初始化：
+
+显示：
+
+合理 loading state。
+
+不要出现：
+
+Layout Shift
+
+闪白
+
+巨大 Loading Spinner。
+
+======================================================================
+十七、保存体验
+======================================================================
+
+测试：
+
+Save
+
+Save As
+
+Large Project
+
+Autosave
+
+Recovery
+
+频繁修改。
+
+保存时：
+
+不要 Freeze UI。
+
+避免：
+
+每个小 Property 变化
+马上完整写磁盘。
+
+确保：
+
+失败提示清楚。
+
+用户不能误以为：
+
+已保存
+
+实际失败。
+
+======================================================================
+十八、视觉一致性
+======================================================================
+
+现在可以开始认真进行 UI Polish。
+
+检查：
+
+Spacing
+
+Control Height
+
+Border
+
+Radius
+
+Typography
+
+Icon Size
+
+Hover
+
+Pressed
+
+Selected
+
+Focus
+
+Disabled
+
+统一。
+
+不要：
+
+不同面板：
+
+按钮大小不同。
+
+不同 Inspector：
+
+输入框高度不同。
+
+Timeline：
+
+另一套字体。
+
+Graph：
+
+另一套圆角。
+
+整个软件必须像：
+
+同一个产品。
+
+======================================================================
+十九、降低视觉噪声
+======================================================================
+
+继续检查所有永久 UI。
+
+对于每个按钮问：
+
+是否必须始终可见？
+
+如果不是：
+
+考虑：
+
+Context Menu
+
+Dropdown
+
+Menu
+
+Shortcut
+
+Command Palette
+
+Inspector Context
+
+删除：
+
+重复入口
+
+低价值文字
+
+教程式常驻文字
+
+不必要 Border
+
+不必要 Divider
+
+让：
+
+Canvas
+
+Timeline
+
+Graph
+
+成为视觉主体。
+
+======================================================================
+二十、Empty / Loading / Error State
+======================================================================
+
+补齐：
+
+Empty Project
+
+No Layer Selected
+
+No Asset
+
+Empty Timeline
+
+Unsupported Node
+
+Missing Media
+
+Loading Project
+
+Render Error
+
+Graph Error
+
+Save Error
+
+等状态。
+
+不要：
+
+空白区域什么都不显示。
+
+也不要：
+
+错误时整个 Editor 崩溃。
+
+======================================================================
+二十一、Edge Cases
+======================================================================
+
+主动测试：
+
+0 Layer
+
+1 Layer
+
+100 Layer
+
+0 Keyframe
+
+大量 Keyframe
+
+极短 Composition
+
+很长 Composition
+
+负数 Position
+
+超大 Scale
+
+Rotation > 360
+
+Opacity Edge
+
+Missing Asset
+
+Broken Graph
+
+Empty Graph
+
+Nested Precomp
+
+Parent Chain
+
+不同 FPS
+
+不同 Resolution
+
+不要只测试 happy path。
+
+======================================================================
+二十二、Keyboard Workflow
+======================================================================
+
+试着：
+
+尽量少使用鼠标
+
+完成一段动画。
+
+寻找：
+
+Shortcut 缺失
+
+Focus 错误
+
+快捷键冲突
+
+Text Editing 冲突
+
+Numeric Input 冲突
+
+Graph 冲突。
+
+改善：
+
+muscle memory。
+
+======================================================================
+二十三、鼠标命中体验
+======================================================================
+
+非常重要。
+
+视觉大小：
+
+不等于：
+
+Hit Area。
+
+例如：
+
+Keyframe Diamond
+
+可以视觉：
+
+8px
+
+但 Hit Target：
+
+14~18px。
+
+Curve Handle
+
+Graph Port
+
+Resize Handle
+
+Rotation Handle
+
+Playhead
+
+都应该拥有：
+
+合理 hit region。
+
+不要为了界面精致：
+
+让操作变难。
+
+======================================================================
+二十四、Hover Feedback
+======================================================================
+
+所有可操作元素：
+
+应该让用户知道：
+
+“这里可以操作”。
+
+例如：
+
+Graph Port
+
+Curve Handle
+
+Transform Handle
+
+Keyframe
+
+Layer Row
+
+Scrub Field
+
+应该拥有：
+
+Hover Feedback。
+
+但不要：
+
+过度发光
+
+大量 Animation。
+
+保持克制。
+
+======================================================================
+二十五、错误恢复
+======================================================================
+
+如果：
+
+Effect Renderer Error
+
+Graph Node Error
+
+Missing Asset
+
+Project Migration Error
+
+尽量：
+
+局部失败。
+
+不要：
+
+整个 App 崩溃。
+
+例如：
+
+一个 Node Error
+
+显示：
+
+Node Error State
+
+其他 Editor：
+
+仍然可用。
+
+======================================================================
+二十六、内存与资源
+======================================================================
+
+检查：
+
+Texture
+
+Image
+
+Video
+
+Canvas
+
+Object URL
+
+Worker
+
+Event Listener
+
+Timer
+
+Render Cache
+
+是否正确释放。
+
+重点寻找：
+
+切换 Project
+
+删除 Layer
+
+关闭 Composition
+
+后：
+
+资源仍然存在。
+
+防止：
+
+长时间使用后越来越卡。
+
+======================================================================
+二十七、Listener / Subscription Audit
+======================================================================
+
+检查：
+
+keydown
+
+mousemove
+
+pointermove
+
+resize
+
+wheel
+
+event bus
+
+store subscription
+
+是否：
+
+重复注册
+
+Unmount 不清理
+
+导致：
+
+一个操作执行两次。
+
+这种 Bug：
+
+优先修复。
+
+======================================================================
+二十八、Project Round-trip Audit
+======================================================================
+
+建立完整测试工程：
+
+Shape
+
+Text
+
+Mask
+
+Effects
+
+Keyframes
+
+Motion Curve
+
+Graph
+
+Parent
+
+Precomp
+
+Camera
+
+Asset
+
+保存：
+
+A.swayframe
+
+关闭。
+
+重新打开。
+
+再保存：
+
+B.swayframe。
+
+比较：
+
+语义上是否一致。
+
+这是高优先级测试。
+
+======================================================================
+二十九、跨平台测试
+======================================================================
+
+尽可能验证：
+
+Windows
+
+macOS。
+
+重点：
+
+Cmd / Ctrl
+
+Alt / Option
+
+File Path
+
+DPI
+
+Scroll
+
+Trackpad
+
+Mouse Wheel
+
+Native Menu
+
+Drag & Drop。
+
+不要让：
+
+Windows 修好
+
+macOS 崩。
+
+======================================================================
+三十、不要做大型重写
+======================================================================
+
+优化阶段：
+
+禁止：
+
+React → 另一个框架
+
+Electron → 完全重写
+
+Renderer 全部推倒
+
+Project Model 全部重建
+
+Graph 全部重写
+
+除非：
+
+存在明确无法修复的架构问题
+
+并且：
+
+已有可验证证据。
+
+优先：
+
+Incremental Refactor。
+
+======================================================================
+三十一、不要为了优化而优化
+======================================================================
+
+如果某段代码：
+
+虽然不漂亮
+
+但：
+
+稳定
+快速
+容易维护
+
+不要动。
+
+优化只针对：
+
+真实体验问题
+
+真实性能问题
+
+真实 bug
+
+真实维护问题。
+
+======================================================================
+三十二、每次优化必须回答
+======================================================================
+
+每做一个较大优化：
+
+明确：
+
+Problem
+
+Cause
+
+Change
+
+Result
+
+例如：
+
+Problem:
+Timeline 拖动 1000 keyframes 时卡顿
+
+Cause:
+每次 pointermove 重算全部 layout
+
+Change:
+缓存静态 layout，仅更新 selected keys
+
+Result:
+interaction 从 xx ms 降至 xx ms
+
+如果无法测量：
+
+至少描述行为改善。
+
+不要只说：
+
+“优化了性能”。
+
+======================================================================
+三十三、优化循环
+======================================================================
+
+持续执行：
+
+USE
+↓
+OBSERVE
+↓
+PROFILE
+↓
+IDENTIFY
+↓
+FIX
+↓
+TEST
+↓
+COMPARE
+↓
+NEXT
+
+不要：
+
+一次写几十个修改
+
+然后一起验证。
+
+保持：
+
+小批次
+可验证。
+
+======================================================================
+三十四、修复 Regression
+======================================================================
+
+每次优化后：
+
+重新测试相关旧功能。
+
+例如：
+
+优化 Timeline
+
+必须重新检查：
+
+Keyframe Add
+
+Keyframe Move
+
+Undo
+
+Copy / Paste
+
+Curve Editor。
+
+优化不能：
+
+修一个功能
+
+破三个功能。
+
+======================================================================
+三十五、代码删除
+======================================================================
+
+允许主动删除：
+
+Dead Code
+
+Duplicate Components
+
+Deprecated Paths
+
+Unused CSS
+
+Old Experimental UI
+
+但是：
+
+必须确认：
+
+没有真实功能依赖。
+
+删除：
+
+比继续保留两套实现
+
+更好。
+
+======================================================================
+三十六、不要增加空功能
+======================================================================
+
+如果优化过程中发现：
+
+某个模块只有：
+
+按钮
+UI
+TODO
+
+但没有真实实现，
+
+不要继续美化它。
+
+选择：
+
+完成它
+
+或者：
+
+暂时隐藏。
+
+不要让用户：
+
+点击一个看似可用但实际没功能的按钮。
+
+======================================================================
+三十七、Product Coherence
+======================================================================
+
+不断问：
+
+这个功能是否像 Swayframe 的一部分？
+
+Canvas
+
+Timeline
+
+Motion Curve
+
+Graph
+
+Inspector
+
+Desktop Menu
+
+应该：
+
+交互一致
+
+视觉一致
+
+命名一致
+
+快捷键一致。
+
+不要像：
+
+6 个不同 Demo 拼起来。
+
+======================================================================
+三十八、优化优先级
+======================================================================
+
+在没有 P0 Bug 时：
+
+按照：
+
+1 Canvas Hand Feel
+
+2 Timeline
+
+3 Keyframe / Undo
+
+4 Motion Curve / Graph Editor
+
+5 Inspector
+
+6 Project Save / Load
+
+7 Playback
+
+8 Compositing Graph UX
+
+9 Desktop UX
+
+10 Performance
+
+11 Visual Polish
+
+12 Edge Cases
+
+持续循环。
+
+======================================================================
+三十九、额外时间怎么使用
+======================================================================
+
+如果主要功能已经稳定：
+
+不要自动增加新功能。
+
+继续：
+
+性能测试
+
+边界测试
+
+Cross-platform QA
+
+UI polish
+
+Accessibility
+
+Keyboard workflow
+
+Memory leak
+
+Error recovery
+
+Project migration
+
+Documentation
+
+Developer tooling
+
+这些工作比：
+
+随机加功能
+
+价值更高。
+
+======================================================================
+四十、最终输出
+======================================================================
+
+只有在：
+
+已经进行了大量实际优化
+
+或者：
+
+达到当前执行环境上限
+
+时再停止。
+
+最终输出：
+
+# Swayframe Optimization Result
+
+## Major UX Improvements
+
+## Performance Improvements
+
+尽量包含 before / after。
+
+## Stability Fixes
+
+## Architecture Improvements
+
+## Removed Technical Debt
+
+## Desktop Improvements
+
+## Graph Improvements
+
+## Tests
+
+实际结果：
+
+lint
+
+typecheck
+
+tests
+
+build
+
+desktop build
+
+## Remaining P0
+
+## Remaining P1
+
+## Remaining P2
+
+## Next Optimization Targets
+
+不要：
+
+仅输出“优化完成”。
+
+明确告诉用户：
+
+到底改善了什么。
+
+======================================================================
+FINAL DIRECTIVE
+======================================================================
+
+Stop optimizing for feature count.
+
+Start optimizing for product quality.
+
+Do not ask:
+
+“What else can I add?”
+
+Ask:
+
+“What still feels bad?”
+
+“What is still slow?”
+
+“What is still confusing?”
+
+“What can still break?”
+
+“What still feels like a prototype?”
+
+Then fix it.
+
+Use Swayframe like a real user.
+
+Find friction.
+
+Remove friction.
+
+Profile bottlenecks.
+
+Remove bottlenecks.
+
+Find inconsistencies.
+
+Unify them.
+
+Find regressions.
+
+Fix them.
+
+Continue until the existing product feels substantially more:
+
+professional
+
+responsive
+
+predictable
+
+coherent
+
+stable
+
+polished.
+
+POLISH.
+PROFILE.
+FIX.
+TEST.
+REPEAT.

@@ -119,3 +119,15 @@ it('边与角缩放使用属性 X/Y 链接，松手一次提交；取消手柄�
   expect(store.getSnapshot().project).toEqual(before);
   expect(store.commands.undoStack).toHaveLength(0);
 });
+
+it('快速手柄拖动在同一事件批次松手也提交最后坐标，而非初始预览', () => {
+  const { store, canvas } = setup();
+  fireEvent.pointerDown(canvas, { button: 0, clientX: 450, clientY: 250 });
+  act(() => {
+    fireEvent.pointerMove(canvas, { clientX: 500, clientY: 300 });
+    fireEvent.pointerUp(canvas);
+  });
+  const edited = activeComposition(store.getSnapshot().project).layers[0]!;
+  expect(edited.transform.scale.baseValue).toEqual({ x: 1.5, y: 1.5 });
+  expect(store.commands.undoStack).toHaveLength(1);
+});

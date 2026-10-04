@@ -1,10 +1,10 @@
 # Current Goal
 
-按 `docs/baseline/DEV_SPRINT_V2.txt` 自主推进完整创作流程。先完成 CG 桌面收尾，再优先修复连续交互与 Canvas/Timeline 操作问题，复用既有 Command/Property/Graph。
+按 `docs/baseline/OPTIMIZATION_POLISH.txt` 进入 Optimization & Polish Sprint；停止大型功能扩张。先真实使用，再按问题证据、性能测量与回归验证推进。
 
 # In Progress
 
-本轮完成，无挂起开发；已交付 0.6.2，下一轮按下列高价值任务推进。
+OP-1：完成独立原生工程全流程。定位快速缩放提交问题，建立性能基准。
 
 # Completed
 
@@ -63,3 +63,12 @@ V2-7：184 tests；V2-8：184 tests；V2-9：71文件/186 tests，全部门禁PA
 V2-10：71 文件 / 186 tests，typecheck、lint、tests、Web build、desktop build 全部 PASS；原生完整工程保存重开与 PNG 像素验收 PASS。
 
 V2-11：按用户反馈改为数值本身纵向拖动、输入/方向键实时预览，只有实际 XY 向量显示链接图标。字号/尺寸/时间/摄像机/曲线/空间路径数值也接入瞬态预览。72 文件 / 192 tests，全门禁 PASS；网页实测旋转输入无需失焦、纵向拖动一次撤销。见 outputs/NUMERIC_EDIT_UPDATE.md。
+
+## Optimization Backlog
+
+- [P0] OP-01：原生 0.6.2 角点拖动后增加一条历史，但缩放与画面保持原值。属性缩放正常。证据：outputs/optimization/use-scale.jpg。已确认 React 批处理导致松手读取旧预览；OP-1 使用同步手势引用提交，新增失败→通过回归。193 tests 全门禁通过。
+- [P1] OP-02：Canvas 每次 React 渲染均重新求值并调用 renderer，选择时间轴关键帧或节点 UI 操作也会影响 Canvas 订阅。需实测调用次数与耗时后处理。
+- [P2] OP-03：原生另存为已命名工程仍默认“未命名.swayframe”，增加重新命名步骤。本轮 A→B 真实操作可复现。
+- [P2] OP-04：数值连续输入一次出现 1250→50，可能是输入工具时序。暂为待复核观察，未确认软件缺陷。
+
+真实使用记录：新建工程/合成、矩形/文字、移动/缩放/旋转、两位置关键帧、Ease Out、Value/Speed Graph、椭圆遮罩/曝光、父级、父子联合预合成、Blur 节点参数、图片导入、A 保存关闭重开、B 另存与 PNG 导出。A/B JSON 严格相等。父子未同时选中时拒绝预合成符合现有保护规则。

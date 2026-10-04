@@ -92,9 +92,16 @@ export function Canvas({ store }: { store: EditorStore }) {
       }
     | undefined
   >(undefined);
-  const [transformPreview, setTransformPreview] = useState<
+  const [transformPreview, updateTransformPreview] = useState<
     readonly RenderLayer[] | undefined
   >();
+  const latestTransformPreview = useRef<readonly RenderLayer[] | undefined>(
+    undefined,
+  );
+  const setTransformPreview = (items: readonly RenderLayer[] | undefined) => {
+    latestTransformPreview.current = items;
+    updateTransformPreview(items);
+  };
   const view = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const c = activeComposition(view.project);
   const ref = useRef<HTMLCanvasElement>(null);
@@ -752,14 +759,14 @@ export function Canvas({ store }: { store: EditorStore }) {
               if (
                 g &&
                 g.moved &&
-                transformPreview &&
+                latestTransformPreview.current &&
                 g.project === store.getSnapshot().project &&
                 g.time === store.getSnapshot().time
               ) {
                 const commands = transformEditCommands(
                   view.project,
                   evaluated,
-                  transformPreview,
+                  latestTransformPreview.current,
                   g.kind,
                   view.time,
                   view.autoKeyframes,
