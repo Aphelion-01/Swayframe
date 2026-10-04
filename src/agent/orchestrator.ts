@@ -207,7 +207,9 @@ export class AgentOrchestrator {
     for (let round = 0; round < 4; round++) {
       this.live(signal);
       const response = await this.model.chat(
-        references.length ? 'vision' : 'planning',
+        references.length || messages.some((m) => m.images?.length)
+          ? 'vision'
+          : 'planning',
         {
           messages,
           tools,

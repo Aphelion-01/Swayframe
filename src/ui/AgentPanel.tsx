@@ -97,6 +97,8 @@ export function AgentPanel({
             ))}
         </select>
       </label>
+      {ai.fallback && <p role="status">{ai.fallback}</p>}
+      {ai.budgetWarning && <p role="status">{ai.budgetWarning}</p>}
       <div className="agent-provider">
         <span title={provider}>{provider ?? '尚未配置 AI 服务'}</span>
         <button

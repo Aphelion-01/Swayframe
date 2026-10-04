@@ -1,4 +1,3 @@
-import { AIError } from '../../../src/ai/contracts';
 import type { AIErrorCode } from '../../../src/ai/contracts';
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import type {
@@ -15,7 +14,9 @@ async function call<T>(request: DesktopRequest): Promise<T> {
   };
   if (!reply.ok) {
     if (reply.code)
-      throw new AIError(reply.code, reply.error ?? 'AI 服务操作未完成');
+      throw new Error(
+        `[SF_AI:${reply.code}]${reply.error ?? 'AI 服务操作未完成'}`,
+      );
     throw new Error(reply.error ?? '原生操作失败，请查看日志。');
   }
   return reply.value;

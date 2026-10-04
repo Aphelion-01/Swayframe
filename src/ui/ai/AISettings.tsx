@@ -1,3 +1,4 @@
+import { AdvancedAISettings } from './AdvancedAISettings';
 import { SkillSettings } from './SkillSettings';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { getAIApplication } from '../../ai/application';
@@ -50,9 +51,10 @@ function ProviderEditor({
         void (async () => {
           const parsed = providerSchema.safeParse({
             ...value,
-            models: value.models.length
+            models: value.models.some((m) => m.id === value.defaultModel)
               ? value.models
               : [
+                  ...value.models,
                   {
                     id: value.defaultModel,
                     name: value.defaultModel,
@@ -211,7 +213,7 @@ export function AISettings({
           </button>
         </header>
         <Tabs
-          items={['服务', '模型', 'Skills']}
+          items={['服务', '模型', '路由', 'Agent', 'Skills', '用量', '隐私']}
           value={tab}
           onChange={setTab}
         />
@@ -316,6 +318,9 @@ export function AISettings({
                     ))}
                   </>
                 ))}
+              {['路由', 'Agent', '用量', '隐私'].includes(tab) && (
+                <AdvancedAISettings manager={manager} tab={tab} />
+              )}
               {tab === 'Skills' && <SkillSettings manager={manager} />}
               {tab === '模型' && (
                 <>

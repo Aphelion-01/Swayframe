@@ -49,9 +49,18 @@ export const providerSchema = z
 export type ProviderConfig = z.infer<typeof providerSchema>;
 export const credentialsSchema = z
   .object({
-    apiKey: z.string().max(8192),
+    apiKey: z
+      .string()
+      .max(8192)
+      .refine((v) => !/[\r\n\0]/.test(v), '密钥包含非法字符'),
     headers: z
-      .record(z.string().regex(/^[A-Za-z0-9-]{1,100}$/), z.string().max(8192))
+      .record(
+        z.string().regex(/^[A-Za-z0-9-]{1,100}$/),
+        z
+          .string()
+          .max(8192)
+          .refine((v) => !/[\r\n\0]/.test(v), '请求头包含非法字符'),
+      )
       .refine(
         (h) =>
           Object.keys(h).length <= 20 &&

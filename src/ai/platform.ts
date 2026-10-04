@@ -50,10 +50,15 @@ export function createAIPlatform(
             if (signal?.aborted) throw new AIError('cancelled', '已停止');
             return value;
           } catch (e) {
+            const bridge =
+              e instanceof Error
+                ? /^\[SF_AI:([a-z_]+)\](.*)$/s.exec(e.message)
+                : null;
             const code =
-              typeof e === 'object' && e !== null && 'code' in e
+              bridge?.[1] ??
+              (typeof e === 'object' && e !== null && 'code' in e
                 ? String(e.code)
-                : 'provider';
+                : 'provider');
             const allowed = [
               'setup',
               'network',
@@ -67,7 +72,8 @@ export function createAIPlatform(
             ] as const;
             throw new AIError(
               allowed.find((v) => v === code) ?? 'provider',
-              e instanceof Error ? e.message : '模型请求未完成',
+              bridge?.[2] ??
+                (e instanceof Error ? e.message : '模型请求未完成'),
             );
           } finally {
             if (timer) clearInterval(timer);

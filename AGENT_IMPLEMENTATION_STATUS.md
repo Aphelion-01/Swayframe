@@ -27,8 +27,10 @@ ProviderManager为应用服务，设置/用量/Skills/历史独立于Project，�
 
 - A11全门禁通过：263 tests / 94 files。用户选择图片/GIF首帧/视频3帧、参考chips/移除和五种模式；Layout-only权限限制、隐私关闭不发送像素、无Project Asset写入。
 
+- A12全门禁通过：267 tests / 95 files。限流/网络/超时受限切换与重试、取消、实时健康与fallback提示、真实用量/80%-100%预算、路由/Agent/Privacy设置；桥接错误类型与凭证换行校验。
+
 ## In Progress
-- A12：Failover、Usage、Routing、Privacy 设置。
+- A13：应用会话历史、动画属性预设、桌面与自动保存集成。
 
 ## Blockers
 - 真实第三方API验收需用户自行配置凭证，不阻塞Mock与协议测试。

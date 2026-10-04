@@ -1,3 +1,5 @@
+import { appendUsage, emptyUsage, usageDate, usageSchema } from './usage';
+import type { AIUsage } from './usage';
 import {
   AIError,
   aiSettingsSchema,
@@ -34,6 +36,10 @@ export interface AIApplicationState {
   storage: 'secure' | 'memory-only' | 'unavailable';
   credentials: Readonly<Record<string, boolean>>;
   connection: Readonly<Record<string, string>>;
+  usage: AIUsage;
+  health: Readonly<Record<string, string>>;
+  fallback: string | null;
+  budgetWarning: string | null;
 }
 export class AIProviderManager {
   private state: AIApplicationState = {
@@ -43,6 +49,10 @@ export class AIProviderManager {
     storage: 'unavailable',
     credentials: {},
     connection: {},
+    usage: emptyUsage(),
+    health: {},
+    fallback: null,
+    budgetWarning: null,
   };
   private listeners = new Set<() => void>();
   private queue: Promise<unknown> = Promise.resolve();
@@ -65,9 +75,10 @@ export class AIProviderManager {
   }
   async initialize() {
     try {
-      const [settings, mode] = await Promise.all([
+      const [settings, mode, usageData] = await Promise.all([
         this.storage.loadSettings(),
         this.storage.storageStatus(),
+        this.storage.readData('usage'),
       ]);
       const credentials = Object.fromEntries(
         await Promise.all(
@@ -79,6 +90,9 @@ export class AIProviderManager {
       );
       this.set({
         settings: aiSettingsSchema.parse(settings),
+        usage: usageSchema.safeParse(usageData).success
+          ? usageSchema.parse(usageData)
+          : emptyUsage(),
         ready: true,
         storage: mode,
         credentials,
@@ -189,11 +203,122 @@ export class AIProviderManager {
     signal?: AbortSignal,
     onText?: (text: string) => void,
   ) {
-    const { provider, model } = this.resolve(task);
-    const raw = { ...request, model };
-    return (
-      this.overrides.get(provider.id)?.chat(raw, signal, onText) ??
-      this.transport.chat(provider, raw, signal, onText)
-    );
+    const settings = this.state.settings;
+    const tokens =
+      this.state.usage.days.find((d) => d.date === usageDate())?.tokens ?? 0;
+    const limit = settings.budget.dailyTokens;
+    const budgetWarning =
+      limit && tokens >= limit * 0.8
+        ? `今日已使用 ${tokens} tokens，预算 ${limit}${tokens >= limit ? '（已达到）' : '（超过80%）'}`
+        : null;
+    this.set({ budgetWarning, fallback: null });
+    if (limit && tokens >= limit && settings.budget.action === 'stop')
+      throw new AIError('invalid_request', '已达到每日 token 预算，请调整设置');
+    if (
+      request.messages.some((m) => m.images?.length) &&
+      !(settings.privacy.sendRenderPreview || settings.privacy.sendReferences)
+    )
+      throw new AIError('invalid_request', '隐私设置禁止发送图片');
+    const first = this.resolve(task);
+    const alternatives = settings.providers
+      .filter(
+        (p) =>
+          p.enabled &&
+          p.id !== first.provider.id &&
+          (p.type === 'mock' || this.state.credentials[p.id]),
+      )
+      .map((provider) => ({ provider, model: provider.defaultModel }))
+      .filter(
+        (r) =>
+          task !== 'vision' ||
+          this.models
+            .resolve(r.provider.id, r.model)
+            ?.capabilities.includes('vision'),
+      )
+      .slice(0, 2);
+    let route = first;
+    for (let attempt = 0; ; attempt++) {
+      if (signal?.aborted) throw new AIError('cancelled', '已停止');
+      this.set({
+        health: { ...this.state.health, [route.provider.id]: '正在请求' },
+      });
+      try {
+        const raw = { ...request, model: route.model };
+        const response = await (this.overrides
+          .get(route.provider.id)
+          ?.chat(raw, signal, onText) ??
+          this.transport.chat(route.provider, raw, signal, onText));
+        if (signal?.aborted) throw new AIError('cancelled', '已停止');
+        this.set({
+          health: { ...this.state.health, [route.provider.id]: '可用' },
+        });
+        await this.enqueue(async () => {
+          const usage = appendUsage(
+            this.state.usage,
+            route.provider.id,
+            response.model,
+            task,
+            response.usage,
+          );
+          const used =
+            usage.days.find((d) => d.date === usageDate())?.tokens ?? 0;
+          this.set({
+            usage,
+            budgetWarning:
+              limit && used >= limit * 0.8
+                ? `今日已使用 ${used} tokens，预算 ${limit}${used >= limit ? '（已达到）' : '（超过80%）'}`
+                : null,
+          });
+          if (usage !== this.state.usage || response.usage)
+            try {
+              await this.storage.writeData('usage', usage);
+            } catch {
+              this.set({ error: '用量记录保存失败' });
+            }
+        });
+        return response;
+      } catch (error) {
+        const retryable =
+          error instanceof AIError &&
+          ['network', 'timeout', 'rate_limit', 'provider'].includes(error.code);
+        this.set({
+          health: {
+            ...this.state.health,
+            [route.provider.id]:
+              error instanceof AIError ? error.message : '请求失败',
+          },
+        });
+        if (
+          signal?.aborted ||
+          !settings.failover.enabled ||
+          !retryable ||
+          attempt >= settings.failover.maxRetries
+        )
+          throw error;
+        const next = alternatives[attempt] ?? route;
+        this.set({
+          fallback:
+            next.provider.id !== route.provider.id
+              ? `${route.provider.name} 请求失败，已切换 ${next.provider.name}`
+              : `${route.provider.name} 暂时不可用，正在重试 (${attempt + 1})`,
+        });
+        await new Promise<void>((resolve, reject) => {
+          const abort = () => {
+            clearTimeout(timer);
+            reject(new AIError('cancelled', '已停止'));
+          };
+          const timer = setTimeout(
+            () => {
+              signal?.removeEventListener('abort', abort);
+              resolve();
+            },
+            100 * 2 ** attempt,
+          );
+          signal?.addEventListener('abort', abort, { once: true });
+          if (signal?.aborted) abort();
+        });
+        route = next;
+      }
+    }
   }
 }
