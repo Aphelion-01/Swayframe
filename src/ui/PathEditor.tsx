@@ -1,3 +1,4 @@
+import { Modal } from './workspace/primitives';
 import { useInteractionCancel } from './workspace/interaction';
 import { useRef, useState, useSyncExternalStore } from 'react';
 import { evaluateProperty } from '../core/animation-engine';
@@ -59,8 +60,18 @@ export function PathEditor({
       };
     };
   return (
-    <div className="modal-backdrop">
-      <section className="graph-dialog" aria-label="路径编辑器">
+    <Modal
+      onClose={() => {
+        store.setPropertyPreview(undefined);
+        onClose();
+      }}
+    >
+      <section
+        className="graph-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-label="路径编辑器"
+      >
         <div className="graph-heading">
           <h2>{title}编辑器</h2>
           <button
@@ -89,8 +100,8 @@ export function PathEditor({
         >
           <path
             d={pathSvg(value, true)}
-            fill="#4163ad55"
-            stroke="#82b6ff"
+            fill="var(--selection-overlay)"
+            stroke="var(--accent-primary)"
             strokeWidth="2"
           />
           {Array.from({ length: value.length / 6 }, (_, index) => {
@@ -102,7 +113,7 @@ export function PathEditor({
                   y1={p[3]}
                   x2={p[4]}
                   y2={p[5]}
-                  stroke="#897642"
+                  stroke="var(--warning)"
                 />
                 {([1, 2, 0] as const).map((handle) => (
                   <circle
@@ -117,9 +128,9 @@ export function PathEditor({
                     fill={
                       handle === 0
                         ? selected === index
-                          ? '#ffd25a'
-                          : '#bad9ff'
-                        : '#d8aa4e'
+                          ? 'var(--warning)'
+                          : 'var(--accent-primary)'
+                        : 'var(--warning)'
                     }
                     style={{ cursor: 'move', touchAction: 'none' }}
                     onPointerDown={(e) => {
@@ -259,6 +270,6 @@ export function PathEditor({
           双击空白处添加点；拖动蓝色点或黄色切线。路径动画在相同点数之间插值，改变点数会按保持方式切换。
         </p>
       </section>
-    </div>
+    </Modal>
   );
 }

@@ -15,6 +15,7 @@ export function NumberField({
   revision,
   time,
   previewValue,
+  compactLabel,
 }: {
   label: string;
   value: number;
@@ -28,6 +29,7 @@ export function NumberField({
   revision?: unknown;
   time?: number;
   previewValue?: number;
+  compactLabel?: string;
 }) {
   const format = (v: number) => String(Number(v.toFixed(3)));
   const [draft, setDraft] = useState(format(value));
@@ -188,8 +190,10 @@ export function NumberField({
     <label className="field">
       <span
         className="scrub-label"
+        data-compact-label={compactLabel}
+        aria-hidden={compactLabel !== undefined ? true : undefined}
         title="拖动调整 · Shift 大步长 · Alt 小步长 · 双击输入"
-        tabIndex={0}
+        tabIndex={compactLabel !== undefined ? -1 : 0}
         onDoubleClick={() => {
           input.current?.focus();
           input.current?.select();

@@ -1,18 +1,19 @@
 import { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
+import type { IconName } from './icons';
 export type Tool = 'select' | 'hand' | 'rectangle' | 'ellipse' | 'pen' | 'text';
 export const tools: readonly {
   id: Tool;
   label: string;
   key: string;
-  icon: string;
+  icon: IconName;
 }[] = [
-  { id: 'select', label: '选择工具', key: 'V', icon: '↖' },
-  { id: 'hand', label: '平移工具', key: 'H', icon: '✋' },
-  { id: 'rectangle', label: '矩形工具', key: 'R', icon: '□' },
-  { id: 'ellipse', label: '椭圆工具', key: 'E', icon: '○' },
-  { id: 'pen', label: '钢笔工具', key: 'P', icon: '⌁' },
-  { id: 'text', label: '文字工具', key: 'T', icon: 'T' },
+  { id: 'select', label: '选择工具', key: 'V', icon: 'select' },
+  { id: 'hand', label: '平移工具', key: 'H', icon: 'hand' },
+  { id: 'rectangle', label: '矩形工具', key: 'R', icon: 'rectangle' },
+  { id: 'ellipse', label: '椭圆工具', key: 'E', icon: 'ellipse' },
+  { id: 'pen', label: '钢笔工具', key: 'P', icon: 'pen' },
+  { id: 'text', label: '文字工具', key: 'T', icon: 'text' },
 ];
 const Context = createContext<{
   tool: Tool;

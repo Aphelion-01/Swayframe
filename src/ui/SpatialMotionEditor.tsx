@@ -35,7 +35,7 @@ export function SpatialMotionEditor({
                 `${i ? 'L' : 'M'}${20 + ((p.x - minX) / w) * 320},${15 + ((p.y - minY) / h) * 90}`,
             )
             .join(' ')}
-          stroke="#86dcca"
+          stroke="var(--success)"
           fill="none"
           strokeWidth="2"
         />

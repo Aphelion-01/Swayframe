@@ -1,4 +1,4 @@
-# Swayframe 0.6.3
+# Swayframe 0.7.0
 
 简体中文本地动效编辑器，支持人工完成 2D 与平面 3D 动画。当前节点模块基线为 `docs/baseline/COMPOSITING_GRAPH_CG0_CG12.txt`，桌面基线为 `docs/baseline/DESKTOP_D0_D10.txt`，前一轮编辑器基线为 `docs/baseline/MOTION_EDITOR_PHASE_A_I.txt`；历史 V0.1 基线保留用于追溯。
 
@@ -11,7 +11,7 @@ npm ci
 npm run dev
 ```
 
-打开终端显示的本地地址。运行 `node scripts/gate.mjs OP-6` 完成 typecheck、lint、tests、build；生产预览使用 `npm run build` 和 `npm run preview`。
+打开终端显示的本地地址。运行 `node scripts/gate.mjs UI-3` 完成 typecheck、lint、tests、build；生产预览使用 `npm run build` 和 `npm run preview`。
 
 ## 桌面启动与打包
 
@@ -81,3 +81,10 @@ GIF 作为静态图片；未提供视频解码、MP4 导出、完整三维建模
 本轮停止大型功能扩张，完成真实创作流程、快速缩放修复、静态时间轴/按层求值缓存、图布局渲染隔离、稳定取消监听、面板订阅缩减及另存为/序列化优化。204 tests，全质量门禁通过。
 
 结果与边界见 `OPTIMIZATION_RESULT.md`；实际测量、原生 A/B round-trip 和截图见 `outputs/optimization/`。开发服务器打开 `/benchmark.html`，点击“运行性能基准”可复测 BENCH-A～D；开发Profiler数值不等同于发行版性能。工程仍只由 Command/Transaction 修改。
+
+
+## Full UI/UX Redesign（0.7.0）
+
+统一中性暗色、16px SVG 图标与紧凑控制体系。上方全局菜单/工具栏，左侧项目/图层/助手，中央画布，右侧属性，下方时间轴/曲线/节点；面板尺寸与折叠仍独立保存。属性数值继续实时预览和纵向拖动，X/Y 链接只出现于向量。助手切换保留草稿与 Proposal，不占据常驻聊天区。
+
+三个改造批次全门禁通过，最终76文件/209 tests。macOS arm64原生保存重开严格一致，0.5秒PNG与0.6.3验收帧字节一致；Windows x64只完成交叉打包。审查与限制见 `docs/ui-redesign/RESULT.md`，真实截图和验证数据见 `outputs/ui-redesign/`。开发环境 `/ui-review.html` 可用真实编辑器检查五种窗口尺寸，不进入产品入口。

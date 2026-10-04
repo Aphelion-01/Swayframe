@@ -1,10 +1,10 @@
 # Current Goal
 
-按 `docs/baseline/OPTIMIZATION_POLISH.txt` 进入 Optimization & Polish Sprint；停止大型功能扩张。先真实使用，再按问题证据、性能测量与回归验证推进。
+按 `docs/baseline/FULL_UI_REDESIGN.txt` 完成全项目UI/UX重构和三轮审查；不扩张动画/渲染/数据模块。
 
 # In Progress
 
-本轮 OP-1～OP-6 完成，0.6.3代码与两平台安装包一致；204 tests 全门禁PASS。当前待优化项见 Optimization Backlog。
+本轮UI-1～UI-3完成，0.7.0代码与两平台安装包一致；76文件/209 tests全门禁PASS。结果见 docs/ui-redesign/RESULT.md，历史Optimization记录保留。
 
 # Completed
 
@@ -39,7 +39,7 @@ V2-10：最终原生工程重开、文字 Undo/Redo、完整数据一致性、PN
 
 # Known Regressions
 
-当前功能门禁75文件/204tests通过；完整原生A/B严格相等，0.5秒PNG与旧版验收字节相同。性能改善以两轮空闲采样区间为准，BENCH-D不宣称加速。
+当前76文件/209 tests通过；0.7.0原生A/B及0.6.3源工程JSON严格相等，0.5秒PNG与旧版验收字节相同。UI改造不宣称额外性能提升。
 
 # Blockers
 
@@ -96,3 +96,14 @@ OP-6：204 tests全门禁PASS。隔离基准首轮BENCH-B：播放头15.2ms→6.
 最终原生验收：full-A保存→关闭→最终包重开→full-B另存，2合成/11图层/1素材严格相等；含Shape/Text/Mask/Effects/Keyframes/MotionCurve/Graph/Parent/Precomp/Camera/Asset。0秒和0.5秒PNG真实导出成功；0.5秒PNG SHA-256与旧版验收帧完全相同。记录：outputs/optimization/native-roundtrip.json。
 
 代码检查点：316dd40、785fecb、482f405、fc41058、ea94cec、163c8b0。当前本轮完成，继续优化目标见OPTIMIZATION_RESULT.md。
+
+
+## Full UI/UX Redesign / UI-1～UI-3
+
+UI-1：统一tokens/icons/shell/panel/property/node/curve视觉和共享Tabs/Modal/Menu；窗口尺寸有界，分隔线使用同步最新布局提交。208 tests，全门禁PASS。
+
+UI-2 / Visual Polish：属性向量压缩X/Y标签、标量消除重复标签，图层实际行高28px；曲线SVG按屏幕像素补偿文字与圆形手柄，保持原时间/值坐标；移除187条被新主题覆盖的旧样式声明。209 tests，全门禁PASS。
+
+UI-3 / Professional Software Feel：修复曲线空状态提示被旧规则隐藏；助手内容保持挂载，切换标签不丢草稿/Proposal，入口展开折叠面板；启动/导出/设置/路径/恢复/About统一克制视觉与焦点关闭行为。209 tests，全门禁PASS。
+
+真实窗口1280×720/1440×900/1920×1080/2560×1440/620×720截图；原生0.7.0打开复杂工程→保存A→重开→另存B，JSON严格相等；0.5秒PNG SHA-256与旧版相同。原生旋转输入25即时预览，Enter一次历史，Undo恢复0。证据outputs/ui-redesign/verification.json。未验证Windows实机和长期使用；官方frontend-skill当前官方仓库不存在，项目Skill已创建、实际使用并通过校验。

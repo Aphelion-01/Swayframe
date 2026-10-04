@@ -16,7 +16,7 @@ afterEach(cleanup);
 it('曲线面板缓出与速度输入真实修改动画，撤销恢复', () => {
   const store = new EditorStore(createDefaultProject());
   render(<App store={store} />);
-  fireEvent.click(screen.getByText('动效 ▾'));
+  fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
   fireEvent.click(screen.getByRole('button', { name: '创建 矩形' }));
   fireEvent.click(screen.getByRole('button', { name: '开启 矩形 位置 动画' }));
   store.setTime(1);

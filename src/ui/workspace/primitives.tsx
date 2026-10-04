@@ -1,5 +1,5 @@
 import { shortcutLabel } from '../../desktop/platform';
-import { useEffect, useRef } from 'react';
+import { useEffect, useEffectEvent, useRef } from 'react';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 export function IconButton({
   label,
@@ -15,7 +15,10 @@ export function IconButton({
       {...props}
       className={`icon-button ${props.className ?? ''}`}
       aria-label={label}
-      title={`${label}${shortcut ? ` (${shortcutLabel(shortcut)})` : ''}`}
+      title={
+        props.title ??
+        `${label}${shortcut ? ` (${shortcutLabel(shortcut)})` : ''}`
+      }
     >
       {children}
     </button>
@@ -47,11 +50,38 @@ export function Tabs({
   onChange: (value: string) => void;
 }) {
   return (
-    <div role="tablist" className="panel-tabs">
+    <div
+      role="tablist"
+      aria-label={items.join(' / ')}
+      className="panel-tabs"
+      onKeyDown={(event) => {
+        const index = items.indexOf(value);
+        const next =
+          event.key === 'Home'
+            ? 0
+            : event.key === 'End'
+              ? items.length - 1
+              : event.key === 'ArrowRight'
+                ? (index + 1) % items.length
+                : event.key === 'ArrowLeft'
+                  ? (index - 1 + items.length) % items.length
+                  : undefined;
+        if (next === undefined) return;
+        event.preventDefault();
+        event.stopPropagation();
+        onChange(items[next]!);
+        const tabs =
+          event.currentTarget.querySelectorAll<HTMLButtonElement>(
+            '[role="tab"]',
+          );
+        tabs[next]?.focus();
+      }}
+    >
       {items.map((item) => (
         <button
           key={item}
           role="tab"
+          tabIndex={value === item ? 0 : -1}
           aria-selected={value === item}
           onClick={() => onChange(item)}
         >
@@ -138,5 +168,138 @@ export function ContextMenu({
         </button>
       ))}
     </div>
+  );
+}
+
+// Focus ownership is shared by the existing dialogs; busy export can block dismissal.
+export function Modal({
+  children,
+  onClose,
+}: {
+  children: ReactNode;
+  onClose?: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const close = useEffectEvent(() => onClose?.());
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    const root = ref.current;
+    const controls = () =>
+      [
+        ...(root?.querySelectorAll<HTMLElement>(
+          'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), summary, [tabindex="0"]',
+        ) ?? []),
+      ].filter(
+        (el) =>
+          !el.hidden &&
+          !el.closest('[hidden]') &&
+          (el.tagName === 'SUMMARY' || !el.closest('details:not([open])')),
+      );
+    controls()[0]?.focus();
+    const handle = (event: globalThis.KeyboardEvent) => {
+      const overlays = document.querySelectorAll('.modal-backdrop');
+      if (overlays[overlays.length - 1] !== root) return;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        close();
+      }
+      if (event.key === 'Tab') {
+        const list = controls();
+        if (!list.length) {
+          event.preventDefault();
+          return;
+        }
+        const first = list[0]!,
+          last = list[list.length - 1]!;
+        if (
+          event.shiftKey &&
+          (document.activeElement === first ||
+            !root?.contains(document.activeElement))
+        ) {
+          event.preventDefault();
+          last.focus();
+        } else if (
+          !event.shiftKey &&
+          (document.activeElement === last ||
+            !root?.contains(document.activeElement))
+        ) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    window.addEventListener('keydown', handle, true);
+    return () => {
+      window.removeEventListener('keydown', handle, true);
+      if (previous?.isConnected) previous.focus();
+    };
+  }, []);
+  return (
+    <div
+      ref={ref}
+      className="modal-backdrop"
+      onPointerDown={(event) => {
+        if (event.target === event.currentTarget) onClose?.();
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+export function MenuDropdown({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    const dismiss = (event: globalThis.PointerEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node))
+        ref.current.open = false;
+    };
+    window.addEventListener('pointerdown', dismiss);
+    return () => window.removeEventListener('pointerdown', dismiss);
+  }, []);
+  return (
+    <details
+      ref={ref}
+      className="toolbar-menu"
+      onKeyDown={(event) => {
+        const el = ref.current;
+        if (!el) return;
+        if (event.key === 'Escape' && el.open) {
+          event.preventDefault();
+          event.stopPropagation();
+          el.open = false;
+          el.querySelector('summary')?.focus();
+          return;
+        }
+        if ((event.target as HTMLElement).matches('input,select,textarea'))
+          return;
+        if (
+          event.key !== 'ArrowDown' &&
+          event.key !== 'ArrowUp' &&
+          event.key !== 'Home' &&
+          event.key !== 'End'
+        )
+          return;
+        event.preventDefault();
+        event.stopPropagation();
+        el.open = true;
+        const list = [
+          ...el.querySelectorAll<HTMLButtonElement>('button:not(:disabled)'),
+        ];
+        const i = list.indexOf(document.activeElement as HTMLButtonElement);
+        const next =
+          event.key === 'Home'
+            ? 0
+            : event.key === 'End'
+              ? list.length - 1
+              : event.key === 'ArrowDown'
+                ? (i + 1) % list.length
+                : (i - 1 + list.length) % list.length;
+        list[next]?.focus();
+      }}
+    >
+      {children}
+    </details>
   );
 }

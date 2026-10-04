@@ -15,7 +15,7 @@ afterEach(cleanup);
 it('路径和文字样式有可操作入口，修改经同一历史', () => {
   const store = new EditorStore(createDefaultProject());
   render(<App store={store} />);
-  fireEvent.click(screen.getByText('动效 ▾'));
+  fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
   fireEvent.click(screen.getByRole('button', { name: '创建 路径' }));
   const before = store.commands.getSnapshot();
   fireEvent.click(screen.getByRole('button', { name: '编辑贝塞尔路径' }));
@@ -27,7 +27,7 @@ it('路径和文字样式有可操作入口，修改经同一历史', () => {
   store.undo();
   expect(store.commands.getSnapshot()).toEqual(before);
   fireEvent.click(screen.getByRole('button', { name: '关闭路径编辑器' }));
-  fireEvent.click(screen.getByText('动效 ▾'));
+  fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
   fireEvent.click(screen.getByRole('button', { name: '创建 文字' }));
   fireEvent.change(screen.getByLabelText('字距'), { target: { value: '12' } });
   fireEvent.blur(screen.getByLabelText('字距'));

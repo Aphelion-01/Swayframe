@@ -1,3 +1,5 @@
+import { Modal } from '../ui/workspace/primitives';
+import { Icon } from '../ui/workspace/icons';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import type { EditorStore } from '../ui/editor-store';
 import { App } from '../ui/App';
@@ -68,8 +70,12 @@ export function DesktopApp({
       ) : (
         <main className="desktop-start">
           <div>
-            <h1>{ProductMetadata.displayName}</h1>
-            <p>把想法变成动态画面。</p>
+            <div className="launcher-heading">
+              <Icon name="comp" />
+              <h1>{ProductMetadata.displayName}</h1>
+              <span>{ProductMetadata.version}</span>
+            </div>
+            <p className="launcher-subtitle">动态设计与合成工作区</p>
             <div className="dialog-actions">
               <button
                 className="primary"
@@ -123,8 +129,13 @@ export function DesktopApp({
         </main>
       )}
       {recovery && (
-        <div className="modal-backdrop">
-          <section className="new-dialog" role="dialog" aria-label="恢复工程">
+        <Modal>
+          <section
+            className="new-dialog"
+            aria-modal="true"
+            role="dialog"
+            aria-label="恢复工程"
+          >
             <h2>发现未保存的恢复版本</h2>
             <p>上次会话可能异常结束。正式工程文件未被覆盖。</p>
             <p>
@@ -154,12 +165,13 @@ export function DesktopApp({
               </button>
             </div>
           </section>
-        </div>
+        </Modal>
       )}
       {about && (
-        <div className="modal-backdrop">
+        <Modal onClose={() => setAbout(false)}>
           <section
             className="new-dialog"
+            aria-modal="true"
             role="dialog"
             aria-label="关于 Swayframe"
           >
@@ -171,7 +183,7 @@ export function DesktopApp({
               <button onClick={() => setAbout(false)}>关闭</button>
             </div>
           </section>
-        </div>
+        </Modal>
       )}
     </>
   );

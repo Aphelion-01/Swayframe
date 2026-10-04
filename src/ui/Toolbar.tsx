@@ -7,7 +7,8 @@ import type { Shortcut } from './workspace/shortcuts';
 import { CommandPalette } from './workspace/palette';
 import { layerActions } from './workspace/layer-actions';
 import { tools, useTools } from './workspace/tools';
-import { IconButton } from './workspace/primitives';
+import { Icon } from './workspace/icons';
+import { MenuDropdown, Modal, IconButton } from './workspace/primitives';
 import { ExportDialog } from './ExportDialog';
 import { readFile } from './file-utils';
 import { importImageFile } from './asset-import';
@@ -360,8 +361,12 @@ export function Toolbar({ store }: { store: EditorStore }) {
         />
       )}
       <header className="topbar">
-        <details className="toolbar-menu">
-          <summary title="工程与创建命令">动效 ▾</summary>
+        <MenuDropdown>
+          <summary title="工程与创建命令">
+            <span className="application-name">Swayframe</span>
+            <span>文件</span>
+            <Icon name="chevron" />
+          </summary>
           <div
             className="dropdown-menu"
             onClick={(event) => {
@@ -440,8 +445,7 @@ export function Toolbar({ store }: { store: EditorStore }) {
               导入图片
             </button>
           </div>
-        </details>
-        <ToolButtons />
+        </MenuDropdown>
         <div className="project-title">
           {displayName(c.name)}
           <span>{displayName(view.project.name)}</span>
@@ -452,15 +456,21 @@ export function Toolbar({ store }: { store: EditorStore }) {
             shortcut="⌘K"
             onClick={() => setPaletteOpen(true)}
           >
-            ⌕
+            <Icon name="search" />
           </IconButton>
-          <button onClick={() => setExportOpen(true)}>导出</button>
+          <button
+            className="toolbar-action"
+            onClick={() => setExportOpen(true)}
+          >
+            <Icon name="export" />
+            导出
+          </button>
           <IconButton
             label="播放预览"
             shortcut="Space"
             onClick={() => store.setPlaying(!view.playing)}
           >
-            {view.playing ? 'Ⅱ' : '▶'}
+            <Icon name={view.playing ? 'pause' : 'play'} />
           </IconButton>
           <IconButton
             label="撤销"
@@ -468,7 +478,7 @@ export function Toolbar({ store }: { store: EditorStore }) {
             disabled={!store.commands.undoStack.length}
             onClick={() => store.undo()}
           >
-            ↶
+            <Icon name="undo" />
           </IconButton>
           <IconButton
             label="重做"
@@ -476,10 +486,23 @@ export function Toolbar({ store }: { store: EditorStore }) {
             disabled={!store.commands.redoStack.length}
             onClick={() => store.redo()}
           >
-            ↷
+            <Icon name="redo" />
           </IconButton>
         </div>
       </header>
+      <div className="editor-tool-strip">
+        <ToolButtons />
+        <span className="tool-context">
+          {tools.find((item) => item.id === tool)?.label}
+        </span>
+        <button
+          className="assistant-entry"
+          onClick={() => window.dispatchEvent(new Event('motion:assistant'))}
+        >
+          <Icon name="assistant" />
+          创作助手
+        </button>
+      </div>
       <input
         ref={openRef}
         type="file"
@@ -517,10 +540,11 @@ export function Toolbar({ store }: { store: EditorStore }) {
         <ExportDialog store={store} onClose={() => setExportOpen(false)} />
       )}
       {newDialog && (
-        <div className="modal-backdrop">
+        <Modal onClose={() => setNewDialog(false)}>
           <form
+            aria-modal="true"
             role="dialog"
-            aria-label="新建合成"
+            aria-label={editingComposition ? '合成设置' : '新建合成'}
             className="new-dialog"
             onSubmit={(event) => {
               event.preventDefault();
@@ -642,7 +666,7 @@ export function Toolbar({ store }: { store: EditorStore }) {
               </button>
             </div>
           </form>
-        </div>
+        </Modal>
       )}
     </>
   );
@@ -660,7 +684,7 @@ function ToolButtons() {
           aria-pressed={tool === item.id}
           onClick={() => setTool(item.id)}
         >
-          {item.icon}
+          <Icon name={item.icon} />
         </IconButton>
       ))}
     </div>

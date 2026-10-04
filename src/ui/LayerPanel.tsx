@@ -1,3 +1,4 @@
+import { Icon } from './workspace/icons';
 import { useEditorSlice } from './use-editor-slice';
 import { AssetsPanel } from './AssetsPanel';
 import { displayName } from './labels';
@@ -13,7 +14,11 @@ export function LayerPanel({ store }: { store: EditorStore }) {
   const view = useEditorSlice(store, ['project', 'selection']),
     c = activeComposition(view.project);
   const [tab, setTab] = useState(() =>
-      localStorage.getItem('motion.active-left') === '项目' ? '项目' : '图层',
+      ['项目', '图层', '助手'].includes(
+        localStorage.getItem('motion.active-left') ?? '',
+      )
+        ? localStorage.getItem('motion.active-left')!
+        : '图层',
     ),
     [renaming, setRenaming] = useState<string>(),
     [name, setName] = useState(''),
@@ -36,6 +41,15 @@ export function LayerPanel({ store }: { store: EditorStore }) {
     const row = document.querySelector('.layer-row.selected');
     row?.scrollIntoView?.({ block: 'nearest' });
   }, [view.selection]);
+  useEffect(() => {
+    const open = () => {
+      setTab('助手');
+      localStorage.setItem('motion.active-left', '助手');
+      window.dispatchEvent(new Event('motion:show-left'));
+    };
+    window.addEventListener('motion:assistant', open);
+    return () => window.removeEventListener('motion:assistant', open);
+  }, []);
   const items = layerActions(store, rename);
   const finishRename = () => {
     if (renaming && name.trim())
@@ -52,7 +66,7 @@ export function LayerPanel({ store }: { store: EditorStore }) {
   return (
     <aside className="layers-panel" aria-label="图层面板" tabIndex={0}>
       <Tabs
-        items={['项目', '图层']}
+        items={['项目', '图层', '助手']}
         value={tab}
         onChange={(tab) => {
           setTab(tab);
@@ -82,13 +96,13 @@ export function LayerPanel({ store }: { store: EditorStore }) {
                   ]);
                 }}
               >
-                ▣ {comp.name}
+                <Icon name="comp" /> {comp.name}
               </button>
             ))}
           </div>
           <AssetsPanel store={store} />
         </>
-      ) : (
+      ) : tab === '助手' ? null : (
         <>
           <div className="panel-heading">
             <h2>
@@ -101,7 +115,7 @@ export function LayerPanel({ store }: { store: EditorStore }) {
                 setMenu({ x: r.left, y: r.bottom });
               }}
             >
-              ⋯
+              <Icon name="more" />
             </IconButton>
           </div>
           {!c.layers.length && (
@@ -162,7 +176,7 @@ export function LayerPanel({ store }: { store: EditorStore }) {
                     ])
                   }
                 >
-                  {layer.visible ? '◉' : '◌'}
+                  <Icon name={layer.visible ? 'eye' : 'eye-off'} />
                 </IconButton>
                 <IconButton
                   label={`${layer.locked ? '解锁' : '锁定'} ${displayName(layer.name)}`}
@@ -178,7 +192,7 @@ export function LayerPanel({ store }: { store: EditorStore }) {
                     ])
                   }
                 >
-                  {layer.locked ? '▣' : '▫'}
+                  <Icon name={layer.locked ? 'lock' : 'unlock'} />
                 </IconButton>
                 {renaming === layer.id ? (
                   <input
@@ -211,20 +225,24 @@ export function LayerPanel({ store }: { store: EditorStore }) {
                     }}
                   >
                     <span className="layer-symbol">
-                      {layer.type === 'text'
-                        ? 'T'
-                        : layer.type === 'image'
-                          ? '▧'
-                          : layer.type === 'precomp'
-                            ? '▣'
-                            : layer.type === 'null'
-                              ? '⊕'
-                              : layer.type === 'camera'
-                                ? '▤'
-                                : layer.type === 'shape' &&
-                                    layer.shapeKind === 'ellipse'
-                                  ? '○'
-                                  : '□'}
+                      <Icon
+                        name={
+                          layer.type === 'text'
+                            ? 'text'
+                            : layer.type === 'image'
+                              ? 'image'
+                              : layer.type === 'precomp'
+                                ? 'comp'
+                                : layer.type === 'null'
+                                  ? 'null'
+                                  : layer.type === 'camera'
+                                    ? 'camera'
+                                    : layer.type === 'shape' &&
+                                        layer.shapeKind === 'ellipse'
+                                      ? 'ellipse'
+                                      : 'rectangle'
+                        }
+                      />
                     </span>
                     <span>{displayName(layer.name)}</span>
                   </button>
@@ -234,6 +252,15 @@ export function LayerPanel({ store }: { store: EditorStore }) {
           </div>
         </>
       )}
+      <div className="assistant-workspace" hidden={tab !== '助手'}>
+        <div className="panel-heading">
+          <h2>创作助手</h2>
+          <span className="metadata">本地演示</span>
+        </div>
+        <AgentPanel store={store} />
+        <ProposalPanel store={store} />
+      </div>
+
       {menu && (
         <ContextMenu
           items={items}
@@ -241,11 +268,6 @@ export function LayerPanel({ store }: { store: EditorStore }) {
           onClose={() => setMenu(undefined)}
         />
       )}
-      <details className="feature-details">
-        <summary>智能辅助（演示）</summary>
-        <AgentPanel store={store} />
-        <ProposalPanel store={store} />
-      </details>
     </aside>
   );
 }

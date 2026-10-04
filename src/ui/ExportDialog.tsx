@@ -1,3 +1,4 @@
+import { Modal } from './workspace/primitives';
 import { desktopService } from '../desktop/service';
 import { useRef, useState } from 'react';
 import { activeComposition } from '../core/project-model';
@@ -70,10 +71,15 @@ export function ExportDialog({
     }
   };
   return (
-    <div className="modal-backdrop">
-      <section className="new-dialog" aria-label="导出">
+    <Modal onClose={busy ? undefined : onClose}>
+      <section
+        className="new-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-label="导出"
+      >
         <h2>导出 PNG</h2>
-        <p>使用与画布相同的动画求值和渲染。导出开始后固定工程快照。</p>
+        <p>导出当前帧，或按时间范围导出 PNG 序列。</p>
         <div className="field-grid">
           <label className="field">
             开始（秒）
@@ -129,6 +135,6 @@ export function ExportDialog({
           MB，可分段导出。
         </p>
       </section>
-    </div>
+    </Modal>
   );
 }

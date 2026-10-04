@@ -36,18 +36,18 @@ export function MotionPreview({ curve }: { curve: MotionCurve }) {
         </button>
       </div>
       <svg viewBox="0 0 360 52" role="img" aria-label="缓动预览小球">
-        <line x1="65" x2="295" y1="26" y2="26" stroke="#485770" />
+        <line x1="65" x2="295" y1="26" y2="26" stroke="var(--border-strong)" />
         <circle
           cx={65 + evaluateMotionCurve(curve, Math.min(1, time)) * 230}
           cy="26"
           r="7"
-          fill="#87dbcc"
+          fill="var(--success)"
         />
       </svg>
       <small>归一化速度 dp/du（可为负）</small>
       <svg viewBox="0 0 360 85" role="img" aria-label="归一化速度预览">
-        <path d={d} stroke="#e7b679" strokeWidth="2" fill="none" />
-        <text x="20" y="83" fill="#a4b5cf" fontSize="10">
+        <path d={d} stroke="var(--warning)" strokeWidth="2" fill="none" />
+        <text x="20" y="83" fill="var(--text-muted)" fontSize="10">
           0 → 1 · 无属性单位
         </text>
       </svg>

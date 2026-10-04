@@ -42,10 +42,10 @@ const start = () => {
 describe('A-01～A-09 用户流程集成验收', () => {
   it('A-01 / A-02 / A-05：新建合成、Canvas 拖动、属性面板 编辑和逐步 Undo/Redo', () => {
     const store = start();
-    fireEvent.click(screen.getByText('动效 ▾'));
+    fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
     fireEvent.click(screen.getByRole('button', { name: '新建合成' }));
     fireEvent.click(screen.getByRole('button', { name: '创建合成' }));
-    fireEvent.click(screen.getByText('动效 ▾'));
+    fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
     fireEvent.click(screen.getByRole('button', { name: '创建 矩形' }));
     expect(activeComposition(store.getSnapshot().project)).toMatchObject({
       width: 1920,
@@ -81,7 +81,7 @@ describe('A-01～A-09 用户流程集成验收', () => {
   });
   it('A-03 / A-04：手动 Spring 入场淡入，四类图层与文件在关闭重开后保持一致', async () => {
     const store = start();
-    fireEvent.click(screen.getByText('动效 ▾'));
+    fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
     fireEvent.click(screen.getByRole('button', { name: '创建 矩形' }));
     edit('位置 X', '-120');
     edit('透明度（%）', '0');
@@ -105,9 +105,9 @@ describe('A-01～A-09 用户流程集成验收', () => {
     const c = activeComposition(store.getSnapshot().project)!;
     expect(createRenderSnapshot(c, 0.5, []).layers[0]?.opacity).toBe(0.5);
     expect(createRenderSnapshot(c, 1, []).layers[0]?.position.x).toBe(960);
-    fireEvent.click(screen.getByText('动效 ▾'));
+    fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
     fireEvent.click(screen.getByRole('button', { name: '创建 椭圆' }));
-    fireEvent.click(screen.getByText('动效 ▾'));
+    fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
     fireEvent.click(screen.getByRole('button', { name: '创建 文字' }));
     const bytes = Uint8Array.from(
       atob(
@@ -137,6 +137,7 @@ describe('A-01～A-09 用户流程集成验收', () => {
   it('A-06 / A-07：Agent 演示一项历史、整体撤销、重做后仍可手改', () => {
     const store = start();
     const before = store.commands.getSnapshot();
+    fireEvent.click(screen.getByRole('tab', { name: '助手' }));
     fireEvent.click(screen.getByRole('button', { name: '生成入场动画 ↗' }));
     expect(store.commands.undoStack).toHaveLength(1);
     expect(screen.getByLabelText('位置 X')).toHaveValue(960);
@@ -145,6 +146,7 @@ describe('A-01～A-09 用户流程集成验收', () => {
     expect(store.commands.getSnapshot()).toEqual(before);
     fireEvent.click(screen.getByRole('button', { name: '重做' }));
     expect(store.commands.getSnapshot()).toEqual(generated);
+    fireEvent.click(screen.getByRole('tab', { name: '图层' }));
     fireEvent.click(screen.getByRole('button', { name: '选择 蓝色方块入场' }));
     edit('旋转（°）', '15');
     expect(
@@ -154,10 +156,11 @@ describe('A-01～A-09 用户流程集成验收', () => {
   });
   it('A-08：Provider 输出建议时不修改工程；应用后可撤销', async () => {
     const store = start();
-    fireEvent.click(screen.getByText('动效 ▾'));
+    fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
     fireEvent.click(screen.getByRole('button', { name: '创建 矩形' }));
     edit('位置 X', '100');
     const before = store.commands.getSnapshot();
+    fireEvent.click(screen.getByRole('tab', { name: '助手' }));
     fireEvent.click(screen.getByRole('button', { name: '布局建议' }));
     await screen.findByRole('button', { name: '应用建议' });
     expect(store.commands.getSnapshot()).toBe(before);
@@ -171,7 +174,7 @@ describe('A-01～A-09 用户流程集成验收', () => {
   });
   it('A-09：真实文件输入拒绝非法 JSON 和未知版本，当前工程不部分变化', async () => {
     const store = start();
-    fireEvent.click(screen.getByText('动效 ▾'));
+    fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
     fireEvent.click(screen.getByRole('button', { name: '创建 矩形' }));
     const before = store.commands.getSnapshot();
     const count = store.commands.undoStack.length;

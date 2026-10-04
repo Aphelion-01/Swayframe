@@ -1,0 +1,1462 @@
+你现在进入本项目的 **FULL UI/UX REDESIGN & POLISH MODE**。
+
+你的任务不是简单修改几个 CSS 数值，也不是只优化当前页面。
+
+你的目标是：
+
+> 对整个应用进行一次系统级、产品级 UI/UX 重构，使它逐步达到 Figma、After Effects、Blender、DaVinci Resolve、Nuke 等专业创作软件应有的界面成熟度，同时保留本项目自身的 AI Native Creative Tool 产品定位。
+
+这是一次真正的全项目 UI/UX 优化任务。
+
+除非遇到无法自行解决的关键阻塞，否则不要停下来询问我，也不要只给建议、计划或设计稿。
+
+**直接检查项目 → 安装 Skill → 建立 UI Skill → 运行项目 → 分析 UI → 修改代码 → 验证 → 继续优化。**
+
+---
+
+# 第一阶段：安装 UI Skill
+
+首先安装 OpenAI 官方 Frontend Skill：
+
+```text
+$skill-installer frontend-skill
+```
+
+安装完成后，在本次 UI 重构过程中主动使用：
+
+```text
+$frontend-skill
+```
+
+不要只安装而不使用。
+
+Frontend Skill 负责：
+
+- Visual hierarchy
+- Composition
+- Typography
+- Spacing
+- Interaction
+- Motion
+- UI restraint
+- Avoiding generic AI-generated UI
+- Removing unnecessary cards
+- Removing excessive rounded rectangles
+- Reducing visual clutter
+- Building stronger interface hierarchy
+
+---
+
+# 第二阶段：建立项目专属 UI Skill
+
+然后使用：
+
+```text
+$skill-creator
+```
+
+为当前 repository 创建一个项目级 Skill：
+
+```text
+professional-creative-editor-ui
+```
+
+Skill 建议存放：
+
+```text
+.codex/skills/professional-creative-editor-ui/SKILL.md
+```
+
+这个 Skill 必须针对：
+
+**Professional Creative Desktop Software**
+
+而不是普通：
+
+- SaaS
+- Dashboard
+- Landing Page
+- Admin Panel
+- Website
+
+它的设计参考对象是：
+
+- Adobe After Effects
+- Figma
+- Blender
+- DaVinci Resolve
+- Nuke
+- Cinema 4D
+- VS Code
+
+但不要直接复制任何一个软件。
+
+目标是学习这些专业软件共有的：
+
+- 信息架构
+- 面板体系
+- 操作密度
+- 工具布局
+- 编辑器思维
+- 状态反馈
+- Workspace 思维
+- Keyboard-first workflow
+
+---
+
+# 第三阶段：为 Skill 写入以下设计原则
+
+`professional-creative-editor-ui` 至少必须包含以下规则。
+
+## 1. Professional Tool First
+
+这个产品首先是一个专业创作工具，而不是网站。
+
+不要把界面设计成：
+
+```text
+Dashboard
+Card Grid
+Landing Page
+SaaS App
+AI Chat Website
+```
+
+避免：
+
+- 大卡片堆叠
+- 到处都是圆角容器
+- 大面积无意义留白
+- 巨型标题
+- 巨型按钮
+- 大面积渐变
+- 玻璃拟态泛滥
+- 每个功能一个 Card
+- 每个区域都有 Border
+- 所有内容都浮起来
+- “AI Website”视觉风格
+
+---
+
+# 2. Desktop Creative Software Mental Model
+
+整个软件应该建立稳定的桌面创作软件布局模型：
+
+```text
+┌─────────────────────────────────────────────┐
+│ Menu / Global Toolbar                      │
+├──────────┬──────────────────────┬───────────┤
+│          │                      │           │
+│ Assets / │    Main Canvas /     │ Inspector │
+│ Tools    │    Composition       │ Properties│
+│          │                      │           │
+├──────────┴──────────────────────┴───────────┤
+│ Timeline / Node Graph / Workflow           │
+└─────────────────────────────────────────────┘
+```
+
+具体结构可以根据现有项目进行调整，但必须保持稳定的：
+
+**Left Tool Area**
+
+**Center Workspace**
+
+**Right Inspector**
+
+**Bottom Timeline / Node / Workflow Area**
+
+不要让核心模块随意漂浮。
+
+---
+
+# 3. Workspace Architecture
+
+整个 UI 必须逐步支持专业软件式 Workspace。
+
+优先检查并优化：
+
+- panel resizing
+- draggable divider
+- panel collapse
+- panel expand
+- sidebar width
+- timeline height
+- inspector width
+- workspace persistence
+- tabs
+- multi-panel organization
+- context menu
+- toolbar
+- status bar
+- command palette
+
+如果已有类似实现，不要重写全部架构。
+
+优先优化现有实现。
+
+---
+
+# 4. Visual Hierarchy
+
+必须形成清晰的视觉层级：
+
+Level 0：
+
+```text
+Application Shell
+```
+
+Level 1：
+
+```text
+Workspace Regions
+```
+
+Level 2：
+
+```text
+Panels
+```
+
+Level 3：
+
+```text
+Sections
+```
+
+Level 4：
+
+```text
+Controls
+```
+
+Level 5：
+
+```text
+Secondary Metadata
+```
+
+用户第一眼应该能够理解：
+
+- 当前在哪个 Workspace
+- 当前选中了什么
+- 哪里是画布
+- 哪里调整属性
+- 哪里管理素材
+- 哪里控制时间
+- 哪里控制 AI
+- 哪里查看节点关系
+
+不要让所有东西视觉权重相同。
+
+---
+
+# 5. Density
+
+这是生产力工具。
+
+默认使用：
+
+```text
+medium-high information density
+```
+
+不要按照消费者 App 设计。
+
+避免：
+
+```text
+48px / 56px 巨大按钮
+24px 巨大内边距
+巨大卡片
+大量空白
+```
+
+优先采用：
+
+```text
+compact controls
+compact toolbar
+compact list
+compact inspector
+tight but breathable spacing
+```
+
+但不要拥挤。
+
+---
+
+# 6. Spacing System
+
+建立统一 spacing token。
+
+例如：
+
+```text
+2
+4
+6
+8
+12
+16
+24
+32
+```
+
+不要出现大量：
+
+```text
+13px
+17px
+19px
+23px
+```
+
+这种随机 spacing。
+
+扫描项目中的：
+
+```text
+padding
+margin
+gap
+height
+width
+```
+
+逐步统一。
+
+---
+
+# 7. Border Radius
+
+专业创作软件应采用克制圆角。
+
+避免：
+
+```text
+rounded-xl
+rounded-2xl
+rounded-3xl
+```
+
+到处使用。
+
+建议：
+
+```text
+small controls:
+2–4px
+
+panels:
+0–6px
+
+floating popover:
+4–8px
+```
+
+只有真正需要强调的组件才能使用更大的 radius。
+
+---
+
+# 8. Color System
+
+建立真正的 Design Token。
+
+至少包括：
+
+```text
+background-primary
+background-secondary
+background-tertiary
+
+surface-hover
+surface-active
+surface-selected
+
+border-subtle
+border-strong
+
+text-primary
+text-secondary
+text-muted
+
+accent-primary
+accent-hover
+
+danger
+warning
+success
+```
+
+禁止在几十个文件里重复硬编码随机颜色。
+
+---
+
+# 9. Dark UI
+
+如果当前项目是暗色 UI，则整体方向保持：
+
+```text
+professional neutral dark
+```
+
+不要：
+
+- pure black everywhere
+- excessive blue
+- cyberpunk neon
+- gaming UI
+- glassmorphism everywhere
+
+应该像真正工作几个小时不会疲劳的创作软件。
+
+强调色只负责：
+
+```text
+selection
+active tools
+important state
+AI action
+```
+
+不要让所有按钮都是强调色。
+
+---
+
+# 10. Typography
+
+建立清晰文字体系。
+
+至少包括：
+
+```text
+Application / Workspace title
+Panel title
+Section label
+Control text
+Metadata
+Hint
+Disabled text
+```
+
+专业软件应避免：
+
+```text
+巨大标题
+营销式 Typography
+页面式 H1/H2/H3
+```
+
+Panel Header 应紧凑。
+
+---
+
+# 11. Icons
+
+统一 Icon System。
+
+检查：
+
+- icon size
+- stroke width
+- optical alignment
+- icon/button padding
+- selected state
+- hover state
+
+不要：
+
+- emoji 作为正式工具图标
+- 多套不同视觉风格 icon
+- 一个地方 14px 一个地方 28px
+- icon 与文字基线错位
+
+如果项目已经采用图标库，则优先继续使用现有库。
+
+不要因为 UI 优化随意增加大量依赖。
+
+---
+
+# 12. Buttons
+
+重新审核所有 Button。
+
+区分：
+
+```text
+Primary
+Secondary
+Ghost
+Icon
+Toolbar
+Danger
+Toggle
+Segmented
+```
+
+不要所有按钮长得一样。
+
+尤其专业工具栏：
+
+优先使用：
+
+```text
+icon button
+icon + tooltip
+toggle tool
+segmented tool group
+```
+
+而不是巨大文字 Button。
+
+---
+
+# 13. Interaction States
+
+所有主要交互组件至少检查：
+
+```text
+default
+hover
+active
+selected
+focus
+disabled
+loading
+error
+```
+
+尤其检查：
+
+- toolbar
+- timeline
+- layer
+- node
+- inspector
+- asset
+- button
+- tab
+- dropdown
+- input
+- slider
+
+不要只实现 default state。
+
+---
+
+# 14. Selection Language
+
+建立整个软件统一 Selected Language。
+
+例如所有：
+
+```text
+Layer
+Node
+Asset
+Tool
+Panel Tab
+Timeline Item
+```
+
+被选择时使用统一的：
+
+```text
+accent
+background
+border
+text
+```
+
+用户必须一眼知道：
+
+> 我现在正在编辑什么？
+
+---
+
+# 15. Inspector
+
+右侧 Inspector / Properties 是核心。
+
+重新检查其信息组织。
+
+推荐：
+
+```text
+Transform
+Appearance
+Motion
+Effects
+Layout
+AI
+Advanced
+```
+
+根据当前项目实际功能调整。
+
+使用：
+
+```text
+collapsible sections
+property rows
+label/value alignment
+compact controls
+```
+
+不要变成很多大 Card。
+
+---
+
+# 16. Canvas
+
+中央 Canvas 必须是视觉中心。
+
+不要让：
+
+```text
+sidebar
+AI panel
+toolbar
+floating UI
+```
+
+抢 Canvas 的视觉权重。
+
+Canvas 应具有：
+
+- 清晰边界
+- zoom feedback
+- pan feedback
+- selection feedback
+- snapping feedback
+- transform handles
+- viewport controls
+
+如果这些功能已经存在，只优化其呈现和交互。
+
+不要破坏绘制/编辑逻辑。
+
+---
+
+# 17. Timeline
+
+Timeline 应向：
+
+```text
+After Effects
+DaVinci Resolve
+Blender
+```
+
+这种专业编辑器的“信息密度 + 精准控制”学习。
+
+重点优化：
+
+- row height
+- layer hierarchy
+- playhead
+- time ruler
+- keyframes
+- selected layer
+- hover
+- track separators
+- visibility controls
+- lock
+- grouping
+- scrolling
+- zoom
+
+不要设计成普通 list。
+
+---
+
+# 18. Node Graph
+
+项目存在流程图 / Node Graph 模块。
+
+这是核心模块之一。
+
+参考：
+
+```text
+Nuke
+Blender Geometry Nodes
+Unreal Blueprint
+ComfyUI
+```
+
+但保持自己产品语言。
+
+重点优化：
+
+- node size
+- header
+- ports
+- wires
+- selected node
+- hover node
+- connection preview
+- canvas grid
+- zoom
+- pan
+- minimap
+- groups
+- node categories
+- search
+- alignment
+- spacing
+
+避免 Node 变成“大号 Card”。
+
+Node 应是工具，而不是展示卡片。
+
+---
+
+# 19. AI Interface
+
+AI 是本产品的重要能力，但：
+
+**AI 不能吞掉整个软件。**
+
+不要让软件变成：
+
+```text
+ChatGPT + Canvas
+```
+
+AI 应作为：
+
+```text
+Assistant
+Agent
+Command Interface
+Contextual Tool
+```
+
+融入专业工作流。
+
+推荐结构：
+
+```text
+AI Command Bar
+Agent Panel
+Inline Suggestion
+Context Actions
+Execution Preview
+```
+
+而不是永远占据巨大聊天窗口。
+
+---
+
+# 20. Motion
+
+UI 动画必须克制。
+
+建议：
+
+```text
+100–220ms
+```
+
+主要用于：
+
+- panel
+- hover
+- menu
+- selection
+- inspector
+- tab
+- modal
+- node interaction
+
+不要：
+
+- exaggerated bounce
+- unnecessary spring
+- cinematic animation
+- slow transitions
+
+专业工具第一目标是响应速度。
+
+---
+
+# 第四阶段：扫描整个代码库
+
+现在扫描整个 repository。
+
+识别：
+
+- UI framework
+- component architecture
+- CSS architecture
+- Tailwind usage
+- design tokens
+- layouts
+- panels
+- routes
+- major screens
+- reusable components
+- duplicated components
+- inconsistent styles
+- dead styles
+- hardcoded colors
+- hardcoded spacing
+- typography
+- icons
+- interaction logic
+
+不要只查看当前打开的文件。
+
+建立整个 UI Architecture Map。
+
+---
+
+# 第五阶段：启动应用
+
+如果当前项目可以运行：
+
+安装缺失依赖。
+
+启动开发环境。
+
+实际查看应用。
+
+不要只根据源代码猜 UI。
+
+如果当前为：
+
+```text
+Electron
+Tauri
+Web
+React
+Next
+Vite
+```
+
+请自行识别正确运行方式。
+
+---
+
+# 第六阶段：建立 UI Audit
+
+对整个软件执行 UI Audit。
+
+检查至少：
+
+```text
+Layout
+Hierarchy
+Density
+Spacing
+Typography
+Colors
+Borders
+Radius
+Icons
+Buttons
+Inputs
+Panels
+Tabs
+Canvas
+Timeline
+Node Graph
+Inspector
+Assets
+AI Panel
+Menus
+Popovers
+Dialogs
+Empty States
+Loading States
+Error States
+Hover States
+Selected States
+Resize Behaviour
+Window Resize Behaviour
+```
+
+按照：
+
+```text
+P0
+P1
+P2
+P3
+```
+
+排列。
+
+P0：
+
+严重影响软件结构和操作。
+
+P1：
+
+明显破坏视觉一致性。
+
+P2：
+
+交互和细节问题。
+
+P3：
+
+最后 polish。
+
+但不要停留在 Audit。
+
+**Audit 后直接开始修改。**
+
+---
+
+# 第七阶段：建立 Design System
+
+如果当前 Design System 不完整，则建立：
+
+```text
+UI tokens
+spacing scale
+color scale
+typography scale
+radius scale
+control sizes
+panel sizes
+icon sizes
+motion tokens
+z-index layers
+```
+
+优先复用已有系统。
+
+禁止为了“重构”而无意义重写整个项目。
+
+---
+
+# 第八阶段：优先重构 Application Shell
+
+首先把整个 App Shell 做正确。
+
+优先优化：
+
+```text
+Window
+Top Bar
+Toolbar
+Left Sidebar
+Center Workspace
+Right Inspector
+Bottom Workspace
+Status Area
+```
+
+只有 Shell 稳定后，才继续局部组件。
+
+---
+
+# 第九阶段：全局组件统一
+
+统一：
+
+```text
+Button
+IconButton
+Input
+NumberInput
+Select
+Slider
+Checkbox
+Toggle
+Tabs
+Tooltip
+Popover
+Dropdown
+ContextMenu
+Modal
+Panel
+PanelHeader
+SectionHeader
+PropertyRow
+Divider
+ScrollArea
+```
+
+优先复用组件。
+
+删除明显重复 UI 实现。
+
+---
+
+# 第十阶段：逐屏优化
+
+依次遍历所有主要 Screen / Workspace。
+
+不能只优化首页。
+
+至少覆盖当前项目实际存在的：
+
+- Home
+- Editor
+- Canvas
+- Timeline
+- Node Graph
+- AI workspace
+- Asset browser
+- Inspector
+- Settings
+- Project manager
+- dialogs
+- popovers
+- menus
+
+如果某些不存在，不要人为创建。
+
+---
+
+# 第十一阶段：交互优化
+
+检查常用操作路径。
+
+目标：
+
+```text
+less mouse travel
+fewer unnecessary clicks
+more context-aware controls
+better keyboard workflow
+clear selection
+clear feedback
+```
+
+能够：
+
+```text
+right click
+double click
+drag
+resize
+keyboard shortcut
+command palette
+```
+
+完成的操作，不应全部依赖按钮。
+
+但不要因为 UI 优化擅自改变成熟功能语义。
+
+---
+
+# 第十二阶段：保留已有功能
+
+非常重要：
+
+UI 重构不得破坏：
+
+- Canvas rendering
+- project state
+- timeline logic
+- node graph logic
+- AI agent logic
+- media loading
+- file operations
+- save/load
+- undo/redo
+- keyboard shortcuts
+- desktop bridge
+- backend
+- IPC
+- existing data model
+
+如果某项 UI 重构会严重影响业务逻辑：
+
+优先采用渐进式改造。
+
+---
+
+# 第十三阶段：持续运行和验证
+
+每完成一个主要区域：
+
+```text
+run
+inspect
+test
+fix
+```
+
+不要：
+
+```text
+一次修改几十个文件
+↓
+不运行
+↓
+宣布完成
+```
+
+如果可以截图或视觉检查：
+
+实际查看修改后的界面。
+
+重点寻找：
+
+- overflow
+- clipping
+- broken layout
+- inconsistent gap
+- icon misalignment
+- incorrect selected state
+- bad resize behaviour
+- typography problems
+- low contrast
+- excessive borders
+- excessive cards
+
+发现之后继续修复。
+
+---
+
+# 第十四阶段：Responsive Desktop Behaviour
+
+这是桌面创作软件。
+
+优先考虑：
+
+```text
+1280×720
+1440×900
+1920×1080
+2560×1440
+```
+
+窗口缩小时：
+
+不要简单缩放整个 UI。
+
+应该：
+
+```text
+panel resize
+panel collapse
+content scroll
+toolbar adaptation
+minimum widths
+```
+
+---
+
+# 第十五阶段：删除 AI UI 痕迹
+
+专门执行一次：
+
+```text
+AI-generated UI smell audit
+```
+
+寻找：
+
+- Card inside Card
+- unnecessary pills
+- excessive gradients
+- giant rounded rectangles
+- excessive shadows
+- decorative badges everywhere
+- meaningless subtitle
+- unnecessary hero section
+- large empty spacing
+- centered everything
+- excessive glassmorphism
+- random icons
+- excessive visual containers
+
+发现后重构。
+
+这个产品应该越来越像：
+
+**真正的软件。**
+
+而不是：
+
+**AI 做出来的网站 Demo。**
+
+---
+
+# 第十六阶段：产品视觉方向
+
+整体关键词：
+
+```text
+Professional
+Precise
+Dense
+Calm
+Modern
+Technical
+Creative
+Fast
+Focused
+Tool-like
+```
+
+避免：
+
+```text
+Cute SaaS
+Generic Dashboard
+Crypto
+Cyberpunk
+Gaming
+Landing Page
+Corporate Admin
+Chat App
+```
+
+---
+
+# 第十七阶段：对本产品的特殊理解
+
+这是一个：
+
+**AI-native visual creation / motion / compositing / procedural creative software**
+
+未来可能包含：
+
+```text
+Canvas
+Timeline
+Layers
+Node Graph
+Effects
+Motion
+External References
+AI Agent
+Expression / Automation
+Assets
+Properties
+Procedural workflows
+```
+
+所以所有 UI 决策必须为未来扩展留下空间。
+
+不要为了当前几个功能设计一个无法扩展的壳。
+
+---
+
+# 第十八阶段：自主决策权限
+
+对于以下问题，你可以自行判断：
+
+- component extraction
+- spacing
+- typography
+- tokens
+- panel arrangement
+- minor layout changes
+- interaction state
+- visual polish
+- refactoring duplicate styles
+
+不需要逐项询问我。
+
+如果没有关键业务风险：
+
+**直接做。**
+
+---
+
+# 第十九阶段：不要这样工作
+
+禁止只输出：
+
+```text
+Here are my suggestions...
+```
+
+禁止只写：
+
+```text
+TODO
+```
+
+禁止只创建设计文档而不改代码。
+
+禁止优化一个组件后停止。
+
+禁止只修改颜色。
+
+禁止只换字体。
+
+禁止只改圆角。
+
+禁止只优化首页。
+
+禁止因为任务大就缩小任务范围。
+
+---
+
+# 第二十阶段：工作模式
+
+你的工作循环必须是：
+
+```text
+SCAN
+↓
+UNDERSTAND
+↓
+RUN
+↓
+AUDIT
+↓
+DESIGN SYSTEM
+↓
+IMPLEMENT
+↓
+RUN
+↓
+VISUAL INSPECT
+↓
+FIX
+↓
+REPEAT
+```
+
+一直推进到当前可以合理达到的最佳状态。
+
+---
+
+# 第二十一阶段：代码质量
+
+UI 重构同时保证：
+
+- TypeScript 类型正确
+- no unnecessary any
+- no duplicated constants
+- no giant components if avoidable
+- reusable primitives
+- semantic component naming
+- clear architecture
+- minimal dependency addition
+- no unnecessary rewrite
+- no abandoned dead CSS
+
+如果发现明显 UI tech debt，在不影响稳定性的情况下顺手清理。
+
+---
+
+# 第二十二阶段：最终验证
+
+最终至少执行：
+
+```text
+build
+typecheck
+lint
+tests
+```
+
+如果项目支持。
+
+解决因为本次修改产生的问题。
+
+不要把你自己制造的错误留给我。
+
+---
+
+# 第二十三阶段：完成标准
+
+只有满足下面条件，才视为本轮 UI 优化完成：
+
+1. 整个软件拥有统一视觉语言。
+2. 不再明显像 AI 自动生成的 SaaS Dashboard。
+3. Canvas 成为核心视觉区域。
+4. Inspector 信息密度合理。
+5. Timeline 有专业编辑器感。
+6. Node Graph 有专业节点编辑器感。
+7. AI 功能融入工作流，而不是支配 UI。
+8. Toolbar 简洁明确。
+9. Selection / Hover / Active 状态统一。
+10. Spacing 基本统一。
+11. Radius 基本统一。
+12. Typography 基本统一。
+13. Colors 使用系统 Token。
+14. Panels 结构清楚。
+15. Resize 行为合理。
+16. 常用操作路径明显缩短。
+17. 无明显布局破损。
+18. Build 正常。
+19. 主要功能未被破坏。
+20. 整体明显更接近成熟桌面创作软件。
+
+---
+
+# 最后要求
+
+从现在开始：
+
+**不要只告诉我你准备做什么。**
+
+请直接开始执行。
+
+第一步：
+
+```text
+$skill-installer frontend-skill
+```
+
+随后创建并使用：
+
+```text
+professional-creative-editor-ui
+```
+
+然后完整检查当前 repository。
+
+不要只看单个页面。
+
+不要把它当网站设计。
+
+把它当成：
+
+> 一个正在成长为真正专业级 AI Native Creative Software 的桌面应用。
+
+充分利用当前 Codex 可用的剩余工作量，主动发现问题、主动修改、主动运行、主动验证、主动继续迭代。
+
+在没有关键阻塞的情况下，不要因为完成了第一轮优化就停止。
+
+**完成第一轮后，再进行第二轮 Visual Polish Audit。**
+
+第二轮重点寻找：
+
+```text
+微小对齐问题
+spacing inconsistencies
+toolbar density
+panel proportions
+typography hierarchy
+icon sizing
+hover feedback
+selected feedback
+divider contrast
+canvas dominance
+timeline readability
+node readability
+inspector density
+```
+
+继续修改。
+
+然后进行第三轮：
+
+```text
+Professional Software Feel Audit
+```
+
+问自己：
+
+> 如果隐藏软件 Logo，一个 After Effects / Figma / Blender / Nuke 的重度用户看到这个界面，会觉得这是认真制作的专业工具，还是一个 AI 生成的网页 Demo？
+
+如果答案仍偏向后者：
+
+继续优化。
+
+现在开始执行。

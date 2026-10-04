@@ -21,7 +21,7 @@ afterEach(cleanup);
 it('GUI 遮罩、羽化动画与效果排序均进入共享命令历史', () => {
   const store = new EditorStore(createDefaultProject());
   render(<App store={store} />);
-  fireEvent.click(screen.getByText('动效 ▾'));
+  fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
   fireEvent.click(screen.getByRole('button', { name: '创建 矩形' }));
   fireEvent.click(screen.getByText('效果与遮罩'));
   fireEvent.click(screen.getByRole('button', { name: '添加椭圆遮罩' }));

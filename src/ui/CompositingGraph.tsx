@@ -602,6 +602,7 @@ function GraphWorkspace({
               <article
                 key={node.id}
                 data-cg-node={node.id}
+                data-category={def?.category}
                 className={`cg-node ${selected.includes(node.id) ? 'selected' : ''} ${node.enabled ? '' : 'disabled'} ${errors.length ? 'invalid' : ''}`}
                 style={{ left: node.position.x, top: node.position.y, width }}
                 onPointerDown={(e) => startMove(e, node)}

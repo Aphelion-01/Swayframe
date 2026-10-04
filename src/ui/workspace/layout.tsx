@@ -1,3 +1,4 @@
+import { Icon } from './icons';
 import { useInteractionCancel } from './interaction';
 import { useEffect } from 'react';
 import { useRef, useState } from 'react';
@@ -34,6 +35,15 @@ export function Workspace({
   bottom: ReactNode;
 }) {
   const [layout, setLayout] = useState(load);
+  const latestLayout = useRef(layout);
+  const updateLayout = (next: Layout) => {
+    latestLayout.current = next;
+    setLayout(next);
+  };
+  const [viewport, setViewport] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
   const drag = useRef<
     | { key: 'left' | 'right' | 'bottom'; x: number; y: number; start: Layout }
     | undefined
@@ -51,11 +61,18 @@ export function Workspace({
     }
   });
   useEffect(() => {
-    localStorage.setItem('motion.collapsed', JSON.stringify(collapsed));
+    try {
+      localStorage.setItem('motion.collapsed', JSON.stringify(collapsed));
+    } catch {
+      /* UI remains usable if storage is unavailable. */
+    }
   }, [collapsed]);
   const [narrow, setNarrow] = useState(() => window.innerWidth <= 650);
   useEffect(() => {
-    const resize = () => setNarrow(window.innerWidth <= 650);
+    const resize = () => {
+      setNarrow(window.innerWidth <= 650);
+      setViewport({ width: window.innerWidth, height: window.innerHeight });
+    };
     window.addEventListener('resize', resize);
     return () => window.removeEventListener('resize', resize);
   }, []);
@@ -66,7 +83,7 @@ export function Workspace({
     else setCollapsed((previous) => ({ ...previous, [key]: !previous[key] }));
   };
   useInteractionCancel(() => {
-    if (drag.current) setLayout(drag.current.start);
+    if (drag.current) updateLayout(drag.current.start);
     drag.current = undefined;
   });
   useEffect(() => {
@@ -81,8 +98,14 @@ export function Workspace({
         const hide = !previous.left || !previous.right;
         return { left: hide, right: hide, bottom: previous.bottom };
       });
+    const showLeft = () => {
+      setCollapsed((previous) => ({ ...previous, left: false }));
+      if (window.innerWidth <= 650) setMobilePanel('left');
+    };
+    window.addEventListener('motion:show-left', showLeft);
     window.addEventListener('motion:toggle-panels', toggleAll);
     return () => {
+      window.removeEventListener('motion:show-left', showLeft);
       window.removeEventListener('motion:toggle-panels', toggleAll);
       handlers.forEach((cleanup) => cleanup());
     };
@@ -104,7 +127,7 @@ export function Workspace({
       className={`workspace-divider ${key}`}
       onKeyDown={(event) => {
         if (event.key === 'Escape' && drag.current) {
-          setLayout(drag.current.start);
+          updateLayout(drag.current.start);
           drag.current = undefined;
         }
         if (event.key.startsWith('Arrow')) {
@@ -120,7 +143,7 @@ export function Workspace({
               key === 'bottom' ? 550 : 440,
             ),
           };
-          setLayout(next);
+          updateLayout(next);
           persist(next);
         }
       }}
@@ -144,7 +167,7 @@ export function Workspace({
             : key === 'right'
               ? d.x - event.clientX
               : event.clientX - d.x;
-        setLayout({
+        updateLayout({
           ...d.start,
           [key]: bound(
             d.start[key] + delta,
@@ -156,11 +179,11 @@ export function Workspace({
         });
       }}
       onPointerUp={() => {
-        if (drag.current) persist(layout);
+        if (drag.current) persist(latestLayout.current);
         drag.current = undefined;
       }}
       onPointerCancel={() => {
-        if (drag.current) setLayout(drag.current.start);
+        if (drag.current) updateLayout(drag.current.start);
         drag.current = undefined;
       }}
     />
@@ -170,9 +193,9 @@ export function Workspace({
       className="workspace-shell"
       style={
         {
-          '--left-width': `${collapsed.left ? 0 : layout.left}px`,
-          '--right-width': `${collapsed.right ? 0 : layout.right}px`,
-          '--timeline-height': `${collapsed.bottom ? 0 : layout.bottom}px`,
+          '--left-width': `${collapsed.left ? 0 : Math.min(layout.left, Math.max(160, (viewport.width - 280) * 0.4))}px`,
+          '--right-width': `${collapsed.right ? 0 : Math.min(layout.right, Math.max(220, (viewport.width - 280) * 0.45))}px`,
+          '--timeline-height': `${collapsed.bottom ? 0 : Math.min(layout.bottom, Math.max(130, viewport.height - 320))}px`,
         } as CSSProperties
       }
     >
@@ -208,7 +231,15 @@ export function Workspace({
             }
             onClick={() => toggle(key)}
           >
-            {{ left: '◧', right: '◨', bottom: '⬒' }[key]}
+            <Icon
+              name={
+                {
+                  left: 'panel-left',
+                  right: 'panel-right',
+                  bottom: 'panel-bottom',
+                }[key] as 'panel-left' | 'panel-right' | 'panel-bottom'
+              }
+            />
           </button>
         ))}
       </div>

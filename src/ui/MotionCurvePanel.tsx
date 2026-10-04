@@ -237,24 +237,36 @@ export function MotionCurvePanel({
         >
           {[0, 0.25, 0.5, 0.75, 1].map((n) => (
             <g key={n} pointerEvents="none">
-              <line x1={X(n)} x2={X(n)} y1="40" y2="240" stroke="#29354b" />
-              <line x1="40" x2="320" y1={Y(n)} y2={Y(n)} stroke="#29354b" />
+              <line
+                x1={X(n)}
+                x2={X(n)}
+                y1="40"
+                y2="240"
+                stroke="var(--border-subtle)"
+              />
+              <line
+                x1="40"
+                x2="320"
+                y1={Y(n)}
+                y2={Y(n)}
+                stroke="var(--border-subtle)"
+              />
             </g>
           ))}
           <path
             d={path}
             fill="none"
-            stroke="#a7b5ff"
+            stroke="var(--curve-value)"
             strokeWidth="3"
             pointerEvents="none"
           />
-          <text x="18" y={Y(0) + 17} fill="#9badc9">
+          <text x="18" y={Y(0) + 17} fill="var(--text-muted)">
             0,0
           </text>
-          <text x="307" y={Y(1) - 10} fill="#9badc9">
+          <text x="307" y={Y(1) - 10} fill="var(--text-muted)">
             1,1
           </text>
-          <text x="117" y="272" fill="#9badc9">
+          <text x="117" y="272" fill="var(--text-muted)">
             标准化时间 0 → 1
           </text>
           {([1, 2] as const).map((which) => {
@@ -268,7 +280,7 @@ export function MotionCurvePanel({
                   y1={Y(which === 1 ? 0 : 1)}
                   x2={X(x)}
                   y2={Y(y)}
-                  stroke="#eab76b"
+                  stroke="var(--warning)"
                 />
                 <circle
                   role="slider"
@@ -278,7 +290,7 @@ export function MotionCurvePanel({
                   cx={X(x)}
                   cy={Y(y)}
                   r="9"
-                  fill={which === 1 ? '#f1be7c' : '#86dcca'}
+                  fill={which === 1 ? 'var(--warning)' : 'var(--success)'}
                   style={{ touchAction: 'none', cursor: 'grab' }}
                   onPointerDown={(e) => {
                     if (!targets.length || e.button !== 0) return;

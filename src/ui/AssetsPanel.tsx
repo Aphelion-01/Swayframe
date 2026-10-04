@@ -76,10 +76,14 @@ export function AssetsPanel({ store }: { store: EditorStore }) {
           }
         }}
       />
+      {!view.project.assets.length && (
+        <p className="asset-empty">导入图片或拖入此处，可在多个图层中复用。</p>
+      )}
       <div className="asset-list">
         {view.project.assets.map((asset) => (
           <div
             className="asset-row"
+            title={asset.name}
             key={asset.id}
             draggable
             onDragStart={(e) => {

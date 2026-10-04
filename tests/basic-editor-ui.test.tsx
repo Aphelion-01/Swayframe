@@ -16,7 +16,7 @@ afterEach(cleanup);
 it('动画开关、属性筛选、图层快捷键和输入焦点隔离在真实 UI 中协同工作', () => {
   const store = new EditorStore(createDefaultProject());
   render(<App store={store} />);
-  fireEvent.click(screen.getByText('动效 ▾'));
+  fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
   fireEvent.click(screen.getByRole('button', { name: '创建 矩形' }));
   fireEvent.click(screen.getByRole('button', { name: '开启 矩形 位置 动画' }));
   expect(

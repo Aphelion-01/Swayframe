@@ -1,9 +1,15 @@
+import { Icon } from './workspace/icons';
 import { snapTimeDelta } from '../core/timeline-snapping';
 import { CompositingGraphPanel } from './CompositingGraph';
 import { motionSegments, segmentMotionCurve } from '../core/motion-curve';
 import { applyMotionCurveCommands } from '../core/motion-curve-commands';
 import { useInteractionCancel } from './workspace/interaction';
-import { ContextMenu, IconButton, Tabs } from './workspace/primitives';
+import {
+  ContextMenu,
+  MenuDropdown,
+  IconButton,
+  Tabs,
+} from './workspace/primitives';
 import { MotionCurvePanel } from './MotionCurvePanel';
 import { LayerTimeBar } from './LayerTimeBar';
 import { GraphEditor } from './GraphEditor';
@@ -334,7 +340,7 @@ export function Timeline({ store }: { store: EditorStore }) {
                               store.togglePropertyAnimation(property.id)
                             }
                           >
-                            ⏱
+                            <Icon name="clock" />
                           </button>
                           <span>{propertyLabel(key, layer)}</span>
                           <button
@@ -358,7 +364,7 @@ export function Timeline({ store }: { store: EditorStore }) {
                               ])
                             }
                           >
-                            ◇
+                            <Icon name="diamond" />
                           </button>
                           <button
                             aria-label={`删除 ${displayName(layer.name)} ${propertyLabel(key, layer)} 关键帧`}
@@ -674,14 +680,14 @@ export function Timeline({ store }: { store: EditorStore }) {
               store.setTime(0);
             }}
           >
-            ⏮
+            <Icon name="start" />
           </button>
           <button
             aria-label={view.playing ? '暂停' : '播放'}
             className="play-button"
             onClick={() => store.setPlaying(!view.playing)}
           >
-            {view.playing ? 'Ⅱ' : '▶'}
+            <Icon name={view.playing ? 'pause' : 'play'} />
           </button>
           <label className="time-field">
             <input
@@ -705,14 +711,14 @@ export function Timeline({ store }: { store: EditorStore }) {
               store.setTime(0);
             }}
           >
-            ■
+            <Icon name="stop" />
           </IconButton>
           <IconButton
             label="循环播放"
             aria-pressed={loop}
             onClick={() => setLoop(!loop)}
           >
-            ↻
+            <Icon name="loop" />
           </IconButton>
           <IconButton
             label="时间轴吸附"
@@ -720,7 +726,7 @@ export function Timeline({ store }: { store: EditorStore }) {
             title="关键帧吸附到播放头、其他关键帧和边界 · Cmd/Ctrl 临时关闭"
             onClick={() => setSnapping(!snapping)}
           >
-            ⌁
+            <Icon name="snap" />
           </IconButton>
           <button
             className="timecode"
@@ -931,7 +937,7 @@ export function Timeline({ store }: { store: EditorStore }) {
       )}
       <div className="timeline-footer" hidden={compositingOpen}>
         <button onClick={() => setMotionOpen((v) => !v)}>动画缓动</button>
-        <details className="toolbar-menu">
+        <MenuDropdown>
           <summary>关键帧 ▾</summary>
           <div className="dropdown-menu">
             <button
@@ -961,7 +967,7 @@ export function Timeline({ store }: { store: EditorStore }) {
               删除关键帧
             </button>
           </div>
-        </details>
+        </MenuDropdown>
         <label className="timeline-filter">
           {' '}
           <select

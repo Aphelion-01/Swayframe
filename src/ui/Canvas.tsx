@@ -1,3 +1,4 @@
+import { Icon } from './workspace/icons';
 import { sameVisualProject } from '../core/render-invalidation';
 import type { Project } from '../core/project-model';
 import { resizeLayer } from '../core/resize-geometry';
@@ -392,30 +393,36 @@ export function Canvas({ store }: { store: EditorStore }) {
       }}
     >
       <div className="canvas-caption">
-        <span>{displayName(c.name)}</span>
-        <button
-          aria-pressed={anchorMode}
-          onClick={() => setAnchorMode(!anchorMode)}
-        >
-          锚点工具
-        </button>
-        <button
-          aria-label="画布吸附"
-          aria-pressed={snapping}
-          title="吸附到合成与图层边缘/中心 · Alt 临时关闭 · Shift 锁定方向"
-          onClick={() => {
-            const next = !snapping;
-            setSnapping(next);
-            try {
-              localStorage.setItem('motion.canvas-snap', String(next));
-            } catch {
-              /* Preferences are optional. */
-            }
-          }}
-        >
-          ⌁
-        </button>
-        <span>
+        <span className="composition-caption">
+          <Icon name="comp" />
+          {displayName(c.name)}
+        </span>
+        <div className="viewport-tools">
+          <button
+            aria-pressed={anchorMode}
+            onClick={() => setAnchorMode(!anchorMode)}
+          >
+            <Icon name="anchor" />
+            <span>锚点</span>
+          </button>
+          <button
+            aria-label="画布吸附"
+            aria-pressed={snapping}
+            title="吸附到合成与图层边缘/中心 · Alt 临时关闭 · Shift 锁定方向"
+            onClick={() => {
+              const next = !snapping;
+              setSnapping(next);
+              try {
+                localStorage.setItem('motion.canvas-snap', String(next));
+              } catch {
+                /* Preferences are optional. */
+              }
+            }}
+          >
+            <Icon name="snap" />
+          </button>
+        </div>
+        <span className="composition-meta">
           {c.width} × {c.height} · {c.fps} 帧/秒
         </span>
       </div>

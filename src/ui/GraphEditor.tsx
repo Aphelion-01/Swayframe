@@ -1,4 +1,4 @@
-import { IconButton } from './workspace/primitives';
+import { Modal, IconButton } from './workspace/primitives';
 import { dispatchShortcut } from './workspace/shortcuts';
 import { useInteractionCancel } from './workspace/interaction';
 import {
@@ -6,7 +6,13 @@ import {
   previewMotionCurve,
 } from '../core/motion-curve-commands';
 import { SpatialMotionEditor } from './SpatialMotionEditor';
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import type { Vec2, AnimValue } from '../core/core-types';
 import type { Property } from '../core/project-model';
 import { activeComposition } from '../core/project-model';
@@ -53,6 +59,27 @@ export function GraphEditor({
     | undefined
   >(undefined);
   const svgRef = useRef<SVGSVGElement>(null);
+  const [svgSize, setSvgSize] = useState({ width: 680, height: 280 });
+  const measureSvg = useCallback((svg: SVGSVGElement | null) => {
+    svgRef.current = svg;
+    if (!svg) return;
+    const measure = () => {
+      const rect = svg.getBoundingClientRect();
+      if (rect.width && rect.height)
+        setSvgSize((previous) =>
+          previous.width === rect.width && previous.height === rect.height
+            ? previous
+            : { width: rect.width, height: rect.height },
+        );
+    };
+    measure();
+    const observer =
+      typeof ResizeObserver === 'undefined'
+        ? undefined
+        : new ResizeObserver(measure);
+    observer?.observe(svg);
+    return () => observer?.disconnect();
+  }, []);
   const [viewport, setViewport] = useState({ x: 0, y: 0, zoom: 1 });
   const space = useRef(false);
   const panUsed = useRef(false);
@@ -119,14 +146,16 @@ export function GraphEditor({
     entries[0];
   if (!entry)
     return (
-      <div className={embedded ? 'graph-inline' : 'modal-backdrop'}>
+      <GraphFrame embedded={embedded} onClose={onClose} empty>
         <section className="graph-dialog">
           <h2>曲线编辑器</h2>
           <p>先选择一个图层。</p>
           <button onClick={onClose}>关闭曲线编辑器</button>
         </section>
-      </div>
+      </GraphFrame>
     );
+  const pixelX = 680 / (svgSize.width * viewport.zoom),
+    pixelY = 280 / (svgSize.height * viewport.zoom);
   const original = entry.property,
     p: Property<AnimValue> =
       view.propertyPreview?.id === original.id
@@ -250,7 +279,7 @@ export function GraphEditor({
     else store.setPropertyPreviews(undefined);
   };
   return (
-    <div className={embedded ? 'graph-inline' : 'modal-backdrop'}>
+    <GraphFrame embedded={embedded} onClose={onClose}>
       <section
         className="graph-dialog"
         aria-label="曲线编辑器"
@@ -405,7 +434,7 @@ export function GraphEditor({
             : '属性值 · 与标准化缓动面板独立'}
         </p>
         <svg
-          ref={svgRef}
+          ref={measureSvg}
           viewBox={`${viewport.x} ${viewport.y} ${680 / viewport.zoom} ${280 / viewport.zoom}`}
           preserveAspectRatio="none"
           tabIndex={0}
@@ -468,16 +497,28 @@ export function GraphEditor({
                 x2="630"
                 y1={30 + (i * 205) / 4}
                 y2={30 + (i * 205) / 4}
-                stroke="#2e3d55"
+                stroke="var(--border-subtle)"
               />
-              <text x="4" y={35 + (i * 205) / 4} fill="#97abc9" fontSize="10">
+              <text
+                x="0"
+                y="0"
+                transform={`translate(4 ${30 + (i * 205) / 4 + 4 * pixelY}) scale(${pixelX} ${pixelY})`}
+                fill="var(--text-muted)"
+                fontSize="10"
+              >
                 {(max - (i * (max - min)) / 4).toFixed(1)}
               </text>
             </g>
           ))}
-          <path d={path} stroke="#6fbeff" strokeWidth="2" fill="none" />
+          <path
+            d={path}
+            stroke="var(--accent-primary)"
+            strokeWidth="2"
+            vectorEffect="non-scaling-stroke"
+            fill="none"
+          />
           {frames.map((k) => (
-            <circle
+            <ellipse
               key={k.id}
               cx={X(k.time)}
               cy={Y(
@@ -486,8 +527,11 @@ export function GraphEditor({
                       factor
                   : valueComponent(k.value, component),
               )}
-              r={5 / viewport.zoom}
-              fill={k.id === left?.id ? '#ffd25a' : '#d6e4ff'}
+              rx={5 * pixelX}
+              ry={5 * pixelY}
+              fill={
+                k.id === left?.id ? 'var(--warning)' : 'var(--text-primary)'
+              }
               onClick={() => {
                 if (space.current || panUsed.current) return;
                 setSegmentId(k.id);
@@ -514,17 +558,18 @@ export function GraphEditor({
                     )}
                     x2={h.x}
                     y2={h.y}
-                    stroke="#e3b34d"
+                    stroke="var(--warning)"
                   />
-                  <circle
+                  <ellipse
                     role="slider"
                     aria-label={which === 'out' ? '出切线手柄' : '入切线手柄'}
                     aria-valuenow={controls[which].x}
                     tabIndex={0}
                     cx={h.x}
                     cy={h.y}
-                    r={8 / viewport.zoom}
-                    fill="#ffd25a"
+                    rx={6 * pixelX}
+                    ry={6 * pixelY}
+                    fill="var(--warning)"
                     style={{ cursor: 'move', touchAction: 'none' }}
                     onPointerDown={(e) => {
                       if (e.button !== 0 || space.current || layer?.locked)
@@ -688,12 +733,24 @@ export function GraphEditor({
             x2={X(view.time)}
             y1="20"
             y2="240"
-            stroke="#ee7282"
+            stroke="var(--danger)"
           />
-          <text x="50" y="268" fill="#a4b5cf" fontSize="12">
+          <text
+            x="0"
+            y="0"
+            transform={`translate(50 268) scale(${pixelX} ${pixelY})`}
+            fill="var(--text-muted)"
+            fontSize="11"
+          >
             {start.toFixed(2)} 秒
           </text>
-          <text x="580" y="268" fill="#a4b5cf" fontSize="12">
+          <text
+            x="0"
+            y="0"
+            transform={`translate(580 268) scale(${pixelX} ${pixelY})`}
+            fill="var(--text-muted)"
+            fontSize="11"
+          >
             {end.toFixed(2)} 秒
           </text>
         </svg>
@@ -770,6 +827,24 @@ export function GraphEditor({
           速度曲线使用属性所有分量的变化速度。拖动黄色切线手柄，松手后提交一次修改；箭头键可微调手柄。
         </p>
       </section>
-    </div>
+    </GraphFrame>
+  );
+}
+
+function GraphFrame({
+  embedded,
+  onClose,
+  children,
+  empty = false,
+}: {
+  embedded: boolean;
+  onClose: () => void;
+  empty?: boolean;
+  children: import('react').ReactNode;
+}) {
+  return embedded ? (
+    <div className={`graph-inline ${empty ? 'is-empty' : ''}`}>{children}</div>
+  ) : (
+    <Modal onClose={onClose}>{children}</Modal>
   );
 }

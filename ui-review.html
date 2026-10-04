@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Swayframe UI Review</title>
+    <style>
+      body {
+        margin: 0;
+        background: #191b1e;
+        color: #e0e3e8;
+        font: 12px system-ui;
+      }
+      header {
+        height: 42px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 0 12px;
+      }
+      select {
+        font: inherit;
+      }
+      iframe {
+        display: block;
+        border: 0;
+        width: 1280px;
+        height: 720px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      真实编辑器窗口验收
+      <label
+        >窗口尺寸
+        <select aria-label="验收窗口尺寸">
+          <option value="1280,720">1280 × 720</option>
+          <option value="1440,900">1440 × 900</option>
+          <option value="1920,1080">1920 × 1080</option>
+          <option value="2560,1440">2560 × 1440</option>
+          <option value="620,720">620 × 720</option>
+        </select></label
+      ><span>开发验收页，不进入产品入口</span>
+    </header>
+    <iframe title="真实 Swayframe 编辑器" src="/"></iframe>
+    <script type="module">
+      const select = document.querySelector('select'),
+        frame = document.querySelector('iframe');
+      select.addEventListener('change', () => {
+        const [width, height] = select.value.split(',').map(Number);
+        frame.style.width = width + 'px';
+        frame.style.height = height + 'px';
+      });
+    </script>
+  </body>
+</html>

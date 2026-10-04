@@ -8,7 +8,7 @@ export function AgentPanel({ store }: { store: EditorStore }) {
   return (
     <section className="agent-panel" aria-label="助手演示">
       <div className="agent-heading">
-        <span>✦ 创作助手</span>
+        <span>动画命令</span>
         <span>模拟</span>
       </div>
       <p>先生成可编辑的入场动画，再继续手动调整。</p>

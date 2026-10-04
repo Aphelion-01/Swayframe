@@ -151,3 +151,17 @@ OP-4：另存为默认已打开工程的路径和文件名；相同冻结版本�
 OP-5：位置预览构造局部ID→position索引，只有对应图层绕过局部帧缓存，其他冻结图层复用相同时间结果。父级/子级世界变换每帧按依赖链重新计算，避免把本地缓存错误用作世界坐标缓存。
 
 OP-6：`useEditorSlice` 按面板实际读取字段返回稳定只读快照，类型只暴露被订阅字段。App 状态栏不随 time/preview 重建工具上下文，Toolbar 订阅 project/selection/playing，LayerPanel 订阅 project/selection；各动画/画布面板仍独立订阅需要的变化，不丢实时预览。50次时间/状态/关键帧选择更新不触发只读工程/选择面板重渲染，提交/选择/Undo仍同步。
+
+## Full UI/UX Redesign / Swayframe 0.7.0
+
+执行基线 `docs/baseline/FULL_UI_REDESIGN.txt`，项目规则 `.codex/skills/professional-creative-editor-ui/SKILL.md`。UI职责仍局限于呈现、用户偏好与调用既有命令，Project schema保持0.5.0；GUI/Agent共享Command/Transaction，Intelligence只输出Proposal。
+
+`design-tokens.css`提供颜色、间距、文字、圆角、控件、图标、120ms过渡和层级；`editor-theme.css`统一shell、panel、list、property、timeline、dialog状态，base.css保留必要几何和响应式规则。`workspace/icons.tsx`为16px/1.5px stroke的共享SVG，不引入图标依赖。只迁移UI和辅助图形的颜色，作品填充、渲染与导出颜色不变。
+
+顶部全局栏与工具栏稳定，工作区仍左Project/Layers/Assistant、中心Canvas、右Inspector、底Timeline/Graph/Nodes。面板宽高按实际窗口约束；拖动布局同步引用保证同批move/up提交最新尺寸，取消恢复起点。尺寸、折叠、标签、视口属于Preferences，不进入Scene或Undo。
+
+Tabs共用方向键/Home/End与roving focus；Modal共用焦点圈定、Escape/外部关闭和焦点归还，忙碌导出没有关闭回调时不取消任务；MenuDropdown共用外部关闭和键盘菜单导航。现有NumberField仍持有瞬态预览和原命令提交，只增加紧凑向量标签；完整aria输入名称保留，向量才显示链接。
+
+GraphEditor的SVG测量当前屏幕大小，文字与ellipse手柄按viewBox、屏幕像素和zoom反向补偿，曲线使用non-scaling-stroke；时间/值域及pointer反算不变。节点标题34px、端口行26px保留原连线几何，只统一中性背景、分类色、端口/连线/选中层级。
+
+助手切换标签采用隐藏而非卸载，保留草稿和Proposal；工具栏入口可展开左面板。Proposal仍须用户显式应用并经既有Transaction/快照过期校验。`ui-review.html`仅为开发验收入口，以实际编辑器iframe检查窗口尺寸，不注入Scene或替代产品入口。

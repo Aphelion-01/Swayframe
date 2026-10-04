@@ -1,3 +1,4 @@
+import { Modal } from './primitives';
 import { useState } from 'react';
 import type { MenuItem } from './primitives';
 export interface PaletteCommand extends MenuItem {
@@ -25,12 +26,7 @@ export function CommandPalette({
     }
   };
   return (
-    <div
-      className="modal-backdrop"
-      onPointerDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
+    <Modal onClose={onClose}>
       <section
         role="dialog"
         aria-modal="true"
@@ -79,6 +75,6 @@ export function CommandPalette({
         </div>
         {!filtered.length && <p>没有匹配的命令</p>}
       </section>
-    </div>
+    </Modal>
   );
 }

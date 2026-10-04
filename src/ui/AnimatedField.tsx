@@ -1,3 +1,4 @@
+import { Icon } from './workspace/icons';
 import type { AnimValue, Vec2 } from '../core/core-types';
 import type { Property } from '../core/project-model';
 import { evaluateProperty } from '../core/animation-engine';
@@ -75,40 +76,49 @@ export function AnimatedField({
       )
       .join('');
   return (
-    <div className="animated-field">
+    <div
+      className="animated-field"
+      data-kind={typeof value === 'number' ? 'scalar' : 'vector'}
+    >
       <div className="animated-field-heading">
-        <span>{label}</span>
-        {vector && (
-          <AxisLinkButton label={label} linked={linked} onClick={toggle} />
-        )}
-        <button
-          title={`${property.keyframes.length ? '关闭' : '开启'}${label}动画`}
-          aria-label={`${property.keyframes.length ? '关闭' : '开启'}${label}动画`}
-          onClick={() => store.togglePropertyAnimation(property.id)}
-        >
-          ⏱
-        </button>
-        <button
-          title={`记录${label}关键帧`}
-          aria-label={`记录${label}关键帧`}
-          disabled={current}
-          onClick={() =>
-            store.run(`记录${label}`, [
-              command({
-                type: 'keyframe.add',
-                propertyId: property.id,
-                keyframe: {
-                  id: newId(),
-                  time,
-                  value,
-                  interpolation: { type: 'linear' },
-                },
-              }),
-            ])
-          }
-        >
-          ◇
-        </button>
+        <span>
+          {label}
+          <small className="property-unit">{unit.replace(/[（）]/g, '')}</small>
+        </span>
+        <div className="property-actions">
+          {vector && (
+            <AxisLinkButton label={label} linked={linked} onClick={toggle} />
+          )}
+          <button
+            aria-pressed={!!property.keyframes.length}
+            title={`${property.keyframes.length ? '关闭' : '开启'}${label}动画`}
+            aria-label={`${property.keyframes.length ? '关闭' : '开启'}${label}动画`}
+            onClick={() => store.togglePropertyAnimation(property.id)}
+          >
+            <Icon name="clock" />
+          </button>
+          <button
+            title={`记录${label}关键帧`}
+            aria-label={`记录${label}关键帧`}
+            disabled={current}
+            onClick={() =>
+              store.run(`记录${label}`, [
+                command({
+                  type: 'keyframe.add',
+                  propertyId: property.id,
+                  keyframe: {
+                    id: newId(),
+                    time,
+                    value,
+                    interpolation: { type: 'linear' },
+                  },
+                }),
+              ])
+            }
+          >
+            <Icon name="diamond" />
+          </button>
+        </div>
       </div>
       {typeof value === 'number' ? (
         <NumberField
@@ -166,6 +176,7 @@ export function AnimatedField({
                 revision={property}
                 time={time}
                 key={i}
+                compactLabel={['X', 'Y', 'Z', 'A'][i] ?? String(i + 1)}
                 label={`${label} ${['X', 'Y', 'Z', 'A'][i] ?? i + 1}${unit}`}
                 value={v * factor}
                 previewValue={
@@ -188,6 +199,7 @@ export function AnimatedField({
               revision={property}
               time={time}
               key={k}
+              compactLabel={k.toUpperCase()}
               label={`${label} ${k.toUpperCase()}${unit}`}
               value={(value as Vec2)[k] * factor}
               previewValue={(shown as Vec2)[k] * factor}
