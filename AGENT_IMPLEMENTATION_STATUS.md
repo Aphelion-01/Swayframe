@@ -10,8 +10,10 @@ ProviderManager为应用服务，设置/用量/Skills/历史独立于Project，�
 
 - A0、A1全门禁通过：234 tests / 84 files。Settings服务CRUD、默认服务、连接测试、模型能力；原生异步safeStorage，开发Web仅内存凭证。
 
+- A2全门禁通过：238 tests / 85 files。结构化Plan、ASSIST/AGENT、运行时危险操作确认、Stop、受限验证循环及过期工程拒绝。
+
 ## In Progress
-- A2：Session / Plan / Orchestrator / Cancellation。
+- A3：Context Engine / Summary / Selection。
 
 ## Blockers
 - 真实第三方API验收需用户自行配置凭证，不阻塞Mock与协议测试。
