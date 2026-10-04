@@ -99,3 +99,37 @@ it('选区从空变为图层后，重复的等值选区仍保持整个帧快照�
     selected,
   );
 });
+it('单层移动预览复用其他层局部矩阵，父级变化仍传播到子级世界矩阵', async () => {
+  const { CommandSystem } = await import('../src/core/command-system');
+  const { createDefaultProject } = await import('../src/core/project-model');
+  const p = createDefaultProject(),
+    parent = createLayer('null', { position: { x: 300, y: 200 } }),
+    rawChild = createLayer('rectangle', { position: { x: 50, y: 20 } }),
+    other = createLayer('rectangle');
+  const child = {
+    ...rawChild,
+    editor: { ...rawChild.editor!, parentId: parent.id },
+  };
+  const project = new CommandSystem({
+    ...p,
+    compositions: p.compositions.map((c) => ({
+      ...c,
+      layers: [parent, child, other],
+    })),
+  }).getSnapshot();
+  const c = project.compositions[0]!,
+    initial = createRenderSnapshot(c, 0, [], undefined, project);
+  const preview = createRenderSnapshot(
+    c,
+    0,
+    [],
+    { layerId: parent.id, position: { x: 400, y: 250 } },
+    project,
+  );
+  expect(preview.layers[2]!.matrix).toBe(initial.layers[2]!.matrix);
+  expect(preview.layers[1]!.position).toEqual({ x: 450, y: 270 });
+  expect(initial.layers[1]!.position).toEqual({ x: 350, y: 220 });
+  expect(
+    createRenderSnapshot(c, 0, [], undefined, project).layers[1]!.position,
+  ).toEqual({ x: 350, y: 220 });
+});

@@ -86,17 +86,26 @@ export function createRenderSnapshot(
       return selected;
     }
   }
+  const previewPositions = new Map<string, Vec2>(
+    preview
+      ? [
+          [preview.layerId, preview.position],
+          ...(preview.others ?? []).map(
+            (item) => [item.layerId, item.position] as [string, Vec2],
+          ),
+        ]
+      : [],
+  );
   const raw: RenderLayer[] = composition.layers.map((source) => {
-    const layerCanCache = !preview && Object.isFrozen(source);
+    const layerCanCache =
+      !previewPositions.has(source.id) && Object.isFrozen(source);
     const cached = layerCanCache
       ? layerFrameCache.get(source)?.get(time)
       : undefined;
     if (cached) return cached;
     const position =
-      source.id === preview?.layerId
-        ? preview.position
-        : (preview?.others?.find((p) => p.layerId === source.id)?.position ??
-          evaluateProperty(source.transform.position, time));
+      previewPositions.get(source.id) ??
+      evaluateProperty(source.transform.position, time);
     const anchor = source.editor?.properties.anchor
         ? (evaluateProperty(source.editor.properties.anchor, time) as Vec2)
         : { x: 0, y: 0 },
