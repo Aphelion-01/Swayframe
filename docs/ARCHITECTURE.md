@@ -147,3 +147,5 @@ OP-3：Canvas 对 committed Project 做精确结构比较，只排除 GraphNode 
 OP-4：另存为默认已打开工程的路径和文件名；相同冻结版本缓存一次工程序列化，dirty、恢复和保存重复读取复用字符串。仅保留当前版本一项，避免历史JSON缓存累积。
 
 OP-5：位置预览构造局部ID→position索引，只有对应图层绕过局部帧缓存，其他冻结图层复用相同时间结果。父级/子级世界变换每帧按依赖链重新计算，避免把本地缓存错误用作世界坐标缓存。
+
+OP-6：`useEditorSlice` 按面板实际读取字段返回稳定只读快照，类型只暴露被订阅字段。App 状态栏不随 time/preview 重建工具上下文，Toolbar 订阅 project/selection/playing，LayerPanel 订阅 project/selection；各动画/画布面板仍独立订阅需要的变化，不丢实时预览。50次时间/状态/关键帧选择更新不触发只读工程/选择面板重渲染，提交/选择/Undo仍同步。

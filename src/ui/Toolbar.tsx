@@ -1,3 +1,4 @@
+import { useEditorSlice } from './use-editor-slice';
 import { desktopService } from '../desktop/service';
 import { importNativeAssets } from '../desktop/asset-service';
 import { getProjectService } from '../desktop/project-service';
@@ -12,7 +13,7 @@ import { readFile } from './file-utils';
 import { importImageFile } from './asset-import';
 export { readFile } from './file-utils';
 import { layerKindLabels, displayName } from './labels';
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { command } from '../core/command-system';
 import {
   activeComposition,
@@ -46,7 +47,7 @@ export function downloadProject(store: EditorStore): void {
 export function Toolbar({ store }: { store: EditorStore }) {
   const { tool, setTool, setSpace } = useTools();
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const view = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const view = useEditorSlice(store, ['project', 'selection', 'playing']);
   const c = activeComposition(view.project);
   const openRef = useRef<HTMLInputElement>(null);
   const imageRef = useRef<HTMLInputElement>(null);

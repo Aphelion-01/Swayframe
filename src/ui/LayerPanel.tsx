@@ -1,6 +1,7 @@
+import { useEditorSlice } from './use-editor-slice';
 import { AssetsPanel } from './AssetsPanel';
 import { displayName } from './labels';
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { command } from '../core/command-system';
 import { activeComposition } from '../core/project-model';
 import type { EditorStore } from './editor-store';
@@ -9,7 +10,7 @@ import { ProposalPanel } from './ProposalPanel';
 import { ContextMenu, IconButton, Tabs } from './workspace/primitives';
 import { layerActions } from './workspace/layer-actions';
 export function LayerPanel({ store }: { store: EditorStore }) {
-  const view = useSyncExternalStore(store.subscribe, store.getSnapshot),
+  const view = useEditorSlice(store, ['project', 'selection']),
     c = activeComposition(view.project);
   const [tab, setTab] = useState(() =>
       localStorage.getItem('motion.active-left') === '项目' ? '项目' : '图层',

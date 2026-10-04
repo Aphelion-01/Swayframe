@@ -1,5 +1,5 @@
 import { dropAssets } from './asset-import';
-import { useSyncExternalStore } from 'react';
+import { useEditorSlice } from './use-editor-slice';
 import { Canvas } from './Canvas';
 import { LayerPanel } from './LayerPanel';
 import { Inspector } from './Inspector';
@@ -10,7 +10,13 @@ import { Workspace } from './workspace/layout';
 import type { EditorStore } from './editor-store';
 
 export function App({ store }: { store: EditorStore }) {
-  const view = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const view = useEditorSlice(store, [
+    'project',
+    'error',
+    'status',
+    'selection',
+    'frames',
+  ]);
   return (
     <ToolProvider>
       <main
