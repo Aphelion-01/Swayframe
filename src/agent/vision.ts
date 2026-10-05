@@ -20,7 +20,7 @@ export type VisualProposal = z.infer<typeof visualProposalSchema>;
 export class VisualIntelligenceService {
   constructor(private readonly manager: AIProviderManager) {}
   async suggest(
-    image: string,
+    image: string | readonly string[],
     context: unknown,
     signal: AbortSignal,
   ): Promise<VisualProposal> {
@@ -33,7 +33,11 @@ export class VisualIntelligenceService {
             content:
               'Evaluate the actual rendered frame against the requested goal. Check clipping, readability, overlap, scale, color and blank output. Animation entrance may intentionally start offscreen. Return submitVisualAssessment only. A refinement is a proposal with registered tools; never direct Scene writes, code or deletion. If acceptable set ok=true and refinement=null.',
           },
-          { role: 'user', content: JSON.stringify(context), images: [image] },
+          {
+            role: 'user',
+            content: JSON.stringify(context),
+            images: typeof image === 'string' ? [image] : [...image],
+          },
         ],
         tools: [
           {

@@ -1,5 +1,6 @@
 import { CommandSystem, transaction } from '../core/command-system';
 import type { Command } from '../core/command-system';
+import { activeComposition } from '../core/project-model';
 import type { Project } from '../core/project-model';
 import type { TransformInteractionSettings } from '../core/transform-context';
 import { defaultTransformSettings } from '../core/transform-context';
@@ -37,6 +38,10 @@ export class AgentTransaction implements AgentTransactionPort {
     const context = {
       ...this.context,
       project: this.sandbox.getSnapshot(),
+      time: Math.min(
+        this.context.time,
+        activeComposition(this.sandbox.getSnapshot()).duration,
+      ),
       transform: this.transform,
     };
     const permission = this.registry.permission(name, args, this.allowedTools);

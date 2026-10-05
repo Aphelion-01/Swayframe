@@ -5,6 +5,7 @@ import {
   activeComposition,
   createLayer,
   findProperty,
+  layerProperties,
   effectKinds,
 } from '../core/project-model';
 import type { Layer, LayerKind } from '../core/project-model';
@@ -820,10 +821,12 @@ export function registerAnimationTools(registry: AgentToolRegistry) {
   };
   registry.register(
     'addKeyframe',
-    'Add a real timeline keyframe.',
+    'Add a real timeline keyframe. Use propertyId, or layerId + property path (position/scale/rotation/opacity or editor.properties key), including layers created earlier in the same plan.',
     z
       .object({
-        propertyId: idSchema,
+        propertyId: idSchema.optional(),
+        layerId: idSchema.optional(),
+        property: z.string().max(100).optional(),
         keyframeId: idSchema.optional(),
         time: z.number().nonnegative(),
         value: animValueSchema,
@@ -833,11 +836,27 @@ export function registerAnimationTools(registry: AgentToolRegistry) {
     'WRITE',
     {
       compile: (ctx, args) => {
-        target(ctx, args.propertyId);
+        let propertyId = args.propertyId;
+        if (propertyId && (args.layerId || args.property))
+          throw Error('只能指定一种属性引用');
+        if (!propertyId) {
+          if (!args.layerId || !args.property)
+            throw Error('需要Property ID，或Layer ID与属性路径');
+          const { layer } = editableLayer(ctx, args.layerId);
+          const keys = [
+            args.property,
+            'transform.' + args.property,
+            'editor.properties.' + args.property,
+          ];
+          propertyId = layerProperties(layer).find((p) => keys.includes(p.key))
+            ?.property.id;
+          if (!propertyId) throw Error('属性不存在');
+        }
+        target(ctx, propertyId);
         return [
           command({
             type: 'keyframe.add',
-            propertyId: args.propertyId,
+            propertyId,
             keyframe: {
               id: args.keyframeId ?? crypto.randomUUID(),
               time: time(ctx, args.time),

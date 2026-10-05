@@ -1,6 +1,12 @@
-# Swayframe 0.8.0
+# Swayframe 0.9.0
 
 简体中文本地动效编辑器，支持人工完成 2D 与平面 3D 动画。当前节点模块基线为 `docs/baseline/COMPOSITING_GRAPH_CG0_CG12.txt`，桌面基线为 `docs/baseline/DESKTOP_D0_D10.txt`，前一轮编辑器基线为 `docs/baseline/MOTION_EDITOR_PHASE_A_I.txt`；历史 V0.1 基线保留用于追溯。
+
+## 原生 AI Agent V1
+
+本轮基线为 `docs/baseline/NATIVE_AI_AGENT_V1.txt`，已按 A0→A14 实施。创作助手使用原生 Provider、typed工具、共享Command/Transaction、真实低分辨率渲染与只读专业Proposal；设置入口为“文件 → 设置 → AI”。首次需配置服务地址、API Key、模型与能力，视觉检查需支持Vision的路由。未配置服务时不会伪装执行。开发Web凭证只存内存，正式密钥存储使用桌面版。
+
+验收记录、限制及安装包见 `SWAYFRAME_AI_AGENT_V1_RESULT.md`。`agent-review.html` 为独立开发Mock协议页面，不进入生产入口。
 
 ## 启动与验证
 
@@ -11,7 +17,7 @@ npm ci
 npm run dev
 ```
 
-打开终端显示的本地地址。运行 `node scripts/gate.mjs UI-3` 完成 typecheck、lint、tests、build；生产预览使用 `npm run build` 和 `npm run preview`。
+打开终端显示的本地地址。运行 `node scripts/gate.mjs A14` 完成 typecheck、lint、tests、build；生产预览使用 `npm run build` 和 `npm run preview`。
 
 ## 桌面启动与打包
 
@@ -70,18 +76,15 @@ GIF 作为静态图片；未提供视频解码、MP4 导出、完整三维建模
 
 完整验收工程：`outputs/sprint-v2/full-workflow.swayframe`。冲刺结果与限制见 `SPRINT_RESULT.md`；运行 `npm run benchmark` 查看CPU求值基准，范围见 `outputs/performance/README.md`。
 
-
 ## 实时数值编辑（0.6.2）
 
 直接在属性数值上向上拖动增大、向下拖动减小；Shift 大步长、Alt 小步长，点击可输入。输入和方向键立即预览，松手或 Enter 提交，Esc 取消。链接的 X/Y 数值同步预览，每次编辑仅一条历史；非 X/Y 数值、颜色和四分量区域不显示链接按钮。原属性名称的横向拖动继续可用。验收见 outputs/NUMERIC_EDIT_UPDATE.md。
-
 
 ## Optimization & Polish（0.6.3）
 
 本轮停止大型功能扩张，完成真实创作流程、快速缩放修复、静态时间轴/按层求值缓存、图布局渲染隔离、稳定取消监听、面板订阅缩减及另存为/序列化优化。204 tests，全质量门禁通过。
 
 结果与边界见 `OPTIMIZATION_RESULT.md`；实际测量、原生 A/B round-trip 和截图见 `outputs/optimization/`。开发服务器打开 `/benchmark.html`，点击“运行性能基准”可复测 BENCH-A～D；开发Profiler数值不等同于发行版性能。工程仍只由 Command/Transaction 修改。
-
 
 ## Full UI/UX Redesign（0.7.0）
 

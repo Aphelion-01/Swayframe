@@ -1,10 +1,12 @@
 # Native AI Agent V1
 
 ## Architecture
+
 基线：docs/baseline/NATIVE_AI_AGENT_V1.txt。A0→A14顺序实施。
 ProviderManager为应用服务，设置/用量/Skills/历史独立于Project，密钥仅原生加密存储。Orchestrator消费结构化Plan，Registry校验权限并适配共享Command；隔离CommandSystem执行/渲染/验证，真实工程仍为同一基线才一次提交，一步Undo。Intelligence仅输出Proposal。
 
 ## Completed
+
 - 上一轮0.8.0：3a6e90e，227测试与18阶段门禁通过。
 - A0审计：现有Agent为固定Mock演示，无Provider/应用设置/密钥服务。保留既有Command、Renderer、Graph与Property。
 
@@ -31,11 +33,18 @@ ProviderManager为应用服务，设置/用量/Skills/历史独立于Project，�
 
 - A13全门禁通过：270 tests / 96 files。工程绑定应用历史/新会话/清除/恢复、真实动画属性与曲线预设/typed应用工具、独立存储；Agent提交触发既有dirty/recovery，隔离阶段不触发；退出中止请求、大文件读取先检查大小。
 
-## In Progress
-- A14：十项验收、实际GUI、性能、最终修复与打包。
+- A14全门禁通过：285 tests / 98 files。十项验收及新建图层关键帧、短合成验证、专业Proposal链路回归。真实浏览器十场景、原生0.9.0启动/设置/无密钥状态/配置保存删除，macOS与Windows包完成且payload与最终构建一致。
+
+## Delivery
+
+- 版本0.9.0，Project schema仍为0.6.0。
+- 结果：SWAYFRAME_AI_AGENT_V1_RESULT.md；证据：outputs/ai-agent/。
+- 第三方真实模型效果、Windows运行、所有参考媒体编码器兼容性未声明为已验证。
 
 ## Blockers
+
 - 真实第三方API验收需用户自行配置凭证，不阻塞Mock与协议测试。
 
 ## Tests
+
 各阶段日志：outputs/quality/A0.log ～ A14.log。未运行阶段不得标为完成。

@@ -177,3 +177,15 @@ Canvas轴向移动、Scale/Rotate与Inspector多选Scale/Rotate共用Context；�
 `timeline-visible-rows`先按实际展开/筛选计算Layer/Group/Property行序，整行和sticky名称共用底色变量；selection > hover > zebra，身份色只显示3px标记，动画用秒表/菱形状态。静态轨道memo保留，播放头CSS变量更新不重建100属性行。`LayerAccentChip`跨面板复用身份，UI tokens负责全部颜色。Layer.ui.accentColorId属于工程，0.6.0严格枚举校验，0.1～0.5迁移分配默认色标，新建层循环分配。修改色标经layer.replace Transaction，可撤销；色标排除出视觉失效及Precomp源缓存，未知ui字段仍导致失效。
 
 `transform-review.html`和`src/dev/transform-fixtures.ts`为独立开发工具，不进入生产入口。质量门禁与真实交互证据见本轮验收记录。
+
+## Native AI Agent V1 (0.9.0)
+
+本轮基线 `docs/baseline/NATIVE_AI_AGENT_V1.txt`，A0→A14。`AIProviderManager`、模型能力、路由、用量、Skills、会话与预设属于应用服务，独立于Project。原生凭证仅在Electron主进程通过异步safeStorage加密；Renderer只读取是否已配置，开发Web只保留会话内凭证。IPC绑定主窗口来源，固定文件键和请求Schema，错误通过受限代码传递，密钥不进入工程、工具上下文或日志。
+
+`AgentOrchestrator`消费结构化Plan与typed只读工具响应；读取最多4轮/12次，Tool Registry同时校验Schema、Skill范围、参考模式和危险权限。GUI、Graph、Mask与Agent共用CommandSystem。AgentTransaction在隔离CommandSystem执行、渲染、验证，当前工程仍为原基线才一次提交，一次Undo；Stop/失败/并发编辑会丢弃未提交修改。工作区Pivot/Orientation不修改Anchor或Project。新图层可通过Layer ID与属性路径创建关键帧。
+
+真实Canvas2DRenderer支持缩放预览，Agent快照最长边720，不含控制柄，不永久写入Project。VisualIntelligenceService只返回结构化Proposal；当前帧与所选动画起止帧提供给能力明确支持Vision的模型，修正最多2轮，危险修正拒绝。没有视觉模型或禁止发送预览时，仅报告本地渲染检查，不能标作模型视觉验收。外部参考只来自用户选中的File，静态图片/GIF首帧/视频3个抽样帧；参考模式在工具白名单约束，布局参考不能写颜色。
+
+网络/限流/超时/Provider失败最多2次重试或切换；无效密钥、无效请求/响应与取消不重试。用量只记录服务返回值，未知成本不估算，每日预算80%提醒/100%可停止后续请求。设置、历史、Skills、用量及真实动画属性预设各自存应用目录；工程只存Scene。共享Agent提交触发现有dirty与recovery服务。开发验收入口 `agent-review.html` 使用隔离Mock协议，不进入生产包，不解析自然语言或替代产品Provider。
+
+`IntelligenceService`提供analyzeLayout/analyzeColor/analyzeTypography/analyzeMotion/analyzeReference五个typed分析入口。注册为只读工具，接收相关Scene摘要和隐私允许的真实预览/参考，仅返回小规模DesignProposal；Agent可读取建议再生成Plan。服务没有Scene/CommandSystem/磁盘写入接口，禁止建议未授权工具，运行时仍校验参数与Scope，建议不会自行提交。

@@ -1,3 +1,5 @@
+import { IntelligenceService } from '../agent/intelligence';
+import { activeComposition, layerProperties } from '../core/project-model';
 import { agentLibraryFor, registerPresetTools } from '../agent/library';
 import { referenceToolScope } from '../agent/references';
 import type { AgentReference, ReferenceMode } from '../agent/references';
@@ -96,26 +98,90 @@ export function createNativeAgent(
   let chosen: AgentSkill | undefined;
   let references: readonly AgentReference[] = [];
   let referenceMode: ReferenceMode = 'overall';
+  let activeReferenceMode: ReferenceMode | undefined;
   const allowed = () =>
-    referenceToolScope(
-      registry,
-      chosen?.allowedTools,
-      references.length && manager.getSnapshot().settings.privacy.sendReferences
-        ? referenceMode
-        : undefined,
+    referenceToolScope(registry, chosen?.allowedTools, activeReferenceMode);
+  const professional = new IntelligenceService(manager);
+  for (const name of [
+    'analyzeLayout',
+    'analyzeColor',
+    'analyzeTypography',
+    'analyzeMotion',
+    'analyzeReference',
+  ] as const) {
+    registry.register(
+      name,
+      '只返回专业 Proposal，由 Agent 决定是否转换成共享命令',
+      z.object({ goal: z.string().min(1).max(1000) }).strict(),
+      'READ',
+      {
+        read: async (ctx, args, signal) => {
+          const privacy = manager.getSnapshot().settings.privacy;
+          const images: string[] = [];
+          if (name === 'analyzeReference') {
+            if (!references.length) throw Error('请先添加参考');
+            if (!privacy.sendReferences) throw Error('隐私设置禁止发送参考');
+            images.push(...references.flatMap((r) => r.frames));
+          } else if (snapshotRenderer && privacy.sendRenderPreview) {
+            try {
+              manager.resolve('vision');
+              images.push(
+                (await snapshotRenderer.render(ctx.project, ctx.time, signal))
+                  .image,
+              );
+            } catch (error) {
+              if (!(error instanceof AIError && error.code === 'setup'))
+                throw error;
+            }
+          }
+          const readNames = new Set(
+            registry.readDefinitions().map((t) => t.name),
+          );
+          const tools = registry
+            .definitions(allowed())
+            .filter((t) => !readNames.has(t.name));
+          const proposal = await professional[name](
+            {
+              goal: args.goal,
+              context: {
+                scene: engine.build(
+                  { ...captured, project: ctx.project, time: ctx.time },
+                  8000,
+                ),
+                referenceMode: activeReferenceMode,
+              },
+              tools,
+              images,
+            },
+            signal,
+          );
+          registry.validatePlan(proposal.plan, allowed());
+          return proposal;
+        },
+      },
     );
+  }
   let goal = '';
   const runtime: AgentRuntimePort = {
     ...(snapshotRenderer
       ? {
           render: async (project, signal) =>
-            (await snapshotRenderer.render(project, captured.time, signal))
-              .image,
+            (
+              await snapshotRenderer.render(
+                project,
+                Math.min(captured.time, activeComposition(project).duration),
+                signal,
+              )
+            ).image,
           verify: async (project, signal) => {
-            const diagnostics = visualDiagnostics(project, captured.time);
+            const currentTime = Math.min(
+              captured.time,
+              activeComposition(project).duration,
+            );
+            const diagnostics = visualDiagnostics(project, currentTime);
             const { image } = await snapshotRenderer.render(
               project,
-              captured.time,
+              currentTime,
               signal,
             );
             if (!manager.getSnapshot().settings.privacy.sendRenderPreview)
@@ -135,11 +201,39 @@ export function createNativeAgent(
                 };
               throw e;
             }
+            const keyTimes = activeComposition(project)
+              .layers.filter(
+                (l) =>
+                  !captured.selection.length ||
+                  captured.selection.includes(l.id),
+              )
+              .flatMap((l) =>
+                layerProperties(l).flatMap((p) =>
+                  p.property.keyframes.map((k) => k.time),
+                ),
+              )
+              .filter((t) => t <= activeComposition(project).duration);
+            const times = [
+              ...new Set(
+                keyTimes.length
+                  ? [Math.min(...keyTimes), Math.max(...keyTimes)]
+                  : [],
+              ),
+            ].filter((t) => t !== currentTime);
+            const images = [image];
+            for (const time of times.slice(0, 2))
+              images.push(
+                (await snapshotRenderer.render(project, time, signal)).image,
+              );
             const proposal = await intelligence.suggest(
-              image,
+              images,
               {
                 goal,
-                context: engine.build({ ...captured, project }, 8000),
+                frameTimes: [currentTime, ...times.slice(0, 2)],
+                context: engine.build(
+                  { ...captured, project, time: currentTime },
+                  8000,
+                ),
                 diagnostics,
                 tools: registry.definitions(allowed()),
               },
@@ -163,6 +257,11 @@ export function createNativeAgent(
       skillId = id;
     },
     context: (prompt) => {
+      activeReferenceMode =
+        references.length &&
+        manager.getSnapshot().settings.privacy.sendReferences
+          ? referenceMode
+          : undefined;
       goal = prompt;
       captured = input();
       chosen = skills.choose(
@@ -171,6 +270,21 @@ export function createNativeAgent(
           ? manager.getSnapshot().settings.agent.defaultSkill
           : skillId,
       );
+      if (chosen.requiredCapabilities?.length) {
+        const route = manager.resolve(
+          activeReferenceMode ? 'vision' : 'planning',
+        );
+        const capabilities =
+          manager.models.resolve(route.provider.id, route.model)
+            ?.capabilities ?? [];
+        if (
+          chosen.requiredCapabilities.some((cap) => !capabilities.includes(cap))
+        )
+          throw new AIError(
+            'setup',
+            '当前模型不满足该 Skill 的能力要求，请调整模型路由',
+          );
+      }
       return {
         ...engine.build(
           captured,
@@ -214,12 +328,23 @@ export function createNativeAgent(
             const before = store.commands.getSnapshot();
             const result = store.commands.executeTransaction(tx);
             if (result.ok) {
+              if (
+                before.activeCompositionId !==
+                store.commands.getSnapshot().activeCompositionId
+              ) {
+                store.setTime(0);
+                store.select(null);
+              }
               const previous = new Set(
                 before.compositions.flatMap((c) => c.layers.map((l) => l.id)),
               );
               const added = store.commands
                 .getSnapshot()
-                .compositions.flatMap((c) => c.layers)
+                .compositions.filter(
+                  (c) =>
+                    c.id === store.commands.getSnapshot().activeCompositionId,
+                )
+                .flatMap((c) => c.layers)
                 .filter((l) => !previous.has(l.id));
               if (added[0]) store.select(added[0].id);
             }

@@ -130,3 +130,86 @@ it('unsupported disk-like files and oversize references are rejected before any 
     ),
   ).rejects.toThrow();
 });
+it('planner can request professional typography analysis, receive a Proposal, then apply through one shared transaction', async () => {
+  const s = await setup();
+  s.agent.setReferences([], 'overall');
+  let analysisWasReadOnly = false;
+  let round = 0;
+  const providerId = s.manager.getSnapshot().settings.defaultProviderId!;
+  s.manager.register(
+    new MockAIProvider(providerId, 'Mock', async (request) => {
+      if (request.toolChoice === 'submitProposal') {
+        analysisWasReadOnly = s.store.commands.undoStack.length === 0;
+        return {
+          text: '',
+          model: 'vision',
+          toolCalls: [
+            {
+              id: 'proposal',
+              name: 'submitProposal',
+              arguments: {
+                id: 'proposal',
+                goal: '专业布局',
+                risk: 'low',
+                steps: [
+                  {
+                    id: 'position',
+                    label: '位置',
+                    tool: 'setPosition',
+                    arguments: {
+                      layerId: s.layer.id,
+                      value: { x: 700, y: 400 },
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        };
+      }
+      if (round++ === 0)
+        return {
+          text: '',
+          model: 'vision',
+          toolCalls: [
+            {
+              id: 'analysis',
+              name: 'analyzeLayout',
+              arguments: { goal: '改善布局' },
+            },
+          ],
+        };
+      return {
+        text: '',
+        model: 'vision',
+        toolCalls: [
+          {
+            id: 'plan',
+            name: 'submitPlan',
+            arguments: {
+              id: 'final',
+              goal: '应用建议',
+              risk: 'low',
+              steps: [
+                {
+                  id: 'position',
+                  label: '位置',
+                  tool: 'setPosition',
+                  arguments: { layerId: s.layer.id, value: { x: 700, y: 400 } },
+                },
+              ],
+            },
+          },
+        ],
+      };
+    }),
+  );
+  await s.agent.run('分析布局再应用');
+  expect(s.agent.getSnapshot().status).toBe('completed');
+  expect(analysisWasReadOnly).toBe(true);
+  expect(s.store.commands.undoStack).toHaveLength(1);
+  expect(
+    s.store.commands.getSnapshot().compositions[0]!.layers[0]!.transform
+      .position.baseValue,
+  ).toEqual({ x: 700, y: 400 });
+});
