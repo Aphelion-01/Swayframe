@@ -8,6 +8,7 @@ describe('Canvas drag controller', () => {
     const p = createDefaultProject();
     const layer = createLayer('rectangle');
     const store = new EditorStore(p);
+    store.setAutoKeyframes(true);
     store.run('Create', [
       command({
         type: 'layer.create',

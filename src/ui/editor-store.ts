@@ -104,7 +104,7 @@ export class EditorStore {
       playing: false,
       selection: [],
       zoom: 1,
-      autoKeyframes: true,
+      autoKeyframes: false,
       frames: [],
       timelineZoom: 1,
       propertyFilter: 'all',
@@ -617,7 +617,17 @@ export class EditorStore {
       const result = this.commands.replaceProject(project);
       if (!result.ok) throw new Error(result.error);
       this.cancelDrag();
-      this.#set({ time: 0, selection: [], playing: false });
+      this.#set({
+        time: 0,
+        selection: [],
+        playing: false,
+        timelineZoom: 1,
+        propertyFilter: 'all',
+        graphSelection: undefined,
+        preview: undefined,
+        propertyPreview: undefined,
+        propertyPreviews: undefined,
+      });
       this.#frameClipboard = [];
       this.#layerClipboard = [];
       this.#set({ frames: [] });

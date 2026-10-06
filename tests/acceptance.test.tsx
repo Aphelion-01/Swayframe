@@ -45,6 +45,7 @@ const start = () => {
 describe('A-01～A-09 用户流程集成验收', () => {
   it('A-01 / A-02 / A-05：新建合成、Canvas 拖动、属性面板 编辑和逐步 Undo/Redo', () => {
     const store = start();
+    store.setAutoKeyframes(true);
     fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
     fireEvent.click(screen.getByRole('button', { name: '新建合成' }));
     fireEvent.click(screen.getByRole('button', { name: '创建合成' }));

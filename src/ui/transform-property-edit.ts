@@ -3,7 +3,10 @@ import type { AnimValue, Vec2 } from '../core/core-types';
 import { activeComposition, findProperty } from '../core/project-model';
 import { createRenderSnapshot } from '../core/renderer-core';
 import { createTransformContext } from '../core/transform-resolvers';
-import { transformItems } from '../core/transform-operations';
+import {
+  transformItems,
+  restoreCollapsedScale,
+} from '../core/transform-operations';
 import {
   transformEditCommands,
   transformPreviewComposition,
@@ -47,12 +50,10 @@ export function transformPropertyEdit(
     )
       return false;
     const before = evaluateProperty(found.property, view.time);
-    if (
+    const collapsed =
       kind === 'scale' &&
       (Math.abs((before as Vec2).x) < 1e-9 ||
-        Math.abs((before as Vec2).y) < 1e-9)
-    )
-      throw Error('当前缩放为零，无法计算相对缩放。');
+        Math.abs((before as Vec2).y) < 1e-9);
     const operation =
       kind === 'scale'
         ? ({
@@ -63,7 +64,14 @@ export function transformPropertyEdit(
             },
           } as const)
         : ({ kind, angle: (value as number) - (before as number) } as const);
-    const items = transformItems(context, operation);
+    const items = collapsed
+      ? restoreCollapsedScale(
+          context,
+          found.layer.id,
+          value as Vec2,
+          store.textMeasure,
+        )
+      : transformItems(context, operation);
     if (commit) {
       store.setPropertyPreview(undefined);
       const commands = transformEditCommands(

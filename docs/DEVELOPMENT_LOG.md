@@ -91,3 +91,10 @@ V2-1～V2-10 按高价值顺序完成连续交互保护、Canvas 吸附、Timeli
 移除对象附近模式名称和持续完整参考圈；角落保留小状态标记。新增双环支点、不同形状的锚点、真正Global/Local控制轴、Scale扩张箭头、Rotation短弧和实时角度、外部支点虚线、受控Ghost轮廓。Inspector九宫格与来源按钮支持悬停/焦点预览，方向键只导航九宫格，不误移动图层。Hover不改工程，Custom Pivot连续拖动一次Undo，参考设置与Scene共用历史顺序但不进入工程。
 
 CASE 1～8以真实变换数学和UI交互回归验证；实际浏览器观察底部固定预览、左上旋转32.4°、全局/局部轴以及Custom Pivot外部连接。完整质量门禁、安装包内容一致性与视觉证据记录于outputs/transform-guidance。未增加动画数据重映射、Skew或Camera功能。
+
+
+## 2026-10-07 — V0.2 创作闭环专项 / Swayframe 0.9.4
+
+初始真实界面审计发现Web新建无效果、缺少合成名称、零缩放阻断作品A；修复上述问题和默认静态误录关键帧，完善加载状态清理以及产品版本显示。新增14项集成/UI/共享Renderer调用测试，102文件/315tests、typecheck及Web/desktop build通过。作品A/B/C均通过普通浏览器控件创建，A播放/属性Undo、B路径/羽化/模糊轨道和删除撤销、C摄像机推进实测。没有扩功能或注入工程状态。
+
+Mac锁屏阻止继续原生文件对话框和鼠标操作；已请求解锁。浏览器下载接口无文件路径，因此原生Save→Close→Reopen和真实PNG序列像素抽查仍待验收，本轮不能整体标记完成。完整结果见V0.2_WORKFLOW_RESULT.md及WORKFLOW_AUDIT.md。

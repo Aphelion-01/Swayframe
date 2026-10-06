@@ -12,3 +12,5 @@ GUI 与 Agent 共用 Command System；复杂操作走 Transaction；Intelligence
 当前UI执行基线为 `docs/baseline/FULL_UI_REDESIGN.txt`，0.7.0已完成三轮改造。设计tokens、共享图标/焦点/键盘组件及工作区偏好边界见 `docs/ARCHITECTURE.md`；审查与验证见 `docs/ui-redesign/RESULT.md`。Project schema仍为0.5.0。
 
 当前执行基线：`docs/baseline/NATIVE_AI_AGENT_V1.txt`。Agent独立应用服务、结构化Tool与共享Command/Transaction闭环；进度见AGENT_IMPLEMENTATION_STATUS.md。
+
+当前执行基线：`docs/baseline/V02_WORKFLOW_OPTIMIZATION.txt`。仅打通已有创作闭环。0.9.4 修复新建/状态清理与零缩放，不扩功能；结果和未验收范围见 `V0.2_WORKFLOW_RESULT.md`。

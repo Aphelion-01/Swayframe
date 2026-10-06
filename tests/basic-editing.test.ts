@@ -11,6 +11,7 @@ import {
 function setup(count = 1) {
   const project = createDefaultProject(),
     store = new EditorStore(project);
+  store.setAutoKeyframes(true);
   const layers = Array.from({ length: count }, (_, i) =>
     createLayer('rectangle', { position: { x: 100 + i * 200, y: 100 } }),
   );

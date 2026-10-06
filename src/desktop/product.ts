@@ -1,7 +1,9 @@
+import { version } from '../../package.json';
+
 export const ProductMetadata = Object.freeze({
   name: 'Swayframe',
   displayName: 'Swayframe',
-  version: '0.9.0',
+  version,
   company: 'Copyright holder pending',
   website: null,
   applicationId: 'com.swayframe.editor',

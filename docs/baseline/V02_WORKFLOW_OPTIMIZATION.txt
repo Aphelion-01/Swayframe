@@ -1,0 +1,1273 @@
+你现在开始进行 Swayframe V0.2 的第一轮专项优化。
+
+本轮只有一个目标：
+
+======================================================================
+把当前已经存在的功能真正打通为一个完整、可靠、可实际使用的 Motion Design 创作闭环。
+======================================================================
+
+本轮不要继续横向扩展功能。
+
+不要新增大型模块。
+
+不要开发新的 AI Agent。
+
+不要开发更多 3D。
+
+不要开发更多 Effect。
+
+不要扩张 Compositing Graph。
+
+这一轮只解决：
+
+“用户能不能真正从零做完一个动画作品，并可靠保存和导出。”
+
+这是当前最高优先级。
+
+======================================================================
+一、首先审计当前完整工作流
+======================================================================
+
+不要先修改 UI。
+
+先实际走一遍当前软件：
+
+New Project
+↓
+New Composition
+↓
+Create Shape
+↓
+Create Text
+↓
+Import Image
+↓
+Canvas Transform
+↓
+Add Keyframe
+↓
+Move Playhead
+↓
+Modify Property
+↓
+Timeline Editing
+↓
+Motion Curve
+↓
+Mask / Effect
+↓
+Parent / Precomp
+↓
+Preview
+↓
+Save
+↓
+Close
+↓
+Reload
+↓
+Export
+
+逐项检查：
+
+是否真的能完成。
+
+不要根据：
+
+“代码里存在这个模块”
+
+判断已经完成。
+
+必须根据：
+
+“普通用户是否真的能从界面完成操作”
+
+判断。
+
+创建：
+
+WORKFLOW_AUDIT.md
+
+内容格式：
+
+## Working
+
+真正可以使用的能力。
+
+## Partial
+
+存在但不完整。
+
+## Broken
+
+无法正确工作的能力。
+
+## Missing connection
+
+模块已经存在，但没有正确连接到完整工作流。
+
+## Regression
+
+以前能用，现在已经损坏。
+
+审计完成后：
+
+立即开始修复。
+
+不要停下来等待用户确认。
+
+======================================================================
+二、本轮核心验收作品
+======================================================================
+
+必须在当前 Swayframe 中能够完成以下三个测试作品。
+
+它们将成为当前阶段的 Integration Benchmark。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TEST PROJECT A
+二维 Logo / Shape 动画
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+创建：
+
+1920 × 1080
+30 fps
+5 秒
+
+内容：
+
+一个圆
+一个矩形
+一个文字标题
+
+要求：
+
+圆：
+
+Scale
+0
+→
+115
+→
+100
+
+使用非线性 easing。
+
+矩形：
+
+从左侧进入中央。
+
+Position 有两个关键帧。
+
+使用 Ease Out。
+
+标题：
+
+Opacity
+0
+→
+100
+
+同时：
+
+Position Y
+580
+→
+540
+
+最终：
+
+三个对象形成简单但完整的 Motion Design。
+
+必须支持：
+
+播放
+暂停
+拖 Playhead
+调整 Keyframe
+调整 Motion Curve
+
+全部正确。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TEST PROJECT B
+图片 + Mask + Effect
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+导入一张图片。
+
+创建：
+
+Image Layer。
+
+为图片增加：
+
+Mask。
+
+至少调整：
+
+Mask Path
+Feather
+
+增加：
+
+Exposure
+Gaussian Blur
+
+其中至少一个 Effect Parameter：
+
+必须可以动画。
+
+例如：
+
+Blur Radius
+
+0
+→
+20
+→
+0
+
+Timeline：
+
+必须能正确显示该动画属性。
+
+Preview：
+
+必须正确更新。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TEST PROJECT C
+简单 2.5D
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+如果当前 3D Layer / Camera 已经存在：
+
+创建三张图片。
+
+分别设置：
+
+Z = 0
+
+Z = -500
+
+Z = -1000
+
+创建 Camera。
+
+Camera：
+
+Position Z
+
+通过关键帧推进。
+
+必须产生：
+
+正确透视变化。
+
+如果当前 3D 系统尚未达到这个能力：
+
+不要为了本轮重新开发大型 3D 系统。
+
+记录为：
+
+Partial
+
+然后继续完成其他核心闭环。
+
+======================================================================
+三、New Project / Composition
+======================================================================
+
+检查：
+
+New Project
+
+是否真正清空：
+
+Scene
+History
+Selection
+Timeline
+Current Composition
+
+避免：
+
+创建新工程后残留旧工程状态。
+
+New Composition：
+
+必须允许设置：
+
+Name
+Width
+Height
+Frame Rate
+Duration
+
+至少提供：
+
+1920×1080
+30fps
+
+默认值。
+
+Composition 创建后：
+
+自动成为 Active Composition。
+
+Canvas：
+
+立即正确显示。
+
+Timeline：
+
+立即匹配：
+
+duration
+fps。
+
+======================================================================
+四、创建对象
+======================================================================
+
+确保：
+
+Shape
+Text
+Image
+
+都可以从实际 UI 创建。
+
+Shape 至少：
+
+Rectangle
+Ellipse
+
+创建后必须：
+
+立即出现在 Canvas
+
+立即出现在 Layer Panel
+
+自动成为 Selection
+
+Inspector 显示属性
+
+Timeline 能展开属性
+
+这五件事必须同步。
+
+禁止出现：
+
+Canvas 已有对象
+
+但 Layer Panel 没有。
+
+或者：
+
+Layer Panel 有对象
+
+Inspector 没状态。
+
+======================================================================
+五、Selection 同步
+======================================================================
+
+建立 / 修复统一 Selection State。
+
+以下入口：
+
+Canvas
+
+Layer Panel
+
+Timeline
+
+必须指向同一个 selection model。
+
+例如：
+
+Canvas 点击 Rectangle
+
+↓
+
+Layer Panel 高亮 Rectangle
+
+↓
+
+Inspector 显示 Rectangle
+
+↓
+
+Timeline 定位 Rectangle
+
+反过来：
+
+Layer Panel 点击 Text
+
+↓
+
+Canvas Selection 切到 Text。
+
+禁止每个 Panel：
+
+维护自己的 selectedLayerId。
+
+======================================================================
+六、Canvas Transform
+======================================================================
+
+确保实际可完成：
+
+Move
+
+Scale
+
+Rotate
+
+Anchor / Pivot
+
+至少前三项必须完全可用。
+
+Canvas 修改 Transform：
+
+必须：
+
+更新 Scene Model
+
+更新 Inspector
+
+更新 Timeline 当前值
+
+更新 Preview
+
+产生正确 Undo Command。
+
+Continuous Drag：
+
+整个拖动过程：
+
+只能生成一个 Undo Step。
+
+例如：
+
+x = 100
+
+拖动
+
+x = 900
+
+Undo：
+
+一次回到：
+
+100。
+
+======================================================================
+七、Inspector → Property → Timeline
+======================================================================
+
+检查：
+
+Inspector 中所有可动画的核心属性：
+
+Position
+
+Scale
+
+Rotation
+
+Opacity
+
+都连接到统一：
+
+Property<T>
+
+不要：
+
+Inspector 自己维护 value。
+
+Scene Model：
+
+才是真实数据源。
+
+Inspector 修改：
+
+↓
+
+Property 修改
+
+↓
+
+Canvas 更新
+
+↓
+
+Timeline 更新
+
+反向同样成立。
+
+======================================================================
+八、关键帧完整闭环
+======================================================================
+
+必须保证以下流程真实可用：
+
+选择 Rectangle
+
+↓
+
+Position：
+
+Enable Animation / Add Keyframe
+
+↓
+
+t = 0
+
+设置：
+
+x = 200
+
+↓
+
+移动 Playhead 到：
+
+1 秒
+
+↓
+
+Canvas 将 Rectangle 拖到：
+
+x = 960
+
+↓
+
+正确生成 / 修改：
+
+第二个 Position Keyframe
+
+↓
+
+播放
+
+↓
+
+正确插值。
+
+用户不应该：
+
+手动输入复杂 Keyframe 数据。
+
+Canvas Direct Manipulation：
+
+必须能够参与 Keyframe Workflow。
+
+======================================================================
+九、Auto-key 行为
+======================================================================
+
+如果项目已经有：
+
+Auto Keyframe / Auto Record
+
+必须重新检查语义。
+
+当 Property 已经进入动画状态：
+
+Playhead 位于不同时间
+
+修改 Property
+
+应该按照当前设计：
+
+创建或更新当前时间 Keyframe。
+
+但：
+
+普通静态 Property
+
+不应该因为用户移动对象
+
+自动产生大量 Keyframes。
+
+行为必须：
+
+可预测
+一致
+可 Undo。
+
+如果当前 Auto-Key 设计混乱：
+
+优先修正。
+
+======================================================================
+十、Timeline 与 Scene 时间一致
+======================================================================
+
+检查所有：
+
+Playhead
+
+currentTime
+
+Animation Evaluation
+
+Renderer
+
+必须共享同一时间源。
+
+禁止：
+
+Timeline 显示：
+
+1.20s
+
+Canvas Renderer：
+
+仍然 Evaluate：
+
+1.17s。
+
+建立：
+
+single source of truth for current time。
+
+拖动 Playhead：
+
+Canvas 必须实时 Evaluate。
+
+======================================================================
+十一、Playback
+======================================================================
+
+确保：
+
+Play
+
+Pause
+
+Loop
+
+Jump to Start
+
+可以工作。
+
+播放时间：
+
+基于 Composition FPS / clock。
+
+不要通过：
+
+每次 setInterval + frame++
+
+制造明显漂移。
+
+允许 Preview：
+
+跳帧
+
+但时间必须正确。
+
+停止播放后：
+
+Playhead 与 Canvas 状态必须一致。
+
+======================================================================
+十二、Motion Curve
+======================================================================
+
+不要在本轮扩展新的 Curve 功能。
+
+只验证现有 Motion Curve：
+
+能否真正进入作品创作流程。
+
+流程：
+
+选择两个 Keyframe
+
+↓
+
+打开 Motion Curve
+
+↓
+
+选择 / 修改 easing
+
+↓
+
+Animation Evaluation 改变
+
+↓
+
+Canvas Preview 立即改变
+
+↓
+
+Undo
+
+↓
+
+恢复原 Curve。
+
+如果只是 UI 曲线变化：
+
+实际动画没变化：
+
+视为严重 bug。
+
+重点修复。
+
+======================================================================
+十三、Mask / Effect 工作流
+======================================================================
+
+如果当前已有：
+
+Mask
+
+Effects
+
+检查：
+
+添加
+编辑
+删除
+Enable / Disable
+Undo
+
+是否完整。
+
+至少保证：
+
+Image
+↓
+Mask
+↓
+Exposure / Blur
+↓
+Output
+
+可以工作。
+
+如果已有 Effect 参数动画能力：
+
+验证 Timeline integration。
+
+如果没有：
+
+不要本轮重构整个 Effect Engine，
+
+但应至少保证基础 Effect 工作稳定。
+
+======================================================================
+十四、Parent / Precomp
+======================================================================
+
+如果当前已经实现：
+
+Parent
+
+验证：
+
+Child Transform
+
+在 Parent 移动 / Scale / Rotation 时：
+
+正确继承。
+
+确保：
+
+Parent Animation
+
+可以影响 Child。
+
+如果已有：
+
+Precomp
+
+测试：
+
+多个 Layer
+
+↓
+
+Pre-compose
+
+↓
+
+形成 Precomp Layer
+
+↓
+
+继续 Transform / Animate
+
+↓
+
+正确 Render。
+
+检测：
+
+Composition circular dependency。
+
+======================================================================
+十五、Undo / Redo 全链路测试
+======================================================================
+
+Undo 是本轮重点。
+
+以下操作至少测试：
+
+Create Layer
+
+Delete Layer
+
+Move Layer
+
+Scale Layer
+
+Rotate Layer
+
+Set Property
+
+Add Keyframe
+
+Move Keyframe
+
+Delete Keyframe
+
+Apply Motion Curve
+
+Add Effect
+
+Change Effect Parameter
+
+Add Mask
+
+Parent
+
+Precomp
+
+Undo / Redo
+
+必须恢复正确状态。
+
+重点检查：
+
+UI State
+
+和：
+
+Scene State
+
+不能不同步。
+
+======================================================================
+十六、Save / Reload
+======================================================================
+
+完成 TEST PROJECT A 后：
+
+Save。
+
+完全关闭 / Reload。
+
+重新 Open。
+
+必须恢复：
+
+Composition
+
+Layer order
+
+Transform
+
+Text
+
+Shape
+
+Keyframes
+
+Interpolation
+
+Motion Curve
+
+Effects
+
+Masks
+
+Parent
+
+Precomp
+
+3D
+
+当前已支持的数据。
+
+不能只检查：
+
+“文件可以打开”。
+
+必须对比：
+
+保存前 Scene
+
+和：
+
+加载后 Scene。
+
+建立：
+
+Project Round-trip Integration Test。
+
+======================================================================
+十七、Export
+======================================================================
+
+确保：
+
+至少一种真实输出可用。
+
+优先：
+
+PNG Sequence。
+
+如果 MP4 已经可靠：
+
+同时保留。
+
+Export 必须使用：
+
+与 Canvas Preview 相同的：
+
+Scene
+Animation Evaluation
+Renderer
+
+不要创建：
+
+“Preview Renderer”
+
+和：
+
+“Export Renderer”
+
+两套完全不同逻辑。
+
+至少随机抽查：
+
+起始帧
+中间帧
+结束帧
+
+与 Canvas 对应时间画面一致。
+
+======================================================================
+十八、错误处理
+======================================================================
+
+本轮顺便修复明显会破坏 Workflow 的错误。
+
+例如：
+
+Project 没有 Composition
+
+Asset Missing
+
+Layer 引用不存在
+
+Property 数据损坏
+
+Keyframe 时间非法
+
+不要：
+
+直接页面白屏。
+
+至少：
+
+Fail gracefully
+
+并显示：
+
+可理解错误信息。
+
+======================================================================
+十九、不要重新设计 UI
+======================================================================
+
+本轮不是：
+
+Canvas UX 专项。
+
+也不是：
+
+Timeline UI 专项。
+
+如果某个 UI 问题：
+
+阻止完整 Workflow
+
+可以修。
+
+否则：
+
+记录：
+
+UX_BACKLOG.md
+
+留给下一轮。
+
+不要本轮大规模改视觉。
+
+======================================================================
+二十、不要扩功能
+======================================================================
+
+明确禁止：
+
+新增 20 种 Effects
+
+实现完整 Nuke Graph
+
+增加 AI Agent
+
+加入粒子
+
+加入 Tracking
+
+加入 Roto
+
+增加高级 3D
+
+增加复杂 Expressions
+
+本轮只负责：
+
+把现有能力连通。
+
+======================================================================
+二十一、建立 Workflow Integration Tests
+======================================================================
+
+除现有 Unit Test 外：
+
+增加核心 Integration Test。
+
+至少包括：
+
+FLOW-01
+
+Create Project
+→
+Create Composition
+→
+Create Shape
+→
+Save
+→
+Load
+
+
+FLOW-02
+
+Create Shape
+→
+Animate Position
+→
+Evaluate t=0
+→
+Evaluate t=0.5
+→
+Evaluate t=1
+
+
+FLOW-03
+
+Apply Motion Curve
+→
+Evaluate animation
+→
+Undo
+→
+Redo
+
+
+FLOW-04
+
+Add Effect
+→
+Save
+→
+Load
+
+
+FLOW-05
+
+Parent
+→
+Animate Parent
+→
+Evaluate Child Transform
+
+
+FLOW-06
+
+Export Frame
+→
+Compare with Renderer output
+
+不要过度依赖 Screenshot Test。
+
+核心数据行为优先。
+
+======================================================================
+二十二、Bug 修复优先级
+======================================================================
+
+发现问题时按：
+
+P0：
+
+工程损坏
+崩溃
+Save/Load 数据丢失
+Undo 损坏
+Renderer 错误
+
+P1：
+
+Workflow 无法完成
+Keyframe 不工作
+Timeline 不同步
+Canvas 不同步
+
+P2：
+
+明显 UX 阻碍
+
+P3：
+
+视觉细节
+
+顺序修复。
+
+======================================================================
+二十三、完成标准
+======================================================================
+
+本轮完成不是：
+
+“代码都实现了。”
+
+而是必须可以手工完成：
+
+TEST PROJECT A
+
+并：
+
+Save
+
+Close
+
+Reopen
+
+Play
+
+Modify
+
+Undo
+
+Export。
+
+全过程不能通过：
+
+修改 JSON
+开发者工具
+手动改源码
+
+完成。
+
+必须全部通过：
+
+Swayframe 正常用户界面。
+
+======================================================================
+二十四、最终输出
+======================================================================
+
+完成后更新：
+
+WORKFLOW_AUDIT.md
+
+改为：
+
+## Fully working
+
+## Still partial
+
+## Known issues
+
+## Deferred to next round
+
+并输出：
+
+V0.2_WORKFLOW_RESULT.md
+
+包括：
+
+1. 修复了什么
+2. 哪些模块真正连通
+3. 哪些模块仍然存在风险
+4. 测试结果
+5. Build 状态
+6. 三个 Benchmark Project 的结果
+7. 下一轮 Canvas UX 最值得修复的具体问题
+
+======================================================================
+二十五、执行方式
+======================================================================
+
+不要只分析。
+
+完成审计后立即开始：
+
+FIX
+TEST
+VERIFY
+REPEAT
+
+遇到普通实现选择：
+
+自行决定。
+
+只有真正无法绕过且会改变整个项目架构的问题：
+
+才需要停止询问。
+
+否则：
+
+持续推进到本轮目标完成。
+
+======================================================================
+本轮最终目标
+======================================================================
+
+Swayframe 不再只是：
+
+“有 Canvas、有 Timeline、有 Keyframe、有 Motion Curve 的软件。”
+
+而必须第一次变成：
+
+“用户真的可以从零完成一件作品的软件。”
+
+这一轮不追求更多功能。
+
+追求的是：
+
+完整性
+可靠性
+一致性。

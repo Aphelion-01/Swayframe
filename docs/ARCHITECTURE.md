@@ -205,3 +205,9 @@ Canvas轴向移动、Scale/Rotate与Inspector多选Scale/Rotate共用Context；�
 `TransformGuidanceController`属于UI应用状态，独立订阅；悬停、活动属性、Ghost与自定义支点拖动不触发EditorStore/Timeline或修改Project。Inspector活动属性切换不同引导。Canvas保留原变换交互，仅渲染GuideModel；缩放/旋转期间用操作起始Context锁定真实固定点（Alt切锚点同步实际计算），当前边界和角度从实时RenderSnapshot读取。文字/路径编辑与非选择工具隐藏无关引导。Ghost仅悬停或首次切换短暂显示，淡入尊重reduced-motion。
 
 新增单对象局部几何边界九宫格及多选世界联合边界九宫格、合成原点；orientation和pivotMode仍分离。UI选择与Custom Pivot结束通过commitTransformReference的workspace command接入现有CommandSystem同一历史序列，Undo/Redo与Scene命令按时间顺序执行。workspace项仅包含应用回调和空Scene命令，不经JSON/Agent工具传输，不写Project，也不改变已有关键帧语义；实际Scale/Rotate/Anchor属性编辑依旧走原Scene Transaction。SetTransformSettings仍保留程序化、无历史的偏好入口。当前交付为现有二维变换引导，不新增Skew/Camera/三维工具。
+
+### 0.9.4 · V0.2 Workflow Optimization
+
+本轮基线 `docs/baseline/V02_WORKFLOW_OPTIMIZATION.txt`，仅连通既有创作能力。Web Toolbar新建通过现有Project加载入口创建空白工程，清理History/Selection/Frames/Time/Playing/TimelineZoom/Preview/Clipboard；合成创建命名并自动激活。桌面仍走原ProjectService的保存保护。默认autoKeyframes=false，静态编辑不隐式开启动画；已有关键帧的Property继续通过valueCommand在当前统一时间记录。连续预览不写Scene，结束一次共享Transaction。
+
+Transform矩阵分解允许塌缩的零轴，以存活轴或既有角度保持旋转及符号；仍拒绝真实剪切。Inspector单对象零缩放恢复使用真实未缩放LocalBounds/TextMeasure与既有Pivot，父级逆矩阵计算补偿，Position/Scale/Rotation仍共用transformEditCommands。多选零缩放、外部Pivot逆推和奇异Parent不近似处理，明确给出错误。产品版本与package.json同源。FLOW-01～06和完整历史测试覆盖往返、求值、曲线、Parent及共享Canvas2D绘制；实际磁盘与PNG像素验收独立记录，未通过不得由测试PASS替代。

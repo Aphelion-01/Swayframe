@@ -12,6 +12,7 @@ import { MenuDropdown, Modal, IconButton } from './workspace/primitives';
 import { ExportDialog } from './ExportDialog';
 import { readFile } from './file-utils';
 import { importImageFile } from './asset-import';
+import { saveProject } from '../core/project-io';
 export { readFile } from './file-utils';
 import { layerKindLabels, displayName } from './labels';
 import { useEffect, useRef, useState } from 'react';
@@ -20,6 +21,7 @@ import {
   activeComposition,
   createComposition,
   createLayer,
+  createDefaultProject,
   layerProperties,
 } from '../core/project-model';
 import type { LayerKind } from '../core/project-model';
@@ -54,13 +56,20 @@ export function Toolbar({ store }: { store: EditorStore }) {
   const imageRef = useRef<HTMLInputElement>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const [newDialog, setNewDialog] = useState(false);
+  const [resetDialog, setResetDialog] = useState(false);
   const [editingComposition, setEditingComposition] = useState(false);
   const [settings, setSettings] = useState({
+    name: '合成 01',
     width: 1920,
     height: 1080,
     fps: 30,
     duration: 5,
   });
+  const newProject = () => {
+    const service = getProjectService(store);
+    if (service) void service.newProject();
+    else setResetDialog(true);
+  };
   const create = (kind: Exclude<LayerKind, 'image'>) => {
     const layer = createLayer(kind, {
       position: { x: c.width / 2, y: c.height / 2 },
@@ -77,7 +86,7 @@ export function Toolbar({ store }: { store: EditorStore }) {
       key: 'n',
       modifier: true,
       inInput: true,
-      action: () => void getProjectService(store)?.newProject(),
+      action: newProject,
     },
     {
       id: 'open-project',
@@ -98,7 +107,11 @@ export function Toolbar({ store }: { store: EditorStore }) {
       modifier: true,
       shift: true,
       inInput: true,
-      action: () => void getProjectService(store)?.save(true),
+      action: () => {
+        const service = getProjectService(store);
+        if (service) void service.save(true);
+        else downloadProject(store);
+      },
     },
     {
       id: 'panels',
@@ -382,6 +395,13 @@ export function Toolbar({ store }: { store: EditorStore }) {
             <button
               onClick={() => {
                 setEditingComposition(false);
+                setSettings({
+                  name: `合成 ${String(view.project.compositions.length + 1).padStart(2, '0')}`,
+                  width: 1920,
+                  height: 1080,
+                  fps: 30,
+                  duration: 5,
+                });
                 setNewDialog(true);
               }}
             >
@@ -396,10 +416,14 @@ export function Toolbar({ store }: { store: EditorStore }) {
             >
               打开工程
             </button>
-            <button onClick={() => void getProjectService(store)?.newProject()}>
-              新建工程
-            </button>
-            <button onClick={() => void getProjectService(store)?.save(true)}>
+            <button onClick={newProject}>新建工程</button>
+            <button
+              onClick={() => {
+                const service = getProjectService(store);
+                if (service) void service.save(true);
+                else downloadProject(store);
+              }}
+            >
               工程另存为
             </button>
             <button onClick={() => downloadProject(store)}>保存工程 ↗</button>
@@ -407,6 +431,7 @@ export function Toolbar({ store }: { store: EditorStore }) {
               onClick={() => {
                 setEditingComposition(true);
                 setSettings({
+                  name: c.name,
                   width: c.width,
                   height: c.height,
                   fps: c.fps,
@@ -551,6 +576,38 @@ export function Toolbar({ store }: { store: EditorStore }) {
       {exportOpen && (
         <ExportDialog store={store} onClose={() => setExportOpen(false)} />
       )}
+      {resetDialog && (
+        <Modal onClose={() => setResetDialog(false)}>
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-label="新建工程"
+            className="new-dialog"
+          >
+            <h2>新建工程</h2>
+            <p>
+              新建会清空当前工程与撤销历史。需要保留当前作品，请先保存工程。
+            </p>
+            <div className="dialog-actions">
+              <button onClick={() => setResetDialog(false)}>取消</button>
+              <button onClick={() => downloadProject(store)}>
+                保存当前工程
+              </button>
+              <button
+                className="primary"
+                onClick={() => {
+                  if (store.load(saveProject(createDefaultProject()))) {
+                    store.setStatus('新工程已创建');
+                    setResetDialog(false);
+                  }
+                }}
+              >
+                创建空白工程
+              </button>
+            </div>
+          </section>
+        </Modal>
+      )}
       {newDialog && (
         <Modal onClose={() => setNewDialog(false)}>
           <form
@@ -565,7 +622,7 @@ export function Toolbar({ store }: { store: EditorStore }) {
                   ? { ...c, ...settings }
                   : createComposition({
                       ...settings,
-                      name: `合成 ${String(view.project.compositions.length + 1).padStart(2, '0')}`,
+                      name: settings.name.trim(),
                     });
                 const result = store.run(
                   editingComposition ? '修改合成设置' : '新建合成',
@@ -584,7 +641,9 @@ export function Toolbar({ store }: { store: EditorStore }) {
                 store.select(null);
                 store.setPlaying(false);
                 store.setTime(0);
-                store.setStatus('新合成已创建');
+                store.setStatus(
+                  editingComposition ? '合成设置已更新' : '新合成已创建',
+                );
                 setNewDialog(false);
               } catch (error) {
                 store.setStatus(
@@ -596,6 +655,18 @@ export function Toolbar({ store }: { store: EditorStore }) {
           >
             <h2>{editingComposition ? '合成设置' : '新建合成'}</h2>
             <p>设置画面尺寸与时间。</p>
+            <label className="field">
+              名称
+              <input
+                aria-label="合成名称"
+                required
+                maxLength={200}
+                value={settings.name}
+                onChange={(event) =>
+                  setSettings({ ...settings, name: event.target.value })
+                }
+              />
+            </label>
             <div className="field-grid">
               {(['width', 'height', 'fps', 'duration'] as const).map((key) => (
                 <label className="field" key={key}>
