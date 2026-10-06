@@ -68,6 +68,19 @@ export function resolveTransformPivot(
   );
   const objectCenter = (l: RenderLayer) =>
     layerToWorld(l, boundsCenter(getLocalBounds(l, snapshot.time, measure)));
+  const gridPoint = (l: RenderLayer, x: number, y: number) => {
+    const bounds =
+      items.length === 1
+        ? getLocalBounds(l, snapshot.time, measure)
+        : unionBounds(
+            items.map((item) => getWorldBounds(item, snapshot.time, measure)),
+          );
+    const point = {
+      x: bounds.minX + (bounds.maxX - bounds.minX) * x,
+      y: bounds.minY + (bounds.maxY - bounds.minY) * y,
+    };
+    return items.length === 1 ? layerToWorld(l, point) : point;
+  };
   const resolvers: Record<TransformPivotMode, (l: RenderLayer) => Vec2> = {
     anchor: (l) => l.position,
     'object-center': objectCenter,
@@ -76,6 +89,15 @@ export function resolveTransformPivot(
     'selection-center': () => selection,
     'individual-origins': objectCenter,
     custom: () => settings.customPivot ?? selection,
+    'top-left': (l) => gridPoint(l, 0, 0),
+    top: (l) => gridPoint(l, 0.5, 0),
+    'top-right': (l) => gridPoint(l, 1, 0),
+    left: (l) => gridPoint(l, 0, 0.5),
+    right: (l) => gridPoint(l, 1, 0.5),
+    'bottom-left': (l) => gridPoint(l, 0, 1),
+    bottom: (l) => gridPoint(l, 0.5, 1),
+    'bottom-right': (l) => gridPoint(l, 1, 1),
+    'world-origin': () => origin,
   };
   const primary = items[0],
     pivot = primary

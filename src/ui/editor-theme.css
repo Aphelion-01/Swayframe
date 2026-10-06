@@ -1346,3 +1346,161 @@ textarea,
   object-fit: contain;
   background: var(--background-primary);
 }
+
+/* Spatial guidance: handle > pivot/axis > bounds > connection/ghost > metadata. */
+.pivot-selector {
+  padding: 6px 0 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 8px;
+}
+.pivot-selector .transform-controls {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.pivot-selector-body {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pivot-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 24px);
+  gap: 2px;
+  border: 1px solid var(--border-strong);
+  padding: 2px;
+}
+.pivot-grid button {
+  padding: 0;
+  width: 24px;
+  height: 24px;
+}
+.pivot-grid svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--text-secondary);
+}
+.pivot-grid [aria-pressed='true'] svg {
+  fill: var(--warning);
+  stroke: var(--warning);
+}
+.pivot-origins {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+}
+.pivot-origins button {
+  font-size: var(--font-metadata);
+  padding: 2px 4px;
+}
+.guide-status {
+  margin-right: 6px;
+  padding: 1px 4px;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+}
+.transform-overlay .guide-fixed circle,
+.transform-overlay .guide-fixed path {
+  stroke: var(--warning);
+  fill: var(--background-primary);
+}
+.transform-overlay .guide-fixed circle + circle {
+  fill: var(--warning);
+}
+.transform-overlay .guide-fixed {
+  opacity: 0.85;
+}
+.transform-overlay.guide-active .guide-fixed {
+  opacity: 1;
+}
+.transform-overlay .guide-connection {
+  stroke: var(--text-muted);
+  stroke-dasharray: 4 4;
+  stroke-width: 1;
+  opacity: 0.5;
+}
+.transform-overlay .guide-ghost polygon {
+  fill: var(--accent-primary);
+  fill-opacity: 0.04;
+  stroke: var(--accent-primary);
+  stroke-width: 1;
+  stroke-dasharray: 5 4;
+  opacity: 0.45;
+}
+.transform-overlay .guide-axis,
+.transform-overlay .guide-expansion,
+.transform-overlay .guide-rotation path {
+  fill: none;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+.transform-overlay .guide-expansion {
+  stroke: var(--warning);
+  opacity: 0.7;
+}
+.transform-overlay .guide-rotation path {
+  stroke: var(--warning);
+  opacity: 0.7;
+}
+.transform-overlay .guide-rotation text {
+  fill: var(--text-primary);
+}
+.transform-overlay.guide-active .guide-expansion,
+.transform-overlay.guide-active .guide-rotation path {
+  opacity: 1;
+  stroke-width: 2;
+}
+.transform-overlay .guide-anchor circle,
+.transform-overlay .guide-anchor path {
+  stroke: var(--text-primary);
+  fill: none;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+.transform-overlay .transform-box {
+  opacity: 0.6;
+}
+.transform-overlay .custom-pivot-handle {
+  fill: transparent;
+  stroke: transparent;
+  cursor: move;
+}
+.transform-overlay .guide-scale-handle {
+  cursor: nwse-resize;
+}
+.transform-overlay .guide-rotate-handle {
+  cursor: crosshair;
+}
+.transform-overlay line,
+.transform-overlay polygon {
+  vector-effect: non-scaling-stroke;
+}
+.transform-axis.guide-dim {
+  opacity: 0.25;
+}
+.guide-active .guide-axis {
+  stroke-width: 2;
+}
+.guide-mode-rotation .guide-scale-handle,
+.guide-mode-anchor .guide-scale-handle,
+.guide-mode-scale .guide-rotate-handle,
+.guide-mode-anchor .guide-rotate-handle {
+  opacity: 0.25;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .guide-ghost {
+    animation: guide-appear 180ms ease-out;
+  }
+}
+@keyframes guide-appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.transform-overlay.guide-active .guide-fixed circle {
+  stroke-width: 2;
+}

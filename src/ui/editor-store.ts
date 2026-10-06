@@ -169,6 +169,18 @@ export class EditorStore {
     if (persist) writeTransformSettings(settings);
     this.#set({ transformSettings: settings });
   }
+  commitTransformReference(
+    patch: Partial<TransformInteractionSettings>,
+    before = this.#view.transformSettings,
+  ): void {
+    const next = { ...before, ...patch };
+    if (JSON.stringify(before) === JSON.stringify(next)) return;
+    this.commands.executeWorkspaceCommand(
+      '修改变换参考',
+      () => this.setTransformSettings(next),
+      () => this.setTransformSettings(before),
+    );
+  }
   setPropertyPreview(preview: EditorView['propertyPreview']): void {
     this.#renderPreview = preview
       ? projectWithPropertyPreviews(this.#view.project, [preview.property])

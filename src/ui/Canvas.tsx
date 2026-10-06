@@ -1,3 +1,8 @@
+import {
+  createTransformGuideModel,
+  hitTransformRotationGuide,
+} from '../core/transform-guidance';
+import { guidanceFor } from './transform-guidance-controller';
 import { TransformOverlay } from './TransformOverlay';
 import {
   TransformControls,
@@ -59,6 +64,12 @@ import type { EditorStore } from './editor-store';
 
 export function Canvas({ store }: { store: EditorStore }) {
   const { tool, setTool, space, setSpace } = useTools();
+  const guidanceController = guidanceFor(store);
+  const guidance = useSyncExternalStore(
+    guidanceController.subscribe,
+    guidanceController.getSnapshot,
+  );
+
   const penPoints = useRef<Vec2[]>([]);
   const [penPreview, setPenPreview] = useState<readonly Vec2[]>([]);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -105,6 +116,7 @@ export function Canvas({ store }: { store: EditorStore }) {
     | {
         kind: HandleKind;
         context?: TransformContext;
+        previewContext?: TransformContext;
         settings: unknown;
         point: Vec2;
         items: readonly RenderLayer[];
@@ -362,6 +374,56 @@ export function Canvas({ store }: { store: EditorStore }) {
     () => transformGizmo(transformContext, uiScale, store.textMeasure),
     [transformContext, uiScale, store],
   );
+  const guideContext = useMemo(
+    () =>
+      guidance.referencePreview
+        ? createTransformContext(
+            input,
+            view.selection,
+            guidance.referencePreview,
+            store.textMeasure,
+          )
+        : ((gesture.current?.project === view.project
+            ? (gesture.current?.previewContext ?? gesture.current?.context)
+            : undefined) ??
+          (guidance.activity?.property === 'scale' ||
+          guidance.activity?.property === 'rotation'
+            ? guidance.baseline
+            : undefined) ??
+          transformContext),
+    [
+      guidance.referencePreview,
+      guidance.baseline,
+      guidance.activity,
+      input,
+      transformContext,
+      view.selection,
+      store,
+    ],
+  );
+  const guideActivity = anchorMode
+    ? {
+        property: 'anchor' as const,
+        phase:
+          guidance.activity?.property === 'anchor'
+            ? guidance.activity.phase
+            : ('hover' as const),
+      }
+    : guidance.referencePreview
+      ? { property: 'scale' as const, phase: 'hover' as const }
+      : guidance.activity;
+  const guideModel = useMemo(
+    () =>
+      createTransformGuideModel(
+        guideContext,
+        input,
+        guideActivity,
+        uiScale,
+        guidance.ghost,
+        store.textMeasure,
+      ),
+    [guideContext, input, guideActivity, uiScale, guidance.ghost],
+  );
   useEffect(() => {
     const container = containerRef.current;
     if (!container || typeof ResizeObserver === 'undefined') return;
@@ -543,40 +605,72 @@ export function Canvas({ store }: { store: EditorStore }) {
               const selected = input.layers.filter(
                 (l) => view.selection.includes(l.source.id) && !l.source.locked,
               );
-              const handle = spatialSelection
-                ? selected
-                    .map((l) =>
-                      hitTransformHandle(
-                        l,
-                        p,
-                        8 * uiScale,
-                        anchorMode,
-                        uiScale,
-                      ),
-                    )
-                    .find(Boolean)
-                : [
-                    ...(anchorMode
-                      ? selected.map((l) => ({
-                          kind: 'anchor' as const,
-                          point: l.position,
-                        }))
-                      : []),
-                    ...gizmo.handles,
-                  ]
-                    .filter(
-                      (h) =>
-                        Math.hypot(h.point.x - p.x, h.point.y - p.y) <=
-                        8 * uiScale,
-                    )
-                    .sort(
-                      (a, b) =>
-                        Math.hypot(a.point.x - p.x, a.point.y - p.y) -
-                        Math.hypot(b.point.x - p.x, b.point.y - p.y),
-                    )[0];
+              const arcHit = hitTransformRotationGuide(
+                guideModel,
+                p,
+                8 * uiScale,
+              );
+              const handle = arcHit
+                ? { kind: 'rotate' as const, point: p }
+                : spatialSelection
+                  ? selected
+                      .map((l) =>
+                        hitTransformHandle(
+                          l,
+                          p,
+                          8 * uiScale,
+                          anchorMode,
+                          uiScale,
+                        ),
+                      )
+                      .find(Boolean)
+                  : [
+                      ...(anchorMode
+                        ? selected.map((l) => ({
+                            kind: 'anchor' as const,
+                            point: l.position,
+                          }))
+                        : []),
+                      ...gizmo.handles,
+                    ]
+                      .filter(
+                        (h) =>
+                          Math.hypot(h.point.x - p.x, h.point.y - p.y) <=
+                          8 * uiScale,
+                      )
+                      .sort(
+                        (a, b) =>
+                          Math.hypot(a.point.x - p.x, a.point.y - p.y) -
+                          Math.hypot(b.point.x - p.x, b.point.y - p.y),
+                      )[0];
               if (handle) {
                 event.currentTarget.setPointerCapture(event.pointerId);
                 store.setPlaying(false);
+                guidanceController.activate({
+                  property:
+                    handle.kind === 'move'
+                      ? 'position'
+                      : handle.kind === 'rotate'
+                        ? 'rotation'
+                        : handle.kind === 'anchor'
+                          ? 'anchor'
+                          : 'scale',
+                  phase: 'active',
+                  axis:
+                    'axis' in handle
+                      ? handle.axis
+                      : handle.kind === 'scale' &&
+                          !readAxisLink(
+                            selected[0]!.source.transform.scale.id,
+                          ) &&
+                          'direction' in handle
+                        ? handle.direction?.x === 0
+                          ? 'y'
+                          : handle.direction?.y === 0
+                            ? 'x'
+                            : undefined
+                        : undefined,
+                });
                 if (handle.kind === 'move') {
                   store.beginDrag(selected[0]!.source.id, p);
                   moveSnap.current = {
@@ -652,7 +746,60 @@ export function Canvas({ store }: { store: EditorStore }) {
               }
               if (!g) {
                 const move = moveSnap.current;
-                if (!move) return;
+                if (!move) {
+                  if (tool === 'select' && !internal) {
+                    const hover = gizmo.handles.find(
+                      (h) =>
+                        Math.hypot(h.point.x - p.x, h.point.y - p.y) <=
+                        8 * uiScale,
+                    );
+                    const overArc = hitTransformRotationGuide(
+                      guideModel,
+                      p,
+                      8 * uiScale,
+                    );
+                    const property =
+                      overArc || hover?.kind === 'rotate'
+                        ? 'rotation'
+                        : hover?.kind === 'scale'
+                          ? 'scale'
+                          : 'position';
+                    if (guidance.activity?.phase !== 'active')
+                      guidanceController.activate({
+                        property,
+                        phase: 'hover',
+                        axis:
+                          hover?.axis ??
+                          (hover?.kind === 'scale' &&
+                          !readAxisLink(
+                            input.layers.find((l) =>
+                              view.selection.includes(l.source.id),
+                            )!.source.transform.scale.id,
+                          )
+                            ? hover.direction?.x === 0
+                              ? 'y'
+                              : hover.direction?.y === 0
+                                ? 'x'
+                                : undefined
+                            : undefined),
+                      });
+                    event.currentTarget.style.cursor =
+                      overArc || hover?.kind === 'rotate'
+                        ? 'crosshair'
+                        : hover?.kind === 'scale'
+                          ? hover.direction?.x && hover.direction?.y
+                            ? 'nwse-resize'
+                            : hover.direction?.x
+                              ? 'ew-resize'
+                              : 'ns-resize'
+                          : hover?.axis === 'x'
+                            ? 'ew-resize'
+                            : hover?.axis === 'y'
+                              ? 'ns-resize'
+                              : 'default';
+                  }
+                  return;
+                }
                 if (move.project !== view.project || move.time !== view.time) {
                   moveSnap.current = undefined;
                   setSnapGuides([]);
@@ -710,6 +857,7 @@ export function Canvas({ store }: { store: EditorStore }) {
                           store.textMeasure,
                         )
                       : g.context;
+                  g.previewContext = context;
                   let operation = pointerTransformOperation(
                     context,
                     g.kind as 'scale' | 'rotate',
@@ -917,6 +1065,7 @@ export function Canvas({ store }: { store: EditorStore }) {
               }
               const g = gesture.current;
               gesture.current = undefined;
+              guidanceController.activate();
               if (
                 g &&
                 g.moved &&
@@ -964,6 +1113,7 @@ export function Canvas({ store }: { store: EditorStore }) {
                 setInternal(layer.id);
             }}
             onPointerCancel={() => {
+              guidanceController.activate();
               marquee.current = undefined;
               setMarqueeBox(undefined);
               drawing.current = undefined;
@@ -975,6 +1125,7 @@ export function Canvas({ store }: { store: EditorStore }) {
               setSnapGuides([]);
             }}
             onLostPointerCapture={() => {
+              guidanceController.activate();
               marquee.current = undefined;
               setMarqueeBox(undefined);
               drawing.current = undefined;
@@ -986,16 +1137,20 @@ export function Canvas({ store }: { store: EditorStore }) {
               setSnapGuides([]);
             }}
           />
-          {!spatialSelection && view.selection.length > 0 && (
-            <TransformOverlay
-              store={store}
-              context={transformContext}
-              gizmo={gizmo}
-              uiScale={uiScale}
-              anchorMode={anchorMode}
-              canvas={ref}
-            />
-          )}
+          {!spatialSelection &&
+            view.selection.length > 0 &&
+            tool === 'select' &&
+            !internal &&
+            !guidance.suppressed && (
+              <TransformOverlay
+                store={store}
+                context={guideContext}
+                gizmo={gizmo}
+                uiScale={uiScale}
+                model={guideModel}
+                canvas={ref}
+              />
+            )}
           {snapGuides.length > 0 && (
             <svg
               className="canvas-snap-guides"
@@ -1113,17 +1268,17 @@ export function Canvas({ store }: { store: EditorStore }) {
       <div className="canvas-bottom">
         <span
           className="transform-mode-hint"
-          role="status"
-          title={`${orientationDescriptions[view.transformSettings.orientation]}；${pivotDescriptions[view.transformSettings.pivotMode]}`}
+          title={`${orientationDescriptions[guideContext.settings.orientation]}；${pivotDescriptions[guideContext.settings.pivotMode]}`}
         >
-          {anchorMode
-            ? '锚点编辑：拖动黄色锚点，调整中心并保持画面位置 · '
-            : ''}
-          {orientationLabels[view.transformSettings.orientation]}轴向 ·{' '}
-          {pivotLabels[view.transformSettings.pivotMode]}支点
-          {view.selection.length
-            ? ` · ${orientationDescriptions[view.transformSettings.orientation]}；${pivotDescriptions[view.transformSettings.pivotMode]}`
-            : ' · 选择对象查看控制轴和支点'}
+          <span className="guide-status">
+            {orientationLabels[guideContext.settings.orientation]}
+          </span>
+          <span className="guide-status">
+            {pivotLabels[guideContext.settings.pivotMode]}
+          </span>
+          {guidance.referencePreview && (
+            <span className="guide-status">预览</span>
+          )}
         </span>
         <span>
           {view.selection.length

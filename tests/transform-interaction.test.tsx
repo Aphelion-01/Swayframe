@@ -8,6 +8,7 @@ import {
   act,
 } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
+import { guidanceFor } from '../src/ui/transform-guidance-controller';
 import { App } from '../src/ui/App';
 import { EditorStore } from '../src/ui/editor-store';
 import {
@@ -95,7 +96,9 @@ it('A1/A2/A9：属性200%执行真实支点补偿，预览不写Scene，提交�
     x: 400,
     y: 200,
   });
-  expect(store.commands.undoStack).toHaveLength(1);
+  expect(
+    store.commands.undoStack.filter((entry) => !entry.workspace),
+  ).toHaveLength(1);
   act(() => store.undo());
   fireEvent.change(screen.getByLabelText('变换支点'), {
     target: { value: 'object-center' },
@@ -110,7 +113,9 @@ it('A1/A2/A9：属性200%执行真实支点补偿，预览不写Scene，提交�
     x: -50,
     y: -50,
   });
-  expect(store.commands.undoStack).toHaveLength(1);
+  expect(
+    store.commands.undoStack.filter((entry) => !entry.workspace),
+  ).toHaveLength(1);
   act(() => store.undo());
   expect(store.getSnapshot().project).toEqual(before);
 });
@@ -125,7 +130,9 @@ it('A3/A4：两层旋转/缩放在Selection Center和Individual Origins下布局
     { x: 400, y: 0 },
     { x: 400, y: 400 },
   ]);
-  expect(store.commands.undoStack).toHaveLength(1);
+  expect(
+    store.commands.undoStack.filter((entry) => !entry.workspace),
+  ).toHaveLength(1);
   act(() => store.undo());
   field = numeric('缩放 X（%）', '200');
   fireEvent.keyDown(field, { key: 'Enter' });
@@ -189,7 +196,9 @@ it('A5/A6：45°对象的Global/Local X轴拖动真实进入不同方向，100�
   fireEvent.pointerUp(canvas);
   expect(current(store)[0]!.transform.position.baseValue.x).toBeCloseTo(450);
   expect(current(store)[0]!.transform.position.baseValue.y).toBeCloseTo(250);
-  expect(store.commands.undoStack).toHaveLength(1);
+  expect(
+    store.commands.undoStack.filter((entry) => !entry.workspace),
+  ).toHaveLength(1);
 });
 it('A8/A10：Custom Pivot拖动/键盘/Escape仅改变偏好，保存重开不污染Scene', () => {
   const { store } = setup([rectangle()]),
@@ -205,7 +214,9 @@ it('A8/A10：Custom Pivot拖动/键盘/Escape仅改变偏好，保存重开不�
     pointerId: 1,
   });
   fireEvent.pointerMove(handle, { clientX: 300, clientY: 250, pointerId: 1 });
-  expect(store.getSnapshot().transformSettings.customPivot).toEqual({
+  expect(
+    guidanceFor(store).getSnapshot().referencePreview?.customPivot,
+  ).toEqual({
     x: 300,
     y: 250,
   });
@@ -217,7 +228,9 @@ it('A8/A10：Custom Pivot拖动/键盘/Escape仅改变偏好，保存重开不�
     x: 390,
     y: 200,
   });
-  expect(store.commands.undoStack).toHaveLength(0);
+  expect(
+    store.commands.undoStack.filter((entry) => !entry.workspace),
+  ).toHaveLength(0);
   expect(saveProject(store.getSnapshot().project)).toBe(before);
   const reloaded = new EditorStore(loadProject(before));
   expect(reloaded.getSnapshot().transformSettings).toEqual(
@@ -232,7 +245,9 @@ it('手势期间修改轴向/时间会取消，旋转父级非等比缩放下可
   act(() => store.setTransformSettings({ orientation: 'global' }));
   fireEvent.pointerUp(canvas);
   expect(store.getSnapshot().project).toBe(before);
-  expect(store.commands.undoStack).toHaveLength(0);
+  expect(
+    store.commands.undoStack.filter((entry) => !entry.workspace),
+  ).toHaveLength(0);
   const p = createLayer('null', { position: { x: 100, y: 100 } }),
     parent = {
       ...p,
@@ -308,19 +323,169 @@ it('模式切换显示真实控制轴和支点，多选各自中心保留独立�
   const overlay = screen.getByLabelText('变换控制器');
   expect(overlay).toHaveAttribute('data-orientation', 'local');
   expect(overlay.querySelectorAll('.pivot-marker')).toHaveLength(2);
-  expect(overlay.textContent).toContain('局部 · 各自中心');
-  expect(
-    screen.getByText(/沿对象自身 X\/Y 轴移动；每个对象围绕自身中心/),
-  ).toBeTruthy();
+  expect(overlay).toHaveAttribute('data-pivot', 'individual-origins');
   fireEvent.change(screen.getByLabelText('变换支点'), {
     target: { value: 'custom' },
   });
   expect(overlay.querySelectorAll('.pivot-marker')).toHaveLength(1);
   expect(overlay.querySelector('.custom-pivot-handle')).toBeTruthy();
-  expect(overlay.textContent).toContain('局部 · 自定义');
+  expect(overlay).toHaveAttribute('data-pivot', 'custom');
   fireEvent.click(screen.getByRole('button', { name: '锚点' }));
   expect(screen.getAllByLabelText('可拖动图层锚点')).toHaveLength(2);
-  expect(screen.getByText(/锚点编辑：拖动黄色锚点/)).toBeTruthy();
+  expect(overlay.querySelectorAll('.guide-anchor')).toHaveLength(2);
   expect(store.getSnapshot().project).toBe(before);
+  expect(
+    store.commands.undoStack.filter((entry) => !entry.workspace),
+  ).toHaveLength(0);
+});
+
+it('CASE 6: 悬停九宫格预览真实右下支点和Ghost，离开恢复且不写Project或Undo', () => {
+  const { store } = setup([rectangle(400, 200)]);
+  const before = store.getSnapshot().project;
+  const settings = store.getSnapshot().transformSettings;
+  const button = screen.getByRole('button', { name: '支点：右下' });
+  fireEvent.mouseEnter(button);
+  const overlay = screen.getByLabelText('变换控制器');
+  expect(overlay).toHaveAttribute('data-pivot', 'bottom-right');
+  expect(overlay.querySelector('.guide-fixed circle')).toHaveAttribute(
+    'cx',
+    '450',
+  );
+  expect(overlay.querySelector('.guide-fixed circle')).toHaveAttribute(
+    'cy',
+    '250',
+  );
+  expect(overlay.querySelectorAll('.guide-ghost polygon')).toHaveLength(1);
+  expect(store.getSnapshot().project).toBe(before);
+  expect(store.getSnapshot().transformSettings).toBe(settings);
   expect(store.commands.undoStack).toHaveLength(0);
+  fireEvent.keyDown(button, { key: 'ArrowLeft' });
+  expect(store.getSnapshot().project).toBe(before);
+  fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
+  fireEvent.mouseLeave(button);
+  expect(overlay).toHaveAttribute('data-pivot', settings.pivotMode);
+  expect(overlay.querySelectorAll('.guide-ghost polygon')).toHaveLength(0);
+  fireEvent.click(button);
+  expect(store.getSnapshot().transformSettings.pivotMode).toBe('bottom-right');
+  expect(store.commands.undoStack).toHaveLength(1);
+  act(() => store.undo());
+  expect(store.getSnapshot().transformSettings).toEqual(settings);
+});
+it('CASE 8: 数值实时缩放时底部支点固定，旋转显示角度和弧线，提交一次Scene Undo', () => {
+  const { store } = setup([rectangle(400, 200)]);
+  fireEvent.click(screen.getByRole('button', { name: '支点：下中' }));
+  const before = store.getSnapshot().project;
+  const scale = screen.getByLabelText('缩放 X（%）');
+  fireEvent.focus(scale);
+  fireEvent.change(scale, { target: { value: '180' } });
+  const overlay = screen.getByLabelText('变换控制器');
+  expect(overlay).toHaveAttribute('data-property', 'scale');
+  expect(overlay.querySelector('.guide-fixed circle')).toHaveAttribute(
+    'cy',
+    '250',
+  );
+  expect(overlay.querySelectorAll('.guide-expansion').length).toBeGreaterThan(
+    0,
+  );
+  expect(store.getSnapshot().project).toBe(before);
+  fireEvent.keyDown(scale, { key: 'Enter' });
+  expect(
+    store.commands.undoStack.filter((entry) => !entry.workspace),
+  ).toHaveLength(1);
+  act(() => store.undo());
+  const rotation = screen.getByLabelText('旋转（°）');
+  fireEvent.focus(rotation);
+  fireEvent.change(rotation, { target: { value: '32.4' } });
+  expect(overlay.querySelector('.guide-rotation text')?.textContent).toBe(
+    '32.4°',
+  );
+  expect(overlay.querySelector('.guide-rotation path')).toHaveAttribute(
+    'data-direction',
+    'clockwise',
+  );
+  fireEvent.change(rotation, { target: { value: '-32.4' } });
+  expect(overlay.querySelector('.guide-rotation path')).toHaveAttribute(
+    'data-direction',
+    'counterclockwise',
+  );
+  expect(overlay.querySelector('.guide-rotation text')?.textContent).toBe(
+    '-32.4°',
+  );
+  fireEvent.keyDown(rotation, { key: 'Escape' });
+  expect(store.getSnapshot().project).toEqual(before);
+});
+
+it('Custom Pivot: 100次移动仅更新引导预览，松开一次可撤销，Scene与原关键帧不变', () => {
+  const { store } = setup([rectangle(400, 200)]);
+  act(() =>
+    store.setTransformSettings({
+      pivotMode: 'custom',
+      customPivot: { x: 400, y: 200 },
+    }),
+  );
+  const before = store.getSnapshot().project;
+  const handle = screen.getByRole('slider', { name: '拖动自定义支点' });
+  fireEvent.pointerDown(handle, {
+    button: 0,
+    clientX: 400,
+    clientY: 200,
+    pointerId: 1,
+  });
+  for (let i = 1; i <= 100; i++)
+    fireEvent.pointerMove(handle, {
+      clientX: 400 - i,
+      clientY: 200 + i,
+      pointerId: 1,
+    });
+  expect(store.getSnapshot().transformSettings.customPivot).toEqual({
+    x: 400,
+    y: 200,
+  });
+  expect(store.commands.undoStack).toHaveLength(0);
+  expect(
+    guidanceFor(store).getSnapshot().referencePreview?.customPivot,
+  ).toEqual({ x: 300, y: 300 });
+  fireEvent.pointerUp(handle, { pointerId: 1 });
+  expect(store.getSnapshot().transformSettings.customPivot).toEqual({
+    x: 300,
+    y: 300,
+  });
+  expect(store.commands.undoStack).toHaveLength(1);
+  expect(store.getSnapshot().project).toBe(before);
+  act(() => store.undo());
+  expect(store.getSnapshot().transformSettings.customPivot).toEqual({
+    x: 400,
+    y: 200,
+  });
+  act(() => store.redo());
+  expect(store.getSnapshot().transformSettings.customPivot).toEqual({
+    x: 300,
+    y: 300,
+  });
+});
+
+it('Custom Pivot: 播放时间改变时丢弃未提交拖动', () => {
+  const { store } = setup([rectangle(400, 200)]);
+  act(() =>
+    store.setTransformSettings({
+      pivotMode: 'custom',
+      customPivot: { x: 400, y: 200 },
+    }),
+  );
+  const handle = screen.getByRole('slider', { name: '拖动自定义支点' });
+  fireEvent.pointerDown(handle, {
+    button: 0,
+    clientX: 400,
+    clientY: 200,
+    pointerId: 1,
+  });
+  fireEvent.pointerMove(handle, { clientX: 300, clientY: 300, pointerId: 1 });
+  act(() => store.setTime(1));
+  fireEvent.pointerUp(handle, { pointerId: 1 });
+  expect(store.getSnapshot().transformSettings.customPivot).toEqual({
+    x: 400,
+    y: 200,
+  });
+  expect(store.commands.undoStack).toHaveLength(0);
+  expect(guidanceFor(store).getSnapshot().referencePreview).toBeUndefined();
 });

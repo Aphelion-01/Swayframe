@@ -119,6 +119,7 @@ export interface AppliedCommand {
 export interface HistoryEntry {
   readonly transaction: Transaction;
   readonly applied: readonly AppliedCommand[];
+  readonly workspace?: { redo: () => void; undo: () => void };
 }
 export type TransactionResult =
   | { readonly ok: true; readonly transactionId: ID }
@@ -701,9 +702,27 @@ export class CommandSystem {
       };
     }
   }
+  /** Application-only reference commands share ordering and Undo, never modify Scene. */
+  executeWorkspaceCommand(
+    label: string,
+    redo: () => void,
+    undo: () => void,
+  ): TransactionResult {
+    const tx = transaction(label, 'human', []);
+    redo();
+    this.#undo.push({
+      transaction: tx,
+      applied: [],
+      workspace: { redo, undo },
+    });
+    this.#redo = [];
+    this.#emit();
+    return { ok: true, transactionId: tx.id };
+  }
   undo(): TransactionResult {
     const entry = this.#undo.at(-1);
     if (!entry) return { ok: false, error: '没有可撤销的操作' };
+    entry.workspace?.undo();
     let project = this.#project;
     for (const item of [...entry.applied].reverse())
       project = applyCommand(project, item.inverse).project;
@@ -717,6 +736,7 @@ export class CommandSystem {
   redo(): TransactionResult {
     const entry = this.#redo.at(-1);
     if (!entry) return { ok: false, error: '没有可重做的操作' };
+    entry.workspace?.redo();
     let project = this.#project;
     for (const item of entry.applied)
       project = applyCommand(project, item.command).project;

@@ -1,3 +1,5 @@
+import { guidanceFor } from './transform-guidance-controller';
+import type { GuideProperty } from '../core/transform-guidance';
 import { transformPropertyEdit } from './transform-property-edit';
 import { Icon } from './workspace/icons';
 import type { AnimValue, Vec2 } from '../core/core-types';
@@ -31,6 +33,33 @@ export function AnimatedField({
   linkMode?: AxisLinkMode;
 }) {
   const { linked, toggle } = useAxisLink(property.id);
+  const guideKind = (
+    {
+      位置: 'position',
+      缩放: 'scale',
+      旋转: 'rotation',
+      锚点: 'anchor',
+    } as Record<string, GuideProperty>
+  )[label];
+  const controller = guidanceFor(store);
+  const activity = (target: EventTarget | null, phase: 'hover' | 'active') => {
+    if (!guideKind) return;
+    const name =
+      target instanceof Element
+        ? (target.getAttribute('aria-label') ?? '')
+        : '';
+    const axis = name.includes(' X')
+      ? 'x'
+      : name.includes(' Y')
+        ? 'y'
+        : undefined;
+    controller.activate({
+      property: guideKind,
+      axis: vector && linked ? undefined : axis,
+      phase,
+    });
+  };
+
   const time = store.getSnapshot().time,
     value = evaluateProperty(property, time),
     current = property.keyframes.some((k) => Math.abs(k.time - time) < 1e-8);
@@ -88,6 +117,21 @@ export function AnimatedField({
       .join('');
   return (
     <div
+      onMouseOver={(event) => {
+        if (controller.getSnapshot().activity?.phase !== 'active')
+          activity(event.target, 'hover');
+      }}
+      onMouseLeave={() => {
+        if (controller.getSnapshot().activity?.phase !== 'active')
+          controller.activate();
+      }}
+      onFocusCapture={(event) => activity(event.target, 'active')}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null))
+          controller.activate();
+      }}
+      onPointerDownCapture={(event) => activity(event.target, 'active')}
+      onPointerUpCapture={(event) => activity(event.target, 'hover')}
       className="animated-field"
       data-kind={typeof value === 'number' ? 'scalar' : 'vector'}
     >

@@ -197,3 +197,11 @@ Canvas轴向移动、Scale/Rotate与Inspector多选Scale/Rotate共用Context；�
 ### 0.9.2 · 输入保护与操作反馈
 
 静态界面禁用浏览器文字拖选，输入框保留文本编辑；Canvas/Timeline/Graph原有对象选择不变。Agent参考的文件选择、区域拖入和图片粘贴共用受限importAgentReference，不进入Scene资产，拖入事件不向工程导入器冒泡。发送参考前检查实际vision路由及凭证；失败、停止和等待确认保留需求，仅成功完成清空原提交内容，不覆盖执行期间编辑的新草稿。TransformOverlay使用已有TransformContext的真实basis/pivot显示控制轴、支点模式与参考圈；模式说明属于UI，不修改工程或历史。
+
+### 0.9.3 · Transform Guidance System
+
+本轮要求见 `docs/baseline/TRANSFORM_GUIDANCE_SYSTEM.txt`。`core/transform-guidance.ts`为只读几何模型，输入真实TransformContext、当前RenderSnapshot、活动属性/轴/交互状态和缩放比例，输出固定支点、轴、扩张箭头、旋转弧、锚点、连接线和Ghost轮廓。Ghost使用现有transformItems求值，不编造另一套变换；不支持的剪切/奇异矩阵不显示误导性预览。文字边界复用实际TextMeasure。多选共享支点用组合边界箭头，各自中心使用逐对象支点与变换。
+
+`TransformGuidanceController`属于UI应用状态，独立订阅；悬停、活动属性、Ghost与自定义支点拖动不触发EditorStore/Timeline或修改Project。Inspector活动属性切换不同引导。Canvas保留原变换交互，仅渲染GuideModel；缩放/旋转期间用操作起始Context锁定真实固定点（Alt切锚点同步实际计算），当前边界和角度从实时RenderSnapshot读取。文字/路径编辑与非选择工具隐藏无关引导。Ghost仅悬停或首次切换短暂显示，淡入尊重reduced-motion。
+
+新增单对象局部几何边界九宫格及多选世界联合边界九宫格、合成原点；orientation和pivotMode仍分离。UI选择与Custom Pivot结束通过commitTransformReference的workspace command接入现有CommandSystem同一历史序列，Undo/Redo与Scene命令按时间顺序执行。workspace项仅包含应用回调和空Scene命令，不经JSON/Agent工具传输，不写Project，也不改变已有关键帧语义；实际Scale/Rotate/Anchor属性编辑依旧走原Scene Transaction。SetTransformSettings仍保留程序化、无历史的偏好入口。当前交付为现有二维变换引导，不新增Skew/Camera/三维工具。

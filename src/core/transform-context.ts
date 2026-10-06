@@ -16,6 +16,15 @@ export const transformPivotModes = [
   'selection-center',
   'individual-origins',
   'custom',
+  'top-left',
+  'top',
+  'top-right',
+  'left',
+  'right',
+  'bottom-left',
+  'bottom',
+  'bottom-right',
+  'world-origin',
 ] as const;
 export type TransformPivotMode = (typeof transformPivotModes)[number];
 export interface Vec3 extends Vec2 {

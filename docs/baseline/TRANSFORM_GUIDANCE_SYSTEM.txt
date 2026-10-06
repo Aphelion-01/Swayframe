@@ -1,0 +1,1626 @@
+你现在需要重新设计 Swayframe 当前的“自定义属性修改 / 变换参考系”视觉引导系统。
+
+当前版本存在明显 UX 问题：
+
+现在只是简单在选中对象附近显示：
+
+“全局 · 几何中心”
+
+以及少量 X/Y 标识。
+
+这不能有效告诉用户：
+
+1. 当前变换到底围绕哪个点进行；
+2. 哪个点会保持不动；
+3. 哪些方向允许变化；
+4. 缩放时物体会向哪边扩展；
+5. 旋转时围绕哪里旋转；
+6. 当前使用的是 Global 还是 Local 坐标；
+7. 修改参考点后，最终行为会发生什么变化。
+
+因此：
+
+======================================================================
+本轮目标不是增加更多文字说明。
+======================================================================
+
+而是建立一套：
+
+Transform Guidance System
+
+通过直接绘制在 Canvas 对象附近的：
+
+Pivot
+Axis
+Arrows
+Rotation Arc
+Fixed Point
+Ghost Preview
+Highlight
+Motion Hint
+
+让用户几乎不需要阅读说明文字，
+就能理解当前 Transform 模式的真实作用。
+
+设计参考可以借鉴：
+
+Blender Gizmo
+Figma Direct Manipulation
+专业 CAD / 3D 软件 Transform Gizmo
+
+但不要直接复制任何软件的 UI。
+
+核心原则：
+
+SHOW THE TRANSFORM.
+DON'T JUST DESCRIBE THE TRANSFORM.
+
+即：
+
+不要告诉用户“这是几何中心”。
+
+而应该让用户直接看到：
+
+“对象接下来会以这个点作为中心发生变化。”
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+一、移除当前大段文字作为主要提示
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+当前：
+
+“全局 · 几何中心”
+
+不要再作为 Canvas 上最主要的信息。
+
+它可以保留为：
+
+小型状态 Badge
+
+例如：
+
+Global
+Center
+
+但它只是辅助信息。
+
+真正主要的 UX 必须来自：
+
+对象上的视觉引导。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二、建立统一 Pivot Visual
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+任何涉及：
+
+Scale
+Rotation
+Transform
+
+的操作，
+
+都必须明确显示：
+
+Transform Pivot。
+
+Pivot 不要只是普通小点。
+
+设计一个专门的 Pivot Symbol，例如：
+
+       │
+       │
+    ── ◎ ──
+       │
+       │
+
+或者：
+
+十字准星 + 中心圆。
+
+Pivot 必须与：
+
+Bounding Box Handle
+
+普通 Anchor Point
+
+Path Point
+
+明显区分。
+
+用户一眼就应该知道：
+
+“所有变换围绕这个点进行。”
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+三、Pivot 必须直接位于真正的参考点
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+如果模式为：
+
+Geometry Center
+
+则：
+
+Pivot 出现在对象几何中心。
+
+如果：
+
+Top Left
+
+Pivot：
+
+出现在左上。
+
+Bottom Right：
+
+出现在右下。
+
+Custom Pivot：
+
+出现在用户设置的位置。
+
+Selection Center：
+
+出现在多选对象共同中心。
+
+World Origin：
+
+显示世界 / Composition 原点位置。
+
+不要：
+
+实际 Pivot 在 A 点，
+
+文字写：
+
+“几何中心”
+
+但视觉中心看起来在 B 点。
+
+视觉必须严格与实际 Transform Calculation 对应。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+四、明确表示“固定点”
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+这是最重要的一项。
+
+例如用户选择：
+
+Scale around Bottom Center
+
+那么应该明确告诉用户：
+
+底部中心：
+
+不会移动。
+
+可以把这个点显示为：
+
+◎
+或
+Pin
+
+并给予轻微高亮。
+
+同时从这个点向：
+
+上
+左
+右
+
+显示弱引导线或箭头。
+
+视觉应该让用户理解：
+
+         ↑
+      ↖  │  ↗
+         │
+┌─────────────┐
+│             │
+│             │
+│             │
+└───────◎─────┘
+        FIXED
+
+但不要长期显示 FIXED 文字。
+
+可以通过：
+
+固定符号
+颜色
+Pin icon
+
+表达。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+五、Scale 模式必须显示缩放方向
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+当用户准备调整 Scale：
+
+不要只显示 Bounding Box。
+
+根据 Pivot 显示：
+
+Scale Direction Hint。
+
+例如：
+
+Pivot = Center
+
+则：
+
+        ↑
+        │
+     ←  ◎  →
+        │
+        ↓
+
+表示：
+
+对象围绕中心向两边扩展 / 收缩。
+
+Pivot = Left Center：
+
+◎────────→
+
+表示：
+
+左侧保持不动，
+对象主要向右扩展。
+
+Pivot = Bottom Center：
+
+       ↑
+       │
+       │
+       │
+       ◎
+
+表示：
+
+对象由底部向上扩展。
+
+如果进行 Uniform Scale：
+
+使用：
+
+对角箭头
+
+↖ ↗
+  ◎
+↙ ↘
+
+如果只修改 Scale X：
+
+只突出：
+
+← →。
+
+Scale Y：
+
+只突出：
+
+↑ ↓。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+六、Rotation 模式必须显示旋转轨迹
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+如果当前编辑：
+
+Rotation
+
+显示：
+
+Pivot
++
+Rotation Arc。
+
+例如：
+
+       ↻
+    ╭──────╮
+   │   ◎    │
+    ╰──────╯
+
+不要显示完整巨大圆。
+
+使用：
+
+约 90°~180° 的半透明弧线
+
++
+方向箭头。
+
+Pivot 在哪里，
+
+Rotation Arc 就围绕哪里。
+
+用户应该无需阅读文字就理解：
+
+“物体会绕这个点旋转。”
+
+鼠标 Hover Rotation：
+
+Rotation Arc 增强。
+
+开始拖动：
+
+显示：
+
+当前角度
+
+例如：
+
+32.4°
+
+拖动结束：
+
+恢复简化状态。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+七、Position 模式使用真正 Axis Gizmo
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Position 操作：
+
+显示：
+
+X Axis
+
+Y Axis。
+
+例如：
+
+       Y
+       ↑
+       │
+       ◎────→ X
+
+X：
+
+水平轴。
+
+Y：
+
+垂直轴。
+
+如果未来 3D：
+
+增加：
+
+Z。
+
+关键：
+
+Global Mode
+
+Axis 始终保持世界方向。
+
+Local Mode
+
+Axis 随对象 Rotation 旋转。
+
+例如对象旋转 30°：
+
+Global：
+
+X → 仍然水平。
+
+Local：
+
+X → 跟随对象旋转 30°。
+
+用户通过 Axis 本身就能看出：
+
+Global / Local
+
+的差别。
+
+这样就不需要依赖：
+
+“全局”
+
+两个中文字告诉用户。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+八、Global / Local 切换要有视觉变化
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+切换：
+
+Global
+→
+Local
+
+不要只是：
+
+Dropdown 文本发生变化。
+
+Canvas Gizmo：
+
+必须立即旋转到对应坐标系。
+
+可以添加非常短的：
+
+150~250ms
+
+Transition。
+
+例如：
+
+Axis 从世界方向
+平滑转向对象方向。
+
+让用户直接看到：
+
+“坐标轴变了。”
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+九、Hover Preview
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+当用户还没有点击某个 Pivot Mode 时：
+
+Hover 某选项：
+
+Center
+Top Left
+Bottom
+Custom
+
+Canvas 直接 Preview。
+
+例如 Hover：
+
+Bottom Center
+
+立即在对象底边中心：
+
+显示 Preview Pivot
+
+并显示 Scale Direction。
+
+但不要实际修改工程状态。
+
+Mouse Leave：
+
+恢复。
+
+Click：
+
+Commit。
+
+这是非常重要的教学机制。
+
+用户甚至不需要理解“Bottom Center”是什么意思。
+
+鼠标经过：
+
+看到图形行为提示，
+
+自然就懂。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十、增加 Ghost Transform Preview
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+对于不熟悉参考点概念的用户，
+
+仅显示 Pivot 可能仍然不够。
+
+因此在：
+
+Hover Transform Mode
+
+或者：
+
+首次使用
+
+时，
+
+可以显示非常轻量的：
+
+Ghost Preview。
+
+例如选择：
+
+Scale from Left
+
+当前对象：
+
+┌──────┐
+│      │
+└──────┘
+
+Ghost：
+
+┌────────────┐
+│            │
+└────────────┘
+
+左边保持一致，
+
+右侧半透明向外扩展。
+
+即：
+
+Original
++
+Ghost Future State
+
+让用户立即理解：
+
+“左边不动，右边变大。”
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十一、Ghost Preview 必须克制
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+不要长期显示 Ghost。
+
+只在：
+
+Hover Reference Mode
+
+第一次切换 Mode
+
+或者：
+
+用户按住 Modifier
+
+时显示。
+
+持续时间：
+
+约 500~1000ms
+
+或者：
+
+Hover 期间。
+
+透明度低。
+
+不要遮挡真正对象。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十二、不同属性使用不同 Guidance
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+这是关键。
+
+不要所有属性都显示同一套 Gizmo。
+
+Position：
+
+Axis。
+
+Scale：
+
+Pivot + Expansion Arrows。
+
+Rotation：
+
+Pivot + Rotation Arc。
+
+Anchor：
+
+Anchor / Pivot Relationship。
+
+Size：
+
+Bounds Direction。
+
+Skew：
+
+Skew Axis。
+
+未来 Camera：
+
+Camera Gizmo。
+
+也就是说：
+
+Transform Guidance
+
+根据：
+
+Active Property
+
+动态变化。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十三、明确区分 Anchor Point 和 Transform Pivot
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+这是非常重要的 UX 问题。
+
+AE 中用户很容易把：
+
+Anchor Point
+
+和：
+
+Bounding Box Center
+
+混淆。
+
+Swayframe 不要继续制造这种问题。
+
+定义：
+
+Anchor Point
+
+使用一种图形：
+
+例如：
+
+○ + 十字
+
+Transform Pivot
+
+使用另一种：
+
+例如：
+
+◎ / Pin。
+
+如果：
+
+Pivot = Anchor Point
+
+则两个视觉元素可以：
+
+合并
+
+或者：
+
+Transform Pivot 吸附到 Anchor。
+
+但用户必须知道：
+
+它们是两个不同概念。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十四、Pivot Selector UI
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Inspector 中不要只用：
+
+Geometry Center
+
+文本 Dropdown。
+
+可以提供：
+
+3×3 Pivot Grid。
+
+例如：
+
+● ○ ○
+○ ○ ○
+○ ○ ○
+
+表示：
+
+Top Left。
+
+例如：
+
+○ ○ ○
+○ ● ○
+○ ○ ○
+
+表示：
+
+Center。
+
+例如：
+
+○ ○ ○
+○ ○ ○
+○ ● ○
+
+表示：
+
+Bottom Center。
+
+用户点击哪个点，
+
+Canvas Pivot 立即移动到对应位置。
+
+这比：
+
+Top Left
+Bottom Center
+Geometry Center
+
+文字 Dropdown
+
+直观很多。
+
+文字可以作为 Tooltip。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十五、推荐 Pivot Control
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+例如 Inspector：
+
+Transform Origin
+
+┌───────────┐
+│ ○   ○   ○ │
+│ ○   ●   ○ │
+│ ○   ○   ○ │
+└───────────┘
+
+Space:
+
+Global / Local
+
+Origin:
+
+Bounding Box
+Anchor
+Custom
+
+这三个概念分开。
+
+不要做成：
+
+“全局 · 几何中心”
+
+一个组合字符串。
+
+因为：
+
+Coordinate Space
+
+和：
+
+Pivot Origin
+
+本质上是两个完全不同的参数。
+
+必须在数据模型和 UI 上分离：
+
+coordinateSpace:
+    global
+    local
+    parent
+
+pivotMode:
+    center
+    topLeft
+    top
+    topRight
+    left
+    right
+    bottomLeft
+    bottom
+    bottomRight
+    anchor
+    custom
+
+不要把两者混在一个枚举。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十六、Custom Pivot
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+允许：
+
+Custom Pivot。
+
+用户可以：
+
+拖动 Pivot Symbol
+
+到任意位置。
+
+例如：
+
+门围绕：
+
+门轴
+
+旋转。
+
+卡片围绕：
+
+左边缘
+
+翻转。
+
+物体围绕：
+
+外部某一点
+
+旋转。
+
+拖 Pivot 时：
+
+显示：
+
+对象中心到 Pivot 的虚线连接。
+
+例如：
+
+Object Center
+      · · · · · ◎ Pivot
+
+让用户明确知道：
+
+Pivot 与对象的关系。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十七、Reference Connection Line
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+如果 Pivot：
+
+不在几何中心
+
+或者：
+
+在对象外部，
+
+增加：
+
+细虚线
+
+连接：
+
+Object Center
+→
+Pivot。
+
+不要显示文字说明。
+
+仅通过：
+
+Connection
+
+表达关联。
+
+这样用户不会疑惑：
+
+“这个浮在外面的点是什么？”
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十八、颜色语义统一
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+不要让：
+
+Bounding Box
+Pivot
+X Axis
+Y Axis
+Rotation Arc
+Anchor
+
+全部同一种颜色。
+
+建立稳定颜色语义。
+
+例如：
+
+Selection：
+当前 Accent Color
+
+X Axis：
+暖色
+
+Y Axis：
+冷色 / 绿色
+
+Pivot：
+黄色 / Accent Secondary
+
+Anchor：
+中性白 / 浅蓝
+
+Guide：
+低透明度 Neutral
+
+具体颜色沿用 Swayframe Design Tokens。
+
+不要硬编码。
+
+同时考虑：
+
+Color Blind Accessibility。
+
+颜色不能是唯一信息。
+
+形状也必须不同。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十九、Guide 层级
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+视觉层级：
+
+一级：
+
+当前操作 Handle
+
+二级：
+
+Pivot / Axis
+
+三级：
+
+Bounding Box
+
+四级：
+
+辅助线 / Ghost
+
+五级：
+
+状态文字
+
+现在版本刚好相反：
+
+文字最抢眼。
+
+必须改变。
+
+用户首先看：
+
+图形。
+
+最后才看：
+
+文字。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十、状态文字缩小
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+现在：
+
+“全局 · 几何中心”
+
+文字非常突出。
+
+改成：
+
+轻量 Badge。
+
+例如：
+
+[ Global ] [ Center ]
+
+位于：
+
+Canvas corner
+
+或者：
+
+Pivot 附近但不遮挡对象。
+
+Hover：
+
+显示 Tooltip：
+
+Global coordinate space
+Transform around geometry center
+
+但默认：
+
+不需要用户阅读。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十一、First-use Micro Animation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+第一次切换 Pivot Mode：
+
+允许播放一次：
+
+300~600ms
+
+非常轻量的教学动画。
+
+例如：
+
+Center Scale：
+
+Ghost Object
+
+从：
+
+100%
+
+→
+
+115%
+
+→
+
+100%。
+
+Pivot：
+
+保持不动。
+
+用户第一次看到：
+
+就知道这个点是变换中心。
+
+之后：
+
+不再自动播放。
+
+不要每次切换都动画，
+
+否则会烦。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十二、操作时实时反馈
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+用户开始 Scale：
+
+Pivot 保持高亮。
+
+Scale Direction：
+
+增强。
+
+Bounding Box：
+
+实时变化。
+
+固定 Pivot：
+
+绝对不能视觉漂移。
+
+Rotation：
+
+Pivot 高亮
+
+Arc 跟随鼠标。
+
+Position：
+
+当前 Axis 高亮。
+
+例如拖 X：
+
+X Axis 加粗。
+
+Y Axis 降低透明度。
+
+这与 Blender Gizmo 的原则类似：
+
+正在发生什么，
+
+直接通过图形告诉用户。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十三、鼠标 Cursor 也参与引导
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Hover：
+
+X Axis：
+
+Horizontal Move Cursor
+
+Y Axis：
+
+Vertical Move Cursor
+
+Scale Handle：
+
+Resize Cursor
+
+Rotation Arc：
+
+Rotate Cursor
+
+Pivot：
+
+Move Pivot Cursor
+
+不要所有地方都是：
+
+default pointer。
+
+Cursor 本身就是 UX 信息。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十四、不要污染画布
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Transform Guidance 必须：
+
+context-aware。
+
+只有：
+
+Selection Tool
+
+或者：
+
+对应 Transform Tool
+
+激活时显示。
+
+没有选中对象：
+
+不显示。
+
+用户正在编辑 Text：
+
+隐藏无关 Transform Guide。
+
+用户进入 Path Editing：
+
+显示 Path Handles，
+
+弱化 Transform Handles。
+
+多个辅助信息不能同时抢占注意力。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十五、多选行为
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+多选对象：
+
+显示：
+
+Selection Bounds。
+
+Pivot 可以：
+
+Selection Center
+
+Individual Origins
+
+Active Object
+
+至少第一阶段支持：
+
+Selection Center。
+
+未来可以参考 Blender：
+
+Median
+Individual Origins
+Active Element
+
+但不要第一阶段做得太复杂。
+
+如果：
+
+Individual Origins
+
+必须在每个对象中心显示：
+
+小 Pivot。
+
+用户才能理解：
+
+每个对象分别围绕自身变化。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十六、Animation Preview
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+如果 Transform 属性：
+
+存在 Keyframe，
+
+用户移动 Pivot / Reference Mode 时：
+
+不要偷偷改变已经存在的动画语义
+
+除非当前功能定义就是如此。
+
+必须明确区分：
+
+改变：
+
+Transform Reference
+
+和：
+
+修改 Anchor / Property Data。
+
+如果操作会导致已有动画视觉发生变化：
+
+Hover 时：
+
+Preview。
+
+Commit 前：
+
+Command。
+
+支持：
+
+Undo。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十七、底层架构
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+不要把 Transform Guidance 写死在 Canvas Component。
+
+建立：
+
+TransformGuidanceController
+
+或等价模块。
+
+输入：
+
+selection
+activeTool
+activeProperty
+coordinateSpace
+pivotMode
+transformState
+interactionState
+
+输出：
+
+TransformGuideModel
+
+例如：
+
+{
+    pivot,
+    axes,
+    scaleDirections,
+    rotationArc,
+    fixedPoints,
+    ghostPreview,
+    connectionLines,
+    labels
+}
+
+Canvas：
+
+只负责 Render Guide。
+
+未来：
+
+2D
+2.5D
+3D
+
+可以复用。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十八、Preview 与正式数据分离
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Hover Reference Mode：
+
+不能修改 Project。
+
+使用：
+
+Preview Transform State。
+
+Click：
+
+生成：
+
+SetTransformReferenceCommand
+
+或等价 Command。
+
+拖动 Custom Pivot：
+
+Drag Start
+→
+Preview
+→
+Commit
+
+只生成：
+
+一个 Undo Step。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十九、性能
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Transform Guidance 属于：
+
+高频 Canvas Overlay。
+
+不要：
+
+每一帧重新序列化 Project。
+
+不要：
+
+Guide 改变导致整个 Timeline 重渲染。
+
+Guide 应该尽可能：
+
+Overlay Render Layer
+
+单独更新。
+
+Mouse Move：
+
+只更新必要的 Guide / Preview。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+三十、最终视觉目标
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+用户不看任何文字。
+
+只看 Canvas。
+
+应该能够回答：
+
+1. 现在围绕哪个点变换？
+2. 哪个点不会动？
+3. 是沿 X 还是 Y？
+4. 是 Global 还是 Local？
+5. Scale 会往哪边扩张？
+6. Rotation 会绕哪里旋转？
+
+如果用户必须阅读：
+
+“全局 · 几何中心”
+
+才能回答这些问题，
+
+则本次 UX 改进失败。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+三十一、验收案例
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CASE 1
+
+Rectangle
+
+Pivot：
+
+Center
+
+Scale。
+
+Canvas：
+
+中心 Pivot 明确显示。
+
+四周显示对称扩张方向。
+
+用户不看文字：
+
+可以理解：
+
+从中心缩放。
+
+CASE 2
+
+Pivot：
+
+Bottom Center。
+
+Canvas：
+
+底部中心显示 Fixed Pivot。
+
+向上 / 两侧显示 Expansion Hint。
+
+用户立即理解：
+
+底部不动。
+
+CASE 3
+
+Rotation
+
+Pivot：
+
+Top Left。
+
+Canvas：
+
+左上 Pivot。
+
+Rotation Arc：
+
+围绕左上。
+
+用户立即理解：
+
+绕左上旋转。
+
+CASE 4
+
+Global
+
+对象 Rotate 45°。
+
+Axis：
+
+仍然水平 / 垂直。
+
+切：
+
+Local。
+
+Axis：
+
+立即旋转 45°。
+
+不依赖文字：
+
+能够辨别差异。
+
+CASE 5
+
+Custom Pivot
+
+用户将 Pivot：
+
+拖到对象外部。
+
+显示：
+
+Object Center → Pivot
+
+虚线连接。
+
+Rotation：
+
+围绕外部 Pivot。
+
+CASE 6
+
+Hover Pivot Selector：
+
+Bottom Right。
+
+Canvas：
+
+立即显示 Preview Pivot
+
++
+
+Ghost Scale Preview。
+
+不修改 Project。
+
+Mouse Leave：
+
+恢复。
+
+CASE 7
+
+Scale X only。
+
+只突出：
+
+X Direction。
+
+Y Guide：
+
+降低透明度。
+
+CASE 8
+
+用户开始拖动 Scale。
+
+Pivot：
+
+持续固定并高亮。
+
+Bounding Box：
+
+实时变化。
+
+Undo：
+
+一步恢复。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+三十二、不要做的事情
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+不要：
+
+继续往 Canvas 写更多说明文字。
+
+不要：
+
+通过 Tooltip 替代视觉表达。
+
+不要：
+
+每种 Pivot 都显示一个巨大名称。
+
+不要：
+
+同时显示所有 Axis、Arc、Ghost、Guide。
+
+不要：
+
+为了视觉效果加入大量发光和动画。
+
+不要：
+
+让 Guide 比作品本身更抢眼。
+
+不要：
+
+让 Transform Reference 和 Anchor Point 混成同一个概念。
+
+不要：
+
+只做 UI，
+
+而实际 Transform 仍然使用旧 Pivot。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+最终原则
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Transform Reference 是空间概念。
+
+空间概念应该通过：
+
+空间视觉语言
+
+表达。
+
+而不是：
+
+文字说明。
+
+Swayframe 的目标应该是：
+
+用户看到 Pivot 在哪里，
+
+就知道哪里固定。
+
+看到 Arrow，
+
+就知道往哪里变化。
+
+看到 Axis，
+
+就知道沿哪个坐标系移动。
+
+看到 Arc，
+
+就知道围绕哪里旋转。
+
+看到 Ghost，
+
+就知道操作后的结果。
+
+做到：
+
+SHOW, DON'T TELL.
+
+把当前：
+
+“全局 · 几何中心”
+
+这种文字型说明，
+
+升级为：
+
+真正专业的 Transform Guidance System。

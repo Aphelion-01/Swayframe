@@ -1,3 +1,4 @@
+import { PivotSelector } from './PivotSelector';
 import { CompositingNodeInspector } from './CompositingNodeInspector';
 import { AnimatedField } from './AnimatedField';
 import { Section } from './workspace/primitives';
@@ -96,6 +97,7 @@ export function Inspector({ store }: { store: EditorStore }) {
           onCommit={(name) => patch({ name })}
         />
         <Section title="变换">
+          <PivotSelector store={store} disabled={!!layer.editor?.is3D} />
           <AnimatedField store={store} property={t.position} label="位置" />
           <AnimatedField
             store={store}

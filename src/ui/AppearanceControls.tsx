@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { guidanceFor } from './transform-guidance-controller';
+import { useEffect, useState } from 'react';
 import type { Layer, LayerEditor, Property } from '../core/project-model';
 import { command } from '../core/command-system';
 import { AnimatedField } from './AnimatedField';
@@ -16,6 +17,10 @@ export function AppearanceControls({
 }) {
   const [pathOpen, setPathOpen] = useState(false),
     editor = layer.editor;
+  useEffect(() => {
+    guidanceFor(store).suppress(pathOpen);
+    return () => guidanceFor(store).suppress(false);
+  }, [pathOpen, store]);
   if (!editor) return null;
   const settings = (patch: Partial<LayerEditor>) =>
     store.run('修改外观', [
@@ -36,7 +41,46 @@ export function AppearanceControls({
   return (
     <>
       <div className="section-label">几何与锚点</div>
-      <div className="field-grid">
+      <div
+        className="field-grid"
+        onMouseOver={(e) => {
+          if (guidanceFor(store).getSnapshot().activity?.phase !== 'active')
+            guidanceFor(store).activate({
+              property: 'size',
+              axis:
+                (e.target as Element).getAttribute('aria-label') === '图层宽度'
+                  ? 'x'
+                  : 'y',
+              phase: 'hover',
+            });
+        }}
+        onMouseLeave={() => {
+          if (guidanceFor(store).getSnapshot().activity?.phase !== 'active')
+            guidanceFor(store).activate();
+        }}
+        onFocusCapture={(e) =>
+          guidanceFor(store).activate({
+            property: 'size',
+            axis:
+              (e.target as Element).getAttribute('aria-label') === '图层宽度'
+                ? 'x'
+                : 'y',
+            phase: 'active',
+          })
+        }
+        onPointerDownCapture={(e) =>
+          guidanceFor(store).activate({
+            property: 'size',
+            axis:
+              (e.target as Element).getAttribute('aria-label') === '图层宽度'
+                ? 'x'
+                : 'y',
+            phase: 'active',
+          })
+        }
+        onPointerUpCapture={() => guidanceFor(store).activate()}
+        onBlurCapture={() => guidanceFor(store).activate()}
+      >
         {(['width', 'height'] as const).map((key) => (
           <NumberField
             key={key}
