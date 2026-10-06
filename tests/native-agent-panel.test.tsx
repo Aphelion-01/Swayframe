@@ -15,9 +15,109 @@ import { createRenderSnapshot } from '../src/core/renderer-core';
 import { AIProviderManager } from '../src/ai/provider-manager';
 import { createAIPlatform } from '../src/ai/platform';
 import { MockAIProvider } from '../src/ai/mock-provider';
+import * as referenceImport from '../src/agent/references';
 afterEach(() => {
   cleanup();
   localStorage.clear();
+  vi.restoreAllMocks();
+});
+it('keeps failed input and lets the user retry instead of clearing it before execution', async () => {
+  const s = await setup();
+  const id = s.manager.resolve().provider.id;
+  s.manager.register(
+    new MockAIProvider(id, 'Failing QA', async () => {
+      throw Error('测试网络错误');
+    }),
+  );
+  render(<AgentPanel {...s} />);
+  fireEvent.change(screen.getByLabelText('Agent 需求'), {
+    target: { value: '保留这段修改需求' },
+  });
+  fireEvent.click(screen.getByText('发送'));
+  await waitFor(() => expect(s.agent.getSnapshot().status).toBe('failed'));
+  expect(
+    (screen.getByLabelText('Agent 需求') as HTMLTextAreaElement).value,
+  ).toBe('保留这段修改需求');
+  expect(screen.getAllByText('测试网络错误').length).toBeGreaterThan(0);
+  expect((screen.getByText('发送') as HTMLButtonElement).disabled).toBe(false);
+});
+it('warns about text-only models when references are present, preserves input and allows text after reference removal', async () => {
+  const s = await setup();
+  const provider = s.manager.resolve().provider;
+  await s.manager.saveProvider({
+    ...provider,
+    models: provider.models.map((m) => ({ ...m, capabilities: ['text'] })),
+  });
+  s.agent.setReferences(
+    [
+      {
+        id: crypto.randomUUID(),
+        name: '参考.png',
+        kind: 'image',
+        frames: ['data:image/png;base64,AAAA'],
+      },
+    ],
+    'overall',
+  );
+  render(<AgentPanel {...s} />);
+  fireEvent.change(screen.getByLabelText('Agent 需求'), {
+    target: { value: '参照图片创建标题' },
+  });
+  fireEvent.click(screen.getByText('发送'));
+  expect(screen.getByText(/当前参考无法发送/)).toBeTruthy();
+  expect(s.agent.getSnapshot().status).toBe('idle');
+  expect(
+    (screen.getByLabelText('Agent 需求') as HTMLTextAreaElement).value,
+  ).toBe('参照图片创建标题');
+  fireEvent.click(screen.getByLabelText('移除参考 参考.png'));
+  fireEvent.click(screen.getByText('发送'));
+  await waitFor(() => expect(s.agent.getSnapshot().status).toBe('completed'));
+  expect(
+    (screen.getByLabelText('Agent 需求') as HTMLTextAreaElement).value,
+  ).toBe('');
+});
+it('imports dropped and pasted images through the same reference path without adding Scene assets', async () => {
+  const s = await setup();
+  const importer = vi
+    .spyOn(referenceImport, 'importAgentReference')
+    .mockImplementation(async (file) => ({
+      id: crypto.randomUUID(),
+      name: file.name,
+      kind: 'image',
+      frames: ['data:image/png;base64,AAAA'],
+    }));
+  render(
+    <div
+      onDrop={() => {
+        throw Error('drop must not reach Scene importer');
+      }}
+    >
+      <AgentPanel {...s} />
+    </div>,
+  );
+  const zone = screen.getByRole('region', { name: '参考图：支持拖入或粘贴' });
+  fireEvent.drop(zone, {
+    dataTransfer: {
+      files: [new File(['image'], 'drop.png', { type: 'image/png' })],
+    },
+  });
+  await screen.findByText('drop.png');
+  fireEvent.paste(screen.getByLabelText('Agent 需求'), {
+    clipboardData: {
+      files: [new File(['image'], 'paste.png', { type: 'image/png' })],
+    },
+  });
+  await screen.findByText('paste.png');
+  expect(importer).toHaveBeenCalledTimes(2);
+  expect(s.agent.getSnapshot().references).toHaveLength(2);
+  expect(s.store.commands.getSnapshot().assets).toHaveLength(0);
+  fireEvent.drop(zone, {
+    dataTransfer: {
+      files: [new File(['image'], 'third.png', { type: 'image/png' })],
+    },
+  });
+  await screen.findByText('最多添加两份参考，请先移除已有参考');
+  expect(importer).toHaveBeenCalledTimes(2);
 });
 async function setup(configured = true) {
   const platform = createAIPlatform(undefined, true),

@@ -7,7 +7,7 @@ import type {
   TransformInteractionSettings,
 } from '../core/transform-context';
 import type { transformGizmo } from '../core/transform-gizmo';
-import { pivotLabels } from './TransformControls';
+import { pivotLabels, orientationLabels } from './TransformControls';
 export function TransformOverlay({
   store,
   context,
@@ -41,6 +41,8 @@ export function TransformOverlay({
     <svg
       className="transform-overlay"
       aria-label="变换控制器"
+      data-orientation={context.settings.orientation}
+      data-pivot={context.settings.pivotMode}
       viewBox={`0 0 ${context.snapshot.width} ${context.snapshot.height}`}
     >
       <polygon
@@ -67,6 +69,10 @@ export function TransformOverlay({
               y2={h.point.y}
             />
             <circle cx={h.point.x} cy={h.point.y} r={4 * uiScale} />
+            <title>
+              {orientationLabels[context.settings.orientation]}{' '}
+              {h.axis?.toUpperCase()} 轴：沿此方向移动
+            </title>
             <text
               x={h.point.x + 8 * uiScale}
               y={h.point.y + 4 * uiScale}
@@ -79,13 +85,22 @@ export function TransformOverlay({
       )}
       {anchorMode &&
         [...context.initialTransforms.values()].map((l) => (
-          <circle
-            className="anchor-marker"
-            key={l.source.id}
-            cx={l.position.x}
-            cy={l.position.y}
-            r={4 * uiScale}
-          />
+          <g key={l.source.id} aria-label="可拖动图层锚点">
+            <circle
+              className="anchor-marker"
+              cx={l.position.x}
+              cy={l.position.y}
+              r={4 * uiScale}
+            />
+            <text
+              className="pivot-caption"
+              x={l.position.x - 12 * uiScale}
+              y={l.position.y + 30 * uiScale}
+              fontSize={11 * uiScale}
+            >
+              锚点编辑
+            </text>
+          </g>
         ))}
       {pivots.map((pivot, i) => (
         <g
@@ -94,6 +109,22 @@ export function TransformOverlay({
           aria-label={`当前支点：${pivotLabels[context.settings.pivotMode]}`}
         >
           <circle cx={pivot.x} cy={pivot.y} r={6 * uiScale} />
+          <circle
+            className="pivot-orbit"
+            cx={pivot.x}
+            cy={pivot.y}
+            r={24 * uiScale}
+          />
+          <text
+            className="pivot-caption"
+            x={pivot.x + 12 * uiScale}
+            y={pivot.y - 30 * uiScale}
+            fontSize={11 * uiScale}
+          >
+            {orientationLabels[context.settings.orientation]} ·{' '}
+            {pivotLabels[context.settings.pivotMode]}
+            {pivots.length > 1 ? ` ${i + 1}` : ''}
+          </text>
           <path
             d={`M ${pivot.x - 10 * uiScale} ${pivot.y} h ${20 * uiScale} M ${pivot.x} ${pivot.y - 10 * uiScale} v ${20 * uiScale}`}
           />

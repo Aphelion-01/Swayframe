@@ -184,7 +184,7 @@ Canvas轴向移动、Scale/Rotate与Inspector多选Scale/Rotate共用Context；�
 
 `AgentOrchestrator`消费结构化Plan与typed只读工具响应；读取最多4轮/12次，Tool Registry同时校验Schema、Skill范围、参考模式和危险权限。GUI、Graph、Mask与Agent共用CommandSystem。AgentTransaction在隔离CommandSystem执行、渲染、验证，当前工程仍为原基线才一次提交，一次Undo；Stop/失败/并发编辑会丢弃未提交修改。工作区Pivot/Orientation不修改Anchor或Project。新图层可通过Layer ID与属性路径创建关键帧。
 
-真实Canvas2DRenderer支持缩放预览，Agent快照最长边720，不含控制柄，不永久写入Project。VisualIntelligenceService只返回结构化Proposal；当前帧与所选动画起止帧提供给能力明确支持Vision的模型，修正最多2轮，危险修正拒绝。没有视觉模型或禁止发送预览时，仅报告本地渲染检查，不能标作模型视觉验收。外部参考只来自用户选中的File，静态图片/GIF首帧/视频3个抽样帧；参考模式在工具白名单约束，布局参考不能写颜色。
+真实Canvas2DRenderer支持缩放预览，Agent快照最长边720，不含控制柄，不永久写入Project。VisualIntelligenceService只返回结构化Proposal；当前帧与所选动画起止帧提供给能力明确支持Vision的模型，修正最多2轮，危险修正拒绝。没有视觉模型或禁止发送预览时，仅报告本地渲染检查，不能标作模型视觉验收。外部参考只来自用户选择、拖入或粘贴的File，静态图片/GIF首帧/视频3个抽样帧；参考模式在工具白名单约束，布局参考不能写颜色。
 
 网络/限流/超时/Provider失败最多2次重试或切换；无效密钥、无效请求/响应与取消不重试。用量只记录服务返回值，未知成本不估算，每日预算80%提醒/100%可停止后续请求。设置、历史、Skills、用量及真实动画属性预设各自存应用目录；工程只存Scene。共享Agent提交触发现有dirty与recovery服务。开发验收入口 `agent-review.html` 使用隔离Mock协议，不进入生产包，不解析自然语言或替代产品Provider。
 
@@ -193,3 +193,7 @@ Canvas轴向移动、Scale/Rotate与Inspector多选Scale/Rotate共用Context；�
 ### 0.9.1 · 面板滚动与供应商预设
 
 左面板导航在滚动容器外，当前面板标题在内容区sticky固定，不进入Scene或Project。供应商预设仅初始化ProviderConfig，DeepSeek/硅基流动/OpenRouter复用现有OpenAI兼容传输及安全密钥存储；自定义地址与模型ID保留。更换服务origin需要对应的新密钥。DeepSeek官方端点显式关闭thinking，兼容Agent的named tool choice和现有工具回传；不引入另一套Agent/Command流程。
+
+### 0.9.2 · 输入保护与操作反馈
+
+静态界面禁用浏览器文字拖选，输入框保留文本编辑；Canvas/Timeline/Graph原有对象选择不变。Agent参考的文件选择、区域拖入和图片粘贴共用受限importAgentReference，不进入Scene资产，拖入事件不向工程导入器冒泡。发送参考前检查实际vision路由及凭证；失败、停止和等待确认保留需求，仅成功完成清空原提交内容，不覆盖执行期间编辑的新草稿。TransformOverlay使用已有TransformContext的真实basis/pivot显示控制轴、支点模式与参考圈；模式说明属于UI，不修改工程或历史。

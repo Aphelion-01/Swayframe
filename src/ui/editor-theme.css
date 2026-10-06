@@ -1292,3 +1292,57 @@ button.danger:hover:not(:disabled) {
   z-index: 2;
   background: var(--background-secondary);
 }
+
+/* Editor gestures select objects; only editable fields select text. */
+body {
+  user-select: none;
+  -webkit-user-select: none;
+}
+input,
+textarea,
+[contenteditable]:not([contenteditable='false']) {
+  user-select: text;
+  -webkit-user-select: text;
+}
+.transform-mode-hint {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-secondary);
+  font-size: var(--font-metadata);
+}
+.transform-overlay .pivot-caption {
+  fill: var(--warning);
+  stroke: var(--background-primary);
+  stroke-width: 3px;
+  paint-order: stroke;
+}
+.transform-overlay .pivot-orbit {
+  fill: none;
+  stroke: var(--warning);
+  stroke-dasharray: 3 4;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.65;
+}
+.transform-axis.axis-x text {
+  fill: var(--axis-x);
+}
+.transform-axis.axis-y text {
+  fill: var(--axis-y);
+}
+.agent-references {
+  border: 1px dashed var(--border-strong);
+  padding: 8px;
+}
+.agent-references.drag-over {
+  border-color: var(--accent-primary);
+  background: var(--surface-selected);
+}
+.agent-reference-chip img {
+  width: 48px;
+  height: 36px;
+  object-fit: contain;
+  background: var(--background-primary);
+}

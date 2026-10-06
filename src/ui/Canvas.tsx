@@ -1,5 +1,11 @@
 import { TransformOverlay } from './TransformOverlay';
-import { TransformControls } from './TransformControls';
+import {
+  TransformControls,
+  orientationLabels,
+  orientationDescriptions,
+  pivotLabels,
+  pivotDescriptions,
+} from './TransformControls';
 import { createTextMeasurer } from '../renderers/content-bounds';
 import { createTransformContext } from '../core/transform-resolvers';
 import { transformGizmo } from '../core/transform-gizmo';
@@ -1105,6 +1111,20 @@ export function Canvas({ store }: { store: EditorStore }) {
           ) : null;
         })()}
       <div className="canvas-bottom">
+        <span
+          className="transform-mode-hint"
+          role="status"
+          title={`${orientationDescriptions[view.transformSettings.orientation]}；${pivotDescriptions[view.transformSettings.pivotMode]}`}
+        >
+          {anchorMode
+            ? '锚点编辑：拖动黄色锚点，调整中心并保持画面位置 · '
+            : ''}
+          {orientationLabels[view.transformSettings.orientation]}轴向 ·{' '}
+          {pivotLabels[view.transformSettings.pivotMode]}支点
+          {view.selection.length
+            ? ` · ${orientationDescriptions[view.transformSettings.orientation]}；${pivotDescriptions[view.transformSettings.pivotMode]}`
+            : ' · 选择对象查看控制轴和支点'}
+        </span>
         <span>
           {view.selection.length
             ? `${view.selection.length} 个图层`

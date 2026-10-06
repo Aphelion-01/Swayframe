@@ -22,6 +22,20 @@ export const pivotLabels: Record<TransformPivotMode, string> = {
   'individual-origins': '各自中心',
   custom: '自定义',
 };
+export const orientationDescriptions: Record<TransformOrientation, string> = {
+  global: '沿合成 X/Y 轴移动',
+  local: '沿对象自身 X/Y 轴移动',
+  parent: '沿父级 X/Y 轴移动',
+  view: '沿屏幕 X/Y 轴移动',
+};
+export const pivotDescriptions: Record<TransformPivotMode, string> = {
+  anchor: '围绕对象锚点旋转 / 缩放',
+  'object-center': '围绕对象几何中心旋转 / 缩放',
+  'bounds-center': '围绕包围框中心旋转 / 缩放',
+  'selection-center': '围绕所选对象中心旋转 / 缩放',
+  'individual-origins': '每个对象围绕自身中心旋转 / 缩放',
+  custom: '围绕自定义支点旋转 / 缩放，可拖动画布十字标记',
+};
 export function TransformControls({
   store,
   disabled = false,

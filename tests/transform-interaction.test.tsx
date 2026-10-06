@@ -295,3 +295,32 @@ it('键盘nudge也共享Local/Global轴向；数值取消不留预览', () => {
   fireEvent.keyDown(field, { key: 'Escape' });
   expect(store.getSnapshot().propertyPreviews).toBeUndefined();
 });
+
+it('模式切换显示真实控制轴和支点，多选各自中心保留独立标记且不写工程', () => {
+  const { store } = setup([rectangle(200, 200), rectangle(600, 200)]);
+  const before = store.getSnapshot().project;
+  fireEvent.change(screen.getByLabelText('变换轴向'), {
+    target: { value: 'local' },
+  });
+  fireEvent.change(screen.getByLabelText('变换支点'), {
+    target: { value: 'individual-origins' },
+  });
+  const overlay = screen.getByLabelText('变换控制器');
+  expect(overlay).toHaveAttribute('data-orientation', 'local');
+  expect(overlay.querySelectorAll('.pivot-marker')).toHaveLength(2);
+  expect(overlay.textContent).toContain('局部 · 各自中心');
+  expect(
+    screen.getByText(/沿对象自身 X\/Y 轴移动；每个对象围绕自身中心/),
+  ).toBeTruthy();
+  fireEvent.change(screen.getByLabelText('变换支点'), {
+    target: { value: 'custom' },
+  });
+  expect(overlay.querySelectorAll('.pivot-marker')).toHaveLength(1);
+  expect(overlay.querySelector('.custom-pivot-handle')).toBeTruthy();
+  expect(overlay.textContent).toContain('局部 · 自定义');
+  fireEvent.click(screen.getByRole('button', { name: '锚点' }));
+  expect(screen.getAllByLabelText('可拖动图层锚点')).toHaveLength(2);
+  expect(screen.getByText(/锚点编辑：拖动黄色锚点/)).toBeTruthy();
+  expect(store.getSnapshot().project).toBe(before);
+  expect(store.commands.undoStack).toHaveLength(0);
+});

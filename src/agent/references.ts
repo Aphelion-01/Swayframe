@@ -69,7 +69,7 @@ function frame(source: CanvasImageSource, width: number, height: number) {
     canvas.width = canvas.height = 1;
   }
 }
-/** Only File objects explicitly selected by the user enter here. No disk path API. */
+/** Only File objects explicitly selected, dropped or pasted by the user enter here. No disk path API. */
 export async function importAgentReference(
   file: File,
   signal: AbortSignal,

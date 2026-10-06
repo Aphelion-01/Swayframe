@@ -2,7 +2,7 @@ import { agentLibraryFor } from '../agent/library';
 import { importAgentReference } from '../agent/references';
 import type { ReferenceMode } from '../agent/references';
 import { skillsFor } from '../agent/skills';
-import { useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { getAIApplication } from '../ai/application';
 import type { AIProviderManager } from '../ai/provider-manager';
 import type { AgentOrchestrator } from '../agent/orchestrator';
@@ -36,6 +36,37 @@ export function AgentPanel({
   const [prompt, setPrompt] = useState('');
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState('');
+  const [referenceDrag, setReferenceDrag] = useState(false);
+  const referenceImport = useRef<AbortController | null>(null);
+  useEffect(() => () => referenceImport.current?.abort(), []);
+  const addReferences = async (files: readonly File[]) => {
+    if (agent.running || referenceImport.current || !files.length) return;
+    const available = 2 - agent.getSnapshot().references.length;
+    if (files.length > available) {
+      setError('最多添加两份参考，请先移除已有参考');
+      return;
+    }
+    const controller = new AbortController();
+    referenceImport.current = controller;
+    setImporting(true);
+    setError('');
+    try {
+      const imported = [];
+      for (const file of files)
+        imported.push(await importAgentReference(file, controller.signal));
+      if (!controller.signal.aborted)
+        agent.setReferences(
+          [...agent.getSnapshot().references, ...imported],
+          agent.getSnapshot().referenceMode,
+        );
+    } catch (e) {
+      if (!controller.signal.aborted)
+        setError(e instanceof Error ? e.message : '导入失败');
+    } finally {
+      if (!controller.signal.aborted) setImporting(false);
+      referenceImport.current = null;
+    }
+  };
   const c = activeComposition(view.project);
   const skills = skillsFor(manager.storage);
   const skillState = useSyncExternalStore(skills.subscribe, skills.getSnapshot);
@@ -57,12 +88,32 @@ export function AgentPanel({
     /* Setup state is shown below. */
   }
   const submit = () => {
-    if (!prompt.trim() || agent.running || !configured) return;
+    if (!prompt.trim() || agent.running || importing || !configured) return;
     const value = prompt;
-    setPrompt('');
     setError('');
+    if (session.references.length && ai.settings.privacy.sendReferences) {
+      try {
+        const vision = manager.resolve('vision');
+        if (
+          vision.provider.type !== 'mock' &&
+          !ai.credentials[vision.provider.id]
+        )
+          throw Error('请为视觉模型配置密钥');
+      } catch (e) {
+        setError(
+          '当前参考无法发送：' +
+            (e instanceof Error ? e.message : '模型不支持识图') +
+            '。请在 AI 设置中选择支持识图的模型，或移除参考后发送文字。',
+        );
+        return;
+      }
+    }
     void agent
       .run(value)
+      .then(() => {
+        if (agent.getSnapshot().status === 'completed')
+          setPrompt((current) => (current === value ? '' : current));
+      })
       .catch((e) => setError(e instanceof Error ? e.message : '任务未完成'));
   };
   const latest = store.commands.undoStack.at(-1)?.transaction.id;
@@ -73,6 +124,15 @@ export function AgentPanel({
     <section
       className="agent-panel native-agent-panel"
       aria-label="原生 AI Agent"
+      onPaste={(event) => {
+        const files = Array.from(event.clipboardData.files).filter((file) =>
+          file.type.startsWith('image/'),
+        );
+        if (!files.length) return;
+        event.preventDefault();
+        event.stopPropagation();
+        void addReferences(files);
+      }}
     >
       <div className="agent-heading">
         <strong>Agent</strong>
@@ -181,8 +241,17 @@ export function AgentPanel({
               className="primary"
               onClick={() => {
                 setError('');
+                const submitted = [...session.conversation]
+                  .reverse()
+                  .find((message) => message.role === 'user')?.content;
                 void agent
                   .apply(session.currentPlan!.id)
+                  .then(() => {
+                    if (agent.getSnapshot().status === 'completed')
+                      setPrompt((current) =>
+                        current.trim() === submitted?.trim() ? '' : current,
+                      );
+                  })
                   .catch((e) =>
                     setError(e instanceof Error ? e.message : '计划未执行'),
                   );
@@ -344,7 +413,32 @@ export function AgentPanel({
           </div>
         ))}
       </details>
-      <div className="agent-references">
+      <div
+        className={`agent-references ${referenceDrag ? 'drag-over' : ''}`}
+        role="region"
+        aria-label="参考图：支持拖入或粘贴"
+        tabIndex={0}
+        onDragOver={(event) => {
+          if (!event.dataTransfer.types.includes('Files')) return;
+          event.preventDefault();
+          event.stopPropagation();
+          event.dataTransfer.dropEffect = 'copy';
+          setReferenceDrag(true);
+        }}
+        onDragLeave={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null))
+            setReferenceDrag(false);
+        }}
+        onDrop={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          setReferenceDrag(false);
+          void addReferences(Array.from(event.dataTransfer.files));
+        }}
+      >
+        <small>
+          将图片拖到这里，或在参考区 / 输入框按 ⌘V / Ctrl+V 粘贴图片
+        </small>
         <label className="ai-file">
           {importing ? '正在读取参考…' : '添加参考'}
           <input
@@ -358,18 +452,7 @@ export function AgentPanel({
               const file = e.target.files?.[0];
               e.target.value = '';
               if (!file) return;
-              setImporting(true);
-              void importAgentReference(file, new AbortController().signal)
-                .then((ref) =>
-                  agent.setReferences(
-                    [...agent.getSnapshot().references, ref],
-                    agent.getSnapshot().referenceMode,
-                  ),
-                )
-                .catch((e) =>
-                  setError(e instanceof Error ? e.message : '导入失败'),
-                )
-                .finally(() => setImporting(false));
+              void addReferences([file]);
             }}
           />
         </label>
@@ -394,6 +477,7 @@ export function AgentPanel({
         )}
         {session.references.map((ref) => (
           <span className="agent-reference-chip" key={ref.id}>
+            <img src={ref.frames[0]} alt={'参考预览 ' + ref.name} />
             {ref.name}
             {ref.kind === 'gif-first-frame'
               ? ' · 首帧'
