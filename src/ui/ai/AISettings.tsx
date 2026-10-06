@@ -3,6 +3,7 @@ import { SkillSettings } from './SkillSettings';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { getAIApplication } from '../../ai/application';
 import { AIError, providerSchema } from '../../ai/contracts';
+import { providerPresets, providerPresetId } from '../../ai/provider-presets';
 import type { ModelCapability, ProviderConfig } from '../../ai/contracts';
 import type { AIProviderManager } from '../../ai/provider-manager';
 import { Modal, Tabs } from '../workspace/primitives';
@@ -35,6 +36,7 @@ function ProviderEditor({
     },
   );
   const [key, setKey] = useState('');
+  const [presetId, setPresetId] = useState(() => providerPresetId(value));
   const [headers, setHeaders] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -66,6 +68,13 @@ function ProviderEditor({
             throw new Error(
               parsed.error.issues[0]?.message ?? '请检查服务设置',
             );
+          if (
+            provider &&
+            new URL(provider.baseUrl).origin !==
+              new URL(parsed.data.baseUrl).origin &&
+            !key.trim()
+          )
+            throw new Error('更换服务地址后，请重新输入对应供应商的密钥');
           let extra: Record<string, string> = {};
           if (headers.trim()) {
             const raw: unknown = JSON.parse(headers);
@@ -111,10 +120,37 @@ function ProviderEditor({
         />
       </label>
       <label>
-        服务类型
-        <select aria-label="服务类型" value={value.type} disabled>
-          <option value="openai-compatible">OpenAI-compatible</option>
-          <option value="mock">本地测试服务</option>
+        供应商
+        <select
+          aria-label="供应商"
+          value={presetId}
+          onChange={(e) => {
+            const id = e.target.value;
+            setPresetId(id);
+            setKey('');
+            setHeaders('');
+            setError('');
+            const preset = providerPresets.find((p) => p.id === id);
+            if (preset)
+              patch({
+                type: 'openai-compatible',
+                name: preset.name,
+                baseUrl: preset.baseUrl,
+                defaultModel: preset.models[0] ?? '',
+                models: preset.models.map((id) => ({
+                  id,
+                  name: id,
+                  capabilities: ['text'],
+                })),
+              });
+          }}
+        >
+          {providerPresets.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+          <option value="custom">自定义兼容服务</option>
         </select>
       </label>
       <label>
@@ -122,7 +158,12 @@ function ProviderEditor({
         <input
           aria-label="API Base URL"
           value={value.baseUrl}
-          onChange={(e) => patch({ baseUrl: e.target.value })}
+          onChange={(e) => {
+            patch({ baseUrl: e.target.value });
+            setPresetId(
+              providerPresetId({ ...value, baseUrl: e.target.value }),
+            );
+          }}
         />
       </label>
       <label>
@@ -142,9 +183,18 @@ function ProviderEditor({
           aria-label="默认模型"
           value={value.defaultModel}
           placeholder="填写服务支持的模型 ID"
+          list="ai-provider-model-options"
           onChange={(e) => patch({ defaultModel: e.target.value })}
         />
+        <datalist id="ai-provider-model-options">
+          {value.models.map((m) => (
+            <option key={m.id} value={m.id} />
+          ))}
+        </datalist>
       </label>
+      <p className="metadata">
+        填写该供应商的密钥与模型 ID。保存后可在“模型”页获取可用模型列表。
+      </p>
       <details>
         <summary>自定义请求头</summary>
         <p className="metadata">与密钥一起安全存储。填写后替换原配置。</p>
@@ -339,7 +389,8 @@ export function AISettings({
                         </button>
                       </div>
                       <p className="metadata">
-                        视觉等能力需按服务说明明确启用。
+                        最多展示 200 个模型，其它模型 ID
+                        可在服务设置中填写。视觉等能力需按服务说明明确启用。
                       </p>
                       {p.models.map((m) => (
                         <div key={m.id} className="ai-model-row">

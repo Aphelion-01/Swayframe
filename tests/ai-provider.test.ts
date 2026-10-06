@@ -38,6 +38,64 @@ const raw = {
   ],
   usage: { prompt_tokens: 12, completion_tokens: 3, total_tokens: 15 },
 };
+it('uses DeepSeek non-thinking mode for named Agent tools and leaves other services unchanged', async () => {
+  const fetcher = vi.fn<typeof fetch>(
+    async () => new Response(JSON.stringify(raw)),
+  );
+  const provider = new OpenAICompatibleProvider(
+    {
+      ...config,
+      baseUrl: 'https://api.deepseek.com',
+      defaultModel: 'deepseek-flash',
+    },
+    credentials,
+    fetcher,
+  );
+  await provider.chat({
+    model: 'deepseek-flash',
+    messages: [{ role: 'user', content: 'test' }],
+    tools: [
+      {
+        name: 'inspectSelection',
+        description: 'inspect',
+        parameters: { type: 'object' },
+      },
+    ],
+    toolChoice: 'inspectSelection',
+  });
+  expect(fetcher.mock.calls[0]?.[0]).toBe(
+    'https://api.deepseek.com/chat/completions',
+  );
+  expect(JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body))).toMatchObject({
+    thinking: { type: 'disabled' },
+    tool_choice: { function: { name: 'inspectSelection' } },
+  });
+  await new OpenAICompatibleProvider(config, credentials, fetcher).chat({
+    model: 'model',
+    messages: [{ role: 'user', content: 'test' }],
+  });
+  expect(
+    JSON.parse(String(fetcher.mock.calls[1]?.[1]?.body)),
+  ).not.toHaveProperty('thinking');
+});
+it('accepts large compatible model catalogues while retaining the configured model within the 200-entry limit', async () => {
+  const fetcher = vi.fn<typeof fetch>(
+    async () =>
+      new Response(
+        JSON.stringify({
+          data: Array.from({ length: 400 }, (_, i) => ({ id: `model-${i}` })),
+        }),
+      ),
+  );
+  const provider = new OpenAICompatibleProvider(
+    { ...config, defaultModel: 'model-399' },
+    credentials,
+    fetcher,
+  );
+  const models = await provider.listModels();
+  expect(models).toHaveLength(200);
+  expect(models[0]?.id).toBe('model-399');
+});
 it('sends typed tools and authorized images, reports actual usage and withholds keys from errors', async () => {
   const fetcher = vi.fn<typeof fetch>(
     async () =>

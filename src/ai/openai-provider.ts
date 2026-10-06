@@ -214,12 +214,19 @@ export class OpenAICompatibleProvider implements AIProvider {
       }
       const parsed = z
         .object({
-          data: z.array(z.object({ id: z.string().min(1).max(200) })).max(200),
+          data: z.array(z.object({ id: z.string().min(1).max(200) })).max(5000),
         })
         .safeParse(raw);
       if (!parsed.success)
         throw new AIError('invalid_response', '模型列表格式无效');
-      return parsed.data.data.map(
+      const preferred = parsed.data.data.find(
+        (m) => m.id === this.config.defaultModel,
+      );
+      const visible = [
+        ...(preferred ? [preferred] : []),
+        ...parsed.data.data.filter((m) => m.id !== preferred?.id),
+      ].slice(0, 200);
+      return visible.map(
         (m) =>
           this.config.models.find((v) => v.id === m.id) ?? {
             id: m.id,
@@ -262,6 +269,11 @@ export class OpenAICompatibleProvider implements AIProvider {
       throw new AIError('invalid_request', '请为该模型明确启用视觉能力');
     const body = {
       model: request.model,
+      // DeepSeek defaults to thinking mode, which rejects our named tool choice
+      // and requires reasoning history. Use its compatible non-thinking mode.
+      ...(new URL(this.config.baseUrl).hostname === 'api.deepseek.com'
+        ? { thinking: { type: 'disabled' } }
+        : {}),
       messages: request.messages.map((m) => ({
         role: m.role,
         content: m.images?.length

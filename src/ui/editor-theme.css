@@ -1266,3 +1266,29 @@ button.danger:hover:not(:disabled) {
 .timeline-scroll {
   max-height: none;
 }
+
+/* Keep left navigation outside the scroll area; pin the current panel title. */
+.workspace > .left-slot {
+  overflow: hidden;
+}
+.left-slot > .layers-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.layers-panel > .panel-tabs {
+  flex-shrink: 0;
+}
+.left-panel-content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.left-panel-content > .panel-heading,
+.left-panel-content > .assistant-workspace > .panel-heading {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--background-secondary);
+}

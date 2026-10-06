@@ -189,3 +189,7 @@ Canvas轴向移动、Scale/Rotate与Inspector多选Scale/Rotate共用Context；�
 网络/限流/超时/Provider失败最多2次重试或切换；无效密钥、无效请求/响应与取消不重试。用量只记录服务返回值，未知成本不估算，每日预算80%提醒/100%可停止后续请求。设置、历史、Skills、用量及真实动画属性预设各自存应用目录；工程只存Scene。共享Agent提交触发现有dirty与recovery服务。开发验收入口 `agent-review.html` 使用隔离Mock协议，不进入生产包，不解析自然语言或替代产品Provider。
 
 `IntelligenceService`提供analyzeLayout/analyzeColor/analyzeTypography/analyzeMotion/analyzeReference五个typed分析入口。注册为只读工具，接收相关Scene摘要和隐私允许的真实预览/参考，仅返回小规模DesignProposal；Agent可读取建议再生成Plan。服务没有Scene/CommandSystem/磁盘写入接口，禁止建议未授权工具，运行时仍校验参数与Scope，建议不会自行提交。
+
+### 0.9.1 · 面板滚动与供应商预设
+
+左面板导航在滚动容器外，当前面板标题在内容区sticky固定，不进入Scene或Project。供应商预设仅初始化ProviderConfig，DeepSeek/硅基流动/OpenRouter复用现有OpenAI兼容传输及安全密钥存储；自定义地址与模型ID保留。更换服务origin需要对应的新密钥。DeepSeek官方端点显式关闭thinking，兼容Agent的named tool choice和现有工具回传；不引入另一套Agent/Command流程。

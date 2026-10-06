@@ -83,3 +83,44 @@ it('production web rejects credential saving and model registry requires explici
   await manager.saveProvider(config);
   expect(() => manager.resolve('vision')).toThrow('视觉');
 });
+it('saves a DeepSeek preset and requires a new key when changing supplier', async () => {
+  const platform = createAIPlatform(undefined, true);
+  const manager = new AIProviderManager(platform.storage, platform.transport);
+  await manager.initialize();
+  render(<AISettings manager={manager} onClose={vi.fn()} />);
+  fireEvent.click(screen.getByText('添加服务'));
+  fireEvent.change(screen.getByLabelText('供应商'), {
+    target: { value: 'deepseek' },
+  });
+  expect(
+    (screen.getByLabelText('API Base URL') as HTMLInputElement).value,
+  ).toBe('https://api.deepseek.com');
+  expect((screen.getByLabelText('默认模型') as HTMLInputElement).value).toBe(
+    'deepseek-flash',
+  );
+  fireEvent.change(screen.getByLabelText('API Key'), {
+    target: { value: 'DEEPSEEK_TEST_KEY' },
+  });
+  fireEvent.click(screen.getByText('保存服务'));
+  await screen.findByText('编辑');
+  expect(manager.resolve().provider.name).toBe('DeepSeek');
+  fireEvent.click(screen.getByText('编辑'));
+  fireEvent.change(screen.getByLabelText('供应商'), {
+    target: { value: 'openrouter' },
+  });
+  fireEvent.change(screen.getByLabelText('默认模型'), {
+    target: { value: 'vendor/model' },
+  });
+  fireEvent.click(screen.getByText('保存服务'));
+  await screen.findByText('更换服务地址后，请重新输入对应供应商的密钥');
+  expect(manager.resolve().provider.baseUrl).toBe('https://api.deepseek.com');
+  fireEvent.change(screen.getByLabelText('API Key'), {
+    target: { value: 'OPENROUTER_TEST_KEY' },
+  });
+  fireEvent.click(screen.getByText('保存服务'));
+  await screen.findByText('编辑');
+  expect(manager.resolve().provider.baseUrl).toBe(
+    'https://openrouter.ai/api/v1',
+  );
+  expect(JSON.stringify(localStorage)).not.toContain('TEST_KEY');
+});
