@@ -1,0 +1,118 @@
+Stage IA-14
+Started: 2026-10-07T16:39:19.815Z
+
+$ npm run typecheck
+
+> motion-system@0.9.15 typecheck
+> tsc --noEmit
+
+
+Exit: 0
+
+$ npm run lint
+
+> motion-system@0.9.15 lint
+> eslint . && prettier --check src tests scripts apps *.json *.ts *.html *.cjs build/*.json docs/ARCHITECTURE.md
+
+Checking formatting...
+All matched files use Prettier code style!
+
+Exit: 0
+
+$ npm test
+
+> motion-system@0.9.15 test
+> vitest run
+
+
+ RUN  v5.0.3 /Users/aphelion-01/Documents/Codex/2026-10-03/referenced-chatgpt-conversation-this-is-an
+
+
+ Test Files  113 passed (113)
+      Tests  435 passed (435)
+   Start at  00:39:26
+   Duration  9.87s (tests 66%, import 14%, environment 12%, transform 7%)
+
+    Isolate  113 workers spawned · ~167ms startup each (spawn + environment, per file)
+             at least ~1.93s faster with isolate: false — reuses workers across files instead of one per file
+
+
+Exit: 0
+
+$ npm run build
+
+> motion-system@0.9.15 build
+> tsc --noEmit && vite build
+
+vite v7.3.6 building client environment for production...
+transforming...
+✓ 308 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                       0.55 kB │ gzip:   0.33 kB
+dist/assets/zip.worker-CXToe_8y.js    1.23 kB
+dist/assets/index-BcIyZlB8.css       76.82 kB │ gzip:  14.02 kB
+dist/assets/vendor-CaW9oamn.js      111.34 kB │ gzip:  32.50 kB
+dist/assets/index-DVYnMnAy.js       731.11 kB │ gzip: 234.12 kB
+✓ built in 1.09s
+node_modules/zod/v4/core/util.js (400:0): A comment
+
+"// Wrapped in a `@__PURE__` IIFE: esbuild never tree-shakes a top-level initializer that contains a member access on `Number`, so the bare object literal survived into every bundle."
+
+in "node_modules/zod/v4/core/util.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+node_modules/zod/v4/core/regexes.js (74:0): A comment
+
+"/** Anchors a pattern source. The interpolation lives here rather than at the call site because
+ * esbuild will not drop a `@__PURE__` call whose own argument interpolates a variable, but it
+ * will drop `anchor(dateSource)`. Keeping it inline pinned `date` into every bundle. */"
+
+in "node_modules/zod/v4/core/regexes.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+Exit: 0
+
+$ npm run desktop:build
+
+> motion-system@0.9.15 desktop:build
+> npm run build && node scripts/desktop/build.mjs
+
+
+> motion-system@0.9.15 build
+> tsc --noEmit && vite build
+
+vite v7.3.6 building client environment for production...
+transforming...
+✓ 308 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                       0.55 kB │ gzip:   0.33 kB
+dist/assets/zip.worker-CXToe_8y.js    1.23 kB
+dist/assets/index-BcIyZlB8.css       76.82 kB │ gzip:  14.02 kB
+dist/assets/vendor-CaW9oamn.js      111.34 kB │ gzip:  32.50 kB
+dist/assets/index-DVYnMnAy.js       731.11 kB │ gzip: 234.12 kB
+✓ built in 1.08s
+node_modules/zod/v4/core/util.js (400:0): A comment
+
+"// Wrapped in a `@__PURE__` IIFE: esbuild never tree-shakes a top-level initializer that contains a member access on `Number`, so the bare object literal survived into every bundle."
+
+in "node_modules/zod/v4/core/util.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+node_modules/zod/v4/core/regexes.js (74:0): A comment
+
+"/** Anchors a pattern source. The interpolation lives here rather than at the call site because
+ * esbuild will not drop a `@__PURE__` call whose own argument interpolates a variable, but it
+ * will drop `anchor(dateSource)`. Keeping it inline pinned `date` into every bundle. */"
+
+in "node_modules/zod/v4/core/regexes.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+Exit: 0
+
+PASS: typecheck / lint / unit + integration tests / Web build / desktop build

@@ -271,3 +271,15 @@ SpatialViewport 复用 createRenderSnapshot 的 world3D、Canvas2DRenderer 的�
 ThreeDRotationGizmo复用rotation3D Property和valueCommand，不改变Scene格式或引入另一套变换执行器。旋转环围绕实际anchor3D+二维anchor定位，轴方向遵守已有Rz*Ry*Rx求值顺序。角度采用跨越±180°的连续展开，边缘视角退化为环切向拖动；Shift15°吸附、Alt精细，预览与提交分离。Canvas中一个上下文选择器控制主视图和SpatialViewport。
 
 navigateSpatialWheel区分连续触控板、Shift平移及Chromium ctrl+wheel捏合。平移按当前投影尺寸换算；orbitSpatialView保留绕转pivot及屏幕平移偏移。空间视口仅在素材变化时同步素材，观察变化只刷新渲染，不增加动画平滑延迟。
+
+## 0.9.15 功能入口扩展协议
+
+`shared/feature-registry` 定义九个固定域、对象/任务/频率/上下文分类和合法贡献点；`feature-catalog` 是生产入口元数据。Feature 只保存 commandId，不能保存业务 callback。`workspace/command-registry` 每次执行重新解析现有 Editor Action，最终通过原 Command System / Transaction 修改 Project。菜单与搜索的旧条目也要重新解析 disabled/target，不能关闭后继续操作旧对象。
+
+`context-keys` 从 EditorView 与 FocusContext 派生，不另建选择；`scoped-commands` 用 WeakMap 提供资产、节点和曲线区间的实例绑定，挂载清理与焦点隔离不进入 Scene。`feature-contributions` 生成菜单/右键；DOM-free `application-menu` 同时提供 renderer/Electron 菜单。`timeline-header-contributions` 挂载 transport；`inspector-sections` 按 appliesTo 生成属性区。字段、拖动预览和提交仍复用既有控制器。
+
+工具、效果和节点分别在 `tool-registry`、`effect-registry`、`compositing-registry` 注册。Effect 包含类型支持、参数、类别和渲染回调，已有节点定义由 EffectRegistry 派生；Inspector 添加器和节点搜索读取注册表。新算法仍需实现渲染/序列化/工具控制器等领域逻辑，注册入口并不自动创造底层能力。
+
+未来 Motion Trail：新增领域实现与 command binding、Feature metadata，必要时注册 Inspector Section；已有 Shell、Header、菜单无需逐个加按钮。色差效果：实现 renderer/工程模型能力并 register effect，既有搜索与分类自然展示。Optical Flow：register node definition/evaluate，现有 Add Node 搜索读取。AI Auto Layout：Intelligence 仅输出 Proposal；注册 assistant action 与 command，再通过 Transaction 应用。没有远程加载、插件市场或新的 Scene 格式。
+
+`tests/feature-scalability.test.ts` 在隔离 Registry 中模拟 100 Effects + 50 Nodes + 20 Motion + 20 AI + 15 Spatial，不注册到生产单例；检查搜索、上下文、预算、执行与 Undo。`scripts/feature-inventory.mjs` 重建入口审计与位置矩阵，静态表达式按实例族保留，不等同于真人可用性测量。

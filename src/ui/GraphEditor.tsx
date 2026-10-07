@@ -1,3 +1,12 @@
+import { contextKeys } from './workspace/context-keys';
+import { features } from '../shared/feature-catalog';
+import { useCommandScope } from './workspace/scoped-commands';
+import {
+  editorCommands,
+  editorContributions,
+  contributionItems,
+} from './workspace/feature-contributions';
+import type { CommandBinding } from './workspace/command-registry';
 import { command } from '../core/command-system';
 import { usePointerRelease } from './workspace/pointer-release';
 import { ContextMenu, Modal, IconButton } from './workspace/primitives';
@@ -191,6 +200,9 @@ export function GraphEditor({
     entries.find((e) => e.property.id === view.selectedProperties[0]) ??
     entries.find((e) => e.property.id === view.frames[0]?.propertyId) ??
     entries.find((e) => e.property.keyframes.length > 0);
+  const curveBindings = useRef<readonly CommandBinding[]>([]);
+  curveBindings.current = [];
+  useCommandScope(store, () => curveBindings.current);
   if (!entry)
     return (
       <GraphFrame embedded={embedded} onClose={onClose} empty>
@@ -431,12 +443,16 @@ export function GraphEditor({
       zoom,
     });
   };
-  const presetItems = Object.entries({
-    linear: '线性',
-    easeIn: '缓入',
-    easeOut: '缓出',
-    easeInOut: '缓入缓出',
-  });
+  const presetIds: Record<string, string> = {
+    linear: 'linear',
+    'ease-in': 'easeIn',
+    'ease-out': 'easeOut',
+    'ease-both': 'easeInOut',
+  };
+  const presetItems = features
+    .all()
+    .filter((f) => f.parentId === 'interpolation' && f.id !== 'hold')
+    .map((f) => [f.id, f.title] as const);
   const usePreset = (key: string) => {
     if (key === 'linear') {
       if (!left || !right || layer?.locked) return;
@@ -454,6 +470,85 @@ export function GraphEditor({
       if (preset.type === 'bezier') apply(preset);
     }
   };
+  curveBindings.current = [
+    {
+      id: 'motion.edit-segment',
+      label: '编辑缓动',
+      contexts: ['curvegraph'],
+      disabled: !left || !right,
+      action: () =>
+        window.dispatchEvent(
+          new CustomEvent('motion:motion-curve', {
+            detail: { segmentId: `${p.id}/${left?.id}/${right?.id}` },
+          }),
+        ),
+    },
+    {
+      id: 'motion.reset-segment',
+      label: '重置缓动',
+      contexts: ['curvegraph'],
+      disabled: !left || !right || layer?.locked,
+      action: () => usePreset('linear'),
+    },
+    ...presetItems.map(([id, label]) => ({
+      id,
+      label,
+      contexts: ['curvegraph'] as const,
+      disabled: !selectedKey || !right || layer?.locked,
+      action: () => usePreset(presetIds[id]!),
+    })),
+    {
+      id: 'hold',
+      label: '保持',
+      contexts: ['curvegraph'],
+      disabled: !selectedKey || layer?.locked,
+      action: () => {
+        if (selectedKey)
+          store.run('保持关键帧', [
+            command({
+              type: 'keyframe.update',
+              propertyId: p.id,
+              keyframeId: selectedKey.id,
+              patch: { interpolation: { type: 'hold' } },
+            }),
+          ]);
+      },
+    },
+    {
+      id: 'copy-easing',
+      label: '复制缓动',
+      contexts: ['curvegraph'],
+      disabled: !left || !right,
+      action: () =>
+        store.motionCurveClipboard.copy({
+          type: 'cubic-bezier',
+          x1: controls.out.x,
+          y1: controls.out.y,
+          x2: controls.in.x,
+          y2: controls.in.y,
+        }),
+    },
+    {
+      id: 'paste-easing',
+      label: '粘贴缓动',
+      contexts: ['curvegraph'],
+      disabled:
+        !left || !right || !store.motionCurveClipboard.read() || layer?.locked,
+      action: () => {
+        const curve = store.motionCurveClipboard.read();
+        if (curve && left && right)
+          store.run(
+            '粘贴缓动',
+            applyMotionCurveCommands(
+              view.project,
+              [`${original.id}/${left.id}/${right.id}`],
+              curve,
+            ),
+          );
+      },
+    },
+  ];
+  const curveCommands = () => editorCommands(store, {}, () => 'curvegraph');
   const selectSegmentAt = (clientX: number) => {
     const rect = svgRef.current!.getBoundingClientRect();
     const time =
@@ -713,7 +808,7 @@ export function GraphEditor({
                   <button
                     key={key}
                     disabled={!selectedKey || !right || layer?.locked}
-                    onClick={() => usePreset(key)}
+                    onClick={() => curveCommands().execute(key)}
                   >
                     {label}
                   </button>
@@ -1310,59 +1405,11 @@ export function GraphEditor({
             onClose={() => setMenu(undefined)}
             items={
               menu.type === 'key'
-                ? [
-                    ...presetItems.map(([key, label]) => ({
-                      label,
-                      action: () => usePreset(key),
-                      disabled: !right || layer?.locked,
-                    })),
-                    {
-                      label: '保持',
-                      disabled: layer?.locked,
-                      action: () =>
-                        selectedKey &&
-                        store.run('保持关键帧', [
-                          command({
-                            type: 'keyframe.update',
-                            propertyId: p.id,
-                            keyframeId: selectedKey.id,
-                            patch: { interpolation: { type: 'hold' } },
-                          }),
-                        ]),
-                    },
-                    { label: '复制', action: () => store.copySelection() },
-                    { label: '粘贴', action: () => store.pasteSelection() },
-                    {
-                      label: '删除',
-                      disabled: layer?.locked,
-                      action: () => store.deleteSelected(),
-                    },
-                  ]
-                : [
-                    {
-                      label: '编辑 Motion Curve',
-                      action: () =>
-                        window.dispatchEvent(
-                          new CustomEvent('motion:motion-curve', {
-                            detail: {
-                              segmentId: `${p.id}/${left?.id}/${right?.id}`,
-                            },
-                          }),
-                        ),
-                    },
-                    { label: '重置缓动', action: () => usePreset('linear') },
-                    {
-                      label: '复制缓动',
-                      action: () =>
-                        store.motionCurveClipboard.copy({
-                          type: 'cubic-bezier',
-                          x1: controls.out.x,
-                          y1: controls.out.y,
-                          x2: controls.in.x,
-                          y2: controls.in.y,
-                        }),
-                    },
-                  ]
+                ? editorContributions(store, 'context.keyframe', 'curvegraph')
+                : contributionItems('motion.segmentContext', curveCommands(), {
+                    ...contextKeys(view, 'curvegraph'),
+                    hasMotionTarget: !!left && !!right,
+                  })
             }
           />
         )}

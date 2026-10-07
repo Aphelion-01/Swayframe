@@ -3,9 +3,14 @@ import { getProjectService } from '../desktop/project-service';
 import { dispatchShortcut, focusContext } from './workspace/shortcuts';
 import type { Shortcut, FocusContext } from './workspace/shortcuts';
 import { CommandPalette } from './workspace/palette';
-import { buildEditorActions } from './workspace/editor-actions';
+import {
+  editorCommands,
+  contributionItems,
+} from './workspace/feature-contributions';
+import { features } from '../shared/feature-catalog';
+import { contextKeys } from './workspace/context-keys';
+import type { IconName } from './workspace/icons';
 import { ApplicationMenus } from './workspace/ApplicationMenus';
-import { applicationMenus } from '../shared/application-menu';
 import { desktopService } from '../desktop/service';
 import { importNativeAssets } from '../desktop/asset-service';
 import { Modal as HelpModal } from './workspace/primitives';
@@ -49,7 +54,7 @@ export function downloadProject(store: EditorStore): void {
   }
 }
 export function Toolbar({ store }: { store: EditorStore }) {
-  const { tool, setTool, setSpace } = useTools();
+  const { tool, setSpace } = useTools();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const actionContext = useRef<FocusContext>('global');
   useEffect(() => {
@@ -76,6 +81,7 @@ export function Toolbar({ store }: { store: EditorStore }) {
   const c = activeComposition(view.project);
   const openRef = useRef<HTMLInputElement>(null);
   const imageRef = useRef<HTMLInputElement>(null);
+  const importAsLayer = useRef(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [newDialog, setNewDialog] = useState(false);
   const [resetDialog, setResetDialog] = useState(false);
@@ -144,7 +150,7 @@ export function Toolbar({ store }: { store: EditorStore }) {
       key: 's',
       modifier: true,
       inInput: true,
-      action: () => downloadProject(store),
+      action: () => execute('save'),
     },
     {
       id: 'palette',
@@ -227,7 +233,7 @@ export function Toolbar({ store }: { store: EditorStore }) {
       label: tool.label,
       key: tool.key.toLowerCase(),
       contexts: ['canvas', 'layers', 'global'] as const,
-      action: () => setTool(tool.id),
+      action: () => execute(`tool-${tool.id}`),
     })),
     ...(
       [
@@ -420,7 +426,13 @@ export function Toolbar({ store }: { store: EditorStore }) {
     },
     'new-composition': () => composeDialog(false),
     'composition-settings': () => composeDialog(true),
+    'create-image': () => {
+      importAsLayer.current = true;
+      if (desktopService.native) void importNativeAssets(store);
+      else imageRef.current?.click();
+    },
     import: () => {
+      importAsLayer.current = false;
       window.dispatchEvent(new Event('motion:show-project'));
       if (desktopService.native) void importNativeAssets(store, false);
       else imageRef.current?.click();
@@ -432,41 +444,30 @@ export function Toolbar({ store }: { store: EditorStore }) {
     shortcuts: () => setHelpOpen('shortcuts' as const),
     about: () => setHelpOpen('about' as const),
   };
-  const actions = buildEditorActions(
+  const commands = editorCommands(
     store,
     uiActions,
     () => actionContext.current,
-  ).map((action) => {
-    const item = applicationMenus
-      .flatMap((group) =>
-        group.items.map((item) => ({ group: group.label, item })),
-      )
-      .find((entry) => entry.item[0] === action.id);
-    return item
-      ? {
-          ...action,
-          label: item.item[1],
-          keywords: `${action.keywords ?? ''} ${item.group} ${action.id}`,
-          shortcut:
-            item.item.length > 2
-              ? item.item[2]
-                  ?.replace('CommandOrControl+', '⌘')
-                  .replace('Shift+', '⇧')
-              : undefined,
-        }
-      : action;
+  );
+  const actions = commands.definitions().map((action) => {
+    const feature = features.get(action.id);
+    return {
+      ...commands.entry(action.id)!,
+      id: action.id,
+      label: feature?.title ?? action.label,
+      keywords: [
+        feature?.domain,
+        ...(feature?.objectTypes ?? []),
+        ...(feature?.keywords ?? []),
+      ].join(' '),
+      action: () => {
+        commands.execute(action.id);
+      },
+    };
   });
   const execute = useEffectEvent((id: string) => {
-    const action = buildEditorActions(
-      store,
-      uiActions,
-      () => actionContext.current,
-    ).find((a) => a.id === id);
-    if (action?.disabled) {
+    if (!commands.execute(id))
       store.setStatus('请先选择适用的对象、属性或关键帧');
-      return;
-    }
-    action?.action();
   });
   useEffect(() => {
     const handler = (event: Event) =>
@@ -478,7 +479,7 @@ export function Toolbar({ store }: { store: EditorStore }) {
   const importImage = async (file?: File) => {
     if (!file) return;
     try {
-      await importImageFile(store, file, false);
+      await importImageFile(store, file, importAsLayer.current);
     } catch (error) {
       store.setStatus(
         error instanceof Error ? error.message : '图片导入失败',
@@ -492,6 +493,7 @@ export function Toolbar({ store }: { store: EditorStore }) {
       {paletteOpen && (
         <CommandPalette
           commands={paletteCommands}
+          context={contextKeys(view, actionContext.current)}
           onClose={() => setPaletteOpen(false)}
         />
       )}
@@ -509,36 +511,33 @@ export function Toolbar({ store }: { store: EditorStore }) {
           <span>{displayName(view.project.name)}</span>
         </div>
         <div className="file-actions">
-          <IconButton
-            label="搜索命令"
-            shortcut="⌘K"
-            onClick={() => setPaletteOpen(true)}
-          >
-            <Icon name="search" />
-          </IconButton>
-          <button
-            className="toolbar-action"
-            onClick={() => setExportOpen(true)}
-          >
-            <Icon name="export" />
-            导出
-          </button>
-          <IconButton
-            label="撤销"
-            shortcut="⌘Z"
-            disabled={!store.commands.undoStack.length}
-            onClick={() => store.undo()}
-          >
-            <Icon name="undo" />
-          </IconButton>
-          <IconButton
-            label="重做"
-            shortcut="⌘⇧Z"
-            disabled={!store.commands.redoStack.length}
-            onClick={() => store.redo()}
-          >
-            <Icon name="redo" />
-          </IconButton>
+          {contributionItems(
+            'toolbar.global',
+            commands,
+            contextKeys(view, actionContext.current),
+          ).map((item) => {
+            const feature = features.all().find((f) => f.title === item.label)!;
+            return feature.id === 'export' ? (
+              <button
+                key={feature.id}
+                className="toolbar-action"
+                onClick={item.action}
+              >
+                <Icon name="export" />
+                导出
+              </button>
+            ) : (
+              <IconButton
+                key={feature.id}
+                label={item.label}
+                shortcut={feature.shortcut}
+                disabled={item.disabled}
+                onClick={item.action}
+              >
+                <Icon name={feature.icon as IconName} />
+              </IconButton>
+            );
+          })}
         </div>
       </header>
       <div className="editor-tool-strip">
@@ -546,13 +545,6 @@ export function Toolbar({ store }: { store: EditorStore }) {
         <span className="tool-context">
           {tools.find((item) => item.id === tool)?.label}
         </span>
-        <button
-          className="assistant-entry"
-          onClick={() => window.dispatchEvent(new Event('motion:assistant'))}
-        >
-          <Icon name="assistant" />
-          创作助手
-        </button>
       </div>
       <input
         ref={openRef}
@@ -845,20 +837,30 @@ export function Toolbar({ store }: { store: EditorStore }) {
 }
 
 function ToolButtons() {
-  const { tool, setTool } = useTools();
+  const { tool } = useTools();
   return (
     <div className="tool-buttons" role="toolbar" aria-label="绘图工具">
-      {tools.map((item) => (
-        <IconButton
-          key={item.id}
-          label={item.label}
-          shortcut={item.key}
-          aria-pressed={tool === item.id}
-          onClick={() => setTool(item.id)}
-        >
-          <Icon name={item.icon} />
-        </IconButton>
-      ))}
+      {features
+        .contributions('toolbar.canvas')
+        .map((feature) => tools.find((t) => `tool-${t.id}` === feature.id)!)
+        .filter(Boolean)
+        .map((item) => (
+          <IconButton
+            key={item.id}
+            label={item.label}
+            shortcut={item.key}
+            aria-pressed={tool === item.id}
+            onClick={() =>
+              window.dispatchEvent(
+                new CustomEvent('motion:editor-action', {
+                  detail: `tool-${item.id}`,
+                }),
+              )
+            }
+          >
+            <Icon name={item.icon} />
+          </IconButton>
+        ))}
     </div>
   );
 }

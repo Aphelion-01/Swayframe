@@ -1,6 +1,6 @@
-# Swayframe 0.9.14
+# Swayframe 0.9.15
 
-本轮更新：3D XYZ 旋转环、主预览与空间视图同步切换移动/旋转，以及 Blender 风格触控板绕转、平移和高响应捏合缩放。详见 [0.9.14 验收记录](SPATIAL_NAVIGATION_0914_RESULT.md)。
+本轮更新：统一 Feature / Command / Context / Contribution 注册机制，迁移工具栏、菜单、上下文、属性分区与搜索；效果和节点支持分类与关键词发现。详见 [0.9.15 验收记录](UX_ARCHITECTURE_RESULT.md)。
 
 简体中文本地动效编辑器，支持人工完成 2D 与平面 3D 动画。当前节点模块基线为 `docs/baseline/COMPOSITING_GRAPH_CG0_CG12.txt`，桌面基线为 `docs/baseline/DESKTOP_D0_D10.txt`，前一轮编辑器基线为 `docs/baseline/MOTION_EDITOR_PHASE_A_I.txt`；历史 V0.1 基线保留用于追溯。
 

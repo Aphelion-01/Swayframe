@@ -113,7 +113,10 @@ it('助手入口显示已折叠左面板，选区和Scene保持，面板尺寸�
   const store = new EditorStore(createDefaultProject()),
     project = store.getSnapshot().project;
   render(<App store={store} />);
-  fireEvent.click(screen.getByRole('button', { name: '创作助手' }));
+  fireEvent.click(
+    screen.getByText('窗口', { selector: '.application-menus summary span' }),
+  );
+  fireEvent.click(screen.getByRole('menuitem', { name: '创作助手' }));
   expect(screen.getByRole('tab', { name: '助手' })).toHaveAttribute(
     'aria-selected',
     'true',

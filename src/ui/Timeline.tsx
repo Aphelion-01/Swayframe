@@ -1,3 +1,5 @@
+import { TimelineHeaderContributions } from './workspace/timeline-header-contributions';
+import { editorContributions } from './workspace/feature-contributions';
 import { SharedCurveTransport } from './workspace/CurveWorkspace';
 import { CompositionTimeRuler } from './workspace/CompositionTimeRuler';
 import { dispatchShortcut } from './workspace/shortcuts';
@@ -7,25 +9,15 @@ import { timelineReorderCommands } from '../core/timeline-reorder';
 import { CanvasInteractionState as PointerInteractionState } from './workspace/canvas-interaction';
 import type { FrameRef } from '../core/editing-commands';
 import { useEditorSlice } from './use-editor-slice';
-import {
-  formatTimecode,
-  snapToFrame,
-  timelineTicks,
-} from '../core/timeline-time';
-import { splitLayerCommands } from '../core/composition-editing';
+import { snapToFrame, timelineTicks } from '../core/timeline-time';
 import { layerActions } from './workspace/layer-actions';
 import { LayerAccentChip } from './LayerAccentChip';
 import { timelineVisibleRows } from './timeline-visible-rows';
 import { Icon } from './workspace/icons';
 import { snapTimeDelta } from '../core/timeline-snapping';
 import { CompositingGraphPanel } from './CompositingGraph';
-import { motionSegments, segmentMotionCurve } from '../core/motion-curve';
-import {
-  applyMotionCurveCommands,
-  selectedMotionSegments,
-} from '../core/motion-curve-commands';
 import { useInteractionCancel } from './workspace/interaction';
-import { ContextMenu, IconButton, Tabs } from './workspace/primitives';
+import { ContextMenu, Tabs } from './workspace/primitives';
 import { MotionCurvePanel } from './MotionCurvePanel';
 import { LayerTimeBar } from './LayerTimeBar';
 import { GraphEditor } from './GraphEditor';
@@ -481,69 +473,6 @@ export function Timeline({ store }: { store: EditorStore }) {
       window.removeEventListener('motion:next-key', next);
     };
   });
-  const easingSegments = () => {
-    const selected = store.getSnapshot().frames;
-    const explicit = selectedMotionSegments(
-      store.getSnapshot().project,
-      selected,
-    );
-    if (explicit.length)
-      return c.layers
-        .flatMap(visibleProperties)
-        .flatMap(({ property }) => motionSegments(property))
-        .filter((segment) => explicit.includes(segment.id));
-    return [
-      ...new Map(
-        selected.flatMap((ref) => {
-          const property = c.layers
-            .flatMap(visibleProperties)
-            .find((entry) => entry.property.id === ref.propertyId)?.property;
-          if (!property) return [];
-          const intervals = motionSegments(property);
-          const segment =
-            intervals.find((s) => s.from.id === ref.keyframeId) ??
-            intervals.find((s) => s.to.id === ref.keyframeId);
-          return segment ? [[segment.id, segment] as const] : [];
-        }),
-      ).values(),
-    ];
-  };
-  const interpolation = (
-    type: 'linear' | 'hold' | 'bezier',
-    out = { x: 0.42, y: 0 },
-    incoming = { x: 0.58, y: 1 },
-  ) => {
-    const intervals = easingSegments();
-    if (type === 'hold')
-      store.run(
-        '保持关键帧',
-        view.frames.map((ref) =>
-          command({
-            type: 'keyframe.update',
-            propertyId: ref.propertyId,
-            keyframeId: ref.keyframeId,
-            patch: { interpolation: { type: 'hold' } },
-          }),
-        ),
-      );
-    else if (intervals.length)
-      store.run(
-        '修改关键帧缓动',
-        applyMotionCurveCommands(
-          view.project,
-          intervals.map((s) => s.id),
-          type === 'linear'
-            ? { type: 'linear' }
-            : {
-                type: 'cubic-bezier',
-                x1: out.x,
-                y1: out.y,
-                x2: incoming.x,
-                y2: incoming.y,
-              },
-        ),
-      );
-  };
   useEffect(() => {
     const open = () => {
       setCompositingOpen(false);
@@ -1245,81 +1174,19 @@ export function Timeline({ store }: { store: EditorStore }) {
       }}
     >
       <div className="timeline-toolbar">
-        <div className="playback-controls">
-          <button
-            aria-label="回到起点"
-            onClick={() => {
-              store.setPlaying(false);
-              store.setTime(0);
-            }}
-          >
-            <Icon name="start" />
-          </button>
-          <IconButton
-            label="回到终点"
-            onClick={() => {
-              store.setPlaying(false);
-              store.setTime(c.duration);
-            }}
-          >
-            <Icon name="start" style={{ transform: 'rotate(180deg)' }} />
-          </IconButton>
-          <button
-            aria-label={view.playing ? '暂停' : '播放'}
-            className="play-button"
-            onClick={() => store.setPlaying(!view.playing)}
-          >
-            <Icon name={view.playing ? 'pause' : 'play'} />
-          </button>
-          <label className="time-field">
-            <input
-              aria-label="当前时间（秒）"
-              type="number"
-              min={0}
-              max={c.duration}
-              step={1 / c.fps}
-              value={Number(view.time.toFixed(3))}
-              onChange={(event) => {
-                store.setPlaying(false);
-                store.setTime(snapToFrame(Number(event.target.value), c.fps));
-              }}
-            />
-            <span>秒</span>
-          </label>
-          <IconButton
-            label="停止"
-            onClick={() => {
-              store.setPlaying(false);
-              store.setTime(0);
-            }}
-          >
-            <Icon name="stop" />
-          </IconButton>
-          <IconButton
-            label="循环播放"
-            aria-pressed={loop}
-            onClick={() => setLoop(!loop)}
-          >
-            <Icon name="loop" />
-          </IconButton>
-          <IconButton
-            label="时间轴吸附"
-            aria-pressed={snapping}
-            title="关键帧吸附到播放头、其他关键帧和边界 · Cmd/Ctrl 临时关闭"
-            onClick={() => setSnapping(!snapping)}
-          >
-            <Icon name="snap" />
-          </IconButton>
-          <button
-            className="timecode"
-            title="切换秒 / 时间码"
-            onClick={() => setTimecode(!timecode)}
-          >
-            {timecode
-              ? formatTimecode(view.time, c.fps)
-              : `${view.time.toFixed(3)} s`}
-          </button>
-        </div>
+        <TimelineHeaderContributions
+          {...{
+            store,
+            view,
+            c,
+            loop,
+            setLoop,
+            snapping,
+            setSnapping,
+            timecode,
+            setTimecode,
+          }}
+        />
         <Tabs
           items={['时间轴', '曲线编辑器', '合成节点']}
           value={
@@ -1780,83 +1647,29 @@ export function Timeline({ store }: { store: EditorStore }) {
         <ContextMenu
           {...propertyMenu}
           onClose={() => setPropertyMenu(undefined)}
-          items={[
-            {
-              label: '添加关键帧',
-              action: () => {
-                store.recordPropertyKeyframe(propertyMenu.id);
-              },
-            },
-            {
-              label: '移除动画',
-              action: () => {
-                const p = findProperty(
-                  store.getSnapshot().project,
-                  propertyMenu.id,
-                ).property;
-                if (p.keyframes.length) store.togglePropertyAnimation(p.id);
-              },
-            },
-            { label: '粘贴到此属性', action: () => store.pasteSelection() },
-            {
-              label: '打开曲线编辑器',
-              action: () => {
-                setMotionOpen(false);
-                setGraphOpen(true);
-              },
-            },
-            {
-              label: '打开动画缓动',
-              action: () => {
-                setGraphOpen(false);
-                setMotionOpen(true);
-              },
-            },
-          ]}
+          items={editorContributions(
+            store,
+            'timeline.propertyContext',
+            'timeline',
+          )}
         />
       )}
       {layerMenu && (
         <ContextMenu
           {...layerMenu}
-          items={[
-            ...layerActions(
-              store,
-              () => {
-                const l = c.layers.find(
-                  (l) => l.id === store.getSnapshot().selection[0],
-                );
-                if (l) {
-                  setRenaming(l.id);
-                  setRenameValue(l.name);
-                }
-              },
-              'timeline',
-            ),
-            {
-              label: '在播放头拆分图层',
-              action: () => {
-                try {
-                  store.run(
-                    '拆分图层',
-                    store
-                      .getSnapshot()
-                      .selection.flatMap((id) =>
-                        splitLayerCommands(
-                          store.getSnapshot().project,
-                          id,
-                          store.getSnapshot().time,
-                        ),
-                      ),
-                  );
-                } catch (e) {
-                  store.setStatus(
-                    e instanceof Error ? e.message : '拆分失败',
-                    true,
-                  );
-                }
-              },
+          items={layerActions(
+            store,
+            () => {
+              const l = c.layers.find(
+                (l) => l.id === store.getSnapshot().selection[0],
+              );
+              if (l) {
+                setRenaming(l.id);
+                setRenameValue(l.name);
+              }
             },
-          ]}
+            'timeline',
+          )}
           onClose={() => setLayerMenu(undefined)}
         />
       )}
@@ -1864,83 +1677,11 @@ export function Timeline({ store }: { store: EditorStore }) {
         <ContextMenu
           {...keyMenu}
           onClose={() => setKeyMenu(undefined)}
-          items={[
-            {
-              label: '缓入',
-              action: () =>
-                interpolation('bezier', { x: 0.42, y: 0 }, { x: 1, y: 1 }),
-            },
-            {
-              label: '缓出',
-              action: () =>
-                interpolation('bezier', { x: 0, y: 0 }, { x: 0.58, y: 1 }),
-            },
-            { label: '缓入缓出', action: () => interpolation('bezier') },
-            { label: '线性', action: () => interpolation('linear') },
-            { label: '保持', action: () => interpolation('hold') },
-            {
-              label: '打开曲线编辑器',
-              action: () => {
-                setMotionOpen(false);
-                setGraphOpen(true);
-              },
-            },
-            {
-              label: '打开动画缓动',
-              action: () => {
-                setGraphOpen(false);
-                setMotionOpen(true);
-              },
-            },
-            {
-              label: '复制缓动',
-              action: () => {
-                const segment = easingSegments()[0];
-                if (segment) {
-                  const curve = segmentMotionCurve(segment.from, segment.to);
-                  if (curve) {
-                    store.motionCurveClipboard.copy(curve);
-                    store.setStatus('缓动已复制');
-                  }
-                }
-              },
-            },
-            {
-              label: '粘贴缓动',
-              disabled: !store.motionCurveClipboard.read(),
-              action: () => {
-                const curve = store.motionCurveClipboard.read();
-                if (curve)
-                  store.run(
-                    '粘贴缓动',
-                    applyMotionCurveCommands(
-                      view.project,
-                      easingSegments().map((s) => s.id),
-                      curve,
-                    ),
-                  );
-              },
-            },
-            {
-              label: '复制',
-              shortcut: '⌘C',
-              action: () => store.copySelection(),
-            },
-            {
-              label: '粘贴',
-              shortcut: '⌘V',
-              action: () => store.pasteSelection(),
-            },
-            {
-              label: '复制关键帧到下一帧',
-              action: () => store.duplicateSelection(),
-            },
-            {
-              label: '删除关键帧',
-              shortcut: 'Delete',
-              action: () => store.deleteSelected(),
-            },
-          ]}
+          items={editorContributions(
+            store,
+            'timeline.keyframeContext',
+            'timeline',
+          )}
         />
       )}
     </section>

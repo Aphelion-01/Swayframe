@@ -59,6 +59,7 @@ export interface Recovery {
 }
 export type DesktopAction =
   | ApplicationActionId
+  | 'create-image'
   | 'create-rectangle'
   | 'create-ellipse'
   | 'create-polygon'
@@ -109,6 +110,7 @@ export type DesktopAction =
   | 'motion-curve'
   | 'about';
 export const actionSchema = z.enum([
+  'create-image',
   'create-rectangle',
   'create-ellipse',
   'create-polygon',

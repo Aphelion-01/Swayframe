@@ -1,13 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { editorCommands } from './feature-contributions';
 import { createPortal } from 'react-dom';
-import { createObject, objectChoices } from './object-actions';
-import { layerKindLabels } from '../labels';
-import { importImageFile } from '../asset-import';
-import { desktopService } from '../../desktop/service';
-import { importNativeAssets } from '../../desktop/asset-service';
+import { features } from '../../shared/feature-catalog';
+import { dispatchEditorAction } from './editor-actions';
 import type { EditorStore } from '../editor-store';
 import { ContextMenu, type MenuItem } from './primitives';
-import { Icon } from './icons';
+import { Icon, type IconName } from './icons';
 export function CreateLayerMenu({
   store,
   x,
@@ -21,41 +18,26 @@ export function CreateLayerMenu({
   onClose: () => void;
   items?: readonly MenuItem[];
 }) {
-  const picking = useRef(false);
-  const input = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    const element = input.current;
-    const cancel = () => onClose();
-    element?.addEventListener('cancel', cancel);
-    return () => element?.removeEventListener('cancel', cancel);
-  }, [onClose]);
-  const choices = objectChoices.map(([kind, icon]) => ({
-    label: kind === 'image' ? '导入 图片' : `创建 ${layerKindLabels[kind]}`,
-    icon: <Icon name={icon} />,
-    action: () => {
-      if (kind === 'image') {
-        if (desktopService.native) {
-          void importNativeAssets(store);
-          onClose();
-        } else {
-          picking.current = true;
-          input.current?.click();
-        }
-      } else {
-        createObject(store, kind);
+  const commands = editorCommands(store);
+  const choices = features
+    .all()
+    .filter((f) => f.parentId === 'create-object')
+    .map((feature) => ({
+      label: feature.title,
+      icon: <Icon name={feature.icon as IconName} />,
+      action: () => {
+        if (!commands.execute(feature.commandId))
+          dispatchEditorAction(feature.commandId);
         onClose();
-      }
-    },
-  }));
+      },
+    }));
   return createPortal(
     <>
       <ContextMenu
         label="创建对象"
         x={x}
         y={y}
-        onClose={() => {
-          if (!picking.current) onClose();
-        }}
+        onClose={onClose}
         items={
           items.length
             ? [
@@ -64,20 +46,6 @@ export function CreateLayerMenu({
               ]
             : choices
         }
-      />
-      <input
-        ref={input}
-        hidden
-        type="file"
-        accept="image/*"
-        aria-label="导入图片文件"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file)
-            void importImageFile(store, file)
-              .catch((error) => store.setStatus(String(error), true))
-              .finally(onClose);
-        }}
       />
     </>,
     document.body,

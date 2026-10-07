@@ -2,7 +2,7 @@ import { newId } from './core-types';
 import type { AnimValue, Vec2 } from './core-types';
 import { createProperty } from './project-model';
 import type { EffectKind } from './project-model';
-import { effectDefinitions } from './effect-definitions';
+import { effectRegistry } from './effect-registry';
 import type {
   CompositingGraph,
   GraphNode,
@@ -45,17 +45,55 @@ export interface NodeDefinition {
   readonly inputs: readonly GraphPort[];
   readonly outputs: readonly GraphPort[];
   readonly params: Readonly<Record<string, NodeParameter>>;
+  readonly icon?: string;
+  readonly searchKeywords?: readonly string[];
   readonly protected?: boolean;
   readonly effectKind?: EffectKind;
   readonly evaluate: <T>(context: NodeContext<T>) => T;
 }
-const registry = new Map<string, NodeDefinition>();
-export function registerNode(definition: NodeDefinition): void {
-  if (registry.has(definition.type)) throw new Error('节点类型已注册');
-  registry.set(definition.type, definition);
+export class GraphNodeRegistry {
+  private readonly items = new Map<string, NodeDefinition>();
+  register(definition: NodeDefinition): void {
+    if (
+      !definition.type ||
+      !definition.title ||
+      !definition.category ||
+      typeof definition.evaluate !== 'function'
+    )
+      throw Error('节点定义缺失');
+    if (this.items.has(definition.type)) throw new Error('节点类型已注册');
+    this.items.set(definition.type, {
+      ...definition,
+      icon: definition.icon ?? 'node',
+      searchKeywords: definition.searchKeywords ?? [
+        definition.type,
+        definition.title,
+        definition.category,
+      ],
+    });
+  }
+  get(type: string) {
+    return this.items.get(type);
+  }
+  all() {
+    return [...this.items.values()];
+  }
+  search(query: string) {
+    return this.all().filter(
+      (d) =>
+        !d.protected &&
+        [d.title, d.type, d.category, ...(d.searchKeywords ?? [])]
+          .join(' ')
+          .toLowerCase()
+          .includes(query.toLowerCase()),
+    );
+  }
 }
-export const nodeDefinition = (type: string) => registry.get(type);
-export const nodeDefinitions = () => [...registry.values()];
+export const graphNodeRegistry = new GraphNodeRegistry();
+export const registerNode = (definition: NodeDefinition) =>
+  graphNodeRegistry.register(definition);
+export const nodeDefinition = (type: string) => graphNodeRegistry.get(type);
+export const nodeDefinitions = () => graphNodeRegistry.all();
 const imageIn: GraphPort = {
   id: 'in',
   name: '图像',
@@ -166,25 +204,21 @@ registerNode({
       params,
     ),
 });
-for (const [kind, def] of Object.entries(effectDefinitions))
+for (const def of effectRegistry.all())
   registerNode({
-    type: kind,
-    title: def.label,
-    category: ['gaussianBlur', 'dropShadow', 'glow'].includes(kind)
-      ? '空间'
-      : '颜色',
+    type: def.id,
+    title: def.name,
+    icon: def.icon,
+    searchKeywords: def.keywords,
+    category: ['Blur', 'Stylize'].includes(def.category) ? '空间' : '颜色',
     inputs: [imageIn],
     outputs: [imageOut],
     params: Object.fromEntries(
       Object.entries(def.parameters).map(([k, p]) => [k, p]),
     ),
-    effectKind: kind as EffectKind,
+    effectKind: def.id as EffectKind,
     evaluate: ({ params, inputs, backend }) =>
-      backend.effect(
-        inputs.in ?? backend.transparent(),
-        kind as EffectKind,
-        params,
-      ),
+      def.render(backend, inputs.in ?? backend.transparent(), params),
   });
 export function createNode(
   type: string,

@@ -112,7 +112,7 @@ typography:
 
 ## Assistant architecture
 
-助手是明确标签和工具条入口，保留草稿、失败恢复、图片拖入/粘贴和能力提示。服务配置属于设置。Proposal 明确展示修改与应用动作；Intelligence 只输出 Proposal，复杂操作通过 Transaction。
+助手使用左侧明确标签和窗口菜单入口，保留草稿、失败恢复、图片拖入/粘贴和能力提示。服务配置属于设置。Proposal 明确展示修改与应用动作；Intelligence 只输出 Proposal，复杂操作通过 Transaction。
 
 ## Shortcut philosophy
 
@@ -150,3 +150,27 @@ GUI/Agent 统一 Command System；多对象/复杂 AI 操作使用 Transaction�
 ## 0.9.14 三维直接操控
 
 3D选区复用Canvas标题行的操控方式选择器，移动轴与旋转环二选一，不新增全局永久工具栏。主预览和空间视图共用模式。旋转以实际锚点为支点，Euler轴遵循现有Rz*Ry*Rx顺序；实时Proposal以外的GUI预览只写UI，松手一次Transaction、Esc取消。空间触控板：双指绕转、Shift双指屏幕等距平移、捏合缩放；无额外缓动或延迟。默认围绕世界原点，F聚焦后围绕选中对象；观察平移不偷偷更换绕转中心。
+
+## UX Constitution / 固定 Domain Model（IA-1）
+
+正式主域仅有 PROJECT、SCENE、CANVAS、INSPECTOR、TIMELINE、MOTION、COMPOSITING、ASSISTANT、APPLICATION。PROJECT 管资源与合成；SCENE 管对象身份/父子级/可见锁定；CANVAS 管绘制与空间直接操控；INSPECTOR 管对象参数；TIMELINE 管时间/关键帧；MOTION 管插值/速度/影响比例；COMPOSITING 管处理流；ASSISTANT 管 Proposal/自动化；APPLICATION 管文件/导出/设置/窗口/帮助。禁止 Misc/Other 域。
+
+每个 Feature 必填 id/title/description/domain/objectTypes/tasks/frequency/contexts/commandId/placement.canonical。Object 词表为 Application/Project/Composition/Asset/SceneObject/Layer/Property/Keyframe/Mask/Effect/GraphNode；Task 为 Create/Organize/Navigate/Transform/Style/Animate/Process/Manage/Inspect/Automate；Context 为 Global/Project/Composition/Selection/LayerSelection/PropertySelection/KeyframeSelection/GraphSelection/CanvasMode/TimelineMode/TextEditing/3DMode/AssistantMode。F1 连续、F2 高频、F3 中频、F4 低频、F5 特殊，属于设计判断而非遥测。
+
+### Canonical home 与 placement algorithm
+
+一个 Feature 只有一个 canonical ContributionPoint。F1/F2 Property → Inspector；Temporal → Timeline；Motion → Motion/Graph；Spatial → Canvas 直接操作。F2/F3 Selection → 对象/属性/关键帧上下文或类型相关 Section。F3/F4 Global → Application Menu。F4/F5 → 搜索/有名称的高级 Section/二级菜单，禁止永久占工具栏。F1/F2 不得仅藏二三级菜单。Secondary entry 必须服务另一工作流，保留 commandId，不复制业务。
+
+Contribution points 是本地 typed 集合：toolbar.global/canvas，panel.project/scene，panel.inspector 各 Section，timeline.header/layerContext/propertyContext/keyframeContext，motion.toolbar，graph.nodeContext，menu.file/edit/layer/animation/view/window/help，context.canvas/layer/property/keyframe/asset/node，commandPalette，assistant.actions，dialog.actions。新增点需定义职责和预算，禁止模块直接往 Shell 加按钮。
+
+### Budget 与扩展契约
+
+Global 快捷动作最多 4；Canvas 基础绘图工具最多 6；Timeline 永久操作只允许播放/时间/循环/吸附/模式/缩放/筛选（最多 8 组）；Scene 只保留结构、选择与一个创建入口。Inspector 使用带 appliesTo 的 Section Registry；Effect/Node 扩展通过类别和搜索进入已有添加器，不能每个效果/节点生成永久按钮。可选高阶入口归 named Section，禁止含糊的杂项菜单。
+
+UI command registry 绑定现有业务 Command/Transaction；FeatureDefinition 不含 callback。Context keys 从当前 EditorView 和 focus/mode 派生，不另建选择。菜单、搜索、快捷键、上下文复用同一执行入口。Tool/Effect/Node registry 是内部本地扩展，不引入远程插件、沙箱或 Marketplace。字段的动态参数及直接操控手势由所属 Section/工具管理，提交仍须通过既有 Command System。
+
+新增入口按 AGENTS.md 强制流程完成 classification → domain → canonical → command → feature → contribution → inventory → placement review。注册表校验未知点、重复 ID、缺失域/上下文/命令、canonical 重复及预算。功能迁移只移动入口，不删除底层能力。
+
+### 实例与贡献边界
+
+`motion.segmentContext` 专用于当前曲线区间，不能用全局选帧替代精确区间。`timeline.header` 注册 transport 组件，内部的时间/循环/吸附共享已有时钟与 UI 状态。`commandScope` 在工作区挂载时提供目标绑定，关闭/换目标后必须重新解析；不可执行的搜索结果保留位置和选择提示。属性 Section 使用带参数的共享 Command，不将每个动态字段注册成无参数全局操作。Effect 类别从实际 Registry 派生，空类别不显示。

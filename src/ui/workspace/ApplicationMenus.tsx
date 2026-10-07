@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { applicationMenus } from '../../shared/application-menu';
+import { applicationMenus, menuChildren } from '../../shared/application-menu';
 import { MenuDropdown } from './primitives';
 import { shortcutLabel } from '../../desktop/platform';
 import type { MenuItem } from './primitives';
@@ -60,6 +60,16 @@ export function ApplicationMenus({
             const action = actions.find((a) => a.id === id);
             return {
               ...action,
+              ...(menuChildren(id).length
+                ? {
+                    children: menuChildren(id).flatMap((feature) => {
+                      const child = actions.find(
+                        (a) => a.id === feature.commandId,
+                      );
+                      return child ? [{ ...child, label: feature.title }] : [];
+                    }),
+                  }
+                : {}),
               label,
               shortcut: keys[0]
                 ?.replace('CommandOrControl+', '⌘')

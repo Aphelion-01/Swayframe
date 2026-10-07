@@ -1,3 +1,6 @@
+import { CommandRegistry } from './workspace/command-registry';
+import { useCommandScope } from './workspace/scoped-commands';
+import { editorContributions } from './workspace/feature-contributions';
 import { desktopService } from '../desktop/service';
 import { importNativeAssets, relinkAsset } from '../desktop/asset-service';
 import { useRef, useSyncExternalStore, useState, useEffect } from 'react';
@@ -12,6 +15,45 @@ export function AssetsPanel({ store }: { store: EditorStore }) {
     c = activeComposition(view.project);
   const [missing, setMissing] = useState<string[]>([]);
   const [menu, setMenu] = useState<{ x: number; y: number; id: string }>();
+  const assetCommands = (assetId?: string) =>
+    new CommandRegistry(() => {
+      const target = store
+        .getSnapshot()
+        .project.assets.find((a) => a.id === assetId);
+      return [
+        {
+          id: 'asset.add',
+          label: '添加到当前合成',
+          disabled: !target,
+          action: () => {
+            if (target)
+              void addAssetLayer(store, target.id).catch((e) =>
+                store.setStatus(String(e), true),
+              );
+          },
+        },
+        {
+          id: 'asset.relink',
+          label: '重新链接',
+          disabled: !target?.source || !desktopService.native,
+          action: () => {
+            if (target) void relinkAsset(store, target.id);
+          },
+        },
+        {
+          id: 'asset.delete',
+          label: '删除素材',
+          disabled: !target,
+          action: () => {
+            if (target)
+              store.run('删除素材', [
+                command({ type: 'asset.remove', assetId: target.id }),
+              ]);
+          },
+        },
+      ];
+    });
+  useCommandScope(store, assetCommands(menu?.id).definitions());
   useEffect(() => {
     let live = true;
     void Promise.all(
@@ -101,7 +143,11 @@ export function AssetsPanel({ store }: { store: EditorStore }) {
             {missing.includes(asset.id) ? (
               <>
                 <span title={asset.source?.path}>素材失联</span>
-                <button onClick={() => void relinkAsset(store, asset.id)}>
+                <button
+                  onClick={() =>
+                    assetCommands(asset.id).execute('asset.relink')
+                  }
+                >
                   重新链接
                 </button>
               </>
@@ -110,24 +156,13 @@ export function AssetsPanel({ store }: { store: EditorStore }) {
             )}
             <button
               aria-label={`添加素材 ${asset.name}`}
-              onClick={() => {
-                void addAssetLayer(store, asset.id).catch((e) =>
-                  store.setStatus(
-                    e instanceof Error ? e.message : '添加失败',
-                    true,
-                  ),
-                );
-              }}
+              onClick={() => assetCommands(asset.id).execute('asset.add')}
             >
               {asset.name}
             </button>
             <button
               aria-label={`删除素材 ${asset.name}`}
-              onClick={() =>
-                store.run('删除素材', [
-                  command({ type: 'asset.remove', assetId: asset.id }),
-                ])
-              }
+              onClick={() => assetCommands(asset.id).execute('asset.delete')}
             >
               ×
             </button>
@@ -176,38 +211,7 @@ export function AssetsPanel({ store }: { store: EditorStore }) {
         <ContextMenu
           {...menu}
           onClose={() => setMenu(undefined)}
-          items={[
-            {
-              label: '添加到当前合成',
-              action: () => {
-                void addAssetLayer(store, menu.id).catch((e) =>
-                  store.setStatus(
-                    e instanceof Error ? e.message : '添加失败',
-                    true,
-                  ),
-                );
-              },
-            },
-            ...(desktopService.native &&
-            view.project.assets.find((a) => a.id === menu.id)?.source
-              ? [
-                  {
-                    label: '重新链接',
-                    action: () => {
-                      void relinkAsset(store, menu.id);
-                    },
-                  },
-                ]
-              : []),
-            {
-              label: '删除素材',
-              action: () => {
-                store.run('删除素材', [
-                  command({ type: 'asset.remove', assetId: menu.id }),
-                ]);
-              },
-            },
-          ]}
+          items={editorContributions(store, 'context.asset')}
         />
       )}
     </details>

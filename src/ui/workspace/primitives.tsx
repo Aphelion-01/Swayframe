@@ -93,6 +93,7 @@ export function Tabs({
   );
 }
 export interface MenuItem {
+  id?: string;
   label: string;
   icon?: ReactNode;
   action: () => void;

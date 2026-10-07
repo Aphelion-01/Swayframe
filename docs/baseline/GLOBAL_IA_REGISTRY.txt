@@ -1,0 +1,2688 @@
+你现在要对整个 Swayframe 进行一次最高优先级的：
+
+======================================================================
+GLOBAL INFORMATION ARCHITECTURE
++
+FEATURE DISCOVERABILITY
++
+SCALABLE FEATURE ENTRY SYSTEM
+重构
+======================================================================
+
+这不是一次普通 UI 美化。
+
+也不是简单：
+
+“把按钮重新排列得好看一点”。
+
+当前真正的问题是：
+
+随着功能数量不断增加，
+
+每个功能都在开发完成后临时寻找入口，
+
+导致：
+
+- 同类功能分散；
+- 高频功能被隐藏；
+- 低频功能长期占据一级界面；
+- 相同功能出现多个重复入口；
+- Canvas / Scene / Inspector / Timeline / Graph 职责混乱；
+- 菜单越来越深；
+- 用户无法预测功能应该出现在哪里；
+- Codex 每次新增功能都可能进一步破坏现有结构；
+- UI Shell 与具体功能耦合越来越严重；
+- 功能越多，未来开发阻力越大。
+
+本轮的最终目标是：
+
+======================================================================
+即使未来 Swayframe 再增加数百个功能，
+
+它们仍然能够按照稳定规则自动归类到合理区域，
+
+而不需要不断重构整个 UI。
+======================================================================
+
+核心原则：
+
+DO NOT organize features by implementation history.
+
+Organize features by:
+
+OBJECT
++
+TASK
++
+FREQUENCY
++
+CONTEXT
+
+任何新功能：
+
+必须先回答：
+
+“它属于哪个用户任务？”
+
+然后才决定：
+
+“它在哪里出现？”
+
+======================================================================
+第一阶段：冻结新功能
+======================================================================
+
+本轮属于：
+
+Architecture / UX Infrastructure Refactor。
+
+除非修复当前功能必须，
+
+暂时禁止增加：
+
+新的 Effects
+新的 3D 功能
+新的 AI 功能
+新的 Graph Node
+新的 Layer Type
+新的 Animation Feature
+
+先把：
+
+现有功能组织方式
+
+彻底修好。
+
+不要：
+
+一边重构 IA
+
+一边继续塞新功能。
+
+======================================================================
+第二阶段：读取现有 UX / Design Skills
+======================================================================
+
+如果以下 Skills 已经安装：
+
+ui-ux-design
+
+ux-heuristics
+
+design-system / design-md-for-codex
+
+则优先读取并按照它们的方法进行：
+
+Information Architecture Audit
+
+Heuristic Audit
+
+Feature Placement
+
+Progressive Disclosure
+
+Navigation Design
+
+Design System
+
+如果没有安装：
+
+不要因为 Skill 缺失停止任务。
+
+直接根据当前仓库现状完成本次重构。
+
+======================================================================
+第三阶段：完整扫描整个软件
+======================================================================
+
+先扫描整个 Swayframe。
+
+不要只看：
+
+主界面。
+
+必须扫描：
+
+Top Toolbar
+
+Canvas Toolbar
+
+Project
+
+Scene Outliner
+
+Inspector
+
+Timeline
+
+Graph Editor
+
+Motion Curve
+
+Compositing Graph
+
+Assistant
+
+File Menu
+
+Edit Menu
+
+Layer Menu
+
+Animation Menu
+
+View Menu
+
+Window Menu
+
+Context Menus
+
+Popovers
+
+Dialogs
+
+Command Palette
+
+Keyboard Shortcuts
+
+Settings
+
+Start Screen
+
+Asset Panel
+
+3D controls
+
+Effect controls
+
+所有二级菜单
+
+所有三级菜单
+
+所有隐藏操作
+
+所有按钮
+
+所有 user-facing actions。
+
+输出：
+
+UX_ARCHITECTURE_AUDIT.md
+
+======================================================================
+第四阶段：建立完整 Feature Inventory
+======================================================================
+
+扫描代码中的所有：
+
+Command
+
+Action
+
+Button
+
+Menu Item
+
+Context Action
+
+Shortcut
+
+Panel Action
+
+Toolbar Action
+
+Dialog Action
+
+建立：
+
+FEATURE_INVENTORY.md
+
+每一个功能必须记录：
+
+id
+
+name
+
+description
+
+domain
+
+objectType
+
+taskType
+
+frequency
+
+context
+
+currentLocations
+
+canonicalLocation
+
+secondaryLocations
+
+shortcut
+
+commandId
+
+discoverability
+
+severity
+
+例如：
+
+{
+  id: "animation.easeOut",
+
+  name: "Ease Out",
+
+  domain: "motion",
+
+  objectType: "keyframe",
+
+  taskType: "animate",
+
+  frequency: "F2",
+
+  context: [
+      "keyframes-selected"
+  ],
+
+  canonicalLocation:
+      "keyframe-context-menu",
+
+  secondaryLocations: [
+      "motion-curve"
+  ],
+
+  commandId:
+      "animation.easeOut"
+}
+
+======================================================================
+第五阶段：建立固定的 Domain Model
+======================================================================
+
+从现在开始：
+
+Swayframe 用户界面必须遵循固定 Domain。
+
+Domain 不得随意增加。
+
+当前正式 Domain：
+
+PROJECT
+
+负责：
+
+Project
+Composition
+Assets
+Import
+Project-level resources
+
+
+SCENE
+
+负责：
+
+Objects
+Hierarchy
+Parent
+Visibility
+Lock
+Camera
+Null
+Precomp identity
+
+
+CANVAS
+
+负责：
+
+Select
+Move
+Scale
+Rotate
+Anchor
+Drawing
+Pen
+Text
+Spatial Editing
+Direct Manipulation
+
+
+INSPECTOR
+
+负责：
+
+Object Properties
+
+Transform
+Appearance
+Text
+Mask
+Effects
+3D
+Camera
+Node Parameters
+
+
+TIMELINE
+
+负责：
+
+Time
+Layer Span
+In / Out
+Animated Property
+Keyframe
+Temporal Editing
+
+
+MOTION
+
+负责：
+
+Interpolation
+Easing
+Motion Curve
+Value Graph
+Speed Graph
+Velocity
+Influence
+
+
+COMPOSITING
+
+负责：
+
+Processing Flow
+
+Source
+Mask
+Color
+Effect
+Merge
+Output
+Graph Nodes
+
+
+ASSISTANT
+
+负责：
+
+AI Assistance
+Agent
+Auto Layout
+Motion Intelligence
+Reference Intelligence
+
+
+APPLICATION
+
+负责：
+
+New
+Open
+Save
+Import
+Export
+Settings
+Window
+Workspace
+Help
+
+任何新功能：
+
+必须归属于其中一个主要 Domain。
+
+如果无法明确归类：
+
+先重新定义功能，
+
+不能：
+
+创建一个：
+
+Misc
+Other
+Advanced Tools
+Utility
+
+来逃避分类。
+
+======================================================================
+第六阶段：建立 Canonical Home 原则
+======================================================================
+
+所有功能必须拥有：
+
+Canonical Home
+
+也就是：
+
+唯一主入口。
+
+例如：
+
+Position
+
+Canonical Home：
+
+Inspector → Transform
+
+Secondary:
+
+Canvas Direct Manipulation
+
+Timeline（仅动画时）
+
+
+Gaussian Blur
+
+Canonical Home：
+
+Inspector → Effects
+
+Secondary:
+
+Command Palette
+
+Compositing Graph
+
+
+Ease Out
+
+Canonical Home：
+
+Keyframe Context
+
+Secondary:
+
+Motion Curve
+
+
+Export
+
+Canonical Home：
+
+File → Export
+
+Secondary:
+
+Top-level export action
+
+
+Parent
+
+Canonical Home：
+
+Inspector / Scene relationship
+
+Secondary:
+
+Layer Context Menu
+
+
+原则：
+
+======================================================================
+一个功能只能有一个主归属地。
+======================================================================
+
+允许存在：
+
+Secondary Entry
+
+但是：
+
+Secondary Entry 必须服务于不同 workflow。
+
+禁止：
+
+同一个功能
+
+在：
+
+Toolbar
+Inspector
+Timeline Header
+Scene
+Menu
+
+全部永久显示。
+
+======================================================================
+第七阶段：正式采用四维 Feature Classification
+======================================================================
+
+以后任何功能加入软件之前：
+
+必须拥有以下 metadata。
+
+第一维：
+
+OBJECT
+
+Application
+Project
+Composition
+Asset
+SceneObject
+Layer
+Property
+Keyframe
+Mask
+Effect
+GraphNode
+
+
+第二维：
+
+TASK
+
+Create
+Organize
+Navigate
+Transform
+Style
+Animate
+Process
+Manage
+Inspect
+Automate
+
+
+第三维：
+
+FREQUENCY
+
+F1 — Continuous
+
+几分钟内不断使用。
+
+F2 — High
+
+每次创作都会频繁使用。
+
+F3 — Medium
+
+每个工程都会使用几次。
+
+F4 — Low
+
+偶尔使用。
+
+F5 — Rare
+
+高级或特殊工作流。
+
+
+第四维：
+
+CONTEXT
+
+Global
+
+Project
+
+Composition
+
+Selection
+
+LayerSelection
+
+PropertySelection
+
+KeyframeSelection
+
+GraphSelection
+
+CanvasMode
+
+TimelineMode
+
+TextEditing
+
+3DMode
+
+AssistantMode
+
+Feature Placement：
+
+由这四个维度决定。
+
+而不是：
+
+由开发者临时决定。
+
+======================================================================
+第八阶段：制定 Placement Algorithm
+======================================================================
+
+以后新功能按照以下规则自动判断位置。
+
+--------------------------------
+F1 + Contextual
+--------------------------------
+
+Direct Manipulation
+
+或：
+
+Primary Contextual UI。
+
+
+例如：
+
+Move
+Scale
+Position
+
+
+--------------------------------
+F1/F2 + Property
+--------------------------------
+
+Inspector。
+
+
+--------------------------------
+F1/F2 + Temporal
+--------------------------------
+
+Timeline。
+
+
+--------------------------------
+F1/F2 + Motion
+--------------------------------
+
+Motion Curve / Graph。
+
+
+--------------------------------
+F2/F3 + Selection Context
+--------------------------------
+
+Context Menu
+
+Inspector section
+
+Contextual toolbar。
+
+
+--------------------------------
+F3/F4 + Global
+--------------------------------
+
+Application Menu。
+
+
+--------------------------------
+F4/F5
+--------------------------------
+
+Command Palette
+Advanced Section
+Secondary Menu。
+
+
+任何：
+
+F1/F2
+
+不得：
+
+只存在于二级/三级菜单。
+
+
+任何：
+
+F4/F5
+
+不得：
+
+长期霸占主要 Toolbar。
+
+======================================================================
+第九阶段：建立 Feature Registry
+======================================================================
+
+这是本轮最重要的工程架构之一。
+
+建立统一：
+
+Feature Registry。
+
+不要让：
+
+React Component
+
+自己决定：
+
+“我要显示哪个功能”。
+
+设计类似：
+
+interface FeatureDefinition {
+    id: string;
+
+    title: string;
+
+    domain: FeatureDomain;
+
+    objectTypes?: ObjectType[];
+
+    tasks: TaskType[];
+
+    frequency: FeatureFrequency;
+
+    contexts: ContextKey[];
+
+    commandId: CommandId;
+
+    placement: {
+        canonical: ContributionPoint;
+        secondary?: ContributionPoint[];
+    };
+
+    shortcut?: ShortcutDefinition;
+
+    keywords?: string[];
+
+    icon?: IconId;
+
+    order?: number;
+}
+
+例如：
+
+registerFeature({
+    id: "layer.precompose",
+
+    domain: "scene",
+
+    objectTypes: ["layer"],
+
+    tasks: ["organize"],
+
+    frequency: "F3",
+
+    contexts: [
+        "layerSelection"
+    ],
+
+    commandId:
+        "layer.precompose",
+
+    placement: {
+        canonical:
+            "context.layer",
+
+        secondary: [
+            "menu.layer",
+            "commandPalette"
+        ]
+    }
+})
+
+======================================================================
+第十阶段：建立 Contribution Points
+======================================================================
+
+不要允许功能：
+
+直接 import TopToolbar
+
+然后插 Button。
+
+建立正式：
+
+Contribution Points。
+
+例如：
+
+toolbar.global
+
+toolbar.canvas
+
+panel.project
+
+panel.scene
+
+panel.inspector.transform
+
+panel.inspector.appearance
+
+panel.inspector.effects
+
+timeline.header
+
+timeline.layerContext
+
+timeline.propertyContext
+
+timeline.keyframeContext
+
+motion.toolbar
+
+graph.nodeContext
+
+menu.file
+
+menu.edit
+
+menu.layer
+
+menu.animation
+
+menu.view
+
+menu.window
+
+context.canvas
+
+context.layer
+
+context.property
+
+context.keyframe
+
+context.asset
+
+context.node
+
+commandPalette
+
+assistant.actions
+
+Feature：
+
+只能通过：
+
+Contribution Point
+
+进入 UI。
+
+禁止：
+
+功能模块随意修改 Shell UI。
+
+======================================================================
+第十一阶段：建立 Context Key System
+======================================================================
+
+很多功能是否显示：
+
+取决于上下文。
+
+不要在组件里到处：
+
+if (
+ selectedLayer &&
+ selectedLayer.type === ...
+)
+
+建立：
+
+Context Keys。
+
+例如：
+
+hasSelection
+
+hasLayerSelection
+
+hasMultipleLayers
+
+hasKeyframeSelection
+
+hasPropertySelection
+
+isShapeSelected
+
+isTextSelected
+
+isCameraSelected
+
+is3DLayer
+
+canPrecompose
+
+canParent
+
+canAnimate
+
+graphMode
+
+timelineMode
+
+textEditing
+
+Context Menu：
+
+根据 Context Key
+
+自动决定：
+
+显示什么。
+
+Command Palette：
+
+也可以根据 Context
+
+提高相关功能排序。
+
+======================================================================
+第十二阶段：Command Registry
+======================================================================
+
+Feature Registry：
+
+不要直接保存业务 callback。
+
+所有功能：
+
+最终绑定：
+
+Command Registry。
+
+例如：
+
+Command:
+
+layer.duplicate
+
+layer.delete
+
+layer.rename
+
+layer.precompose
+
+animation.addKeyframe
+
+animation.easeOut
+
+view.fitCanvas
+
+file.export
+
+Feature Entry：
+
+只是：
+
+Command 的 UI 表现。
+
+形成：
+
+Feature
+↓
+Command
+↓
+Action / Command System
+↓
+Scene
+
+不要：
+
+Button
+↓
+业务逻辑
+
+Context Menu
+↓
+另一份业务逻辑
+
+Shortcut
+↓
+第三份业务逻辑。
+
+======================================================================
+第十三阶段：一个 Command，多种 Entry
+======================================================================
+
+例如：
+
+Duplicate。
+
+以下入口：
+
+Cmd/Ctrl + D
+
+Context Menu → Duplicate
+
+Menu → Edit → Duplicate
+
+Command Palette → Duplicate
+
+全部调用：
+
+command.execute(
+    "layer.duplicate"
+)
+
+禁止：
+
+四套实现。
+
+这样以后：
+
+移动 UI 入口
+
+不会影响功能。
+
+======================================================================
+第十四阶段：UI Shell 不得依赖具体 Feature
+======================================================================
+
+TopToolbar
+
+TimelineHeader
+
+ScenePanel
+
+Inspector
+
+ContextMenu
+
+不要：
+
+import 50 个 feature modules。
+
+它们应该：
+
+读取 Registry
+
+然后：
+
+render contributions。
+
+例如：
+
+getContributions(
+    "context.keyframe",
+    currentContext
+)
+
+未来增加功能：
+
+只：
+
+registerFeature()
+
+不需要：
+
+修改 Timeline.tsx
+
+修改 ContextMenu.tsx
+
+修改 Toolbar.tsx
+
+这就是本轮必须实现的：
+
+Scalable Feature Architecture。
+
+======================================================================
+第十五阶段：不要过度工程化
+======================================================================
+
+注意：
+
+不要把它变成：
+
+完整 Plugin Marketplace API。
+
+当前只是：
+
+Internal Contribution System。
+
+保持：
+
+简单
+
+typed
+
+testable
+
+local。
+
+不要：
+
+Dynamic Module Loader
+
+Remote Plugin
+
+Sandbox
+
+Marketplace
+
+Plugin Permission
+
+这些属于未来。
+
+当前目标：
+
+防止核心 UI
+
+随着功能增加越来越难维护。
+
+======================================================================
+第十六阶段：建立 Permanent UI Budget
+======================================================================
+
+为每个区域建立明确预算。
+
+TOP TOOLBAR
+
+只允许：
+
+核心 Canvas Tools
+极少数 Global Actions
+
+不能继续无限增长。
+
+
+CANVAS TOOLBAR
+
+只允许：
+
+Select
+Hand
+Shape
+Pen
+Text
+真正 Spatial Tools。
+
+
+TIMELINE HEADER
+
+只允许：
+
+Playback
+Current Time
+Loop
+Graph Toggle
+Zoom
+Filter
+
+
+SCENE
+
+只允许：
+
+Hierarchy
+Visibility
+Lock
+Navigation
+Structure
+
+
+INSPECTOR
+
+允许更多属性，
+
+但必须：
+
+Sectioned
+
+Contextual。
+
+
+任何 Contribution：
+
+如果超过预算：
+
+必须进入：
+
+Menu
+Context Menu
+Command Palette
+Popover
+
+而不是：
+
+继续扩 Toolbar。
+
+======================================================================
+第十七阶段：Progressive Disclosure
+======================================================================
+
+界面复杂度必须随着用户任务逐步出现。
+
+例如：
+
+无选择：
+
+Inspector：
+
+Composition / Empty State。
+
+
+选 Shape：
+
+Transform
+Appearance
+
+
+选 Text：
+
+Transform
+Text
+Appearance
+
+
+选 Camera：
+
+Transform
+Camera
+3D
+
+
+选 Keyframe：
+
+Motion / Easing actions
+
+
+选 Graph Node：
+
+Node Parameters
+
+不要：
+
+软件启动后
+
+把全部功能直接展示。
+
+======================================================================
+第十八阶段：Mode-aware UI
+======================================================================
+
+不要永久显示：
+
+当前 Mode 无关的功能。
+
+例如：
+
+Graph Editor 打开时：
+
+显示 Graph 工具。
+
+Canvas 时：
+
+显示 Canvas 工具。
+
+Text Editing：
+
+显示 Text 相关控制。
+
+3D Camera：
+
+显示 Camera 相关控制。
+
+但是：
+
+Mode 切换不能把用户困住。
+
+始终保证：
+
+返回路径
+
+清晰可见。
+
+======================================================================
+第十九阶段：Command Palette 成为长尾安全阀
+======================================================================
+
+Command Palette：
+
+Cmd/Ctrl + K
+
+必须成为：
+
+所有合法用户命令
+
+的统一搜索入口。
+
+这样 UI 不需要：
+
+把所有功能永久展示。
+
+Feature 注册时：
+
+默认可选择：
+
+contributeToCommandPalette: true
+
+Command Palette 搜索：
+
+title
+
+keywords
+
+domain
+
+object type
+
+例如：
+
+搜索：
+
+curve
+
+出现：
+
+Open Motion Curve
+
+Open Value Graph
+
+Open Speed Graph
+
+
+搜索：
+
+blur
+
+出现：
+
+Add Gaussian Blur
+
+
+搜索：
+
+parent
+
+出现：
+
+Set Parent
+
+Remove Parent
+
+======================================================================
+第二十阶段：搜索与 Discoverability
+======================================================================
+
+Command Palette：
+
+不仅搜索命令名。
+
+支持：
+
+aliases / keywords。
+
+例如：
+
+Precompose
+
+keywords：
+
+precomp
+nest
+group composition
+合成
+预合成
+
+
+Motion Curve：
+
+keywords：
+
+ease
+easing
+speed
+curve
+缓动
+速度曲线
+
+以后用户：
+
+不知道准确名称
+
+也能找到。
+
+======================================================================
+第二十一阶段：菜单重新生成
+======================================================================
+
+Application Menu：
+
+不要大量手写。
+
+可以根据：
+
+Feature Registry
+
+生成对应部分。
+
+File
+
+Edit
+
+Layer
+
+Animation
+
+View
+
+Window
+
+Help
+
+例如：
+
+Feature placement:
+
+menu.animation
+
+则自动进入：
+
+Animation Menu。
+
+Menu grouping：
+
+通过：
+
+group
+order
+
+控制。
+
+不要：
+
+每加一个功能
+
+直接修改 Electron Menu 文件。
+
+======================================================================
+第二十二阶段：Context Menu 动态生成
+======================================================================
+
+同理：
+
+Canvas Context
+
+Layer Context
+
+Keyframe Context
+
+Asset Context
+
+Node Context
+
+根据：
+
+Context Keys
+
+自动产生。
+
+例如：
+
+选 Keyframe：
+
+Ease In
+
+Ease Out
+
+Linear
+
+Hold
+
+Motion Curve
+
+Graph Editor
+
+
+没有 Keyframe：
+
+这些项：
+
+根本不出现。
+
+======================================================================
+第二十三阶段：Inspector Section Registry
+======================================================================
+
+Inspector：
+
+未来一定会快速变复杂。
+
+不要：
+
+Inspector.tsx
+
+变成：
+
+5000 行 if else。
+
+建立：
+
+Inspector Section Registry。
+
+例如：
+
+registerInspectorSection({
+
+    id:
+      "transform",
+
+    appliesTo:
+      ["shape","text","image","camera"],
+
+    order:
+      100,
+
+    component:
+      TransformSection
+})
+
+Effect system：
+
+进入：
+
+EffectsSection
+
+3D：
+
+3DSection
+
+Camera：
+
+CameraSection
+
+以后新 Layer / Feature：
+
+新增 Section registration
+
+而不是：
+
+改主 Inspector。
+
+======================================================================
+第二十四阶段：Tool Registry
+======================================================================
+
+Canvas Tools：
+
+也建立：
+
+Tool Registry。
+
+例如：
+
+select
+
+hand
+
+rectangle
+
+ellipse
+
+pen
+
+text
+
+未来：
+
+mask
+
+anchor
+
+camera
+
+加入时：
+
+注册：
+
+tool
+
+shortcut
+
+icon
+
+group
+
+order
+
+不要：
+
+继续硬编码 toolbar。
+
+======================================================================
+第二十五阶段：Graph Node Registry
+======================================================================
+
+Compositing Graph：
+
+未来节点会非常多。
+
+从现在开始建立：
+
+Node Registry。
+
+每种 Node：
+
+注册：
+
+type
+
+category
+
+displayName
+
+inputs
+
+outputs
+
+parameters
+
+icon
+
+searchKeywords
+
+Graph Add Node：
+
+通过：
+
+Registry
+
+生成菜单和搜索。
+
+不要：
+
+每加 Node
+
+修改：
+
+AddNodeMenu.tsx。
+
+======================================================================
+第二十六阶段：Effect Registry
+======================================================================
+
+Effects 未来也会大量增长。
+
+建立：
+
+Effect Registry。
+
+至少：
+
+id
+
+name
+
+category
+
+parameters
+
+supportedLayerTypes
+
+renderer implementation
+
+keywords
+
+例如：
+
+Color
+
+Blur
+
+Distort
+
+Generate
+
+Stylize
+
+Utility
+
+Inspector Add Effect：
+
+通过 Effect Registry
+
+生成。
+
+不要：
+
+硬编码 50 个菜单项。
+
+======================================================================
+第二十七阶段：统一分类 Vocabulary
+======================================================================
+
+不要：
+
+同一个概念
+
+不同地方叫：
+
+Effects
+Filters
+FX
+Image Effects
+
+统一叫：
+
+Effects。
+
+
+不要：
+
+Layer
+Object
+Item
+
+无规则混用。
+
+制定：
+
+UI_TERMINOLOGY.md
+
+例如：
+
+Project
+Composition
+Scene
+Layer
+Property
+Effect
+Mask
+Keyframe
+Motion Curve
+Graph
+Node
+Asset
+
+每个词：
+
+定义清楚。
+
+======================================================================
+第二十八阶段：全局功能迁移
+======================================================================
+
+完成基础 Infrastructure 后：
+
+开始迁移现有功能。
+
+不要：
+
+一次性重写所有 UI。
+
+顺序：
+
+1.
+
+Top Toolbar
+
+
+2.
+
+Canvas Tools
+
+
+3.
+
+Scene
+
+
+4.
+
+Inspector
+
+
+5.
+
+Timeline
+
+
+6.
+
+Motion / Graph
+
+
+7.
+
+Context Menus
+
+
+8.
+
+Application Menu
+
+
+9.
+
+Command Palette
+
+
+10.
+
+Compositing Graph
+
+每迁移一个区域：
+
+保证：
+
+功能不丢失。
+
+======================================================================
+第二十九阶段：清除重复入口
+======================================================================
+
+对于：
+
+没有明确 workflow 价值
+
+的重复入口：
+
+删除 UI Entry。
+
+例如一个操作：
+
+已有：
+
+Canonical Home
+
+Context Menu
+
+Shortcut
+
+则一般没有必要：
+
+再永久放一个 Toolbar Button。
+
+但：
+
+只删除入口。
+
+不要删除：
+
+underlying command。
+
+======================================================================
+第三十阶段：寻找 Missing Primary Entry
+======================================================================
+
+反过来检查：
+
+是否有：
+
+重要功能
+
+只有 Command Palette
+
+或者：
+
+三级菜单。
+
+例如：
+
+F1/F2 功能。
+
+为它补上：
+
+合理 Primary Entry。
+
+目标：
+
+不是：
+
+减少所有按钮。
+
+而是：
+
+正确分配。
+
+======================================================================
+第三十一阶段：DESIGN.md
+======================================================================
+
+项目根目录创建或重写：
+
+DESIGN.md。
+
+它必须成为：
+
+Swayframe UX Constitution。
+
+至少包括：
+
+Product Mental Model
+
+Domain Model
+
+Workspace Responsibilities
+
+Feature Classification
+
+Canonical Home Principle
+
+Feature Placement Algorithm
+
+Contribution Points
+
+Permanent UI Budget
+
+Progressive Disclosure
+
+Contextual UI
+
+Menu Rules
+
+Context Menu Rules
+
+Inspector Rules
+
+Timeline Rules
+
+Canvas Rules
+
+Scene Rules
+
+Graph Rules
+
+Assistant Rules
+
+Shortcut Rules
+
+Selection Model
+
+Undo Semantics
+
+Terminology
+
+Anti-patterns
+
+======================================================================
+第三十二阶段：Anti-patterns
+======================================================================
+
+DESIGN.md 中明确禁止：
+
+实现一个功能
+
+→
+
+随便找地方加 Button。
+
+
+禁止：
+
+高频功能只藏深层菜单。
+
+
+禁止：
+
+低频功能永久占据 Toolbar。
+
+
+禁止：
+
+同一功能出现多个无意义永久入口。
+
+
+禁止：
+
+功能模块直接修改 App Shell。
+
+
+禁止：
+
+Timeline 做 Inspector 的工作。
+
+
+禁止：
+
+Scene 做 Timeline 的工作。
+
+
+禁止：
+
+Canvas Toolbar 塞 Export / Effect / Keyframe。
+
+
+禁止：
+
+Inspector 变成万能菜单。
+
+
+禁止：
+
+二级菜单成为“垃圾桶”。
+
+
+禁止：
+
+Misc / Other
+
+作为长期功能分类。
+
+======================================================================
+第三十三阶段：AGENTS.md
+======================================================================
+
+更新：
+
+AGENTS.md
+
+加入：
+
+======================================================================
+MANDATORY UX RULE
+======================================================================
+
+Before adding any user-facing feature:
+
+1. Read DESIGN.md.
+
+2. Define:
+   object
+   task
+   frequency
+   context
+
+3. Choose:
+   domain
+
+4. Assign:
+   canonical home
+
+5. Register:
+   command
+
+6. Register:
+   feature
+
+7. Use:
+   existing contribution point
+
+8. Update:
+   FEATURE_INVENTORY.md
+
+9. Do NOT modify global toolbar / shell unless the feature legitimately belongs there.
+
+10. Run:
+   Feature Placement Review.
+
+任何 Codex Agent：
+
+以后都必须遵守。
+
+======================================================================
+第三十四阶段：Feature Placement CI / Test
+======================================================================
+
+如果架构允许：
+
+建立开发期检查。
+
+例如：
+
+FeatureDefinition schema validation。
+
+检查：
+
+每个 Feature：
+
+有：
+
+domain
+
+frequency
+
+context
+
+commandId
+
+canonical placement。
+
+
+检查：
+
+一个 Feature
+
+不能：
+
+注册三个 canonical homes。
+
+
+检查：
+
+unknown contribution point
+
+报错。
+
+
+不需要：
+
+复杂 CI framework。
+
+但至少：
+
+Unit Test
+
+可以验证 Registry。
+
+======================================================================
+第三十五阶段：Future Feature Scalability Test
+======================================================================
+
+完成重构后：
+
+不要立刻实现这些功能。
+
+只做模拟测试。
+
+假设未来增加：
+
+Motion Trail
+
+问：
+
+需要修改哪些文件？
+
+理想答案：
+
+新增：
+
+MotionTrailFeature
+
+register command
+
+register feature
+
+register inspector/effect contribution
+
+少量 renderer code
+
+不应该：
+
+修改 AppShell
+
+修改 TimelineHeader
+
+修改 MainToolbar
+
+修改多个 Context Menu。
+
+
+再假设增加：
+
+Chromatic Aberration Effect。
+
+理想：
+
+register effect
+
+renderer implementation
+
+Inspector 自动出现。
+
+
+再假设增加：
+
+Optical Flow Node。
+
+理想：
+
+register graph node
+
+Graph Add Node 自动出现。
+
+
+再假设增加：
+
+AI Auto Layout。
+
+理想：
+
+register assistant action
+
+Command Palette 可搜索。
+
+如果每新增一个功能：
+
+仍然需要改：
+
+5–10 个核心 UI 文件，
+
+说明本轮架构仍未成功。
+
+======================================================================
+第三十六阶段：100 Features Thought Experiment
+======================================================================
+
+假设未来新增：
+
+100 个 Effects
+
+50 个 Graph Nodes
+
+20 个 Motion Tools
+
+20 个 AI Actions
+
+15 个 3D Tools
+
+整个 UI：
+
+不能因此：
+
+出现 200 个按钮。
+
+应该主要通过：
+
+Registry
+
+Search
+
+Context
+
+Category
+
+Progressive Disclosure
+
+组织。
+
+这就是本轮：
+
+长期扩展性的验收标准。
+
+======================================================================
+第三十七阶段：真实用户任务测试
+======================================================================
+
+完成后执行：
+
+Create Shape
+
+Import Image
+
+Change Color
+
+Animate Position
+
+Add Ease Out
+
+Open Motion Curve
+
+Add Blur
+
+Add Mask
+
+Parent Layer
+
+Precompose
+
+Enable 3D
+
+Create Camera
+
+Open Compositing Graph
+
+Export
+
+Save Project
+
+Relink Asset
+
+每一个任务：
+
+判断：
+
+没有教程时，
+
+一个有设计软件经验的用户
+
+是否可以合理猜到入口。
+
+如果：
+
+连续猜错，
+
+重新调整 IA。
+
+======================================================================
+第三十八阶段：Heuristic Review
+======================================================================
+
+重新运行：
+
+UX heuristic audit。
+
+重点：
+
+Consistency
+
+Recognition rather than recall
+
+Discoverability
+
+Minimalist design
+
+User control
+
+Match to real-world expectations
+
+输出：
+
+Before / After
+
+Severity 4
+
+Severity 3
+
+Severity 2
+
+剩余：
+
+Severity 3–4
+
+继续修复。
+
+======================================================================
+第三十九阶段：不要只输出文档
+======================================================================
+
+这是非常重要的要求。
+
+不要：
+
+写完：
+
+DESIGN.md
+FEATURE_INVENTORY.md
+UX_AUDIT.md
+
+然后结束。
+
+必须：
+
+实际修改 UI。
+
+移动功能。
+
+删除重复入口。
+
+建立 Registry。
+
+重构 Menu。
+
+重构 Context Menu。
+
+重构 Toolbar。
+
+重构 Inspector。
+
+让最终软件：
+
+真的发生改变。
+
+======================================================================
+第四十阶段：不要做大规模视觉重设计
+======================================================================
+
+这轮主要优化：
+
+Architecture
+
+Discoverability
+
+Hierarchy
+
+Feature Placement
+
+Interaction Logic。
+
+不需要：
+
+重做主题
+
+重做 Logo
+
+大量渐变
+
+复杂动画
+
+玻璃态
+
+视觉炫技。
+
+视觉只服务于：
+
+结构清晰。
+
+======================================================================
+第四十一阶段：开发顺序
+======================================================================
+
+严格按：
+
+IA-0
+Audit
+
+IA-1
+Domain Model + DESIGN.md
+
+IA-2
+Command Registry
+
+IA-3
+Feature Registry
+
+IA-4
+Context Key System
+
+IA-5
+Contribution Points
+
+IA-6
+Toolbar migration
+
+IA-7
+Inspector migration
+
+IA-8
+Timeline migration
+
+IA-9
+Menus / Context Menus
+
+IA-10
+Command Palette
+
+IA-11
+Effect / Tool / Node registries
+
+IA-12
+Full migration
+
+IA-13
+Heuristic review
+
+IA-14
+Scalability test
+
+======================================================================
+第四十二阶段：质量门禁
+======================================================================
+
+每完成一个阶段：
+
+typecheck
+
+lint
+
+unit tests
+
+integration tests
+
+build
+
+desktop build
+
+确保：
+
+功能入口移动后：
+
+Command 仍然有效。
+
+Undo：
+
+仍然有效。
+
+Shortcut：
+
+仍然有效。
+
+Selection：
+
+仍然正确。
+
+======================================================================
+第四十三阶段：最终文件
+======================================================================
+
+最终必须存在：
+
+DESIGN.md
+
+UI_TERMINOLOGY.md
+
+FEATURE_INVENTORY.md
+
+FEATURE_LOCATION_MATRIX.md
+
+UX_ARCHITECTURE_AUDIT.md
+
+UX_ARCHITECTURE_RESULT.md
+
+以及真正工作的：
+
+Command Registry
+
+Feature Registry
+
+Context Key System
+
+Contribution System
+
+Tool Registry
+
+Effect Registry
+
+Graph Node Registry
+
+合理情况下可以：
+
+分阶段实现，
+
+但基础 Registry 必须真正进入生产代码。
+
+======================================================================
+第四十四阶段：最终验收
+======================================================================
+
+最终问自己：
+
+如果明天增加一个新功能，
+
+开发者是否首先知道：
+
+它是什么类型？
+
+属于哪个 Domain？
+
+作用于哪个 Object？
+
+属于哪个 Task？
+
+使用频率是多少？
+
+需要什么 Context？
+
+Canonical Home 在哪里？
+
+是否需要 Shortcut？
+
+是否需要 Context Menu？
+
+然后：
+
+只注册 Feature
+
+就可以进入：
+
+正确 UI。
+
+如果答案是：
+
+是，
+
+则本轮成功。
+
+
+如果仍然是：
+
+“先做功能，然后看看哪个地方还有空位放按钮”，
+
+则本轮失败。
+
+======================================================================
+最终目标
+======================================================================
+
+将 Swayframe 从：
+
+Feature-driven UI
+
+升级为：
+
+Architecture-driven UI。
+
+以前：
+
+Feature
+→
+找个地方塞入口。
+
+以后：
+
+Feature
+→
+Classification
+→
+Domain
+→
+Command Registry
+→
+Feature Registry
+→
+Context
+→
+Contribution Point
+→
+正确 UI。
+
+做到：
+
+功能越多，
+
+软件能力越强，
+
+而不是：
+
+功能越多，
+
+软件越难用。
+
+本轮的真正目标：
+
+不是整理今天的 UI。
+
+而是让 Swayframe
+
+以后增加 100 个功能
+
+也不会再次变乱。

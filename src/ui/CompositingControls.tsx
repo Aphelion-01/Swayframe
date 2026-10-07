@@ -1,3 +1,5 @@
+import { effectRegistry, effectCategories } from '../core/effect-registry';
+import { editorCommands } from './workspace/feature-contributions';
 import {
   effectsToGraph,
   linearGraphEffects,
@@ -5,7 +7,6 @@ import {
 } from '../core/compositing-migration';
 import { graphCommand } from '../core/compositing-commands';
 import {
-  insertGraphNode,
   deleteGraphNodes,
   patchGraphNode,
 } from '../core/compositing-operations';
@@ -17,7 +18,7 @@ import type {
   Mask,
   Effect,
 } from '../core/project-model';
-import { blendModes, effectKinds } from '../core/project-model';
+import { blendModes } from '../core/project-model';
 import { createMask, effectDefinitions } from '../core/effect-model';
 import { command } from '../core/command-system';
 import { AnimatedField } from './AnimatedField';
@@ -41,25 +42,12 @@ export function CompositingControls({
   layer: Layer;
   compositionId: string;
 }) {
+  const [effectQuery, setEffectQuery] = useState('');
   const [kind, setKind] = useState<EffectKind>('exposure'),
     [maskPath, setMaskPath] = useState<string>();
   useEffect(() => {
     const add = () => {
-      const view = store.getSnapshot(),
-        selected = view.project.compositions
-          .find((c) => c.id === view.project.activeCompositionId)
-          ?.layers.find((l) => l.id === view.selection[0]);
-      if (selected?.id !== layer.id || !selected.editor) return;
-      const graph =
-        selected.editor.graph ??
-        effectsToGraph(selected.id, selected.editor.effects ?? []);
-      store.run('添加高斯模糊', [
-        graphCommand(
-          view.project,
-          selected.id,
-          insertGraphNode(graph, 'gaussianBlur').graph,
-        ),
-      ]);
+      editorCommands(store).execute('effect-gaussianBlur');
     };
     window.addEventListener('motion:add-blur', add);
     return () => window.removeEventListener('motion:add-blur', add);
@@ -224,22 +212,48 @@ export function CompositingControls({
       </details>
       <details className="feature-details" open>
         <summary>效果与调色</summary>
+        <input
+          aria-label="搜索效果"
+          placeholder="搜索效果…"
+          value={effectQuery}
+          onChange={(e) => {
+            setEffectQuery(e.target.value);
+            const first = effectRegistry.search(e.target.value, layer.type)[0];
+            if (first) setKind(first.id as EffectKind);
+          }}
+        />
         <div className="effect-add">
           <select
             aria-label="添加效果类型"
             value={kind}
             onChange={(e) => setKind(e.target.value as EffectKind)}
           >
-            {effectKinds.map((k) => (
-              <option key={k} value={k}>
-                {effectDefinitions[k].label}
-              </option>
+            {[
+              ...new Set(
+                effectRegistry
+                  .search(effectQuery, layer.type)
+                  .map((d) => d.category),
+              ),
+            ].map((category) => (
+              <optgroup key={category} label={effectCategories[category]}>
+                {effectRegistry
+                  .search(effectQuery, layer.type)
+                  .filter((d) => d.category === category)
+                  .map((def) => (
+                    <option key={def.id} value={def.id}>
+                      {def.name}
+                    </option>
+                  ))}
+              </optgroup>
             ))}
           </select>
           <button
-            onClick={() =>
-              graphUpdate('添加效果', insertGraphNode(graph, kind).graph)
+            disabled={
+              !effectRegistry
+                .search(effectQuery, layer.type)
+                .some((d) => d.id === kind)
             }
+            onClick={() => editorCommands(store).execute(`effect-${kind}`)}
           >
             添加效果
           </button>

@@ -17,6 +17,7 @@ export function hasPrimaryModifier(
 }
 
 export function shortcutLabel(label: string | undefined): string | undefined {
+  label = label?.replace(/CommandOrControl\+/g, '⌘').replace(/Shift\+/g, '⇧');
   return current === 'Control'
     ? label
         ?.replace(/⌘/g, 'Ctrl+')

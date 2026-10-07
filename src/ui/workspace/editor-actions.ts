@@ -1,3 +1,6 @@
+import { features } from '../../shared/feature-catalog';
+import { scopedCommands } from './scoped-commands';
+import { toolDefinitions } from '../../shared/tool-registry';
 import {
   activeComposition,
   findProperty,
@@ -25,10 +28,9 @@ import { graphCommand } from '../../core/compositing-commands';
 import { splitLayerCommands } from '../../core/composition-editing';
 import type { EditorStore } from '../editor-store';
 import { layerKindLabels } from '../labels';
-import { layerActions } from './layer-actions';
+import { layerCommandBindings as layerActions } from './layer-command-bindings';
 import { createObject, objectChoices } from './object-actions';
 import type { PaletteCommand } from './palette';
-import type { ApplicationActionId } from '../../shared/application-menu';
 
 import { focusContext } from './shortcuts';
 import type { FocusContext } from './shortcuts';
@@ -43,7 +45,7 @@ const emit = (name: string) => () =>
 
 export function buildEditorActions(
   store: EditorStore,
-  ui: Partial<Record<ApplicationActionId, () => void>>,
+  ui: Partial<Record<string, () => void>>,
   getContext: () => FocusContext = () => focusContext(document.activeElement),
 ): EditorAction[] {
   const v = store.getSnapshot(),
@@ -82,6 +84,24 @@ export function buildEditorActions(
     label: string,
     source: string,
   ): EditorAction => ({ id, label, action: () => {}, ...fromLayer(source) });
+  const selectedIntervals = () => {
+    const explicit = selectedMotionSegments(v.project, v.frames);
+    return explicit.length
+      ? explicit
+      : [
+          ...new Set(
+            v.frames.flatMap((ref) => {
+              const segments = motionSegments(
+                findProperty(v.project, ref.propertyId).property,
+              );
+              const s =
+                segments.find((s) => s.from.id === ref.keyframeId) ??
+                segments.find((s) => s.to.id === ref.keyframeId);
+              return s ? [s.id] : [];
+            }),
+          ),
+        ];
+  };
   const ease = (
     id: string,
     label: string,
@@ -105,22 +125,7 @@ export function buildEditorActions(
           ),
         );
       else {
-        const explicit = selectedMotionSegments(v.project, v.frames);
-        const ids = explicit.length
-          ? explicit
-          : [
-              ...new Set(
-                v.frames.flatMap((ref) => {
-                  const segments = motionSegments(
-                    findProperty(v.project, ref.propertyId).property,
-                  );
-                  const s =
-                    segments.find((s) => s.from.id === ref.keyframeId) ??
-                    segments.find((s) => s.to.id === ref.keyframeId);
-                  return s ? [s.id] : [];
-                }),
-              ),
-            ];
+        const ids = selectedIntervals();
         if (!ids.length) {
           store.setStatus('请选择含相邻区间的关键帧');
           return;
@@ -159,8 +164,73 @@ export function buildEditorActions(
       keywords: `create layer ${kind} 新建 对象`,
       action: () => createObject(store, kind as Exclude<typeof kind, 'image'>),
     }));
+  const scoped = scopedCommands(store, getContext());
+  const extraStructure = [
+    ['layer-color', '图层颜色'],
+    ['layer-copy', '复制图层'],
+    ['layer-delete', '删除选中图层'],
+    ['layer-visibility', selected[0]?.visible ? '隐藏图层' : '显示图层'],
+    ['layer-lock', selected[0]?.locked ? '解锁图层' : '锁定图层'],
+    ['enter-precomp', '进入预合成'],
+  ].map(([id, label]) => selectedAction(id!, label!, label!));
   return [
-    ...Object.entries(ui).map(([id, action]) => ({ id, label: id, action })),
+    ...features
+      .all()
+      .filter((f) => f.commandScope)
+      .map((f) => ({
+        id: f.commandId,
+        label: f.title,
+        disabled: true,
+        action: () => {},
+        ...scoped.find((c) => c.id === f.commandId),
+      })),
+    ...toolDefinitions.map((tool) => ({
+      id: `tool-${tool.id}`,
+      label: tool.label,
+      action: () =>
+        window.dispatchEvent(
+          new CustomEvent('motion:tool', { detail: tool.id }),
+        ),
+    })),
+    ...extraStructure,
+    {
+      id: 'parent-remove',
+      label: '解除父级',
+      disabled: !selected.length,
+      action: () => fromLayer('设置父级')?.children?.[0]?.action(),
+    },
+    ...(['copy-easing', 'paste-easing'] as const).map((id) => ({
+      id,
+      label: id === 'copy-easing' ? '复制缓动' : '粘贴缓动',
+      disabled:
+        !v.frames.length ||
+        (id === 'paste-easing' && !store.motionCurveClipboard.read()),
+      action: () => {
+        const ids = selectedIntervals();
+        if (id === 'paste-easing') {
+          const curve = store.motionCurveClipboard.read();
+          if (curve && ids.length)
+            store.run(
+              '粘贴缓动',
+              applyMotionCurveCommands(v.project, ids, curve),
+            );
+        } else {
+          const ref = v.frames[0];
+          if (ref) {
+            const segment = motionSegments(
+              findProperty(v.project, ref.propertyId).property,
+            ).find((s) => s.id === ids[0]);
+            if (segment?.curve) {
+              store.motionCurveClipboard.copy(segment.curve);
+              store.setStatus('缓动已复制');
+            }
+          }
+        }
+      },
+    })),
+    ...Object.entries(ui).flatMap(([id, action]) =>
+      action ? [{ id, label: id, action }] : [],
+    ),
     {
       id: 'undo',
       label: '撤销',
@@ -424,5 +494,5 @@ export function buildEditorActions(
         if (commands.length) store.run('移除选中属性动画', commands);
       },
     },
-  ];
+  ].map((binding) => scoped.find((s) => s.id === binding.id) ?? binding);
 }

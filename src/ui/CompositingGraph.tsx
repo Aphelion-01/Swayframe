@@ -1,3 +1,8 @@
+import { useCommandScope } from './workspace/scoped-commands';
+import {
+  editorCommands,
+  editorContributions,
+} from './workspace/feature-contributions';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import type { Vec2 } from '../core/core-types';
@@ -11,7 +16,10 @@ import type {
 import { graphCommand } from '../core/compositing-commands';
 import { compileGraph } from '../core/compositing-compiler';
 import { migrateLayerGraph } from '../core/compositing-migration';
-import { nodeDefinition, nodeDefinitions } from '../core/compositing-registry';
+import {
+  nodeDefinition,
+  graphNodeRegistry,
+} from '../core/compositing-registry';
 import {
   connectPorts,
   deleteGraphNodes,
@@ -256,7 +264,7 @@ function GraphWorkspace({
       label: '删除节点',
       key,
       contexts: ['compositing'] as const,
-      action: remove,
+      action: () => editorCommands(store).execute('node.delete'),
     })),
     {
       id: 'cg-duplicate',
@@ -264,7 +272,7 @@ function GraphWorkspace({
       key: 'd',
       modifier: true,
       contexts: ['compositing'],
-      action: duplicate,
+      action: () => editorCommands(store).execute('node.duplicate'),
     },
     {
       id: 'cg-pan',
@@ -431,13 +439,7 @@ function GraphWorkspace({
       status(error);
     }
   };
-  const candidates = nodeDefinitions().filter(
-    (d) =>
-      !d.protected &&
-      (d.title + d.type + d.category)
-        .toLowerCase()
-        .includes(query.toLowerCase()),
-  );
+  const candidates = graphNodeRegistry.search(query);
   const add = (type: string) => {
     if (!search) return;
     try {
@@ -458,6 +460,57 @@ function GraphWorkspace({
       status(error);
     }
   };
+  useCommandScope(store, [
+    {
+      id: 'node.rename',
+      label: '重命名节点',
+      disabled: !menu?.nodeId && !selected.length,
+      action: () => {
+        const n = graph.nodes.find(
+          (n) => n.id === (menu?.nodeId ?? selected[0]),
+        );
+        if (n) setRename({ id: n.id, name: n.name });
+      },
+    },
+    {
+      id: 'node.duplicate',
+      label: '复制节点',
+      disabled: !editableIds.length,
+      action: duplicate,
+    },
+    {
+      id: 'node.delete',
+      label: '删除节点',
+      disabled: !editableIds.length,
+      action: remove,
+    },
+    {
+      id: 'node.add',
+      label: '添加节点',
+      disabled: !!menu?.edgeId || !!menu?.nodeId,
+      action: () => openSearch(menu?.x ?? 100, menu?.y ?? 100),
+    },
+    {
+      id: 'node.fit',
+      label: '适应所有节点',
+      disabled: !!menu?.edgeId || !!menu?.nodeId,
+      action: fit,
+    },
+    {
+      id: 'edge.insert',
+      label: '在连线上插入节点',
+      disabled: !menu?.edgeId,
+      action: () => menu && openSearch(menu.x, menu.y, menu.edgeId),
+    },
+    {
+      id: 'edge.disconnect',
+      label: '断开连线',
+      disabled: !menu?.edgeId,
+      action: () =>
+        menu?.edgeId &&
+        commit('断开节点连线', disconnectEdge(graph, menu.edgeId)),
+    },
+  ]);
   return (
     <section
       className="compositing-graph"
@@ -749,52 +802,18 @@ function GraphWorkspace({
           x={menu.x}
           y={menu.y}
           onClose={() => setMenu(undefined)}
-          items={
-            menu.edgeId
-              ? [
-                  {
-                    label: '在连线上插入节点',
-                    action: () => openSearch(menu.x, menu.y, menu.edgeId),
-                  },
-                  {
-                    label: '断开连线',
-                    action: () =>
-                      commit(
-                        '断开节点连线',
-                        disconnectEdge(graph, menu.edgeId!),
-                      ),
-                  },
-                ]
+          items={editorContributions(
+            store,
+            'context.node',
+            'compositing',
+          ).filter((item) => {
+            const id = (item as { id?: string }).id ?? '';
+            return menu.edgeId
+              ? id.startsWith('edge.')
               : menu.nodeId
-                ? [
-                    {
-                      label: '重命名节点',
-                      action: () => {
-                        const n = graph.nodes.find(
-                          (n) => n.id === menu.nodeId,
-                        )!;
-                        setRename({ id: n.id, name: n.name });
-                      },
-                    },
-                    {
-                      label: '复制节点',
-                      action: duplicate,
-                      disabled: !editableIds.length,
-                    },
-                    {
-                      label: '删除节点',
-                      action: remove,
-                      disabled: !editableIds.length,
-                    },
-                  ]
-                : [
-                    {
-                      label: '添加节点',
-                      action: () => openSearch(menu.x, menu.y),
-                    },
-                    { label: '适应所有节点', action: fit },
-                  ]
-          }
+                ? ['node.rename', 'node.duplicate', 'node.delete'].includes(id)
+                : ['node.add', 'node.fit'].includes(id);
+          })}
         />
       )}
       {search && (
