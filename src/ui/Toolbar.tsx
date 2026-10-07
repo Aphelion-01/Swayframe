@@ -381,7 +381,13 @@ export function Toolbar({ store }: { store: EditorStore }) {
       <header className="topbar">
         <MenuDropdown>
           <summary title="工程与创建命令">
-            <span className="application-name">Swayframe</span>
+            <span className="application-name">
+              <img
+                src="./branding/wordmark.png"
+                alt="Swayframe"
+                draggable={false}
+              />
+            </span>
             <span>文件</span>
             <Icon name="chevron" />
           </summary>

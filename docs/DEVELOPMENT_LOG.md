@@ -104,3 +104,7 @@ Mac锁屏阻止继续原生文件对话框和鼠标操作；已请求解锁。�
 用户解锁后，以独立桌面配置重建并保存作品 A，真正退出应用后重开、播放、修改和撤销；完整工程 JSON 相等。实测播放头与 Canvas 移动/缩放/旋转。发现关键帧按钮丢失末次释放，改为窗口捕获完整手势，释放时采样坐标；真实 1→1.5 秒拖动一次 Undo 恢复。新增回归，全量 102 文件 / 316 tests、lint 通过。
 
 原生 0.9.4 导出 150 张 1920×1080 PNG，首/中/末单帧与序列解码 RGBA 相等；最终 0.9.5 缩放峰值单帧也与序列第 15 帧相等，Renderer 未变。原生验收记录见 outputs/workflow-v02/native-acceptance.json；B/C 原生完整输出及 Windows 实机仍未验证。
+
+## 2026-10-07 — 品牌图标 / Swayframe 0.9.6
+
+按用户参考图替换应用图标与顶部字标；使用 imagegen 分离品牌资源，Sway 字段适配深色界面为浅灰，frame 保持蓝色。原图未覆盖。PNG 转换为标准多尺寸 ICNS/ICO，electron-builder 使用真实图标，网页 favicon 同步更新；字标保留 alt 文本和原文件菜单交互。浏览器 1280×720 实测字标清晰、完整、无裁切，截图 outputs/branding/editor-branding.jpg。全量 316 tests、lint、typecheck、Web/desktop build 通过；macOS 包内 ICNS 与源文件相同。
