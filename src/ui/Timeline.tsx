@@ -29,7 +29,7 @@ import type { CSSProperties } from 'react';
 import { command } from '../core/command-system';
 import { newId } from '../core/core-types';
 import { evaluateProperty } from '../core/animation-engine';
-import { activeComposition } from '../core/project-model';
+import { findProperty, activeComposition } from '../core/project-model';
 import type { Interpolation } from '../core/project-model';
 import type { EditorStore } from './editor-store';
 import { advancePlayback } from './playback';
@@ -81,6 +81,7 @@ export function Timeline({ store }: { store: EditorStore }) {
         delta: number;
         snapshot: unknown;
         duplicate: boolean;
+        time: number;
         times: readonly number[];
         targets: readonly number[];
       }
@@ -172,6 +173,76 @@ export function Timeline({ store }: { store: EditorStore }) {
     setKeyMenu(undefined);
     setLayerMenu(undefined);
   });
+  // Track the complete gesture at window level: React updates or a lost button
+  // capture must not discard the final pointer position / release.
+  useEffect(() => {
+    const clear = () => {
+      dragRef.current = undefined;
+      setFrameDrag(undefined);
+    };
+    const move = (event: PointerEvent) => {
+      const drag = dragRef.current;
+      if (!drag) return;
+      if (drag.snapshot !== store.getSnapshot().project) {
+        clear();
+        return;
+      }
+      const result = snapTimeDelta(
+        drag.times,
+        ((event.clientX - drag.x) / Math.max(1, drag.width)) * c.duration,
+        c.duration,
+        c.fps,
+        drag.targets,
+        snapping && !event.metaKey && !event.ctrlKey
+          ? (8 / Math.max(1, drag.width)) * c.duration
+          : -1,
+      );
+      drag.delta = result.delta;
+      setFrameDrag({ id: drag.id, ...result });
+    };
+    const finish = (event: PointerEvent) => {
+      const initial = dragRef.current;
+      if (!initial) return;
+      move(event);
+      const drag = dragRef.current;
+      clear();
+      if (!drag) {
+        store.setStatus('工程已变化，关键帧拖动已取消', true);
+        return;
+      }
+      if (Math.abs(drag.delta) <= 1e-8) {
+        store.setTime(drag.time);
+        return;
+      }
+      if (drag.duplicate) {
+        const commands = store.getSnapshot().frames.map((ref) => {
+          const source = findProperty(
+            store.getSnapshot().project,
+            ref.propertyId,
+          ).property.keyframes.find((key) => key.id === ref.keyframeId);
+          if (!source) throw new Error('关键帧不存在');
+          return command({
+            type: 'keyframe.add',
+            propertyId: ref.propertyId,
+            keyframe: {
+              ...source,
+              id: newId(),
+              time: source.time + drag.delta,
+            },
+          });
+        });
+        store.run('拖动复制关键帧', commands);
+      } else store.moveSelectedFrames(drag.delta);
+    };
+    window.addEventListener('pointermove', move, true);
+    window.addEventListener('pointerup', finish, true);
+    window.addEventListener('pointercancel', clear, true);
+    return () => {
+      window.removeEventListener('pointermove', move, true);
+      window.removeEventListener('pointerup', finish, true);
+      window.removeEventListener('pointercancel', clear, true);
+    };
+  }, [store, c, snapping]);
   const easingSegments = () => {
     const selected = store.getSnapshot().frames;
     return [
@@ -484,6 +555,7 @@ export function Timeline({ store }: { store: EditorStore }) {
                                   delta: 0,
                                   snapshot: view.project,
                                   duplicate: event.altKey,
+                                  time: frame.time,
                                   times: c.layers
                                     .flatMap(visibleProperties)
                                     .flatMap(({ property: p }) =>
@@ -518,94 +590,6 @@ export function Timeline({ store }: { store: EditorStore }) {
                                       ),
                                   ],
                                 };
-                              }}
-                              onPointerMove={(event) => {
-                                const drag = dragRef.current;
-                                if (!drag || drag.id !== frame.id) return;
-                                if (
-                                  drag.snapshot !== store.getSnapshot().project
-                                ) {
-                                  dragRef.current = undefined;
-                                  setFrameDrag(undefined);
-                                  return;
-                                }
-                                const result = snapTimeDelta(
-                                  drag.times,
-                                  ((event.clientX - drag.x) /
-                                    Math.max(1, drag.width)) *
-                                    c.duration,
-                                  c.duration,
-                                  c.fps,
-                                  drag.targets,
-                                  snapping && !event.metaKey && !event.ctrlKey
-                                    ? (8 / Math.max(1, drag.width)) * c.duration
-                                    : -1,
-                                );
-                                drag.delta = result.delta;
-                                setFrameDrag({
-                                  id: frame.id,
-                                  ...result,
-                                });
-                              }}
-                              onPointerUp={(event) => {
-                                event.stopPropagation();
-                                const drag = dragRef.current;
-                                dragRef.current = undefined;
-                                setFrameDrag(undefined);
-                                if (
-                                  drag &&
-                                  drag.snapshot === store.getSnapshot().project
-                                ) {
-                                  if (Math.abs(drag.delta) > 1e-8) {
-                                    if (drag.duplicate) {
-                                      const commands = view.frames.map(
-                                        (ref) => {
-                                          const property =
-                                            visibleProperties(layer).find(
-                                              (entry) =>
-                                                entry.property.id ===
-                                                ref.propertyId,
-                                            )?.property ??
-                                            c.layers
-                                              .flatMap(visibleProperties)
-                                              .find(
-                                                (entry) =>
-                                                  entry.property.id ===
-                                                  ref.propertyId,
-                                              )?.property;
-                                          const source =
-                                            property?.keyframes.find(
-                                              (k) => k.id === ref.keyframeId,
-                                            );
-                                          if (!source)
-                                            throw new Error('关键帧不存在');
-                                          return command({
-                                            type: 'keyframe.add',
-                                            propertyId: ref.propertyId,
-                                            keyframe: {
-                                              ...source,
-                                              id: newId(),
-                                              time: source.time + drag.delta,
-                                            },
-                                          });
-                                        },
-                                      );
-                                      store.run('拖动复制关键帧', commands);
-                                    } else store.moveSelectedFrames(drag.delta);
-                                  } else store.setTime(frame.time);
-                                } else if (drag)
-                                  store.setStatus(
-                                    '工程已变化，关键帧拖动已取消',
-                                    true,
-                                  );
-                              }}
-                              onPointerCancel={() => {
-                                dragRef.current = undefined;
-                                setFrameDrag(undefined);
-                              }}
-                              onLostPointerCapture={() => {
-                                dragRef.current = undefined;
-                                setFrameDrag(undefined);
                               }}
                               onClick={(event) => {
                                 event.stopPropagation();

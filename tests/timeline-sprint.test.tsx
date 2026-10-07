@@ -83,7 +83,7 @@ it('多选关键帧100次拖动只提交一次，预览与实际提交均夹到�
     fireEvent.pointerMove(frame, { clientX: 1000 + i });
   expect(store.getSnapshot().project).toBe(before);
   expect(frame.style.left).toBe('80%');
-  fireEvent.pointerUp(frame);
+  fireEvent.pointerUp(frame, { clientX: 1099 });
   expect(
     activeComposition(
       store.getSnapshot().project,
@@ -93,7 +93,7 @@ it('多选关键帧100次拖动只提交一次，预览与实际提交均夹到�
   act(() => store.undo());
   expect(store.getSnapshot().project).toEqual(before);
 });
-it('关键帧吸附播放头；Escape/丢失捕获取消；播放头拖动取消恢复时间，不增加历史', () => {
+it('关键帧吸附播放头；Escape取消，丢失按钮捕获仍由窗口完成；播放头取消恢复时间', () => {
   const { store } = setup();
   act(() => store.setTime(3.05));
   const frame = screen.getByRole('button', {
@@ -109,8 +109,9 @@ it('关键帧吸附播放头；Escape/丢失捕获取消；播放头拖动取消
   fireEvent.pointerDown(frame, { button: 0, clientX: 100 });
   fireEvent.pointerMove(frame, { clientX: 300 });
   fireEvent.lostPointerCapture(frame);
-  fireEvent.pointerUp(frame);
-  expect(store.commands.undoStack).toHaveLength(0);
+  fireEvent.pointerUp(window, { clientX: 300 });
+  expect(store.commands.undoStack).toHaveLength(1);
+  act(() => store.undo());
   const ruler = screen.getByRole('slider', { name: '播放头' });
   rect(ruler);
   fireEvent.pointerDown(ruler, { button: 0, clientX: 50 });
@@ -120,6 +121,26 @@ it('关键帧吸附播放头；Escape/丢失捕获取消；播放头拖动取消
   fireEvent.pointerUp(ruler);
   expect(store.getSnapshot().time).toBe(3.05);
   expect(store.commands.undoStack).toHaveLength(0);
+});
+it('首次选择关键帧并在窗口释放，使用最终坐标而非缺失的中间移动，一次Undo', () => {
+  const { store, position } = setup();
+  const frame = screen.getByRole('button', {
+    name: '关键帧 矩形 位置 1.000 秒',
+  });
+  rect(frame.parentElement!);
+  const before = store.getSnapshot().project;
+  fireEvent.pointerDown(frame, { button: 0, clientX: 100 });
+  fireEvent.pointerUp(window, { clientX: 150 });
+  expect(
+    activeComposition(
+      store.getSnapshot().project,
+    ).layers[0]!.transform.position.keyframes.find(
+      (k) => k.id === position.keyframes[0]!.id,
+    )!.time,
+  ).toBe(1.5);
+  expect(store.commands.undoStack).toHaveLength(1);
+  act(() => store.undo());
+  expect(store.getSnapshot().project).toEqual(before);
 });
 it('图层时间条越界拖动保持有效范围；右键不会启动移动', () => {
   const { store, layer } = setup();

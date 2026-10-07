@@ -211,3 +211,7 @@ Canvas轴向移动、Scale/Rotate与Inspector多选Scale/Rotate共用Context；�
 本轮基线 `docs/baseline/V02_WORKFLOW_OPTIMIZATION.txt`，仅连通既有创作能力。Web Toolbar新建通过现有Project加载入口创建空白工程，清理History/Selection/Frames/Time/Playing/TimelineZoom/Preview/Clipboard；合成创建命名并自动激活。桌面仍走原ProjectService的保存保护。默认autoKeyframes=false，静态编辑不隐式开启动画；已有关键帧的Property继续通过valueCommand在当前统一时间记录。连续预览不写Scene，结束一次共享Transaction。
 
 Transform矩阵分解允许塌缩的零轴，以存活轴或既有角度保持旋转及符号；仍拒绝真实剪切。Inspector单对象零缩放恢复使用真实未缩放LocalBounds/TextMeasure与既有Pivot，父级逆矩阵计算补偿，Position/Scale/Rotation仍共用transformEditCommands。多选零缩放、外部Pivot逆推和奇异Parent不近似处理，明确给出错误。产品版本与package.json同源。FLOW-01～06和完整历史测试覆盖往返、求值、曲线、Parent及共享Canvas2D绘制；实际磁盘与PNG像素验收独立记录，未通过不得由测试PASS替代。
+
+### 0.9.5 · Timeline 手势闭环
+
+关键帧拖动由窗口捕获 pointermove/pointerup/pointercancel，按钮捕获变化不丢失释放。结束时采样最终坐标，连续预览只更新 UI；提交仍调用 moveSelectedFrames 或共享 keyframe.add Transaction，一次 Undo。工程快照变化、Esc 或取消清理临时状态。真实原生拖动与末次释放回归独立验证。
