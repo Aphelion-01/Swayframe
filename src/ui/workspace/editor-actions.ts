@@ -267,6 +267,18 @@ export function buildEditorActions(
     selectedAction('rename', '重命名', '重命名'),
     selectedAction('precompose', '选中图层预合成', '选中图层预合成'),
     selectedAction('parent-null', '创建父级空对象', '创建父级空对象'),
+    {
+      ...selectedAction('parent-select', '设置父子级', '设置父级'),
+      action: () => {
+        store.clearGraphSelection();
+        window.dispatchEvent(new Event('motion:show-right'));
+        requestAnimationFrame(() =>
+          document
+            .querySelector<HTMLSelectElement>('[aria-label="父级图层"]')
+            ?.focus(),
+        );
+      },
+    },
     selectedAction(
       'toggle-3d',
       '切换三维图层',

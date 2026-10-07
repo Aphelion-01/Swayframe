@@ -9,6 +9,7 @@ export interface CameraSnapshot {
   readonly position: Point3;
   readonly rotation: Point3;
   readonly zoom: number;
+  readonly orthographic?: boolean;
   readonly width: number;
   readonly height: number;
 }
@@ -108,7 +109,7 @@ export function projectPoint(
 ): ProjectedPoint | null {
   const [x, y, z] = point4(view, point);
   if (z <= 1) return null;
-  const ratio = camera.zoom / z;
+  const ratio = camera.orthographic ? camera.zoom : camera.zoom / z;
   return {
     x: camera.width / 2 + x * ratio,
     y: camera.height / 2 + y * ratio,

@@ -1,3 +1,7 @@
+import { SpatialViewport } from './SpatialViewport';
+import { ThreeDGizmo } from './ThreeDGizmo';
+import { CanvasAids, type CanvasAidSettings } from './CanvasAids';
+import { projectPoint } from '../core/perspective';
 import { pathSvg } from '../core/shape-geometry';
 import { useEditorSlice } from './use-editor-slice';
 import {
@@ -41,7 +45,7 @@ import type { Project } from '../core/project-model';
 import { canvasSnapContext, snapCanvasDelta } from '../core/canvas-snapping';
 import type { CanvasSnapContext, SnapGuide } from '../core/canvas-snapping';
 import { useInteractionCancel } from './workspace/interaction';
-import { ContextMenu } from './workspace/primitives';
+import { ContextMenu, MenuDropdown } from './workspace/primitives';
 import { layerActions } from './workspace/layer-actions';
 import { PathEditor } from './PathEditor';
 import { TextField } from './fields';
@@ -155,6 +159,28 @@ type CanvasInteractionData = {
 };
 
 export function Canvas({ store }: { store: EditorStore }) {
+  const [spaceView, setSpaceView] = useState(false);
+  const [aids, setAids] = useState<CanvasAidSettings>(() => {
+    try {
+      return {
+        ...{ grid: false, rulers: false, guides: true },
+        ...JSON.parse(localStorage.getItem('swayframe.canvas-aids') ?? '{}'),
+      };
+    } catch {
+      return { grid: false, rulers: false, guides: true };
+    }
+  });
+  const toggleAid = (key: keyof CanvasAidSettings) =>
+    setAids((old) => {
+      const next = { ...old, [key]: !old[key] };
+      try {
+        localStorage.setItem('swayframe.canvas-aids', JSON.stringify(next));
+      } catch {
+        /* preferences only */
+      }
+      return next;
+    });
+
   const { tool, space, setSpace } = useTools();
   const interaction = useRef(
     new CanvasInteractionState<CanvasInteractionData>(),
@@ -1287,302 +1313,362 @@ export function Canvas({ store }: { store: EditorStore }) {
             <Icon name="snap" />
           </button>
         </div>
+        <div className="canvas-view-tools">
+          <button
+            aria-label="三维图层查看工具"
+            aria-pressed={spaceView}
+            onClick={() => setSpaceView(!spaceView)}
+          >
+            3D 空间
+          </button>
+          <MenuDropdown className="canvas-aids-menu">
+            <summary>辅助</summary>
+            <div>
+              {(
+                [
+                  ['grid', '网格'],
+                  ['rulers', '标尺'],
+                  ['guides', '参考线'],
+                ] as const
+              ).map(([id, label]) => (
+                <label key={id}>
+                  <input
+                    type="checkbox"
+                    checked={aids[id]}
+                    onChange={() => toggleAid(id)}
+                  />
+                  {label}
+                </label>
+              ))}
+              <small>像素单位 · 从标尺拖出参考线</small>
+            </div>
+          </MenuDropdown>
+        </div>
         <span className="composition-meta">
           {c.width} × {c.height} · {c.fps} 帧/秒
         </span>
       </div>
-      <div
-        className="canvas-scroll"
-        ref={containerRef}
-        onPointerDownCapture={(event) => {
-          if (event.button !== 1 && !space && tool !== 'hand') return;
-          if (interaction.state.type !== 'idle') return;
-          event.preventDefault();
-          event.stopPropagation();
-          event.currentTarget.setPointerCapture(event.pointerId);
-          setPanning(true);
-          pan.current = {
-            x: event.clientX,
-            y: event.clientY,
-            left: event.currentTarget.scrollLeft,
-            top: event.currentTarget.scrollTop,
-            offset,
-          };
-        }}
-        onPointerMove={(event) => {
-          if (!pan.current) {
-            if (outsideInteraction.current) onPointerMove(event);
-            return;
-          }
-          setOffset({
-            x: pan.current.offset.x + event.clientX - pan.current.x,
-            y: pan.current.offset.y + event.clientY - pan.current.y,
-          });
-        }}
-        onPointerDown={(event) => {
-          if (
-            event.target === event.currentTarget &&
-            event.button === 0 &&
-            !space &&
-            tool !== 'hand'
-          ) {
-            outsideInteraction.current = true;
-            onPointerDown(event);
-          }
-        }}
-        onPointerUp={() => {
-          if (outsideInteraction.current) {
-            onPointerUp();
-            outsideInteraction.current = false;
-          }
-          pan.current = undefined;
-          setPanning(false);
-        }}
-        onLostPointerCapture={() => {
-          if (interaction.state.type !== 'idle') cancelCanvas();
-        }}
-        onPointerCancel={() => {
-          cancelCanvas();
-          setPanning(false);
-          if (pan.current) setOffset(pan.current.offset);
-          pan.current = undefined;
-        }}
-      >
+      <div className={`canvas-viewports ${spaceView ? 'is-split' : ''}`}>
         <div
-          className="canvas-fit"
-          style={{
-            width: fitWidth
-              ? `${fitWidth * view.zoom}px`
-              : `${view.zoom * 100}%`,
-            aspectRatio: `${c.width} / ${c.height}`,
-            transform: `translate(${offset.x}px,${offset.y}px)`,
+          className="canvas-scroll"
+          ref={containerRef}
+          onPointerDownCapture={(event) => {
+            if (event.button !== 1 && !space && tool !== 'hand') return;
+            if (interaction.state.type !== 'idle') return;
+            event.preventDefault();
+            event.stopPropagation();
+            event.currentTarget.setPointerCapture(event.pointerId);
+            setPanning(true);
+            pan.current = {
+              x: event.clientX,
+              y: event.clientY,
+              left: event.currentTarget.scrollLeft,
+              top: event.currentTarget.scrollTop,
+              offset,
+            };
+          }}
+          onPointerMove={(event) => {
+            if (!pan.current) {
+              if (outsideInteraction.current) onPointerMove(event);
+              return;
+            }
+            setOffset({
+              x: pan.current.offset.x + event.clientX - pan.current.x,
+              y: pan.current.offset.y + event.clientY - pan.current.y,
+            });
+          }}
+          onPointerDown={(event) => {
+            if (
+              event.target === event.currentTarget &&
+              event.button === 0 &&
+              !space &&
+              tool !== 'hand'
+            ) {
+              outsideInteraction.current = true;
+              onPointerDown(event);
+            }
+          }}
+          onPointerUp={() => {
+            if (outsideInteraction.current) {
+              onPointerUp();
+              outsideInteraction.current = false;
+            }
+            pan.current = undefined;
+            setPanning(false);
+          }}
+          onLostPointerCapture={() => {
+            if (interaction.state.type !== 'idle') cancelCanvas();
+          }}
+          onPointerCancel={() => {
+            cancelCanvas();
+            setPanning(false);
+            if (pan.current) setOffset(pan.current.offset);
+            pan.current = undefined;
           }}
         >
-          <canvas
-            ref={ref}
-            aria-label="合成画布"
-            data-testid="canvas"
-            style={
-              space || tool === 'hand'
-                ? { cursor: panning ? 'grabbing' : 'grab' }
-                : tool === 'text'
-                  ? { cursor: 'text' }
-                  : tool !== 'select'
-                    ? { cursor: 'crosshair' }
-                    : undefined
-            }
-            width={c.width}
-            height={c.height}
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerLeave={() => {
-              setHoverId(undefined);
-              if (ref.current) ref.current.style.cursor = '';
+          <div
+            className="canvas-fit"
+            style={{
+              width: fitWidth
+                ? `${fitWidth * view.zoom}px`
+                : `${view.zoom * 100}%`,
+              aspectRatio: `${c.width} / ${c.height}`,
+              transform: `translate(${offset.x}px,${offset.y}px)`,
             }}
-            onContextMenu={(event) => {
-              event.preventDefault();
-              const id = hitTest(input, point(event), store.textMeasure);
-              if (id && !view.selection.includes(id)) store.select(id);
-              store.selectFrames([]);
-              store.selectProperties([]);
-              setMenu({ x: event.clientX, y: event.clientY });
-            }}
-            onDoubleClick={(event) => {
-              if (tool === 'pen') {
-                finishPen();
-                return;
+          >
+            <canvas
+              ref={ref}
+              aria-label="合成画布"
+              data-testid="canvas"
+              style={
+                space || tool === 'hand'
+                  ? { cursor: panning ? 'grabbing' : 'grab' }
+                  : tool === 'text'
+                    ? { cursor: 'text' }
+                    : tool !== 'select'
+                      ? { cursor: 'crosshair' }
+                      : undefined
               }
-              if (space || tool !== 'select') return;
-              const id = hitTest(input, point(event), store.textMeasure);
-              const layer = c.layers.find((l) => l.id === id);
-              if (!layer) return;
-              store.select(layer.id);
-              if (layer.type === 'precomp' && layer.compositionId) {
-                breadcrumbs.current = [...breadcrumbs.current, c.id];
-                setNavigation(breadcrumbs.current);
-                store.run('进入预合成', [
-                  command({
-                    type: 'project.activate',
-                    compositionId: layer.compositionId,
-                  }),
-                ]);
-                store.select(null);
-              } else if (layer.type === 'text' || layer.type === 'shape')
-                setInternal(layer.id);
-            }}
-            onPointerCancel={() => {
-              guidanceController.activate();
-              cancelMarquee();
-              drawing.current = undefined;
-              setDrawBox(undefined);
-              gesture.current = undefined;
-              setTransformPreview(undefined);
-              store.cancelDrag();
-              moveSnap.current = undefined;
-              setSnapGuides([]);
-            }}
-            onLostPointerCapture={() => {
-              guidanceController.activate();
-              cancelMarquee();
-              drawing.current = undefined;
-              setDrawBox(undefined);
-              gesture.current = undefined;
-              setTransformPreview(undefined);
-              store.cancelDrag();
-              moveSnap.current = undefined;
-              setSnapGuides([]);
-            }}
-          />
-          {hoverId &&
-            !view.selection.includes(hoverId) &&
-            tool === 'select' &&
-            !space &&
-            (() => {
-              const item = input.layers.find((l) => l.source.id === hoverId);
-              if (!item) return null;
-              const q =
-                item.quad ??
-                boundsCorners(
-                  getWorldBounds(item, view.time, store.textMeasure),
+              width={c.width}
+              height={c.height}
+              onPointerDown={onPointerDown}
+              onPointerMove={onPointerMove}
+              onPointerUp={onPointerUp}
+              onPointerLeave={() => {
+                setHoverId(undefined);
+                if (ref.current) ref.current.style.cursor = '';
+              }}
+              onContextMenu={(event) => {
+                event.preventDefault();
+                const id = hitTest(input, point(event), store.textMeasure);
+                if (id && !view.selection.includes(id)) store.select(id);
+                store.selectFrames([]);
+                store.selectProperties([]);
+                setMenu({ x: event.clientX, y: event.clientY });
+              }}
+              onDoubleClick={(event) => {
+                if (tool === 'pen') {
+                  finishPen();
+                  return;
+                }
+                if (space || tool !== 'select') return;
+                const id = hitTest(input, point(event), store.textMeasure);
+                const layer = c.layers.find((l) => l.id === id);
+                if (!layer) return;
+                store.select(layer.id);
+                if (layer.type === 'precomp' && layer.compositionId) {
+                  breadcrumbs.current = [...breadcrumbs.current, c.id];
+                  setNavigation(breadcrumbs.current);
+                  store.run('进入预合成', [
+                    command({
+                      type: 'project.activate',
+                      compositionId: layer.compositionId,
+                    }),
+                  ]);
+                  store.select(null);
+                } else if (layer.type === 'text' || layer.type === 'shape')
+                  setInternal(layer.id);
+              }}
+              onPointerCancel={() => {
+                guidanceController.activate();
+                cancelMarquee();
+                drawing.current = undefined;
+                setDrawBox(undefined);
+                gesture.current = undefined;
+                setTransformPreview(undefined);
+                store.cancelDrag();
+                moveSnap.current = undefined;
+                setSnapGuides([]);
+              }}
+              onLostPointerCapture={() => {
+                guidanceController.activate();
+                cancelMarquee();
+                drawing.current = undefined;
+                setDrawBox(undefined);
+                gesture.current = undefined;
+                setTransformPreview(undefined);
+                store.cancelDrag();
+                moveSnap.current = undefined;
+                setSnapGuides([]);
+              }}
+            />
+            <CanvasAids
+              width={c.width}
+              height={c.height}
+              scale={uiScale}
+              key={c.id}
+              compositionId={c.id}
+              settings={aids}
+            />
+            {spatialSelection &&
+              tool === 'select' &&
+              !space &&
+              input.camera && (
+                <ThreeDGizmo
+                  store={store}
+                  snapshot={input}
+                  project={(p) => projectPoint(p, input.camera!)}
+                  width={c.width}
+                  height={c.height}
+                  unitsPerPixel={uiScale}
+                />
+              )}
+            {hoverId &&
+              !view.selection.includes(hoverId) &&
+              tool === 'select' &&
+              !space &&
+              (() => {
+                const item = input.layers.find((l) => l.source.id === hoverId);
+                if (!item) return null;
+                const q =
+                  item.quad ??
+                  boundsCorners(
+                    getWorldBounds(item, view.time, store.textMeasure),
+                  );
+                return (
+                  <svg
+                    className="canvas-hover-outline"
+                    aria-label="悬停对象轮廓"
+                    viewBox={`0 0 ${c.width} ${c.height}`}
+                  >
+                    <polygon points={q.map((p) => `${p.x},${p.y}`).join(' ')} />
+                  </svg>
                 );
-              return (
-                <svg
-                  className="canvas-hover-outline"
-                  aria-label="悬停对象轮廓"
-                  viewBox={`0 0 ${c.width} ${c.height}`}
-                >
-                  <polygon points={q.map((p) => `${p.x},${p.y}`).join(' ')} />
-                </svg>
-              );
-            })()}
-          {!spatialSelection &&
-            view.selection.length > 0 &&
-            tool === 'select' &&
-            !internal &&
-            !guidance.suppressed && (
-              <TransformOverlay
-                store={store}
-                context={guideContext}
-                gizmo={gizmo}
-                uiScale={uiScale}
-                model={guideModel}
-                canvas={ref}
+              })()}
+            {!spatialSelection &&
+              view.selection.length > 0 &&
+              tool === 'select' &&
+              !internal &&
+              !guidance.suppressed && (
+                <TransformOverlay
+                  store={store}
+                  context={guideContext}
+                  gizmo={gizmo}
+                  uiScale={uiScale}
+                  model={guideModel}
+                  canvas={ref}
+                />
+              )}
+            {snapGuides.length > 0 && (
+              <svg
+                className="canvas-snap-guides"
+                aria-label="画布吸附参考线"
+                viewBox={`0 0 ${c.width} ${c.height}`}
+              >
+                {snapGuides.map((guide) =>
+                  guide.spacing ? (
+                    <g key={guide.axis} aria-label="等间距参考线">
+                      {guide.spacing.spans.map(([a, b], i) => (
+                        <g key={i}>
+                          <line
+                            x1={guide.axis === 'x' ? a : guide.spacing!.cross}
+                            x2={guide.axis === 'x' ? b : guide.spacing!.cross}
+                            y1={guide.axis === 'y' ? a : guide.spacing!.cross}
+                            y2={guide.axis === 'y' ? b : guide.spacing!.cross}
+                          />
+                          <text
+                            x={
+                              guide.axis === 'x'
+                                ? (a + b) / 2
+                                : guide.spacing!.cross + 8 * uiScale
+                            }
+                            y={
+                              guide.axis === 'y'
+                                ? (a + b) / 2
+                                : guide.spacing!.cross - 8 * uiScale
+                            }
+                            fontSize={11 * uiScale}
+                            textAnchor="middle"
+                          >
+                            {Math.round(guide.spacing!.distance * 10) / 10}
+                          </text>
+                        </g>
+                      ))}
+                    </g>
+                  ) : (
+                    <line
+                      key={guide.axis}
+                      x1={guide.axis === 'x' ? guide.value : 0}
+                      x2={guide.axis === 'x' ? guide.value : c.width}
+                      y1={guide.axis === 'y' ? guide.value : 0}
+                      y2={guide.axis === 'y' ? guide.value : c.height}
+                    />
+                  ),
+                )}
+              </svg>
+            )}
+            {penPreview.length > 0 && (
+              <svg
+                className="pen-preview"
+                viewBox={`0 0 ${c.width} ${c.height}`}
+              >
+                <path
+                  d={pathSvg(penValues(penPreview), false)}
+                  fill="none"
+                  stroke="#8dafff"
+                  strokeWidth={Math.max(
+                    2,
+                    c.width / Math.max(1, fitWidth) / view.zoom,
+                  )}
+                />
+                {penPreview.map((p, i) => (
+                  <g key={i}>
+                    <line
+                      x1={p.incoming.x}
+                      y1={p.incoming.y}
+                      x2={p.outgoing.x}
+                      y2={p.outgoing.y}
+                      stroke="var(--warning)"
+                      strokeWidth={uiScale}
+                    />
+                    <circle
+                      cx={p.outgoing.x}
+                      cy={p.outgoing.y}
+                      r={3 * uiScale}
+                      fill="var(--warning)"
+                    />
+                    <circle
+                      key={i}
+                      cx={p.x}
+                      cy={p.y}
+                      r={Math.max(
+                        3,
+                        (c.width / Math.max(1, fitWidth) / view.zoom) * 3,
+                      )}
+                      fill="#8dafff"
+                    />
+                  </g>
+                ))}
+              </svg>
+            )}
+            {marqueeBox && (
+              <div
+                className="draw-preview"
+                style={{
+                  left: `${(Math.min(marqueeBox.start.x, marqueeBox.end.x) / c.width) * 100}%`,
+                  top: `${(Math.min(marqueeBox.start.y, marqueeBox.end.y) / c.height) * 100}%`,
+                  width: `${(Math.abs(marqueeBox.end.x - marqueeBox.start.x) / c.width) * 100}%`,
+                  height: `${(Math.abs(marqueeBox.end.y - marqueeBox.start.y) / c.height) * 100}%`,
+                }}
               />
             )}
-          {snapGuides.length > 0 && (
-            <svg
-              className="canvas-snap-guides"
-              aria-label="画布吸附参考线"
-              viewBox={`0 0 ${c.width} ${c.height}`}
-            >
-              {snapGuides.map((guide) =>
-                guide.spacing ? (
-                  <g key={guide.axis} aria-label="等间距参考线">
-                    {guide.spacing.spans.map(([a, b], i) => (
-                      <g key={i}>
-                        <line
-                          x1={guide.axis === 'x' ? a : guide.spacing!.cross}
-                          x2={guide.axis === 'x' ? b : guide.spacing!.cross}
-                          y1={guide.axis === 'y' ? a : guide.spacing!.cross}
-                          y2={guide.axis === 'y' ? b : guide.spacing!.cross}
-                        />
-                        <text
-                          x={
-                            guide.axis === 'x'
-                              ? (a + b) / 2
-                              : guide.spacing!.cross + 8 * uiScale
-                          }
-                          y={
-                            guide.axis === 'y'
-                              ? (a + b) / 2
-                              : guide.spacing!.cross - 8 * uiScale
-                          }
-                          fontSize={11 * uiScale}
-                          textAnchor="middle"
-                        >
-                          {Math.round(guide.spacing!.distance * 10) / 10}
-                        </text>
-                      </g>
-                    ))}
-                  </g>
-                ) : (
-                  <line
-                    key={guide.axis}
-                    x1={guide.axis === 'x' ? guide.value : 0}
-                    x2={guide.axis === 'x' ? guide.value : c.width}
-                    y1={guide.axis === 'y' ? guide.value : 0}
-                    y2={guide.axis === 'y' ? guide.value : c.height}
-                  />
-                ),
-              )}
-            </svg>
-          )}
-          {penPreview.length > 0 && (
-            <svg className="pen-preview" viewBox={`0 0 ${c.width} ${c.height}`}>
-              <path
-                d={pathSvg(penValues(penPreview), false)}
-                fill="none"
-                stroke="#8dafff"
-                strokeWidth={Math.max(
-                  2,
-                  c.width / Math.max(1, fitWidth) / view.zoom,
-                )}
+            {drawBox && tool !== 'pen' && (
+              <div
+                className="draw-preview creation-preview"
+                style={{
+                  left: `${(Math.min(drawBox.start.x, drawBox.end.x) / c.width) * 100}%`,
+                  top: `${(Math.min(drawBox.start.y, drawBox.end.y) / c.height) * 100}%`,
+                  width: `${(Math.abs(drawBox.end.x - drawBox.start.x) / c.width) * 100}%`,
+                  height: `${(Math.abs(drawBox.end.y - drawBox.start.y) / c.height) * 100}%`,
+                  borderRadius: tool === 'ellipse' ? '50%' : 0,
+                }}
               />
-              {penPreview.map((p, i) => (
-                <g key={i}>
-                  <line
-                    x1={p.incoming.x}
-                    y1={p.incoming.y}
-                    x2={p.outgoing.x}
-                    y2={p.outgoing.y}
-                    stroke="var(--warning)"
-                    strokeWidth={uiScale}
-                  />
-                  <circle
-                    cx={p.outgoing.x}
-                    cy={p.outgoing.y}
-                    r={3 * uiScale}
-                    fill="var(--warning)"
-                  />
-                  <circle
-                    key={i}
-                    cx={p.x}
-                    cy={p.y}
-                    r={Math.max(
-                      3,
-                      (c.width / Math.max(1, fitWidth) / view.zoom) * 3,
-                    )}
-                    fill="#8dafff"
-                  />
-                </g>
-              ))}
-            </svg>
-          )}
-          {marqueeBox && (
-            <div
-              className="draw-preview"
-              style={{
-                left: `${(Math.min(marqueeBox.start.x, marqueeBox.end.x) / c.width) * 100}%`,
-                top: `${(Math.min(marqueeBox.start.y, marqueeBox.end.y) / c.height) * 100}%`,
-                width: `${(Math.abs(marqueeBox.end.x - marqueeBox.start.x) / c.width) * 100}%`,
-                height: `${(Math.abs(marqueeBox.end.y - marqueeBox.start.y) / c.height) * 100}%`,
-              }}
-            />
-          )}
-          {drawBox && tool !== 'pen' && (
-            <div
-              className="draw-preview creation-preview"
-              style={{
-                left: `${(Math.min(drawBox.start.x, drawBox.end.x) / c.width) * 100}%`,
-                top: `${(Math.min(drawBox.start.y, drawBox.end.y) / c.height) * 100}%`,
-                width: `${(Math.abs(drawBox.end.x - drawBox.start.x) / c.width) * 100}%`,
-                height: `${(Math.abs(drawBox.end.y - drawBox.start.y) / c.height) * 100}%`,
-                borderRadius: tool === 'ellipse' ? '50%' : 0,
-              }}
-            />
-          )}
+            )}
+          </div>
         </div>
+        {spaceView && (
+          <SpatialViewport store={store} onClose={() => setSpaceView(false)} />
+        )}
       </div>
       {menu && (
         <ContextMenu

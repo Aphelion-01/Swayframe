@@ -141,9 +141,9 @@ it('capture loss and release outside the curve retain the edited controls and ax
 });
 it('graph playback and tap Space work without switching panels; holding Space for pan does not start playback', () => {
   const { store, svg } = setup();
-  fireEvent.click(screen.getByRole('button', { name: '播放曲线预览' }));
+  fireEvent.click(screen.getByRole('button', { name: '播放' }));
   expect(store.getSnapshot().playing).toBe(true);
-  fireEvent.click(screen.getByRole('button', { name: '暂停曲线预览' }));
+  fireEvent.click(screen.getByRole('button', { name: '暂停' }));
   fireEvent.keyDown(svg, { key: ' ', code: 'Space' });
   fireEvent.keyUp(svg, { key: ' ', code: 'Space' });
   expect(store.getSnapshot().playing).toBe(true);

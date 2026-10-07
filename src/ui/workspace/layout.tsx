@@ -102,6 +102,10 @@ export function Workspace({
       setCollapsed((previous) => ({ ...previous, left: false }));
       if (window.innerWidth <= 650) setMobilePanel('left');
     };
+    const showRight = () => {
+      setCollapsed((previous) => ({ ...previous, right: false }));
+      if (window.innerWidth <= 650) setMobilePanel('right');
+    };
     const showBottom = () => setCollapsed((p) => ({ ...p, bottom: false }));
     const reset = () => {
       updateLayout(defaults);
@@ -117,6 +121,7 @@ export function Workspace({
     showEvents.forEach((name) => window.addEventListener(name, showBottom));
     window.addEventListener('motion:reset-workspace', reset);
     window.addEventListener('motion:show-left', showLeft);
+    window.addEventListener('motion:show-right', showRight);
     window.addEventListener('motion:toggle-panels', toggleAll);
     return () => {
       showEvents.forEach((name) =>
@@ -124,6 +129,7 @@ export function Workspace({
       );
       window.removeEventListener('motion:reset-workspace', reset);
       window.removeEventListener('motion:show-left', showLeft);
+      window.removeEventListener('motion:show-right', showRight);
       window.removeEventListener('motion:toggle-panels', toggleAll);
       handlers.forEach((cleanup) => cleanup());
     };

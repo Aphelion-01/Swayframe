@@ -280,7 +280,7 @@ it('segment context opens the exact Motion Curve segment; curve modes hide timel
     clientY: 100,
   });
   fireEvent.click(screen.getByRole('menuitem', { name: '编辑 Motion Curve' }));
-  expect(screen.getByRole('tab', { name: '缓动曲线' })).toHaveAttribute(
+  expect(screen.getByRole('tab', { name: '曲线编辑器' })).toHaveAttribute(
     'aria-selected',
     'true',
   );

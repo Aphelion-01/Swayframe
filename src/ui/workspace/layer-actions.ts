@@ -1,3 +1,4 @@
+import { toggleLayer3D } from './layer-3d';
 import { layerColorActions } from './layer-color-actions';
 import { command } from '../../core/command-system';
 import { activeComposition, createLayer } from '../../core/project-model';
@@ -87,17 +88,7 @@ export function layerActions(
       label: layer?.editor?.is3D ? '关闭三维图层' : '开启三维图层',
       disabled: !layer?.editor,
       action: () => {
-        if (layer?.editor)
-          store.run('切换三维', [
-            command({
-              type: 'layer.replace',
-              compositionId: c.id,
-              layer: {
-                ...layer,
-                editor: { ...layer.editor, is3D: !layer.editor.is3D },
-              },
-            }),
-          ]);
+        toggleLayer3D(store, view.selection);
       },
     },
     {

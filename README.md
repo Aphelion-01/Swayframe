@@ -1,4 +1,6 @@
-# Swayframe 0.9.12
+# Swayframe 0.9.13
+
+本轮更新：常驻时间标尺、曲线内缓动、列表创建菜单、父子级快捷设置、3D XYZ与双视图，以及像素网格/标尺/参考线。详见 [0.9.13 验收记录](SPATIAL_TIMELINE_0913_RESULT.md)。
 
 简体中文本地动效编辑器，支持人工完成 2D 与平面 3D 动画。当前节点模块基线为 `docs/baseline/COMPOSITING_GRAPH_CG0_CG12.txt`，桌面基线为 `docs/baseline/DESKTOP_D0_D10.txt`，前一轮编辑器基线为 `docs/baseline/MOTION_EDITOR_PHASE_A_I.txt`；历史 V0.1 基线保留用于追溯。
 

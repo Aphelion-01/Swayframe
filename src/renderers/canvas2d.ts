@@ -361,8 +361,8 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
       }
       ctx.restore();
     }
-    for (const item of (drawHandles ? input.layers : []).filter((l) =>
-      input.selection.includes(l.source.id),
+    for (const item of (drawHandles ? input.layers : []).filter(
+      (l) => input.selection.includes(l.source.id) && !l.source.editor?.is3D,
     ))
       for (const handle of transformHandles(item, handleScale)) {
         ctx.beginPath();

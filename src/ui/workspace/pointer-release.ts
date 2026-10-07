@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 export function usePointerRelease(handlers: {
   active: () => boolean;
   move?: (event: PointerEvent) => void;
-  finish: () => void;
+  finish: (event: PointerEvent) => void;
   cancel: () => void;
 }) {
   const latest = useRef(handlers);
@@ -13,8 +13,8 @@ export function usePointerRelease(handlers: {
     const move = (event: PointerEvent) => {
       if (latest.current.active()) latest.current.move?.(event);
     };
-    const finish = () => {
-      if (latest.current.active()) latest.current.finish();
+    const finish = (event: PointerEvent) => {
+      if (latest.current.active()) latest.current.finish(event);
     };
     const cancel = () => {
       if (latest.current.active()) latest.current.cancel();

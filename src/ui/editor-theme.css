@@ -1818,57 +1818,6 @@ textarea,
   stroke-width: 2px;
   vector-effect: non-scaling-stroke;
 }
-.creation-menu-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-}
-.creation-pie {
-  position: fixed;
-  border-radius: 50%;
-  background: var(--surface-raised, #292d33);
-  border: 1px solid var(--border-strong);
-  box-shadow: 0 8px 36px #0008;
-}
-.creation-pie > button {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  width: 64px;
-  height: 54px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  background: transparent;
-  border: 0;
-  font-size: 11px;
-}
-.creation-pie > button .ui-icon {
-  width: 21px;
-  height: 21px;
-}
-.creation-pie > button:hover,
-.creation-pie > button:focus-visible {
-  background: var(--surface-selected);
-  color: var(--accent-primary);
-  border-radius: 12px;
-}
-.creation-pie-center {
-  position: absolute;
-  inset: 36%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  font-size: 11px;
-}
-.creation-pie-center button {
-  display: flex;
-  align-items: center;
-  padding: 2px 4px;
-}
 .layer-list {
   min-height: 100px;
 }
@@ -2161,4 +2110,242 @@ textarea,
 /* Keep an editable plot even when the dock was collapsed to timeline height. */
 .timeline-dock:has(.curve-workspace) {
   min-height: 220px;
+}
+
+/* Shared time overview and scene inspection tools. */
+.composition-time-ruler {
+  position: relative;
+  height: 32px;
+  flex: 0 0 32px;
+  margin: 0 8px;
+  border-bottom: 1px solid var(--border-strong);
+  cursor: ew-resize;
+  overflow: hidden;
+  background: var(--background-primary);
+  touch-action: none;
+}
+.composition-time-tick {
+  position: absolute;
+  top: 12px;
+  height: 20px;
+  border-left: 1px solid var(--border-subtle);
+  padding-left: 4px;
+  color: var(--text-muted);
+  font-size: 10px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.composition-time-pointer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid var(--accent-primary);
+  pointer-events: none;
+}
+.composition-time-pointer i {
+  position: absolute;
+  top: 0;
+  left: -5px;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 7px solid var(--accent-primary);
+}
+.composition-time-pointer b {
+  position: absolute;
+  left: 7px;
+  top: 0;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--accent-primary);
+  white-space: nowrap;
+}
+.curve-function-tabs {
+  display: flex;
+  flex: 0 0 28px;
+  gap: 4px;
+  padding: 2px 8px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.curve-function-tabs button {
+  height: 23px;
+  min-height: 23px;
+  padding: 2px 10px;
+  font-size: 11px;
+  background: transparent;
+  border: 0;
+}
+.curve-function-tabs button[aria-pressed='true'] {
+  background: var(--surface-selected);
+  color: var(--accent-primary);
+}
+.curve-workspace.shared-transport {
+  grid-template-rows: 32px minmax(0, 1fr);
+}
+.canvas-viewports {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+.canvas-viewports.is-split {
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 1fr);
+}
+.canvas-viewports > .canvas-scroll {
+  min-height: 0;
+  min-width: 0;
+}
+.canvas-view-tools {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin-left: auto;
+}
+.canvas-view-tools button,
+.canvas-aids-menu summary {
+  font-size: 11px;
+  padding: 3px 6px;
+  min-height: 24px;
+  white-space: nowrap;
+}
+.canvas-view-tools button[aria-pressed='true'] {
+  background: var(--surface-selected);
+  color: var(--accent-primary);
+}
+.canvas-aids-menu {
+  position: relative;
+}
+.canvas-aids-menu summary {
+  cursor: pointer;
+}
+.canvas-aids-menu > div {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 30;
+  min-width: 190px;
+  padding: 8px;
+  background: var(--background-secondary);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 8px 24px #0006;
+}
+.canvas-aids-menu label {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 5px 0;
+}
+.canvas-aids-menu input {
+  width: auto;
+  margin: 0;
+}
+.canvas-drawing-aids,
+.three-d-gizmo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+}
+.spatial-viewport {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-left: 1px solid var(--border-strong);
+  background: var(--background-primary);
+}
+.spatial-viewport header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 30px;
+  padding: 3px 6px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 11px;
+}
+.spatial-viewport header strong {
+  margin-right: auto;
+  white-space: nowrap;
+}
+.spatial-viewport header button,
+.spatial-viewport header select {
+  min-height: 24px;
+  height: 24px;
+  width: auto;
+  margin: 0;
+  padding: 2px 5px;
+  font-size: 11px;
+}
+.spatial-viewport-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  touch-action: none;
+}
+.spatial-content,
+.spatial-grid,
+.spatial-scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.spatial-axis-compass {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 80px;
+  height: 80px;
+  pointer-events: none;
+}
+.spatial-axis-compass svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.spatial-viewport footer {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  color: var(--text-muted);
+  font-size: 10px;
+  border-top: 1px solid var(--border-subtle);
+}
+.layer-3d-toggle {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+.layer-3d-toggle[aria-pressed='true'] {
+  color: var(--accent-primary);
+  background: var(--surface-selected);
+}
+.context-menu [role='menuitem'] > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+@media (max-width: 900px) {
+  .canvas-viewports.is-split {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 1fr);
+  }
+}
+
+.spatial-content {
+  pointer-events: none;
+}
+
+.layer-3d-placeholder {
+  flex: 0 0 24px;
+  width: 24px;
 }

@@ -9,20 +9,20 @@
 | 工程新建/打开/保存/另存 | 文件 | 搜索；native File；startup/recent（native） | Cmd/Ctrl+N/O/S/Shift+S | 无 |
 | 合成创建/设置 | Project / 文件 | 搜索；窗口打开项目 | — | 混合对象创建菜单 |
 | 导入/重复使用/重连/删除素材 | Project Assets | File import、Canvas/Timeline drop、Asset右键 | — | 对象属性区域 |
-| 矩形/椭圆/文字/钢笔 | Canvas Tools | Scene创建/空白饼菜单；图层菜单；搜索 | R/E/T/P | File |
-| 多边形/星形/纯色/空对象/Camera | Scene创建对象 | 图层菜单；搜索；空白饼菜单 | — | 隐藏操作子菜单 |
+| 矩形/椭圆/文字/钢笔 | Canvas Tools | Scene创建/空白列表菜单；图层菜单；搜索 | R/E/T/P | File |
+| 多边形/星形/纯色/空对象/Camera | Scene创建对象 | 图层菜单；搜索；空白列表菜单 | — | 隐藏操作子菜单 |
 | Copy/Paste/Cut/Duplicate/Delete/Undo/Redo | 编辑 / selection context | 搜索；键盘；context | Cmd/Ctrl+C/V/X/D/Z/Shift+Z Delete | Timeline永久菜单 |
 | Position/Scale/Rotation/Opacity/Anchor | Inspector Transform | Timeline if animated、Graph | P/S/R/T/U（Timeline筛选） | 无关全局菜单 |
 | 外观/路径/文字/三维/Camera参数 | Inspector对象类型Section | PathEditor；animated Timeline/Graph | — | 无关Toolbar |
-| Parent/Visibility/Lock/Rename/Reorder | Scene / Inspector层级 | 对象右键；图层菜单；搜索 | F2 | Timeline header、Canvas toolbar |
-| Precompose/Enter/Return | Layer context / Inspector层级 | 图层菜单；搜索；Canvas双击；合成面包屑 | — | 创建饼菜单的操作深层 |
+| Parent/Visibility/Lock/Rename/Reorder | Scene / Inspector父子级 | 对象右键；图层菜单；搜索 | F2 | Timeline header、Canvas toolbar |
+| Precompose/Enter/Return | Layer context / Inspector父子级 | 图层菜单；搜索；Canvas双击；合成面包屑 | — | 创建列表菜单的操作深层 |
 | LayerSpan/In/Out/Split | Timeline | Inspector图层时间；Timeline对象右键 | — | Scene / global toolbar |
 | Animation toggle / Record / Remove | Property row | Property context；动画菜单/搜索记录 | — | global permanent toolbar |
 | Keyframe select/move/multi/copy/delete/nextframeclone | Timeline keyframes | 编辑菜单 / keyframe context | Cmd/Ctrl+C/V/D Delete | Timeline footer永久菜单 |
 | Interpolation / Ease | Keyframe context | Graph / Motion；动画菜单；搜索 | — | Timeline permanent toolbar |
 | Prev/Next key | Timeline | 动画菜单；搜索 | J/K（Timeline） | footer永久入口 |
 | Graph / value-speed / handles / velocity / influence | Bottom Graph tab | 动画菜单/搜索；key/property context | Shift+F3；1/2 F/Home Space | unrelated panels |
-| Motion normalized presets/library/scope/coords | Bottom缓动曲线tab | Animation/context/search | F Space（mode） | File |
+| Motion normalized presets/library/scope/coords | 曲线编辑器 → 缓动 | Animation/context/search | F Space（mode） | File |
 | Spatial path / Bezier points/tangents | Inspector PathEditor / Graph空间路径 | Canvas pen | Enter/P | normalized Motion settings |
 | Mask/Blend/Effects参数与顺序 | Inspector效果与遮罩 | Node graph；添加效果搜索 | — | Canvas toolbar |
 | Source/Mask/Color/Blur/Merge/Output flow | Compositing Graph | Inspector打开合成节点；窗口菜单/搜索 | Tab/F/Home Space（nodes） | Scene |
@@ -279,12 +279,12 @@
 | E-0236 空间路径（独立于缓动） | Motion Curve / Graph | 同族 Context / Inspector / Animated Timeline（适用时） | 见族表/Registry | — |
 | E-0237 {路径${side === 'out' ? '出' : '入'}点 ${axis.toUpperCase()}} | Motion Curve / Graph | 同族 Context / Inspector / Animated Timeline（适用时） | 见族表/Registry | — |
 | E-0238 恢复直线路径 | Motion Curve / Graph | 同族 Context / Inspector / Animated Timeline（适用时） | 见族表/Registry | — |
-| E-0239 "父级图层" | Scene / Inspector层级 | 同族 Context / Inspector / Animated Timeline（适用时） | 见族表/Registry | — |
+| E-0239 "父级图层" | Scene / Inspector父子级 | 同族 Context / Inspector / Animated Timeline（适用时） | 见族表/Registry | — |
 | E-0240 "图层入点" | Timeline / Inspector图层时间 | 同族 Context / Inspector / Animated Timeline（适用时） | 见族表/Registry | — |
 | E-0241 "图层出点" | Timeline / Inspector图层时间 | 同族 Context / Inspector / Animated Timeline（适用时） | 见族表/Registry | — |
 | E-0242 在播放头拆分图层 | Timeline / Inspector图层时间 | 同族 Context / Inspector / Animated Timeline（适用时） | 见族表/Registry | — |
-| E-0243 选中图层预合成 | Scene / Inspector层级 | 同族 Context / Inspector / Animated Timeline（适用时） | 见族表/Registry | — |
-| E-0244 进入预合成 | Scene / Inspector层级 | 同族 Context / Inspector / Animated Timeline（适用时） | 见族表/Registry | — |
+| E-0243 选中图层预合成 | Scene / Inspector父子级 | 同族 Context / Inspector / Animated Timeline（适用时） | 见族表/Registry | — |
+| E-0244 进入预合成 | Scene / Inspector父子级 | 同族 Context / Inspector / Animated Timeline（适用时） | 见族表/Registry | — |
 | E-0245 "启用三维图层" | Inspector | 同族 Context / Inspector / Animated Timeline（适用时） | 见族表/Registry | — |
 | E-0246 "摄像机位置" | Inspector | 同族 Context / Inspector / Animated Timeline（适用时） | 见族表/Registry | — |
 | E-0247 "摄像机旋转" | Inspector | 同族 Context / Inspector / Animated Timeline（适用时） | 见族表/Registry | — |
@@ -483,3 +483,16 @@
 | E-0440 '椭圆工具' | Application / Workspace | Application Menu / Palette（已注册操作） | 见族表/Registry | — |
 | E-0441 '钢笔工具' | Application / Workspace | Application Menu / Palette（已注册操作） | 见族表/Registry | — |
 | E-0442 '文字工具' | Application / Workspace | Application Menu / Palette（已注册操作） | 见族表/Registry | — |
+
+## 0.9.13 capability placement
+
+| 能力 | 主入口 | 频率/上下文与任务 | 辅助入口/状态 |
+|---|---|---|---|
+| 全模式刻度/播放头/播放 | Bottom 各编辑模式顶部 | 高频、合成级：调整时间并观察运动 | Timeline保留轨道对齐的缩放标尺；Graph/Nodes常驻合成标尺，唯一时钟 |
+| 缓动 | 曲线编辑器内“缓动” | 中频、关键帧区间：调整时间映射 | 动画菜单/区间右键；删除独立顶级Tab及重复底部播放滑杆 |
+| 图层创建 | Scene创建按钮/Scene全区域与Timeline空白右键 | 中频、场景级：创建指定类型对象 | 带类型图标的列表及新建子菜单；删除饼菜单；文件导入复用原流程 |
+| 设置父子级 | 图层菜单“设置父子级”/Inspector父子级 | 中频、选中图层：直接选择父级 | Scene对象右键；native命令展开属性面板并聚焦父级 |
+| 快速3D | Scene每个图层的3D开关 | 高频、对象级：2D/3D切换，符合行内开关规则 | 图层菜单/Inspector；一次Transaction；3D位置默认不联动 |
+| XYZ移动 | 主预览及空间视图选中3D层的轴手柄 | 高频、空间级：按父空间坐标调整XYZ | 键盘微调/Alt精细；实时预览，松手单次提交，Esc/取消恢复 |
+| 3D空间 | Canvas标题行“3D空间” | 中频、合成级：与成片并排观察空间位置，现有Canvas无此入口可复用 | MMB绕转/Shift MMB平移/滚轮缩放/F聚焦/1、3、7方向/5投影；独立观察摄像机 |
+| 网格/标尺/参考线 | Canvas标题行“辅助”折叠菜单 | 中频、视口级：按合成像素布局 | 网格1/2/5自适应，标尺拖出参考线、双击/拖出删除；UI偏好不入Scene或导出 |

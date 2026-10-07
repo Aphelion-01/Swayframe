@@ -70,7 +70,7 @@ typography:
 - Canvas Toolbar：Select、Hand、Rectangle/Ellipse、Pen、Text；不得放保存、导出、关键帧、Blur、Parent、Motion Curve。
 - Scene Header：名称/数量和一个明确的“创建对象”入口；结构性操作放对象右键，禁止常驻关键帧/效果按钮。
 - Project Header：新合成、导入（素材库所属）；不能将所有对象创建类型塞入文件菜单。
-- Timeline Header：Playback、Current Time、Loop、Snap、Graph/Motion/Nodes tabs。Footer：必要搜索/属性筛选/Zoom/Fit duration。Copy/Paste/Delete/Ease/关键帧导航不占永久按钮。
+- Timeline Header：Playback、Current Time、Loop、Snap、Graph/Nodes tabs与常驻合成时间标尺。Footer：必要搜索/属性筛选/Zoom/Fit duration。Copy/Paste/Delete/Ease/关键帧导航不占永久按钮。
 - Inspector：常用变换默认展开；外观、效果/遮罩、结构按任务分区，入口标题始终可见。语义、三维高级参数渐进展开。
 - Graph：上下文工具条 + 主要图区 + 可折叠 Inspector + 共享预览条；不重复 Timeline 工具栏。
 - Secondary Actions：优先右键、菜单、搜索、快捷键。新增永久入口必须在 Matrix 写明任务、频率和不能复用的原因。
@@ -86,13 +86,13 @@ typography:
 图层：创建对象（当前已有类型）、结构操作、父级、三维、对齐。
 动画：记录选中属性关键帧、插值/缓动、曲线、前后关键帧。
 视图：适应、实际尺寸、缩放。
-窗口：项目/图层/助手、属性、时间轴/曲线/缓动/节点，恢复工作区。
+窗口：项目/图层/助手、属性、时间轴/曲线/节点，恢复工作区。
 帮助：操作指引、快捷键、关于。
 菜单与搜索使用同一 Editor Action 集合；桌面菜单桥接同一入口，不实现第二套业务操作。选择相关操作必须禁用或给出明确选择提示。
 
 ## Inspector architecture
 
-保留现有 AnimatedField / NumberField；变换、外观/几何、文字、层级、图层时间、效果/遮罩、三维/摄像机分别归属。Effects 与 Structure 核心入口不藏在语义/高级部分。Effects 区域能直接进入合成节点，节点属性能返回图层属性。编辑参数只调用原 Command/Transaction。
+保留现有 AnimatedField / NumberField；变换、外观/几何、文字、父子级、图层时间、效果/遮罩、三维/摄像机分别归属。Effects 与 Structure 核心入口不藏在语义/高级部分。Effects 区域能直接进入合成节点，节点属性能返回图层属性。编辑参数只调用原 Command/Transaction。
 
 ## Timeline architecture
 
@@ -100,7 +100,7 @@ typography:
 
 ## Scene architecture
 
-图层列表显示名称、类型、可见性、锁定与父级身份。对象右键直接进入结构菜单。空白创建饼菜单保留肌肉记忆；显式创建按钮也打开相同组件。合成导航属于 Project；预合成具有进入与返回父合成路径。
+图层列表显示名称、类型、可见性、锁定与父级身份。对象右键直接进入结构菜单。空白区域与显式创建按钮统一使用带类型图标的列表式创建菜单，禁止饼菜单；右键覆盖整个图层工作区。合成导航属于 Project；预合成具有进入与返回父合成路径。
 
 ## Canvas architecture
 
@@ -141,3 +141,8 @@ GUI/Agent 统一 Command System；多对象/复杂 AI 操作使用 Transaction�
 ## Anti-patterns
 
 禁止功能实现后随意找地方加 Button；禁止同一功能在多个地方永久展示；禁止高频功能藏深层菜单；禁止低频功能霸占一级界面；禁止 Canvas / Scene / Inspector / Timeline 职责混用；禁止 UI 组件直接修改 Scene Model；禁止为了“容易发现”无限增加入口；禁止添加底层不存在的功能菜单；禁止将内部核查等同真人可用性研究。
+
+
+## 0.9.13 interaction update
+
+缓动是曲线编辑器内的功能，取消独立顶级Tab；所有底部模式保留同一合成时间标尺、播放头、播放控制与唯一时钟。3D快速开关属于Scene对象行；父子级快速设置属于图层菜单和Inspector。3D位置默认轴不联动。Canvas允许显式打开旁侧空间视图：中键绕转、Shift中键平移、滚轮缩放、F聚焦、正交方向快捷切换；观察状态不写Scene。XYZ拖动必须预览、一次Transaction、Esc取消。网格、参考线、标尺只辅助编辑，不进入最终渲染；以合成像素标注，自适应刻度，不依赖屏幕DPI猜尺寸。

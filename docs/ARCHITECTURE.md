@@ -257,3 +257,11 @@ Graph 与 Timeline 共用 EditorView 的 selectedProperties、frames、time、pl
 ### 0.9.12 · Global Information Architecture
 
 根 DESIGN.md 与 FEATURE_LOCATION_MATRIX.md 约束功能归属和入口预算。shared/application-menu 维护 Web/Electron 分类与动作ID；workspace/editor-actions 将应用菜单、Palette、Registry与原生适配接入现有Command/Transaction，object-actions复用图层创建。Scene/Canvas/Timeline按上下文过滤layerActions；属性、关键帧、节点、素材各自拥有相关菜单。跨入口读取当前snapshot，节点Edit保留工作区上下文并保护空选择/Source/Output，输入框保留文本编辑。UI菜单/模式/布局不写Scene；Intelligence只输出Proposal不变。文件持久化继续ProjectService与原IPC。
+
+## 0.9.13 时间与三维观察工作流
+
+Timeline / Graph / Compositing 继续共享 EditorStore.time / playing，Graph 内含缓动功能，独立面板使用 SharedCurveTransport 抑制重复播放滑杆。Scene 和 Timeline 创建菜单复用 object-actions 与 ContextMenu，Portal 避免父容器裁切；Scene 根面板接管空白右键。
+
+ThreeDGizmo 将父空间轴投影至两个预览视口，拖动期间仅 setPropertyPreview；最终 PointerEvent 坐标重采样后 valueCommand 进入单个 Transaction，取消/失焦/卸载清理预览。3D 开关只走 layer.replace；默认轴联动保留用户显式偏好。
+
+SpatialViewport 复用 createRenderSnapshot 的 world3D、Canvas2DRenderer 的内容/素材/遮罩/效果渲染，通过瞬态 spatialCamera 更换观察投影；CameraSnapshot 的 optional orthographic 仅供观察使用，不写工程模型。主预览和导出仍使用工程摄像机。观察视角、网格/标尺/参考线、菜单状态均独立于 Scene。

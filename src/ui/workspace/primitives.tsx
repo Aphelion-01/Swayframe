@@ -94,6 +94,7 @@ export function Tabs({
 }
 export interface MenuItem {
   label: string;
+  icon?: ReactNode;
   action: () => void;
   disabled?: boolean;
   shortcut?: string;
@@ -102,11 +103,13 @@ export interface MenuItem {
   accent?: LayerAccentId;
 }
 export function ContextMenu({
+  label,
   items,
   x,
   y,
   onClose,
 }: {
+  label?: string;
   items: readonly MenuItem[];
   x: number;
   y: number;
@@ -138,6 +141,7 @@ export function ContextMenu({
     <div
       ref={ref}
       role="menu"
+      aria-label={label}
       className="context-menu"
       style={{
         left: Math.max(4, Math.min(x, window.innerWidth - 225)),
@@ -203,6 +207,7 @@ export function ContextMenu({
                 aria-hidden="true"
               />
             )}
+            {item.icon}
             {item.label}
           </span>
           <kbd
@@ -299,7 +304,13 @@ export function Modal({
   );
 }
 
-export function MenuDropdown({ children }: { children: ReactNode }) {
+export function MenuDropdown({
+  children,
+  className = '',
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   const ref = useRef<HTMLDetailsElement>(null);
   useEffect(() => {
     const dismiss = (event: globalThis.PointerEvent) => {
@@ -312,7 +323,7 @@ export function MenuDropdown({ children }: { children: ReactNode }) {
   return (
     <details
       ref={ref}
-      className="toolbar-menu"
+      className={`toolbar-menu ${className}`}
       onClickCapture={(event) => {
         if ((event.target as Element).closest('summary'))
           document

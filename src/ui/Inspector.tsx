@@ -143,7 +143,13 @@ export function Inspector({ store }: { store: EditorStore }) {
         />
         <Section title="变换">
           <PivotSelector store={store} disabled={!!layer.editor?.is3D} />
-          <AnimatedField store={store} property={t.position} label="位置" />
+          <AnimatedField
+            key={`${t.position.id}-${!!layer.editor?.is3D}`}
+            store={store}
+            property={t.position}
+            label="位置"
+            defaultLinked={!layer.editor?.is3D}
+          />
           <AnimatedField
             store={store}
             property={t.scale}
@@ -301,7 +307,7 @@ export function Inspector({ store }: { store: EditorStore }) {
         >
           <ThreeDControls store={store} layer={layer} />
         </Section>
-        <Section title="层级" open>
+        <Section title="父子级" open>
           <StructureControls store={store} layer={layer} mode="structure" />
         </Section>
         <Section title="图层时间" open={false}>

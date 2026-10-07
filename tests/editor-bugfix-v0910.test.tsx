@@ -143,7 +143,7 @@ for (const surface of ['.layer-list', '.timeline-scroll'])
     expect(store.getSnapshot().project).toBe(before);
     expect(store.commands.undoStack).toHaveLength(0);
   });
-it('right click opens icon creation pie on layers and timeline, file menu contains only project actions', () => {
+it('right click opens icon creation list on layers and timeline, file menu contains only project actions', () => {
   const { store } = setup();
   fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
   expect(screen.queryByRole('button', { name: '创建 矩形' })).toBeNull();

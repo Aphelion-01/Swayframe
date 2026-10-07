@@ -22,6 +22,7 @@ export function AnimatedField({
   factor = 1,
   unit = '',
   linkMode = 'offset',
+  defaultLinked = true,
 }: {
   store: EditorStore;
   property: Property<AnimValue>;
@@ -32,8 +33,9 @@ export function AnimatedField({
   factor?: number;
   unit?: string;
   linkMode?: AxisLinkMode;
+  defaultLinked?: boolean;
 }) {
-  const { linked, toggle } = useAxisLink(property.id);
+  const { linked, toggle } = useAxisLink(property.id, defaultLinked);
   const [menu, setMenu] = useState<{ x: number; y: number }>();
   const guideKind = (
     {

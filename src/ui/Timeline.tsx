@@ -1,6 +1,8 @@
+import { SharedCurveTransport } from './workspace/CurveWorkspace';
+import { CompositionTimeRuler } from './workspace/CompositionTimeRuler';
 import { dispatchShortcut } from './workspace/shortcuts';
 import { useLayerMarquee } from './workspace/layer-marquee';
-import { CreatePieMenu } from './workspace/CreatePieMenu';
+import { CreateLayerMenu } from './workspace/CreateLayerMenu';
 import { timelineReorderCommands } from '../core/timeline-reorder';
 import { CanvasInteractionState as PointerInteractionState } from './workspace/canvas-interaction';
 import type { FrameRef } from '../core/editing-commands';
@@ -1243,7 +1245,7 @@ export function Timeline({ store }: { store: EditorStore }) {
       }}
     >
       <div className="timeline-toolbar">
-        <div className="playback-controls" hidden={graphOpen || motionOpen}>
+        <div className="playback-controls">
           <button
             aria-label="回到起点"
             onClick={() => {
@@ -1319,20 +1321,20 @@ export function Timeline({ store }: { store: EditorStore }) {
           </button>
         </div>
         <Tabs
-          items={['时间轴', '曲线编辑器', '缓动曲线', '合成节点']}
+          items={['时间轴', '曲线编辑器', '合成节点']}
           value={
             compositingOpen
               ? '合成节点'
               : graphOpen
                 ? '曲线编辑器'
                 : motionOpen
-                  ? '缓动曲线'
+                  ? '曲线编辑器'
                   : '时间轴'
           }
           onChange={(tab) => {
             store.setPropertyPreview(undefined);
             store.setPropertyPreviews(undefined);
-            setMotionOpen(tab === '缓动曲线');
+            setMotionOpen(false);
             setMotionInitialSegment('');
             setGraphOpen(tab === '曲线编辑器');
             setCompositingOpen(tab === '合成节点');
@@ -1343,372 +1345,422 @@ export function Timeline({ store }: { store: EditorStore }) {
                 ? 'compositing'
                 : tab === '曲线编辑器'
                   ? 'graph'
-                  : tab === '缓动曲线'
-                    ? 'motion'
-                    : 'timeline',
+                  : 'timeline',
             );
           }}
         />
         <span className="timeline-meta">{c.fps} fps</span>
       </div>
-      {motionOpen && (
-        <MotionCurvePanel
-          store={store}
-          key={motionInitialSegment}
-          initialSegmentId={motionInitialSegment}
-          loop={loop}
-          onLoopChange={setLoop}
-          onClose={() => setMotionOpen(false)}
-        />
+      {(graphOpen || motionOpen || compositingOpen) && (
+        <CompositionTimeRuler store={store} />
       )}
-      {compositingOpen && <CompositingGraphPanel store={store} />}
-      {graphOpen && (
-        <GraphEditor
-          store={store}
-          embedded
-          loop={loop}
-          onLoopChange={setLoop}
-          onClose={() => setGraphOpen(false)}
-        />
-      )}
-      {!graphOpen && !compositingOpen && !motionOpen && (
-        <div
-          className="timeline-scroll"
-          ref={scrollRef}
-          onContextMenu={(event) => {
-            if (
-              (event.target as Element).closest(
-                'button,.property-name,.timeline-layer-label',
+      <SharedCurveTransport.Provider value={true}>
+        {(graphOpen || motionOpen) && (
+          <div
+            className="curve-function-tabs"
+            role="group"
+            aria-label="曲线编辑功能"
+          >
+            <button
+              aria-pressed={!motionOpen}
+              onClick={() => {
+                setMotionOpen(false);
+                setGraphOpen(true);
+              }}
+            >
+              数值 / 速度
+            </button>
+            <button
+              aria-pressed={motionOpen}
+              onClick={() => {
+                setGraphOpen(false);
+                setMotionOpen(true);
+              }}
+            >
+              缓动
+            </button>
+          </div>
+        )}
+        {motionOpen && (
+          <MotionCurvePanel
+            store={store}
+            key={motionInitialSegment}
+            initialSegmentId={motionInitialSegment}
+            loop={loop}
+            onLoopChange={setLoop}
+            onClose={() => {
+              setMotionOpen(false);
+              setGraphOpen(false);
+            }}
+          />
+        )}
+        {compositingOpen && <CompositingGraphPanel store={store} />}
+        {graphOpen && (
+          <GraphEditor
+            store={store}
+            embedded
+            loop={loop}
+            onLoopChange={setLoop}
+            onClose={() => setGraphOpen(false)}
+          />
+        )}
+        {!graphOpen && !compositingOpen && !motionOpen && (
+          <div
+            className="timeline-scroll"
+            ref={scrollRef}
+            onContextMenu={(event) => {
+              if (
+                (event.target as Element).closest(
+                  'button,.property-name,.timeline-layer-label',
+                )
               )
-            )
-              return;
-            event.preventDefault();
-            setBlankMenu({ x: event.clientX, y: event.clientY });
-          }}
-          onPointerDownCapture={(event) => {
-            if (interaction.state.type !== 'idle') return;
-            if (!spacePan.current && layerMarquee.begin(event)) return;
-            suppressTrackClick.current = false;
-            if (event.button !== 1 && !(event.button === 0 && spacePan.current))
-              return;
-            event.preventDefault();
-            event.stopPropagation();
-            spacePanUsed.current = true;
-            interaction.slot('panning').current = {
-              x: event.clientX,
-              scroll: event.currentTarget.scrollLeft,
-            };
-            event.currentTarget.setPointerCapture(event.pointerId);
-          }}
-          onPointerDown={(event) => {
-            if (
-              event.button !== 0 ||
-              interaction.state.type !== 'idle' ||
-              !(event.target instanceof Element) ||
-              !event.target.closest('.keyframe-track') ||
-              event.target.closest('button')
-            )
-              return;
-            const m = {
-              x: event.clientX,
-              y: event.clientY,
-              endX: event.clientX,
-              endY: event.clientY,
-              start: event.shiftKey ? view.frames : [],
-            };
-            marquee.current = m;
-            setBox(m);
-            event.currentTarget.setPointerCapture(event.pointerId);
-          }}
-          onPointerMove={(event) => {
-            const pan = interaction.slot('panning').current;
-            if (pan) {
-              event.currentTarget.scrollLeft =
-                pan.scroll + pan.x - event.clientX;
-              return;
-            }
-            const m = marquee.current;
-            if (!m) return;
-            m.endX = event.clientX;
-            m.endY = event.clientY;
-            setBox({ ...m });
-          }}
-          onPointerUp={(event) => {
-            if (interaction.slot('panning').current) {
-              interaction.slot('panning').current = undefined;
-              suppressTrackClick.current = true;
-              return;
-            }
-            const m = marquee.current;
-            if (m) {
+                return;
+              event.preventDefault();
+              setBlankMenu({ x: event.clientX, y: event.clientY });
+            }}
+            onPointerDownCapture={(event) => {
+              if (interaction.state.type !== 'idle') return;
+              if (!spacePan.current && layerMarquee.begin(event)) return;
+              suppressTrackClick.current = false;
+              if (
+                event.button !== 1 &&
+                !(event.button === 0 && spacePan.current)
+              )
+                return;
+              event.preventDefault();
+              event.stopPropagation();
+              spacePanUsed.current = true;
+              interaction.slot('panning').current = {
+                x: event.clientX,
+                scroll: event.currentTarget.scrollLeft,
+              };
+              event.currentTarget.setPointerCapture(event.pointerId);
+            }}
+            onPointerDown={(event) => {
+              if (
+                event.button !== 0 ||
+                interaction.state.type !== 'idle' ||
+                !(event.target instanceof Element) ||
+                !event.target.closest('.keyframe-track') ||
+                event.target.closest('button')
+              )
+                return;
+              const m = {
+                x: event.clientX,
+                y: event.clientY,
+                endX: event.clientX,
+                endY: event.clientY,
+                start: event.shiftKey ? view.frames : [],
+              };
+              marquee.current = m;
+              setBox(m);
+              event.currentTarget.setPointerCapture(event.pointerId);
+            }}
+            onPointerMove={(event) => {
+              const pan = interaction.slot('panning').current;
+              if (pan) {
+                event.currentTarget.scrollLeft =
+                  pan.scroll + pan.x - event.clientX;
+                return;
+              }
+              const m = marquee.current;
+              if (!m) return;
               m.endX = event.clientX;
               m.endY = event.clientY;
-            }
-            marquee.current = undefined;
-            setBox(undefined);
-            if (!m) return;
-            suppressTrackClick.current =
-              Math.hypot(m.endX - m.x, m.endY - m.y) > 3;
-            const left = Math.min(m.x, m.endX),
-              right = Math.max(m.x, m.endX),
-              top = Math.min(m.y, m.endY),
-              bottom = Math.max(m.y, m.endY);
-            const refs = [...m.start];
-            event.currentTarget
-              .querySelectorAll<HTMLButtonElement>('.keyframe-diamond')
-              .forEach((button) => {
-                const r = button.getBoundingClientRect();
-                if (
-                  r.left + r.width / 2 >= left &&
-                  r.left + r.width / 2 <= right &&
-                  r.top + r.height / 2 >= top &&
-                  r.top + r.height / 2 <= bottom
-                ) {
-                  const propertyId = button.dataset.property!,
-                    keyframeId = button.dataset.frame!;
-                  if (!refs.some((ref) => ref.keyframeId === keyframeId))
-                    refs.push({ propertyId, keyframeId });
-                }
-              });
-            store.selectFrames(refs);
-          }}
-          onPointerCancel={() => {
-            interaction.slot('panning').current = undefined;
-            marquee.current = undefined;
-            setBox(undefined);
-          }}
-        >
-          {box && (
-            <div
-              className="timeline-marquee"
-              style={{
-                left: Math.min(box.x, box.endX),
-                top: Math.min(box.y, box.endY),
-                width: Math.abs(box.endX - box.x),
-                height: Math.abs(box.endY - box.y),
-              }}
-            />
-          )}
-          <div
-            style={{
-              minWidth: 680,
-              width: `calc(${treeWidth + 28}px + (100% - ${treeWidth + 28}px) * ${view.timelineZoom})`,
+              setBox({ ...m });
+            }}
+            onPointerUp={(event) => {
+              if (interaction.slot('panning').current) {
+                interaction.slot('panning').current = undefined;
+                suppressTrackClick.current = true;
+                return;
+              }
+              const m = marquee.current;
+              if (m) {
+                m.endX = event.clientX;
+                m.endY = event.clientY;
+              }
+              marquee.current = undefined;
+              setBox(undefined);
+              if (!m) return;
+              suppressTrackClick.current =
+                Math.hypot(m.endX - m.x, m.endY - m.y) > 3;
+              const left = Math.min(m.x, m.endX),
+                right = Math.max(m.x, m.endX),
+                top = Math.min(m.y, m.endY),
+                bottom = Math.max(m.y, m.endY);
+              const refs = [...m.start];
+              event.currentTarget
+                .querySelectorAll<HTMLButtonElement>('.keyframe-diamond')
+                .forEach((button) => {
+                  const r = button.getBoundingClientRect();
+                  if (
+                    r.left + r.width / 2 >= left &&
+                    r.left + r.width / 2 <= right &&
+                    r.top + r.height / 2 >= top &&
+                    r.top + r.height / 2 <= bottom
+                  ) {
+                    const propertyId = button.dataset.property!,
+                      keyframeId = button.dataset.frame!;
+                    if (!refs.some((ref) => ref.keyframeId === keyframeId))
+                      refs.push({ propertyId, keyframeId });
+                  }
+                });
+              store.selectFrames(refs);
+            }}
+            onPointerCancel={() => {
+              interaction.slot('panning').current = undefined;
+              marquee.current = undefined;
+              setBox(undefined);
             }}
           >
-            <div className="timeline-ruler">
-              <span className="timeline-tree-heading">
-                图层 / 属性
-                <span
-                  role="separator"
-                  aria-label="时间轴属性列宽"
-                  aria-orientation="vertical"
+            {box && (
+              <div
+                className="timeline-marquee"
+                style={{
+                  left: Math.min(box.x, box.endX),
+                  top: Math.min(box.y, box.endY),
+                  width: Math.abs(box.endX - box.x),
+                  height: Math.abs(box.endY - box.y),
+                }}
+              />
+            )}
+            <div
+              style={{
+                minWidth: 680,
+                width: `calc(${treeWidth + 28}px + (100% - ${treeWidth + 28}px) * ${view.timelineZoom})`,
+              }}
+            >
+              <div className="timeline-ruler">
+                <span className="timeline-tree-heading">
+                  图层 / 属性
+                  <span
+                    role="separator"
+                    aria-label="时间轴属性列宽"
+                    aria-orientation="vertical"
+                    tabIndex={0}
+                    className="timeline-column-resizer"
+                    onKeyDown={(event) => {
+                      if (
+                        event.key === 'ArrowLeft' ||
+                        event.key === 'ArrowRight'
+                      ) {
+                        event.preventDefault();
+                        setTreeWidth((w) =>
+                          Math.max(
+                            220,
+                            Math.min(
+                              480,
+                              w + (event.key === 'ArrowLeft' ? -10 : 10),
+                            ),
+                          ),
+                        );
+                      }
+                    }}
+                    onPointerDown={(event) => {
+                      if (
+                        event.button !== 0 ||
+                        interaction.state.type !== 'idle'
+                      )
+                        return;
+                      event.preventDefault();
+                      event.currentTarget.setPointerCapture(event.pointerId);
+                      treeResize.current = {
+                        x: event.clientX,
+                        width: treeWidth,
+                      };
+                    }}
+                    onPointerMove={(event) => {
+                      if (treeResize.current)
+                        setTreeWidth(
+                          Math.max(
+                            220,
+                            Math.min(
+                              480,
+                              treeResize.current.width +
+                                event.clientX -
+                                treeResize.current.x,
+                            ),
+                          ),
+                        );
+                    }}
+                    onPointerUp={() => {
+                      treeResize.current = undefined;
+                    }}
+                    onPointerCancel={() => {
+                      if (treeResize.current)
+                        setTreeWidth(treeResize.current.width);
+                      treeResize.current = undefined;
+                    }}
+                  />
+                </span>
+                <div
+                  className="ruler-track"
+                  role="slider"
                   tabIndex={0}
-                  className="timeline-column-resizer"
+                  aria-label="播放头"
+                  aria-valuemin={0}
+                  aria-valuemax={c.duration}
+                  aria-valuenow={view.time}
                   onKeyDown={(event) => {
                     if (
                       event.key === 'ArrowLeft' ||
                       event.key === 'ArrowRight'
                     ) {
                       event.preventDefault();
-                      setTreeWidth((w) =>
-                        Math.max(
-                          220,
-                          Math.min(
-                            480,
-                            w + (event.key === 'ArrowLeft' ? -10 : 10),
-                          ),
-                        ),
+                      store.setPlaying(false);
+                      store.setTime(
+                        view.time +
+                          (event.key === 'ArrowLeft' ? -1 : 1) / c.fps,
                       );
                     }
                   }}
                   onPointerDown={(event) => {
                     if (event.button !== 0 || interaction.state.type !== 'idle')
                       return;
-                    event.preventDefault();
+                    const r = event.currentTarget.getBoundingClientRect();
+                    rulerDrag.current = {
+                      time: store.getSnapshot().time,
+                      left: r.left,
+                      width: Math.max(1, r.width),
+                    };
                     event.currentTarget.setPointerCapture(event.pointerId);
-                    treeResize.current = { x: event.clientX, width: treeWidth };
-                  }}
-                  onPointerMove={(event) => {
-                    if (treeResize.current)
-                      setTreeWidth(
-                        Math.max(
-                          220,
-                          Math.min(
-                            480,
-                            treeResize.current.width +
-                              event.clientX -
-                              treeResize.current.x,
-                          ),
-                        ),
-                      );
-                  }}
-                  onPointerUp={() => {
-                    treeResize.current = undefined;
-                  }}
-                  onPointerCancel={() => {
-                    if (treeResize.current)
-                      setTreeWidth(treeResize.current.width);
-                    treeResize.current = undefined;
-                  }}
-                />
-              </span>
-              <div
-                className="ruler-track"
-                role="slider"
-                tabIndex={0}
-                aria-label="播放头"
-                aria-valuemin={0}
-                aria-valuemax={c.duration}
-                aria-valuenow={view.time}
-                onKeyDown={(event) => {
-                  if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-                    event.preventDefault();
                     store.setPlaying(false);
                     store.setTime(
-                      view.time + (event.key === 'ArrowLeft' ? -1 : 1) / c.fps,
+                      Math.round(
+                        ((event.clientX - r.left) / r.width) *
+                          c.duration *
+                          c.fps,
+                      ) / c.fps,
                     );
-                  }
-                }}
-                onPointerDown={(event) => {
-                  if (event.button !== 0 || interaction.state.type !== 'idle')
-                    return;
-                  const r = event.currentTarget.getBoundingClientRect();
-                  rulerDrag.current = {
-                    time: store.getSnapshot().time,
-                    left: r.left,
-                    width: Math.max(1, r.width),
-                  };
-                  event.currentTarget.setPointerCapture(event.pointerId);
-                  store.setPlaying(false);
-                  store.setTime(
-                    Math.round(
-                      ((event.clientX - r.left) / r.width) * c.duration * c.fps,
-                    ) / c.fps,
-                  );
-                }}
-                onPointerMove={(event) => {
-                  if (!rulerDrag.current) return;
-                  const r = event.currentTarget.getBoundingClientRect();
-                  store.setTime(
-                    Math.round(
-                      ((event.clientX - r.left) / r.width) * c.duration * c.fps,
-                    ) / c.fps,
-                  );
-                }}
-                onPointerUp={() => {
-                  rulerDrag.current = undefined;
-                }}
-                onPointerCancel={() => {
-                  if (rulerDrag.current) store.setTime(rulerDrag.current.time);
-                  rulerDrag.current = undefined;
-                }}
-              >
-                {frameDrag?.snapTime !== undefined && (
-                  <span
-                    className="timeline-snap-guide"
-                    aria-label="关键帧吸附参考线"
-                    style={{
-                      left: `${(frameDrag.snapTime / c.duration) * 100}%`,
-                    }}
-                  />
-                )}
-                <span className="ruler-playhead" style={{ left: playhead }}>
-                  ▼
-                </span>
-                {timelineTicks(
-                  c.duration,
-                  c.fps,
-                  Math.max(1, viewportWidth - treeWidth - 28) *
-                    view.timelineZoom,
-                  timecode,
-                ).map((tick) => (
-                  <span
-                    key={tick.time}
-                    className={`timeline-tick ${tick.major ? 'major' : 'minor'}`}
-                    style={{ left: `${(tick.time / c.duration) * 100}%` }}
-                  >
-                    {tick.label}
+                  }}
+                  onPointerMove={(event) => {
+                    if (!rulerDrag.current) return;
+                    const r = event.currentTarget.getBoundingClientRect();
+                    store.setTime(
+                      Math.round(
+                        ((event.clientX - r.left) / r.width) *
+                          c.duration *
+                          c.fps,
+                      ) / c.fps,
+                    );
+                  }}
+                  onPointerUp={() => {
+                    rulerDrag.current = undefined;
+                  }}
+                  onPointerCancel={() => {
+                    if (rulerDrag.current)
+                      store.setTime(rulerDrag.current.time);
+                    rulerDrag.current = undefined;
+                  }}
+                >
+                  {frameDrag?.snapTime !== undefined && (
+                    <span
+                      className="timeline-snap-guide"
+                      aria-label="关键帧吸附参考线"
+                      style={{
+                        left: `${(frameDrag.snapTime / c.duration) * 100}%`,
+                      }}
+                    />
+                  )}
+                  <span className="ruler-playhead" style={{ left: playhead }}>
+                    ▼
                   </span>
-                ))}
+                  {timelineTicks(
+                    c.duration,
+                    c.fps,
+                    Math.max(1, viewportWidth - treeWidth - 28) *
+                      view.timelineZoom,
+                    timecode,
+                  ).map((tick) => (
+                    <span
+                      key={tick.time}
+                      className={`timeline-tick ${tick.major ? 'major' : 'minor'}`}
+                      style={{ left: `${(tick.time / c.duration) * 100}%` }}
+                    >
+                      {tick.label}
+                    </span>
+                  ))}
+                </div>
+                <span>插值</span>
               </div>
-              <span>插值</span>
-            </div>
-            <div className="timeline-body">
-              {c.layers.length === 0 && (
-                <p className="timeline-empty">
-                  添加图层后，点击秒表开启动画，或点击 ◇ 添加关键帧。
-                </p>
-              )}
-              {layerRows}
+              <div className="timeline-body">
+                {c.layers.length === 0 && (
+                  <p className="timeline-empty">
+                    添加图层后，点击秒表开启动画，或点击 ◇ 添加关键帧。
+                  </p>
+                )}
+                {layerRows}
+              </div>
             </div>
           </div>
-        </div>
-      )}
-      <div
-        className="timeline-footer"
-        hidden={compositingOpen || graphOpen || motionOpen}
-      >
-        <input
-          className="timeline-search"
-          aria-label="搜索时间轴属性"
-          placeholder="搜索图层 / 属性"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-        />
-        <label className="timeline-filter">
-          {' '}
-          <select
-            aria-label="时间轴属性筛选"
-            value={view.propertyFilter}
-            onChange={(e) =>
-              store.setPropertyFilter(
-                e.target.value as typeof view.propertyFilter,
-              )
-            }
-          >
-            {(
-              [
-                ['all', '全部'],
-                ['animated', '已有动画'],
-                ['selected', '所选属性'],
-                ['position', '位置'],
-                ['scale', '缩放'],
-                ['rotation', '旋转'],
-                ['opacity', '透明度'],
-              ] as const
-            ).map(([key, label]) => (
-              <option key={key} value={key}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button
-          onClick={() => {
-            zoomAnchor.current = undefined;
-            store.setTimelineZoom(1);
-            if (scrollRef.current) scrollRef.current.scrollLeft = 0;
-          }}
-          aria-label="适合合成时长"
+        )}
+        <div
+          className="timeline-footer"
+          hidden={compositingOpen || graphOpen || motionOpen}
         >
-          适合时长
-        </button>
-        <label className="timeline-zoom">
-          缩放
           <input
-            type="range"
-            aria-label="时间轴缩放"
-            min={1}
-            max={32}
-            step={0.1}
-            value={view.timelineZoom}
-            onChange={(event) => setZoom(Number(event.target.value))}
+            className="timeline-search"
+            aria-label="搜索时间轴属性"
+            placeholder="搜索图层 / 属性"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
           />
-        </label>
-      </div>
+          <label className="timeline-filter">
+            {' '}
+            <select
+              aria-label="时间轴属性筛选"
+              value={view.propertyFilter}
+              onChange={(e) =>
+                store.setPropertyFilter(
+                  e.target.value as typeof view.propertyFilter,
+                )
+              }
+            >
+              {(
+                [
+                  ['all', '全部'],
+                  ['animated', '已有动画'],
+                  ['selected', '所选属性'],
+                  ['position', '位置'],
+                  ['scale', '缩放'],
+                  ['rotation', '旋转'],
+                  ['opacity', '透明度'],
+                ] as const
+              ).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            onClick={() => {
+              zoomAnchor.current = undefined;
+              store.setTimelineZoom(1);
+              if (scrollRef.current) scrollRef.current.scrollLeft = 0;
+            }}
+            aria-label="适合合成时长"
+          >
+            适合时长
+          </button>
+          <label className="timeline-zoom">
+            缩放
+            <input
+              type="range"
+              aria-label="时间轴缩放"
+              min={1}
+              max={32}
+              step={0.1}
+              value={view.timelineZoom}
+              onChange={(event) => setZoom(Number(event.target.value))}
+            />
+          </label>
+        </div>
+      </SharedCurveTransport.Provider>
       {layerMarquee.overlay}
       {blankMenu && (
-        <CreatePieMenu
+        <CreateLayerMenu
           store={store}
           {...blankMenu}
           onClose={() => setBlankMenu(undefined)}

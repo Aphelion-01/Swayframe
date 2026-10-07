@@ -18,18 +18,26 @@ export function linkedAxisValues(
       : values[other]! + next - start;
   return result;
 }
-export function readAxisLink(id: string): boolean {
+export function readAxisLink(id: string, defaultLinked = true): boolean {
   try {
-    return localStorage.getItem(`swayframe.axis-link.${id}`) !== 'false';
+    const saved = localStorage.getItem(`swayframe.axis-link.${id}`);
+    return saved === null ? defaultLinked : saved !== 'false';
   } catch {
-    return true;
+    return defaultLinked;
   }
 }
-export function useAxisLink(id: string) {
-  const [state, setState] = useState(() => ({ id, linked: readAxisLink(id) }));
-  const linked = state.id === id ? state.linked : readAxisLink(id);
+export function useAxisLink(id: string, defaultLinked = true) {
+  const [state, setState] = useState(() => ({
+    id,
+    defaultLinked,
+    linked: readAxisLink(id, defaultLinked),
+  }));
+  const linked =
+    state.id === id && state.defaultLinked === defaultLinked
+      ? state.linked
+      : readAxisLink(id, defaultLinked);
   const toggle = () => {
-    setState({ id, linked: !linked });
+    setState({ id, defaultLinked, linked: !linked });
     try {
       localStorage.setItem(`swayframe.axis-link.${id}`, String(!linked));
     } catch {

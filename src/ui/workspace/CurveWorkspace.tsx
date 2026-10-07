@@ -1,4 +1,11 @@
-import { useRef, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
+export const SharedCurveTransport = createContext(false);
 import { IconButton } from './primitives';
 import { Icon } from './icons';
 import { usePointerRelease } from './pointer-release';
@@ -31,6 +38,7 @@ export function CurveWorkspace({
   footer: ReactNode;
   children: ReactNode;
 }) {
+  const sharedTransport = useContext(SharedCurveTransport);
   const [preference, setPreference] = useState(readPreference);
   const drag = useRef<{ x: number; width: number } | undefined>(undefined);
   const latest = useRef(preference);
@@ -72,7 +80,7 @@ export function CurveWorkspace({
   });
   return (
     <div
-      className={`curve-workspace ${preference.collapsed ? 'inspector-collapsed' : ''}`}
+      className={`curve-workspace ${sharedTransport ? 'shared-transport' : ''} ${preference.collapsed ? 'inspector-collapsed' : ''}`}
     >
       <div className="curve-context-toolbar">
         {toolbar}
@@ -134,7 +142,7 @@ export function CurveWorkspace({
           </>
         )}
       </div>
-      <div className="curve-preview-bar">{footer}</div>
+      {!sharedTransport && <div className="curve-preview-bar">{footer}</div>}
     </div>
   );
 }

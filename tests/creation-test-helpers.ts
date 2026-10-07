@@ -9,5 +9,6 @@ export function createObject(label: string) {
     clientX: 300,
     clientY: 500,
   });
+  fireEvent.click(screen.getByRole('menuitem', { name: '新建图层' }));
   fireEvent.click(screen.getByRole('menuitem', { name: label }));
 }

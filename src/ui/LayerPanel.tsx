@@ -1,5 +1,6 @@
+import { toggleLayer3D } from './workspace/layer-3d';
 import { useLayerMarquee } from './workspace/layer-marquee';
-import { CreatePieMenu } from './workspace/CreatePieMenu';
+import { CreateLayerMenu } from './workspace/CreateLayerMenu';
 import { LayerAccentChip } from './LayerAccentChip';
 import { Icon } from './workspace/icons';
 import { useEditorSlice } from './use-editor-slice';
@@ -11,7 +12,7 @@ import { activeComposition } from '../core/project-model';
 import type { EditorStore } from './editor-store';
 import { AgentPanel } from './AgentPanel';
 import { ProposalPanel } from './ProposalPanel';
-import { ContextMenu, IconButton, Tabs } from './workspace/primitives';
+import { IconButton, Tabs } from './workspace/primitives';
 import { layerActions } from './workspace/layer-actions';
 export function LayerPanel({ store }: { store: EditorStore }) {
   const view = useEditorSlice(store, ['project', 'selection']),
@@ -84,7 +85,17 @@ export function LayerPanel({ store }: { store: EditorStore }) {
     setRenaming(undefined);
   };
   return (
-    <aside className="layers-panel" aria-label="图层面板" tabIndex={0}>
+    <aside
+      className="layers-panel"
+      aria-label="图层面板"
+      tabIndex={0}
+      onContextMenu={(event) => {
+        if (tab !== '图层') return;
+        event.preventDefault();
+        setOperations(false);
+        setMenu({ x: event.clientX, y: event.clientY });
+      }}
+    >
       <Tabs
         items={['项目', '图层', '助手']}
         value={tab}
@@ -145,7 +156,7 @@ export function LayerPanel({ store }: { store: EditorStore }) {
                 onClick={(event) => {
                   const r = event.currentTarget.getBoundingClientRect();
                   setOperations(false);
-                  setMenu({ x: r.left, y: r.bottom + 140 });
+                  setMenu({ x: r.left, y: r.bottom });
                 }}
               >
                 <span aria-hidden="true">＋</span>创建对象
@@ -170,6 +181,7 @@ export function LayerPanel({ store }: { store: EditorStore }) {
               className="layer-list"
               onPointerDownCapture={layerMarquee.begin}
               onContextMenu={(event) => {
+                event.stopPropagation();
                 event.preventDefault();
                 setOperations(false);
                 setMenu({ x: event.clientX, y: event.clientY });
@@ -219,6 +231,20 @@ export function LayerPanel({ store }: { store: EditorStore }) {
                     setMenu({ x: event.clientX, y: event.clientY });
                   }}
                 >
+                  {layer.type === 'camera' ? (
+                    <span className="layer-3d-placeholder" aria-hidden="true" />
+                  ) : (
+                    <button
+                      className="layer-3d-toggle"
+                      aria-label={`${layer.editor?.is3D ? '关闭' : '开启'} ${displayName(layer.name)} 三维图层`}
+                      aria-pressed={!!layer.editor?.is3D}
+                      disabled={layer.locked}
+                      onClick={() => toggleLayer3D(store, [layer.id])}
+                      title="快速切换 2D / 3D"
+                    >
+                      3D
+                    </button>
+                  )}
                   <IconButton
                     label={`${layer.visible ? '隐藏' : '显示'} ${displayName(layer.name)}`}
                     onClick={() =>
@@ -332,17 +358,10 @@ export function LayerPanel({ store }: { store: EditorStore }) {
         </div>
       </div>
       {layerMarquee.overlay}
-      {menu && operations && (
-        <ContextMenu
-          items={items}
-          {...menu}
-          onClose={() => setMenu(undefined)}
-        />
-      )}
-      {menu && !operations && (
-        <CreatePieMenu
+      {menu && (
+        <CreateLayerMenu
           store={store}
-          items={items}
+          items={operations ? items : []}
           {...menu}
           onClose={() => setMenu(undefined)}
         />

@@ -47,6 +47,7 @@ export function ThreeDControls({
             store={store}
             property={editor.properties.cameraPosition!}
             label="摄像机位置"
+            defaultLinked={false}
           />
           <AnimatedField
             store={store}
@@ -112,6 +113,7 @@ export function ThreeDControls({
               store={store}
               property={editor.properties.position3D!}
               label="三维位置"
+              defaultLinked={false}
             />
             <AnimatedField
               store={store}
