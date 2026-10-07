@@ -22,7 +22,10 @@ import { MotionCurveAPI } from '../src/core/motion-curve-commands';
 beforeAll(() => {
   HTMLCanvasElement.prototype.getContext = vi.fn(() => null);
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  localStorage.clear();
+});
 it('面板读取跨属性 Mixed，点击预设即时统一，指定区间模式隔离其他区间', () => {
   const store = new EditorStore(createDefaultProject()),
     layer = createLayer('rectangle'),
@@ -99,7 +102,7 @@ it('面板读取跨属性 Mixed，点击预设即时统一，指定区间模式�
   expect(api.getMotionCurve(a.id)?.type).toBe('linear');
 });
 
-it('真实手柄 pointermove 在 pointerup 之前更新画布求值，只在松手提交一次事务', () => {
+it('真实手柄 200 次 pointermove 实时更新画布求值，窗口释放只提交一次事务', () => {
   class TestPointerEvent extends MouseEvent {
     readonly pointerId = 1;
   }
@@ -147,7 +150,11 @@ it('真实手柄 pointermove 在 pointerup 之前更新画布求值，只在松�
   });
   const handle = screen.getByRole('slider', { name: '缓动 P1 手柄' });
   fireEvent.pointerDown(handle, { button: 0, clientX: 40, clientY: 207 });
-  fireEvent.pointerMove(handle, { clientX: 180, clientY: 180 });
+  for (let i = 0; i < 200; i++)
+    fireEvent.pointerMove(window, {
+      clientX: 100 + (80 * i) / 199,
+      clientY: 180,
+    });
   expect(store.getRenderProject()).not.toBe(before);
   expect(store.getSnapshot().project).toBe(before);
   expect(store.commands.undoStack.length).toBe(count);
@@ -156,7 +163,8 @@ it('真实手柄 pointermove 在 pointerup 之前更新画布求值，只在松�
     findProperty(preview, layer.transform.position.id).property.keyframes[0]!
       .outgoing?.x,
   ).toBeCloseTo(0.5);
-  fireEvent.pointerUp(handle);
+  fireEvent.lostPointerCapture(handle);
+  fireEvent.pointerUp(window);
   expect(store.commands.undoStack.length).toBe(count + 1);
   expect(store.getSnapshot().project).toEqual(preview);
   expect(store.getSnapshot().propertyPreviews).toBeUndefined();

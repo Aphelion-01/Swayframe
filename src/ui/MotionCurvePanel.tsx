@@ -1,3 +1,5 @@
+import { usePointerRelease } from './workspace/pointer-release';
+import { useCurveNavigation } from './workspace/use-curve-navigation';
 import { useInteractionCancel } from './workspace/interaction';
 import {
   reverseMotionCurve,
@@ -6,7 +8,12 @@ import {
 import { MotionPresetBrowser } from './MotionPresetBrowser';
 import { MotionPreview } from './MotionPreview';
 import { previewMotionCurve } from '../core/motion-curve-commands';
-import { useRef, useState, useSyncExternalStore } from 'react';
+import { useSvgMetrics } from './workspace/use-svg-metrics';
+import { CurveWorkspace } from './workspace/CurveWorkspace';
+import { IconButton } from './workspace/primitives';
+import { Icon } from './workspace/icons';
+import { useEditorSlice } from './use-editor-slice';
+import { useRef, useState } from 'react';
 import type { EditorStore } from './editor-store';
 import type {
   MotionCurve,
@@ -37,15 +44,39 @@ export const quickMotionCurves: Readonly<Record<string, MotionCurve>> = {
 export function MotionCurvePanel({
   store,
   onClose,
+  loop = true,
+  initialSegmentId = '',
+  onLoopChange,
 }: {
   store: EditorStore;
   onClose: () => void;
+  loop?: boolean;
+  initialSegmentId?: string;
+  onLoopChange?: (loop: boolean) => void;
 }) {
-  const view = useSyncExternalStore(store.subscribe, store.getSnapshot),
+  const view = useEditorSlice(store, [
+      'project',
+      'selection',
+      'frames',
+      'selectedProperties',
+      'time',
+      'playing',
+    ]),
     project = view.project;
+  const {
+    ref: svgRef,
+    size: svgSize,
+    measure: measureSvg,
+  } = useSvgMetrics(360, 280);
+  const navigation = useCurveNavigation(svgRef, 360, 280, () =>
+    store.setPlaying(!store.getSnapshot().playing),
+  );
+  const { viewport } = navigation;
   const [, refreshClipboard] = useState(0);
-  const [scope, setScope] = useState<'selection' | 'segment'>('selection');
-  const [chosen, setChosen] = useState(''),
+  const [scope, setScope] = useState<'selection' | 'segment'>(
+    initialSegmentId ? 'segment' : 'selection',
+  );
+  const [chosen, setChosen] = useState(initialSegmentId),
     [mode, setMode] = useState<MotionCurveApplyMode>('both');
   const [draft, setDraft] = useState<{
     project: unknown;
@@ -53,6 +84,7 @@ export function MotionCurvePanel({
   }>();
   const gesture = useRef<
     | {
+        which: 1 | 2;
         project: unknown;
         curve: MotionCurve;
         targets: readonly string[];
@@ -139,351 +171,464 @@ export function MotionCurvePanel({
     store.setPropertyPreviews(undefined);
   };
   useInteractionCancel(cancel);
+  usePointerRelease({
+    active: () => !!gesture.current,
+    move: (e) => {
+      const g = gesture.current;
+      if (!g) return;
+      if (g.project !== store.getSnapshot().project) {
+        cancel();
+        return;
+      }
+      const r = svgRef.current!.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      const px =
+        (viewport.x +
+          ((e.clientX - r.left) * 360) / r.width / viewport.zoom -
+          40) /
+        280;
+      const py =
+        g.min +
+        ((240 -
+          (viewport.y +
+            ((e.clientY - r.top) * 280) / r.height / viewport.zoom)) /
+          200) *
+          (g.max - g.min);
+      const next = {
+        ...cubicCoordinates(g.curve),
+        [g.which === 1 ? 'x1' : 'x2']: Math.max(0, Math.min(1, px)),
+        [g.which === 1 ? 'y1' : 'y2']: Math.max(-10, Math.min(10, py)),
+      };
+      g.curve = next;
+      preview(next);
+    },
+    finish: () => {
+      const g = gesture.current;
+      gesture.current = undefined;
+      if (g && g.project === store.getSnapshot().project)
+        apply(g.curve, g.targets);
+      else cancel();
+    },
+    cancel,
+  });
   const path = Array.from(
     { length: 121 },
     (_, i) =>
       `${i ? 'L' : 'M'}${X(i / 120)},${Y(evaluateMotionCurve(curve, i / 120))}`,
   ).join(' ');
   return (
-    <aside className="motion-curve-panel" aria-label="动画缓动面板">
-      <header>
-        <div>
-          <strong>动画缓动 · Motion Curve</strong>
-          <small>标准化时间 → 动画进度</small>
-        </div>
-        <button
-          onClick={() => {
-            cancel();
-            onClose();
-          }}
-        >
-          关闭缓动面板
-        </button>
-      </header>
-      <p role="status">
-        {mixed
-          ? '混合（Mixed）'
-          : first?.curve === null
-            ? '保持 / 弹簧：应用预设将转换曲线'
-            : `${targets.length} 个动画区间`}
-      </p>
-      <label>
-        应用范围
-        <select
-          aria-label="缓动应用范围"
-          value={scope}
-          onChange={(e) => {
-            cancel();
-            setScope(e.target.value as typeof scope);
-          }}
-        >
-          <option value="selection">选中关键帧的全部相邻区间</option>
-          <option value="segment">仅当前区间</option>
-        </select>
-      </label>
-      <label>
-        目标区间
-        <select
-          aria-label="缓动目标区间"
-          value={fallback?.id ?? ''}
-          onChange={(e) => {
-            cancel();
-            setChosen(e.target.value);
-            setScope('segment');
-          }}
-        >
-          {available.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.label}
-            </option>
-          ))}
-        </select>
-      </label>
-      {!targets.length && (
-        <p>选择图层的动画区间，或在时间轴选中两个相邻关键帧。</p>
-      )}
-      <label>
-        合成预览时间
-        <input
-          aria-label="缓动合成预览时间"
-          type="range"
-          min={0}
-          max={activeComposition(project).duration}
-          step={0.001}
-          value={view.time}
-          onChange={(e) => store.setTime(Number(e.target.value))}
-        />
-      </label>
-      <output aria-label="当前标准化进度">
-        {first
-          ? evaluateMotionCurve(
-              curve,
-              (view.time - first.from.time) / (first.to.time - first.from.time),
-            ).toFixed(3)
-          : '—'}
-      </output>
-      <fieldset disabled={!targets.length}>
-        <div className="motion-quick">
-          {Object.entries(quickMotionCurves).map(([name, data]) => (
-            <button key={name} onClick={() => apply(data)}>
-              {name}
-            </button>
-          ))}
-        </div>
-        <svg
-          viewBox="0 0 360 280"
-          className="motion-curve-svg"
-          role="img"
-          aria-label="标准化缓动曲线"
-        >
-          {[0, 0.25, 0.5, 0.75, 1].map((n) => (
-            <g key={n} pointerEvents="none">
-              <line
-                x1={X(n)}
-                x2={X(n)}
-                y1="40"
-                y2="240"
-                stroke="var(--border-subtle)"
-              />
-              <line
-                x1="40"
-                x2="320"
-                y1={Y(n)}
-                y2={Y(n)}
-                stroke="var(--border-subtle)"
-              />
-            </g>
-          ))}
-          <path
-            d={path}
-            fill="none"
-            stroke="var(--curve-value)"
-            strokeWidth="3"
-            pointerEvents="none"
-          />
-          <text x="18" y={Y(0) + 17} fill="var(--text-muted)">
-            0,0
-          </text>
-          <text x="307" y={Y(1) - 10} fill="var(--text-muted)">
-            1,1
-          </text>
-          <text x="117" y="272" fill="var(--text-muted)">
-            标准化时间 0 → 1
-          </text>
-          {([1, 2] as const).map((which) => {
-            const x = which === 1 ? c.x1 : c.x2,
-              y = which === 1 ? c.y1 : c.y2;
-            return (
-              <g key={which}>
-                <line
-                  pointerEvents="none"
-                  x1={X(which === 1 ? 0 : 1)}
-                  y1={Y(which === 1 ? 0 : 1)}
-                  x2={X(x)}
-                  y2={Y(y)}
-                  stroke="var(--warning)"
-                />
-                <circle
-                  role="slider"
-                  tabIndex={0}
-                  aria-label={`缓动 P${which} 手柄`}
-                  aria-valuenow={x}
-                  cx={X(x)}
-                  cy={Y(y)}
-                  r="9"
-                  fill={which === 1 ? 'var(--warning)' : 'var(--success)'}
-                  style={{ touchAction: 'none', cursor: 'grab' }}
-                  onPointerDown={(e) => {
-                    if (!targets.length || e.button !== 0) return;
-                    e.preventDefault();
-                    e.currentTarget.setPointerCapture(e.pointerId);
-                    gesture.current = {
-                      project,
-                      curve,
-                      targets,
-                      min: low,
-                      max: high,
-                    };
-                  }}
-                  onPointerMove={(e) => {
-                    const g = gesture.current;
-                    if (!g) return;
-                    if (g.project !== store.getSnapshot().project) {
+    <aside
+      className="motion-curve-panel"
+      aria-label="动画缓动面板"
+      tabIndex={0}
+      onKeyDown={navigation.onKeyDown}
+    >
+      <CurveWorkspace
+        toolbar={
+          <>
+            <IconButton
+              label="返回时间轴"
+              onClick={() => {
+                cancel();
+                onClose();
+              }}
+            >
+              <Icon name="undo" />
+            </IconButton>
+            <strong>标准化缓动</strong>
+            <IconButton
+              label="适应缓动视图"
+              shortcut="F"
+              onClick={navigation.fit}
+            >
+              <Icon name="fit" />
+            </IconButton>
+            {available.length > 1 && (
+              <>
+                <label>
+                  应用范围
+                  <select
+                    aria-label="缓动应用范围"
+                    value={scope}
+                    onChange={(e) => {
                       cancel();
-                      return;
+                      setScope(e.target.value as typeof scope);
+                    }}
+                  >
+                    <option value="selection">选中关键帧的全部相邻区间</option>
+                    <option value="segment">仅当前区间</option>
+                  </select>
+                </label>
+                <label>
+                  目标区间
+                  <select
+                    aria-label="缓动目标区间"
+                    value={fallback?.id ?? ''}
+                    onChange={(e) => {
+                      cancel();
+                      setChosen(e.target.value);
+                      setScope('segment');
+                    }}
+                  >
+                    {available.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </>
+            )}
+            {available.length === 1 && (
+              <span className="curve-target-label" title={fallback?.label}>
+                {fallback?.label}
+              </span>
+            )}
+            <div className="motion-quick">
+              {Object.entries(quickMotionCurves).map(([name, data]) => (
+                <button
+                  key={name}
+                  disabled={!targets.length}
+                  onClick={() => apply(data)}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+          </>
+        }
+        inspector={
+          <>
+            <strong>区间缓动</strong>
+            <small>
+              {mixed ? '混合（Mixed）' : `${targets.length} 个动画区间`}
+            </small>
+            <fieldset disabled={!targets.length}>
+              <div className="motion-coordinates">
+                {(['x1', 'y1', 'x2', 'y2'] as const).map((key) => (
+                  <NumberField
+                    key={key}
+                    revision={project}
+                    time={store.getSnapshot().time}
+                    step={0.01}
+                    onPreview={(v) => preview({ ...c, [key]: v })}
+                    onCancel={cancel}
+                    label={key.toUpperCase()}
+                    value={c[key]}
+                    min={key.startsWith('x') ? 0 : -10}
+                    max={key.startsWith('x') ? 1 : 10}
+                    onCommit={(v) => apply({ ...c, [key]: v })}
+                    onError={(m) => store.setStatus(m, true)}
+                  />
+                ))}
+              </div>
+              <div className="motion-coordinates">
+                {(['out', 'in'] as const).map((side) => (
+                  <NumberField
+                    key={side}
+                    revision={project}
+                    time={store.getSnapshot().time}
+                    onPreview={(v) =>
+                      preview(
+                        side === 'out'
+                          ? { ...c, x1: v / 100 }
+                          : { ...c, x2: 1 - v / 100 },
+                      )
                     }
-                    const r =
-                      e.currentTarget.ownerSVGElement!.getBoundingClientRect();
-                    const px =
-                        (((e.clientX - r.left) * 360) / r.width - 40) / 280,
-                      py =
-                        g.min +
-                        ((240 - ((e.clientY - r.top) * 280) / r.height) / 200) *
-                          (g.max - g.min);
-                    const next = {
-                      ...cubicCoordinates(g.curve),
-                      [which === 1 ? 'x1' : 'x2']: Math.max(0, Math.min(1, px)),
-                      [which === 1 ? 'y1' : 'y2']: Math.max(
-                        -10,
-                        Math.min(10, py),
-                      ),
-                    };
-                    g.curve = next;
-                    preview(next);
+                    onCancel={cancel}
+                    label={side === 'out' ? '出影响（%）' : '入影响（%）'}
+                    value={(side === 'out' ? c.x1 : 1 - c.x2) * 100}
+                    min={0}
+                    max={100}
+                    onCommit={(v) =>
+                      apply(
+                        side === 'out'
+                          ? { ...c, x1: v / 100 }
+                          : { ...c, x2: 1 - v / 100 },
+                      )
+                    }
+                    onError={(m) => store.setStatus(m, true)}
+                  />
+                ))}
+              </div>
+              <label>
+                应用模式
+                <select
+                  aria-label="缓动应用模式"
+                  value={mode}
+                  onChange={(e) =>
+                    setMode(e.target.value as MotionCurveApplyMode)
+                  }
+                >
+                  <option value="both">双侧（Both）</option>
+                  <option value="out">出侧（Out）</option>
+                  <option value="in">入侧（In）</option>
+                </select>
+              </label>
+            </fieldset>
+            <details>
+              <summary>缓动操作与预设</summary>
+
+              <div className="motion-quick">
+                <button
+                  disabled={!targets.length}
+                  onClick={() => apply(reverseMotionCurve(curve))}
+                >
+                  反转曲线
+                </button>
+                <button
+                  disabled={!targets.length}
+                  title="保留出侧，将入侧设为中心对称"
+                  onClick={() => apply(mirrorMotionCurve(curve, 'out'))}
+                >
+                  镜像：出 → 入
+                </button>
+                <button
+                  disabled={!targets.length}
+                  title="保留入侧，将出侧设为中心对称"
+                  onClick={() => apply(mirrorMotionCurve(curve, 'in'))}
+                >
+                  镜像：入 → 出
+                </button>
+                <button
+                  disabled={!first?.curve || mixed}
+                  onClick={() => {
+                    store.motionCurveClipboard.copy(curve);
+                    refreshClipboard((v) => v + 1);
+                    store.setStatus('已复制缓动曲线，不含时间与数值');
                   }}
-                  onPointerUp={() => {
-                    const g = gesture.current;
-                    gesture.current = undefined;
-                    if (g && g.project === store.getSnapshot().project)
-                      apply(g.curve, g.targets);
-                    else cancel();
-                  }}
-                  onPointerCancel={cancel}
-                  onKeyDown={(e) => {
-                    if (!e.key.startsWith('Arrow')) return;
-                    e.preventDefault();
-                    const next = {
-                      ...c,
-                      [which === 1 ? 'x1' : 'x2']: Math.max(
-                        0,
-                        Math.min(
-                          1,
-                          x +
-                            (e.key === 'ArrowRight'
-                              ? 0.01
-                              : e.key === 'ArrowLeft'
-                                ? -0.01
-                                : 0),
-                        ),
-                      ),
-                      [which === 1 ? 'y1' : 'y2']: Math.max(
-                        -10,
-                        Math.min(
-                          10,
-                          y +
-                            (e.key === 'ArrowUp'
-                              ? 0.02
-                              : e.key === 'ArrowDown'
-                                ? -0.02
-                                : 0),
-                        ),
-                      ),
-                    };
-                    apply(next);
-                  }}
+                >
+                  复制缓动
+                </button>
+                <button
+                  disabled={
+                    !targets.length || !store.motionCurveClipboard.read()
+                  }
+                  onClick={() => apply(store.motionCurveClipboard.read()!)}
+                >
+                  粘贴缓动
+                </button>
+              </div>
+              <MotionPreview curve={curve} />
+              <MotionPresetBrowser
+                curve={curve}
+                onApply={apply}
+                onError={(m) => store.setStatus(m, true)}
+              />
+            </details>
+          </>
+        }
+        footer={
+          <>
+            <IconButton
+              label={view.playing ? '暂停缓动预览' : '播放缓动预览'}
+              shortcut="Space"
+              onClick={() => store.setPlaying(!view.playing)}
+            >
+              <Icon name={view.playing ? 'pause' : 'play'} />
+            </IconButton>
+            <IconButton
+              label="停止缓动预览"
+              onClick={() => {
+                store.setPlaying(false);
+                store.setTime(0);
+              }}
+            >
+              <Icon name="stop" />
+            </IconButton>
+            {onLoopChange && (
+              <IconButton
+                label="缓动循环播放"
+                aria-pressed={loop}
+                onClick={() => onLoopChange(!loop)}
+              >
+                <Icon name="loop" />
+              </IconButton>
+            )}
+            <label className="motion-mini-scrubber">
+              <input
+                aria-label="缓动合成预览时间"
+                type="range"
+                min={0}
+                max={activeComposition(project).duration}
+                step={0.001}
+                value={view.time}
+                onChange={(e) => store.setTime(Number(e.target.value))}
+              />
+            </label>
+            <output>{view.time.toFixed(3)} s</output>
+            <output aria-label="当前标准化进度">
+              {first
+                ? evaluateMotionCurve(
+                    curve,
+                    (view.time - first.from.time) /
+                      (first.to.time - first.from.time),
+                  ).toFixed(3)
+                : '—'}
+            </output>
+            <span className="curve-nav-hint">标准化时间 → 动画进度</span>
+            <IconButton
+              label="缩小缓动视图"
+              onClick={() => navigation.zoomAt(1 / 1.25)}
+            >
+              −
+            </IconButton>
+            <output>{Math.round(viewport.zoom * 100)}%</output>
+            <IconButton
+              label="放大缓动视图"
+              onClick={() => navigation.zoomAt(1.25)}
+            >
+              ＋
+            </IconButton>
+          </>
+        }
+      >
+        <div className="curve-canvas">
+          <svg
+            ref={measureSvg}
+            viewBox={`${viewport.x} ${viewport.y} ${360 / viewport.zoom} ${280 / viewport.zoom}`}
+            tabIndex={0}
+            onPointerDown={navigation.onPointerDown}
+            preserveAspectRatio="none"
+            className="motion-curve-svg"
+            role="img"
+            aria-label="标准化缓动曲线"
+          >
+            {[0, 0.25, 0.5, 0.75, 1].map((n) => (
+              <g key={n} pointerEvents="none">
+                <line
+                  vectorEffect="non-scaling-stroke"
+                  x1={X(n)}
+                  x2={X(n)}
+                  y1="40"
+                  y2="240"
+                  stroke="var(--border-subtle)"
+                />
+                <line
+                  vectorEffect="non-scaling-stroke"
+                  x1="40"
+                  x2="320"
+                  y1={Y(n)}
+                  y2={Y(n)}
+                  stroke="var(--border-subtle)"
                 />
               </g>
-            );
-          })}
-        </svg>
-        <div className="motion-coordinates">
-          {(['x1', 'y1', 'x2', 'y2'] as const).map((key) => (
-            <NumberField
-              key={key}
-              revision={project}
-              time={store.getSnapshot().time}
-              step={0.01}
-              onPreview={(v) => preview({ ...c, [key]: v })}
-              onCancel={cancel}
-              label={key.toUpperCase()}
-              value={c[key]}
-              min={key.startsWith('x') ? 0 : -10}
-              max={key.startsWith('x') ? 1 : 10}
-              onCommit={(v) => apply({ ...c, [key]: v })}
-              onError={(m) => store.setStatus(m, true)}
+            ))}
+            <path
+              d={targets.length ? path : ''}
+              fill="none"
+              stroke="var(--curve-value)"
+              strokeWidth="2"
+              vectorEffect="non-scaling-stroke"
+              pointerEvents="none"
             />
-          ))}
+            {[
+              { x: 18, y: Y(0) + 17, label: '0,0' },
+              { x: 307, y: Y(1) - 10, label: '1,1' },
+            ].map((t) => (
+              <text
+                key={t.label}
+                transform={`translate(${t.x} ${t.y}) scale(${360 / svgSize.width / viewport.zoom} ${280 / svgSize.height / viewport.zoom})`}
+                fill="var(--text-muted)"
+                fontSize="11"
+              >
+                {t.label}
+              </text>
+            ))}
+            {targets.length > 0 &&
+              ([1, 2] as const).map((which) => {
+                const x = which === 1 ? c.x1 : c.x2,
+                  y = which === 1 ? c.y1 : c.y2;
+                return (
+                  <g key={which}>
+                    <line
+                      pointerEvents="none"
+                      vectorEffect="non-scaling-stroke"
+                      x1={X(which === 1 ? 0 : 1)}
+                      y1={Y(which === 1 ? 0 : 1)}
+                      x2={X(x)}
+                      y2={Y(y)}
+                      stroke="var(--warning)"
+                    />
+                    <ellipse
+                      role="slider"
+                      tabIndex={0}
+                      aria-label={`缓动 P${which} 手柄`}
+                      aria-valuenow={x}
+                      cx={X(x)}
+                      cy={Y(y)}
+                      rx={(4 * 360) / svgSize.width / viewport.zoom}
+                      ry={(4 * 280) / svgSize.height / viewport.zoom}
+                      stroke="transparent"
+                      strokeWidth="10"
+                      vectorEffect="non-scaling-stroke"
+                      fill={which === 1 ? 'var(--warning)' : 'var(--success)'}
+                      style={{ touchAction: 'none', cursor: 'grab' }}
+                      onPointerDown={(e) => {
+                        if (
+                          !targets.length ||
+                          e.button !== 0 ||
+                          navigation.space.current
+                        )
+                          return;
+                        e.stopPropagation();
+                        store.setPlaying(false);
+                        e.preventDefault();
+                        e.currentTarget.setPointerCapture(e.pointerId);
+                        gesture.current = {
+                          which,
+                          project,
+                          curve,
+                          targets,
+                          min: low,
+                          max: high,
+                        };
+                      }}
+                      onPointerCancel={cancel}
+                      onKeyDown={(e) => {
+                        if (!e.key.startsWith('Arrow')) return;
+                        e.preventDefault();
+                        const next = {
+                          ...c,
+                          [which === 1 ? 'x1' : 'x2']: Math.max(
+                            0,
+                            Math.min(
+                              1,
+                              x +
+                                (e.key === 'ArrowRight'
+                                  ? 0.01
+                                  : e.key === 'ArrowLeft'
+                                    ? -0.01
+                                    : 0),
+                            ),
+                          ),
+                          [which === 1 ? 'y1' : 'y2']: Math.max(
+                            -10,
+                            Math.min(
+                              10,
+                              y +
+                                (e.key === 'ArrowUp'
+                                  ? 0.02
+                                  : e.key === 'ArrowDown'
+                                    ? -0.02
+                                    : 0),
+                            ),
+                          ),
+                        };
+                        apply(next);
+                      }}
+                    />
+                  </g>
+                );
+              })}
+          </svg>{' '}
+          {!targets.length && (
+            <p className="curve-empty-hint">
+              选择图层的动画区间，或在时间轴选中两个相邻关键帧。
+            </p>
+          )}
         </div>
-        <div className="motion-coordinates">
-          {(['out', 'in'] as const).map((side) => (
-            <NumberField
-              key={side}
-              revision={project}
-              time={store.getSnapshot().time}
-              onPreview={(v) =>
-                preview(
-                  side === 'out'
-                    ? { ...c, x1: v / 100 }
-                    : { ...c, x2: 1 - v / 100 },
-                )
-              }
-              onCancel={cancel}
-              label={side === 'out' ? '出影响（%）' : '入影响（%）'}
-              value={(side === 'out' ? c.x1 : 1 - c.x2) * 100}
-              min={0}
-              max={100}
-              onCommit={(v) =>
-                apply(
-                  side === 'out'
-                    ? { ...c, x1: v / 100 }
-                    : { ...c, x2: 1 - v / 100 },
-                )
-              }
-              onError={(m) => store.setStatus(m, true)}
-            />
-          ))}
-        </div>
-        <label>
-          应用模式
-          <select
-            aria-label="缓动应用模式"
-            value={mode}
-            onChange={(e) => setMode(e.target.value as MotionCurveApplyMode)}
-          >
-            <option value="both">双侧（Both）</option>
-            <option value="out">出侧（Out）</option>
-            <option value="in">入侧（In）</option>
-          </select>
-        </label>
-      </fieldset>
-      <div className="motion-quick">
-        <button
-          disabled={!targets.length}
-          onClick={() => apply(reverseMotionCurve(curve))}
-        >
-          反转曲线
-        </button>
-        <button
-          disabled={!targets.length}
-          title="保留出侧，将入侧设为中心对称"
-          onClick={() => apply(mirrorMotionCurve(curve, 'out'))}
-        >
-          镜像：出 → 入
-        </button>
-        <button
-          disabled={!targets.length}
-          title="保留入侧，将出侧设为中心对称"
-          onClick={() => apply(mirrorMotionCurve(curve, 'in'))}
-        >
-          镜像：入 → 出
-        </button>
-        <button
-          disabled={!first?.curve || mixed}
-          onClick={() => {
-            store.motionCurveClipboard.copy(curve);
-            refreshClipboard((v) => v + 1);
-            store.setStatus('已复制缓动曲线，不含时间与数值');
-          }}
-        >
-          复制缓动
-        </button>
-        <button
-          disabled={!targets.length || !store.motionCurveClipboard.read()}
-          onClick={() => apply(store.motionCurveClipboard.read()!)}
-        >
-          粘贴缓动
-        </button>
-      </div>
-      <MotionPreview curve={curve} />
-      <MotionPresetBrowser
-        curve={curve}
-        onApply={apply}
-        onError={(m) => store.setStatus(m, true)}
-      />
-      <p className="inspector-note">
-        拖动控制点直接修改缓动。Y 可越过
-        0～1；修改时间曲线不改变空间路径。拖动右下角调整面板大小。
-      </p>
+      </CurveWorkspace>
     </aside>
   );
 }

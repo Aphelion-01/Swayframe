@@ -263,5 +263,6 @@ it('从末尾关键帧打开 Graph 时定位前一区间，保留可编辑速度
   );
   fireEvent.click(screen.getByRole('tab', { name: '曲线编辑器' }));
   expect(screen.getByRole('button', { name: '缓入缓出' })).toBeEnabled();
-  expect(screen.getByLabelText('出影响比例（%）')).toBeInTheDocument();
+  expect(screen.getByLabelText('入影响比例（%）')).toBeInTheDocument();
+  expect(screen.queryByLabelText('出影响比例（%）')).not.toBeInTheDocument();
 });

@@ -359,6 +359,7 @@ it('所选属性归属正确，Graph不误编辑多选中的首个图层', () =>
   store.selectProperties([layers[1]!.transform.position.id]);
   render(<Timeline store={store} />);
   fireEvent.click(screen.getByRole('tab', { name: '曲线编辑器' }));
+  fireEvent.click(screen.getByRole('button', { name: '关键帧 K1' }));
   fireEvent.click(screen.getByRole('button', { name: '缓出' }));
   expect(
     evaluateProperty(current().layers[0]!.transform.position, 0.5).x,

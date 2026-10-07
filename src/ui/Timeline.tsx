@@ -128,7 +128,10 @@ export function Timeline({ store }: { store: EditorStore }) {
   const [compositingOpen, setCompositingOpen] = useState(
     () => localStorage.getItem('motion.active-timeline') === 'compositing',
   );
-  const [motionOpen, setMotionOpen] = useState(false);
+  const [motionOpen, setMotionOpen] = useState(
+    () => localStorage.getItem('motion.active-timeline') === 'motion',
+  );
+  const [motionInitialSegment, setMotionInitialSegment] = useState('');
   const [frameDrag, setFrameDrag] = useState<{
     id: string;
     delta: number;
@@ -550,7 +553,9 @@ export function Timeline({ store }: { store: EditorStore }) {
       setMotionOpen(false);
       store.clearGraphSelection();
     };
-    const motion = () => {
+    const motion = (e: Event) => {
+      const detail = (e as CustomEvent<{ segmentId?: string }>).detail;
+      setMotionInitialSegment(detail?.segmentId ?? '');
       setMotionOpen(true);
       setGraphOpen(false);
       setCompositingOpen(false);
@@ -565,7 +570,13 @@ export function Timeline({ store }: { store: EditorStore }) {
   useEffect(() => {
     localStorage.setItem(
       'motion.active-timeline',
-      compositingOpen ? 'compositing' : graphOpen ? 'graph' : 'timeline',
+      compositingOpen
+        ? 'compositing'
+        : graphOpen
+          ? 'graph'
+          : motionOpen
+            ? 'motion'
+            : 'timeline',
     );
   }, [graphOpen, compositingOpen, motionOpen]);
   const frameSignatures = useMemo(() => {
@@ -1196,7 +1207,7 @@ export function Timeline({ store }: { store: EditorStore }) {
       }}
     >
       <div className="timeline-toolbar">
-        <div className="playback-controls">
+        <div className="playback-controls" hidden={graphOpen || motionOpen}>
           <button
             aria-label="回到起点"
             onClick={() => {
@@ -1272,14 +1283,21 @@ export function Timeline({ store }: { store: EditorStore }) {
           </button>
         </div>
         <Tabs
-          items={['时间轴', '曲线编辑器', '合成节点']}
+          items={['时间轴', '曲线编辑器', '缓动曲线', '合成节点']}
           value={
-            compositingOpen ? '合成节点' : graphOpen ? '曲线编辑器' : '时间轴'
+            compositingOpen
+              ? '合成节点'
+              : graphOpen
+                ? '曲线编辑器'
+                : motionOpen
+                  ? '缓动曲线'
+                  : '时间轴'
           }
           onChange={(tab) => {
             store.setPropertyPreview(undefined);
             store.setPropertyPreviews(undefined);
-            setMotionOpen(false);
+            setMotionOpen(tab === '缓动曲线');
+            setMotionInitialSegment('');
             setGraphOpen(tab === '曲线编辑器');
             setCompositingOpen(tab === '合成节点');
             if (tab !== '合成节点') store.clearGraphSelection();
@@ -1289,20 +1307,31 @@ export function Timeline({ store }: { store: EditorStore }) {
                 ? 'compositing'
                 : tab === '曲线编辑器'
                   ? 'graph'
-                  : 'timeline',
+                  : tab === '缓动曲线'
+                    ? 'motion'
+                    : 'timeline',
             );
           }}
         />
         <span className="timeline-meta">{c.fps} fps</span>
       </div>
       {motionOpen && (
-        <MotionCurvePanel store={store} onClose={() => setMotionOpen(false)} />
+        <MotionCurvePanel
+          store={store}
+          key={motionInitialSegment}
+          initialSegmentId={motionInitialSegment}
+          loop={loop}
+          onLoopChange={setLoop}
+          onClose={() => setMotionOpen(false)}
+        />
       )}
       {compositingOpen && <CompositingGraphPanel store={store} />}
       {graphOpen && (
         <GraphEditor
           store={store}
           embedded
+          loop={loop}
+          onLoopChange={setLoop}
           onClose={() => setGraphOpen(false)}
         />
       )}
@@ -1579,7 +1608,10 @@ export function Timeline({ store }: { store: EditorStore }) {
           </div>
         </div>
       )}
-      <div className="timeline-footer" hidden={compositingOpen}>
+      <div
+        className="timeline-footer"
+        hidden={compositingOpen || graphOpen || motionOpen}
+      >
         <input
           className="timeline-search"
           aria-label="搜索时间轴属性"

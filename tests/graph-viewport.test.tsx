@@ -84,9 +84,7 @@ it('值/速度曲线滚轮以鼠标为中心缩放，Space/中键平移和取消
   expect(store.commands.undoStack).toHaveLength(0);
   fireEvent.keyDown(svg, { key: 'f' });
   expect(svg).toHaveAttribute('viewBox', '0 0 680 280');
-  fireEvent.change(screen.getByLabelText('曲线模式'), {
-    target: { value: 'speed' },
-  });
+  fireEvent.click(screen.getByRole('button', { name: '速度曲线' }));
   expect(screen.getByRole('img', { name: '动画速度曲线' })).toBeInTheDocument();
   expect(store.getSnapshot().project).toBe(before);
 });
@@ -119,9 +117,7 @@ it('缩放后的切线拖动正确换算坐标，100次预览一条事务，Undo
 it('capture loss and release outside the curve retain the edited controls and axis domain; edge handles stay selectable', () => {
   const { store, svg } = setup(),
     before = store.getSnapshot().project;
-  fireEvent.change(screen.getByLabelText('曲线模式'), {
-    target: { value: 'speed' },
-  });
+  fireEvent.click(screen.getByRole('button', { name: '速度曲线' }));
   const handle = screen.getByRole('slider', { name: '出切线手柄' });
   const grid = () =>
     [...svg.querySelectorAll('text')].map((n) => n.textContent);
@@ -161,7 +157,11 @@ it('graph playback and tap Space work without switching panels; holding Space fo
 });
 it('editing outgoing influence preserves the incoming endpoint including its zero influence', () => {
   setup();
+  fireEvent.click(screen.getByRole('button', { name: '关键帧 K1' }));
   fireEvent.click(screen.getByRole('button', { name: '缓入' }));
+  fireEvent.click(
+    screen.getByRole('img', { name: '动画值曲线' }).querySelector('path')!,
+  );
   expect(screen.getByLabelText('入影响比例（%）')).toHaveValue(0);
   const field = screen.getByLabelText('出影响比例（%）');
   fireEvent.change(field, { target: { value: '30' } });

@@ -33,13 +33,12 @@ it('曲线面板缓出与速度输入真实修改动画，撤销恢复', () => {
     .getByRole('img', { name: '动画值曲线' })
     .querySelectorAll('line'))
     expect(line).toHaveAttribute('pointer-events', 'none');
+  fireEvent.click(screen.getByRole('button', { name: '关键帧 K1' }));
   fireEvent.click(screen.getByRole('button', { name: '缓出' }));
   const p = activeComposition(store.getSnapshot().project).layers[0]!.transform
     .position;
   expect(evaluateProperty(p, 0.5).x).toBeGreaterThan(1110);
-  fireEvent.change(screen.getByLabelText('曲线模式'), {
-    target: { value: 'speed' },
-  });
+  fireEvent.click(screen.getByRole('button', { name: '速度曲线' }));
   expect(screen.getByRole('img', { name: '动画速度曲线' })).toBeInTheDocument();
   const input = screen.getByLabelText('出影响比例（%）');
   fireEvent.change(input, { target: { value: '40' } });

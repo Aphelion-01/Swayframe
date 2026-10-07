@@ -1,5 +1,6 @@
 import type { SVGProps } from 'react';
 export type IconName =
+  | 'fit'
   | 'polygon'
   | 'star'
   | 'path'
@@ -41,6 +42,7 @@ export type IconName =
   | 'save'
   | 'export';
 const paths: Record<IconName, string> = {
+  fit: 'M6 2H2v4 M10 2h4v4 M2 10v4h4 M14 10v4h-4 M5 5h6v6H5Z',
   polygon: 'M8 2l6 4v6l-6 3-6-3V6Z',
   star: 'M8 1l2 4 4.5.6-3.3 3.2.8 4.5L8 11.2l-4 2.1.8-4.5L1.5 5.6 6 5Z',
   path: 'M2 12C3 1 13 15 14 4 M1 11h2v2H1Z M13 3h2v2h-2Z',

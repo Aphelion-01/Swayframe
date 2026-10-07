@@ -245,3 +245,11 @@ Timeline复用泛型PointerInteractionState，以互斥载荷管理scrub、marqu
 `workspace/layer-marquee.tsx`复用可见 DOM 图层行的几何范围，仅更新 UI 选区，不进入工程。`workspace/CreatePieMenu.tsx`将图层/时间轴的创建入口移到右键，操作仍调用共享 layer.create 与资产导入服务，原上下文命令保留在中央操作入口。文件菜单不再承载对象创建列表。
 
 钢笔按下/拖动生成位置及对称入/出切线，沿用现有六数值路径节点、pathSvg、Property 和 Renderer；连续绘制不自动切换选择工具。PathEditor 支持节点类型转换、路径范围适配与开放/闭合预览，AppearanceControls 暴露填充和描边透明度。所有持久化操作仍通过 Command System，无工程 schema 变化。验证和边界见 `EDITOR_BUGFIX_0910.md`。
+
+### 0.9.11 · Graph Editor / Motion Curve 工作区
+
+执行基线 `docs/baseline/V02_GRAPH_EDITOR_UX.txt`。`CurveWorkspace` 统一紧凑上下文工具栏、填满剩余空间的 SVG、可拖宽/折叠的曲线属性栏和 36px 预览栏。右栏偏好存于 `motion.workspace.curve-inspector.v1`，不进入 Project。`use-svg-metrics` 将关键帧、手柄与标尺换算为屏幕像素，解除旧的 720px / 固定宽高比限制；视口平移缩放继续为 UI 状态。
+
+Graph 与 Timeline 共用 EditorView 的 selectedProperties、frames、time、playing；Timeline 保留唯一的合成播放时钟及 loop。Graph 按关键帧、区间、手柄逐级显示参数；中间关键帧的 incoming 指向前一区间，outgoing 指向后一区间。数值预览使用临时 Property，释放经共享 Command / Transaction 提交；向量及颜色数组保持原类型。Graph 区间右键通过带 segmentId 的 UI 事件打开标准化缓动，直接操作同一动画区间。
+
+两个曲线视图采用字段选择订阅，临时 Property 预览不重建静态 Timeline 树、不保存或序列化 Scene。手柄窗口释放复用 `usePointerRelease`，丢失捕获不隐式取消；Esc / 失焦 / PointerCancel 清空预览。曲线算法、Project schema、渲染引擎、AI Proposal 边界保持。验收与延后事项见 `GRAPH_EDITOR_UX_RESULT.md`。
