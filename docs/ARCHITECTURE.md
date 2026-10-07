@@ -215,3 +215,7 @@ Transform矩阵分解允许塌缩的零轴，以存活轴或既有角度保持�
 ### 0.9.5 · Timeline 手势闭环
 
 关键帧拖动由窗口捕获 pointermove/pointerup/pointercancel，按钮捕获变化不丢失释放。结束时采样最终坐标，连续预览只更新 UI；提交仍调用 moveSelectedFrames 或共享 keyframe.add Transaction，一次 Undo。工程快照变化、Esc 或取消清理临时状态。真实原生拖动与末次释放回归独立验证。
+
+### 0.9.7 · Professional Proposal 约束
+
+IntelligenceService 的 submitProposal 使用当前工具逐项约束的参数 schema，步骤上限与内部校验同为12。格式、步数或工具名无效时仅允许一次模型纠正，取消与传输异常直接传播；纠正不执行任何命令，最终计划仍由原 Registry/Transaction 校验与提交。工具范围不放宽，不支持的效果需说明近似方案的边界。

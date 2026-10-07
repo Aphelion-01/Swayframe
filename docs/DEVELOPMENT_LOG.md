@@ -108,3 +108,7 @@ Mac锁屏阻止继续原生文件对话框和鼠标操作；已请求解锁。�
 ## 2026-10-07 — 品牌图标 / Swayframe 0.9.6
 
 按用户参考图替换应用图标与顶部字标；使用 imagegen 分离品牌资源，Sway 字段适配深色界面为浅灰，frame 保持蓝色。原图未覆盖。PNG 转换为标准多尺寸 ICNS/ICO，electron-builder 使用真实图标，网页 favicon 同步更新；字标保留 alt 文本和原文件菜单交互。浏览器 1280×720 实测字标清晰、完整、无裁切，截图 outputs/branding/editor-branding.jpg。全量 316 tests、lint、typecheck、Web/desktop build 通过；macOS 包内 ICNS 与源文件相同。
+
+## 2026-10-07 — 专业 Proposal 约束修复 / Swayframe 0.9.7
+
+顶部字标由 124×26 调整为 104×22。定位到 IntelligenceService 对外使用最多100步的通用Plan schema，内部却最多12步且不允许范围外工具；模型未预先获知同一约束，错误直接终止。现为专业Proposal生成匹配12步上限、当前工具名及各工具参数的JSON Schema，并明确不支持能力须说明可编辑近似方案。无效响应最多自动纠正一次；仍失败时分别显示格式、步数或不可用工具名称，取消/传输异常不重试。不放宽权限、无新增工具，Proposal仍只读，实际执行继续通过Registry校验和共享Transaction。新增上限与schema、超限纠正、越权拒绝和取消回归；全量102文件/319tests、lint及Web/desktop build通过。视觉证据outputs/proposal-fix/editor.jpg。未调用用户付费模型，真实供应商响应仍须用户复测；本修复不新增形状布尔融合/液态融合能力。
