@@ -23,6 +23,9 @@ import {
   spatialBasis,
   spatialCamera,
   spatialSegment,
+  navigateSpatialWheel,
+  orbitSpatialView,
+  unwrapAngle,
   axisDragAmount,
   rulerStep,
 } from '../src/core/spatial-view';
@@ -349,6 +352,180 @@ it('主预览打开旁侧空间视图不改工程；辅助入口复用关闭行�
   expect(summary.closest('details')).not.toHaveAttribute('open');
   fireEvent.click(screen.getByLabelText('关闭三维空间预览'));
   expect(screen.queryByLabelText('三维空间预览')).toBeNull();
+  expect(store.getSnapshot().project).toBe(before);
+  expect(store.commands.undoStack).toHaveLength(count);
+});
+
+it('触控板双指绕转、Shift双指屏幕等距平移、捏合高响应缩放，均不混淆', () => {
+  const wheel = {
+    deltaX: 20,
+    deltaY: 10,
+    deltaMode: 0,
+    ctrlKey: false,
+    shiftKey: false,
+  };
+  const orbit = navigateSpatialWheel(defaultSpatialView, wheel, 800, 600);
+  expect(orbit.yaw).toBeCloseTo(defaultSpatialView.yaw + 0.12);
+  expect(orbit.distance).toBe(defaultSpatialView.distance);
+  expect(orbit.target).toEqual([0, 0, 0]);
+  const pan = navigateSpatialWheel(
+    defaultSpatialView,
+    { ...wheel, shiftKey: true },
+    800,
+    600,
+  );
+  expect(pan.yaw).toBe(defaultSpatialView.yaw);
+  const before = spatialProject([0, 0, 0], defaultSpatialView, 800, 600)!,
+    after = spatialProject([0, 0, 0], pan, 800, 600)!;
+  expect(after.x - before.x).toBeCloseTo(-20);
+  expect(after.y - before.y).toBeCloseTo(-10);
+  const zoom = navigateSpatialWheel(
+    defaultSpatialView,
+    { ...wheel, deltaX: 0, deltaY: -20, ctrlKey: true },
+    800,
+    600,
+  );
+  expect(zoom.distance / defaultSpatialView.distance).toBeCloseTo(
+    Math.exp(-0.36),
+  );
+  expect(zoom.yaw).toBe(defaultSpatialView.yaw);
+  const reverse = navigateSpatialWheel(
+    zoom,
+    { ...wheel, deltaX: 0, deltaY: 20, ctrlKey: true },
+    800,
+    600,
+  );
+  expect(reverse.distance).toBeCloseTo(defaultSpatialView.distance);
+  const mouse = navigateSpatialWheel(
+    defaultSpatialView,
+    { ...wheel, deltaX: 0, deltaY: 100 },
+    800,
+    600,
+  );
+  expect(mouse.distance).toBeGreaterThan(defaultSpatialView.distance);
+});
+it('平移后双指仍围绕原点，指向的原点屏幕位置保持稳定', () => {
+  const panned = { ...defaultSpatialView, target: [400, -100, 50] as const };
+  const before = spatialProject([0, 0, 0], panned, 800, 600)!;
+  const after = spatialProject(
+    [0, 0, 0],
+    orbitSpatialView(panned, 0.3, 0.2),
+    800,
+    600,
+  )!;
+  expect(after.x).toBeCloseTo(before.x);
+  expect(after.y).toBeCloseTo(before.y);
+  expect(unwrapAngle(-Math.PI + 0.1, Math.PI - 0.1)).toBeCloseTo(0.2);
+});
+it('旋转环连续预览、松手重采样一次提交，取消不残留，支持跨越正负180度', () => {
+  const { store, layers, current } = fixture();
+  toggleLayer3D(store, [layers[0]!.id]);
+  const before = store.getSnapshot().project,
+    count = store.commands.undoStack.length;
+  const snapshot = createRenderSnapshot(
+    activeComposition(before),
+    0,
+    [layers[0]!.id],
+    undefined,
+    before,
+  );
+  render(
+    <ThreeDGizmo
+      mode="rotate"
+      store={store}
+      snapshot={snapshot}
+      project={(p) => ({ x: 300 + p[0], y: 200 + p[1], z: 1000 + p[2] })}
+      width={600}
+      height={400}
+    />,
+  );
+  const root = screen.getByLabelText('三维 XYZ 操控手柄');
+  rect(root);
+  const center = root.querySelector('circle')!,
+    x = Number(center.getAttribute('cx')),
+    y = Number(center.getAttribute('cy'));
+  const z = screen.getByLabelText('旋转三维 Z 轴');
+  fireEvent.pointerDown(z, { button: 0, clientX: x + 66, clientY: y });
+  fireEvent.pointerMove(window, { clientX: x, clientY: y + 66 });
+  expect(store.getSnapshot().project).toBe(before);
+  expect(store.getSnapshot().propertyPreview!.property.baseValue).toEqual([
+    0, 0, 90,
+  ]);
+  fireEvent.pointerUp(window, { clientX: x - 66, clientY: y });
+  expect(current().editor!.properties.rotation3D!.baseValue).toEqual([
+    0, 0, 180,
+  ]);
+  expect(store.commands.undoStack).toHaveLength(count + 1);
+  act(() => store.undo());
+  fireEvent.pointerDown(z, { button: 0, clientX: x + 66, clientY: y });
+  fireEvent.pointerMove(window, { clientX: x, clientY: y + 66 });
+  fireEvent.pointerCancel(window);
+  expect(store.getSnapshot().propertyPreview).toBeUndefined();
+  expect(store.getSnapshot().project).toEqual(before);
+});
+it('旋转环支持Shift十五度吸附、键盘独立改轴，切回移动不残留预览', () => {
+  const { store, layers, current } = fixture();
+  toggleLayer3D(store, [layers[0]!.id]);
+  const snapshot = createRenderSnapshot(
+    activeComposition(store.getSnapshot().project),
+    0,
+    [layers[0]!.id],
+    undefined,
+    store.getSnapshot().project,
+  );
+  const props = {
+    store,
+    snapshot,
+    project: (p: readonly [number, number, number]) => ({
+      x: 300 + p[0],
+      y: 200 + p[1],
+      z: 1000 + p[2],
+    }),
+    width: 600,
+    height: 400,
+  };
+  const ui = render(<ThreeDGizmo {...props} mode="rotate" />);
+  const svg = screen.getByLabelText('三维 XYZ 操控手柄');
+  rect(svg);
+  const c = svg.querySelector('circle')!,
+    x = Number(c.getAttribute('cx')),
+    y = Number(c.getAttribute('cy'));
+  const z = screen.getByLabelText('旋转三维 Z 轴'),
+    angle = (38 * Math.PI) / 180;
+  fireEvent.pointerDown(z, { button: 0, clientX: x + 66, clientY: y });
+  fireEvent.pointerUp(window, {
+    clientX: x + 66 * Math.cos(angle),
+    clientY: y + 66 * Math.sin(angle),
+    shiftKey: true,
+  });
+  expect(current().editor!.properties.rotation3D!.baseValue).toEqual([
+    0, 0, 45,
+  ]);
+  fireEvent.keyDown(screen.getByLabelText('旋转三维 X 轴'), {
+    key: 'ArrowUp',
+    shiftKey: true,
+  });
+  expect(current().editor!.properties.rotation3D!.baseValue).toEqual([
+    10, 0, 45,
+  ]);
+  fireEvent.pointerDown(z, { button: 0, clientX: x + 66, clientY: y });
+  fireEvent.pointerMove(window, { clientX: x, clientY: y + 66 });
+  ui.rerender(<ThreeDGizmo {...props} mode="translate" />);
+  expect(store.getSnapshot().propertyPreview).toBeUndefined();
+  expect(screen.getByLabelText('移动三维 X 轴')).toBeInTheDocument();
+});
+it('主预览的操控方式切换同步两视图且不写工程', () => {
+  const { store, layers } = fixture();
+  toggleLayer3D(store, [layers[0]!.id]);
+  render(<Canvas store={store} />);
+  const before = store.getSnapshot().project,
+    count = store.commands.undoStack.length;
+  fireEvent.click(screen.getByLabelText('三维图层查看工具'));
+  fireEvent.change(screen.getByLabelText('三维操控方式'), {
+    target: { value: 'rotate' },
+  });
+  expect(screen.getAllByLabelText('旋转三维 X 轴')).toHaveLength(2);
+  expect(screen.queryByLabelText('移动三维 X 轴')).toBeNull();
   expect(store.getSnapshot().project).toBe(before);
   expect(store.commands.undoStack).toHaveLength(count);
 });

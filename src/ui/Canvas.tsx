@@ -1,5 +1,5 @@
 import { SpatialViewport } from './SpatialViewport';
-import { ThreeDGizmo } from './ThreeDGizmo';
+import { ThreeDGizmo, type SpatialGizmoMode } from './ThreeDGizmo';
 import { CanvasAids, type CanvasAidSettings } from './CanvasAids';
 import { projectPoint } from '../core/perspective';
 import { pathSvg } from '../core/shape-geometry';
@@ -209,6 +209,8 @@ export function Canvas({ store }: { store: EditorStore }) {
   const zoomAnchor = useRef<
     { x: number; y: number; u: number; v: number } | undefined
   >(undefined);
+  const [spatialGizmoMode, setSpatialGizmoMode] =
+    useState<SpatialGizmoMode>('translate');
   const [anchorMode, setAnchorMode] = useState(false);
   const [snapping, setSnapping] = useState(() => {
     try {
@@ -1314,6 +1316,18 @@ export function Canvas({ store }: { store: EditorStore }) {
           </button>
         </div>
         <div className="canvas-view-tools">
+          {spatialSelection && (
+            <select
+              aria-label="三维操控方式"
+              value={spatialGizmoMode}
+              onChange={(e) =>
+                setSpatialGizmoMode(e.target.value as SpatialGizmoMode)
+              }
+            >
+              <option value="translate">XYZ 移动</option>
+              <option value="rotate">XYZ 旋转</option>
+            </select>
+          )}
           <button
             aria-label="三维图层查看工具"
             aria-pressed={spaceView}
@@ -1506,6 +1520,7 @@ export function Canvas({ store }: { store: EditorStore }) {
               input.camera && (
                 <ThreeDGizmo
                   store={store}
+                  mode={spatialGizmoMode}
                   snapshot={input}
                   project={(p) => projectPoint(p, input.camera!)}
                   width={c.width}
@@ -1667,7 +1682,11 @@ export function Canvas({ store }: { store: EditorStore }) {
           </div>
         </div>
         {spaceView && (
-          <SpatialViewport store={store} onClose={() => setSpaceView(false)} />
+          <SpatialViewport
+            store={store}
+            gizmoMode={spatialGizmoMode}
+            onClose={() => setSpaceView(false)}
+          />
         )}
       </div>
       {menu && (

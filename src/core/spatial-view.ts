@@ -5,6 +5,7 @@ export interface SpatialView {
   distance: number;
   target: Point3;
   orthographic: boolean;
+  orbitOrigin?: Point3;
 }
 export const defaultSpatialView: SpatialView = {
   yaw: -0.55,
@@ -112,5 +113,91 @@ export function spatialCamera(
     orthographic: view.orthographic,
     width,
     height,
+  };
+}
+
+export interface SpatialWheelInput {
+  deltaX: number;
+  deltaY: number;
+  deltaMode: number;
+  ctrlKey: boolean;
+  shiftKey: boolean;
+}
+/** Chromium exposes trackpad pinch as ctrl+wheel. Continuous pixel deltas orbit. */
+export function navigateSpatialWheel(
+  view: SpatialView,
+  input: SpatialWheelInput,
+  width: number,
+  height: number,
+): SpatialView {
+  const coarseWheel =
+    input.deltaMode !== 0 ||
+    (input.deltaX === 0 &&
+      Math.abs(input.deltaY) >= 100 &&
+      Number.isInteger(input.deltaY / 100));
+  const multiplier =
+    input.deltaMode === 1 ? 16 : input.deltaMode === 2 ? height : 1;
+  const dx = input.deltaX * multiplier,
+    dy = input.deltaY * multiplier;
+  if (input.ctrlKey || (!input.shiftKey && coarseWheel)) {
+    const sensitivity = input.ctrlKey ? 0.018 : 0.0025;
+    return {
+      ...view,
+      distance: Math.max(
+        10,
+        Math.min(
+          1000000,
+          view.distance *
+            Math.exp(Math.max(-1.5, Math.min(1.5, dy * sensitivity))),
+        ),
+      ),
+    };
+  }
+  if (input.shiftKey) {
+    const basis = spatialBasis(view),
+      scale = view.distance / (Math.max(1, Math.min(width, height)) * 1.25);
+    // Follow fingers in screen space; no easing or artificial inertia.
+    return {
+      ...view,
+      target: view.target.map(
+        (n, i) => n + (dx * basis.right[i]! + dy * basis.down[i]!) * scale,
+      ) as unknown as Point3,
+    };
+  }
+  return orbitSpatialView(view, dx * 0.006, dy * 0.006);
+}
+export function unwrapAngle(next: number, previous: number) {
+  return Math.atan2(Math.sin(next - previous), Math.cos(next - previous));
+}
+
+/** Preserve the screen-space pan offset while orbiting the chosen world pivot. */
+export function orbitSpatialView(
+  view: SpatialView,
+  deltaYaw: number,
+  deltaPitch: number,
+): SpatialView {
+  const next = {
+    ...view,
+    yaw: view.yaw + deltaYaw,
+    pitch: Math.max(
+      -Math.PI / 2 + 0.001,
+      Math.min(Math.PI / 2 - 0.001, view.pitch + deltaPitch),
+    ),
+  };
+  const pivot = view.orbitOrigin ?? [0, 0, 0],
+    before = spatialBasis(view),
+    after = spatialBasis(next);
+  const coordinates = [before.right, before.down, before.forward].map((axis) =>
+    axis.reduce((sum, n, i) => sum + n * (view.target[i]! - pivot[i]!), 0),
+  );
+  return {
+    ...next,
+    target: pivot.map(
+      (n, i) =>
+        n +
+        after.right[i]! * coordinates[0]! +
+        after.down[i]! * coordinates[1]! +
+        after.forward[i]! * coordinates[2]!,
+    ) as unknown as Point3,
   };
 }

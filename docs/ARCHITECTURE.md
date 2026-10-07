@@ -265,3 +265,9 @@ Timeline / Graph / Compositing 继续共享 EditorStore.time / playing，Graph �
 ThreeDGizmo 将父空间轴投影至两个预览视口，拖动期间仅 setPropertyPreview；最终 PointerEvent 坐标重采样后 valueCommand 进入单个 Transaction，取消/失焦/卸载清理预览。3D 开关只走 layer.replace；默认轴联动保留用户显式偏好。
 
 SpatialViewport 复用 createRenderSnapshot 的 world3D、Canvas2DRenderer 的内容/素材/遮罩/效果渲染，通过瞬态 spatialCamera 更换观察投影；CameraSnapshot 的 optional orthographic 仅供观察使用，不写工程模型。主预览和导出仍使用工程摄像机。观察视角、网格/标尺/参考线、菜单状态均独立于 Scene。
+
+## 0.9.14 旋转与触控板
+
+ThreeDRotationGizmo复用rotation3D Property和valueCommand，不改变Scene格式或引入另一套变换执行器。旋转环围绕实际anchor3D+二维anchor定位，轴方向遵守已有Rz*Ry*Rx求值顺序。角度采用跨越±180°的连续展开，边缘视角退化为环切向拖动；Shift15°吸附、Alt精细，预览与提交分离。Canvas中一个上下文选择器控制主视图和SpatialViewport。
+
+navigateSpatialWheel区分连续触控板、Shift平移及Chromium ctrl+wheel捏合。平移按当前投影尺寸换算；orbitSpatialView保留绕转pivot及屏幕平移偏移。空间视口仅在素材变化时同步素材，观察变化只刷新渲染，不增加动画平滑延迟。

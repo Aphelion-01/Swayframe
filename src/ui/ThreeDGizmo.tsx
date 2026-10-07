@@ -1,13 +1,19 @@
+import { ThreeDRotationGizmo } from './ThreeDRotationGizmo';
 import { useEffect, useRef } from 'react';
 import type { EditorStore } from './editor-store';
 import { evaluateProperty } from '../core/animation-engine';
-import { activeComposition, type Property } from '../core/project-model';
+import {
+  activeComposition,
+  findProperty,
+  type Property,
+} from '../core/project-model';
 import type { AnimValue } from '../core/core-types';
 import { point4, identity4, type Point3 } from '../core/perspective';
 import { axisDragAmount } from '../core/spatial-view';
 import type { RenderSnapshot } from '../core/renderer-core';
 import { usePointerRelease } from './workspace/pointer-release';
 import { useInteractionCancel } from './workspace/interaction';
+export type SpatialGizmoMode = 'translate' | 'rotate';
 export type SpatialProjector = (
   p: Point3,
 ) => { x: number; y: number; z: number } | null;
@@ -18,6 +24,7 @@ export function ThreeDGizmo({
   width,
   height,
   unitsPerPixel = 1,
+  mode = 'translate',
 }: {
   store: EditorStore;
   snapshot: RenderSnapshot;
@@ -25,6 +32,7 @@ export function ThreeDGizmo({
   width: number;
   height: number;
   unitsPerPixel?: number;
+  mode?: SpatialGizmoMode;
 }) {
   const drag = useRef<
     | {
@@ -85,6 +93,23 @@ export function ThreeDGizmo({
     },
     [store],
   );
+  useEffect(() => {
+    if (drag.current) {
+      drag.current = undefined;
+      store.setPropertyPreview(undefined);
+    }
+  }, [mode, store]);
+  if (mode === 'rotate')
+    return (
+      <ThreeDRotationGizmo
+        store={store}
+        snapshot={snapshot}
+        project={project}
+        width={width}
+        height={height}
+        unitsPerPixel={unitsPerPixel}
+      />
+    );
   const chosen = snapshot.layers.find(
     (l) =>
       store.getSnapshot().selection.includes(l.source.id) &&
@@ -187,7 +212,8 @@ export function ThreeDGizmo({
               aria-valuenow={
                 (
                   evaluateProperty(
-                    property,
+                    findProperty(store.getSnapshot().project, property.id)
+                      .property,
                     store.getSnapshot().time,
                   ) as readonly number[]
                 )[axis]
@@ -209,7 +235,8 @@ export function ThreeDGizmo({
                   e.preventDefault();
                   e.stopPropagation();
                   const base = evaluateProperty(
-                    property,
+                    findProperty(store.getSnapshot().project, property.id)
+                      .property,
                     store.getSnapshot().time,
                   ) as readonly number[];
                   store.run('微调三维位置', [

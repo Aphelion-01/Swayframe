@@ -14,18 +14,22 @@ import {
   spatialProject,
   spatialSegment,
   spatialCamera,
+  navigateSpatialWheel,
+  orbitSpatialView,
   type SpatialView,
 } from '../core/spatial-view';
 import { Canvas2DRenderer } from '../renderers/canvas2d';
-import { ThreeDGizmo } from './ThreeDGizmo';
+import { ThreeDGizmo, type SpatialGizmoMode } from './ThreeDGizmo';
 import { usePointerRelease } from './workspace/pointer-release';
 import { useInteractionCancel } from './workspace/interaction';
 export function SpatialViewport({
   store,
   onClose,
+  gizmoMode = 'translate',
 }: {
   store: EditorStore;
   onClose: () => void;
+  gizmoMode?: SpatialGizmoMode;
 }) {
   const v = useEditorSlice(store, [
     'project',
@@ -44,13 +48,16 @@ export function SpatialViewport({
     const element = root.current;
     const wheel = (event: WheelEvent) => {
       event.preventDefault();
-      setView((s) => ({
-        ...s,
-        distance: Math.max(
-          50,
-          Math.min(100000, s.distance * Math.exp(event.deltaY * 0.001)),
+      event.stopPropagation();
+      const bounds = element!.getBoundingClientRect();
+      setView((s) =>
+        navigateSpatialWheel(
+          s,
+          event,
+          bounds.width || 600,
+          bounds.height || 400,
         ),
-      }));
+      );
     };
     element?.addEventListener('wheel', wheel, { passive: false });
     return () => element?.removeEventListener('wheel', wheel);
@@ -108,22 +115,26 @@ export function SpatialViewport({
         .sort((a, b) => (b.quad?.[0]?.z ?? 0) - (a.quad?.[0]?.z ?? 0)),
     };
   }, [snapshot, view, size, v.time, c.duration]);
+  const latestFrame = useRef(spatialFrame);
+  latestFrame.current = spatialFrame;
+  useEffect(() => {
+    if (image.current) renderer.render(spatialFrame, image.current, 1, false);
+  }, [renderer, spatialFrame]);
   useEffect(() => {
     let cancelled = false;
-    if (image.current) renderer.render(spatialFrame, image.current, 1, false);
     void renderer
       .syncAssets(project.assets)
       .then(() => {
         if (!cancelled && image.current)
-          renderer.render(spatialFrame, image.current, 1, false);
+          renderer.render(latestFrame.current, image.current, 1, false);
       })
       .catch(() => {
-        /* Main preview already reports media failures. */
+        /* Main preview reports media failures. */
       });
     return () => {
       cancelled = true;
     };
-  }, [renderer, spatialFrame, project.assets]);
+  }, [renderer, project.assets]);
   const projectPoint = (p: Point3) =>
     spatialProject(p, view, size.width, size.height);
   const cancel = () => {
@@ -144,15 +155,7 @@ export function SpatialViewport({
           (n, i) => n - (dx * b.right[i]! + dy * b.down[i]!) * scale,
         ) as unknown as Point3,
       });
-    } else
-      setView({
-        ...d.view,
-        yaw: d.view.yaw + dx * 0.006,
-        pitch: Math.max(
-          -Math.PI / 2 + 0.001,
-          Math.min(Math.PI / 2 - 0.001, d.view.pitch + dy * 0.006),
-        ),
-      });
+    } else setView(orbitSpatialView(d.view, dx * 0.006, dy * 0.006));
   };
   usePointerRelease({
     active: () => !!drag.current,
@@ -172,6 +175,7 @@ export function SpatialViewport({
     setView((s) => ({
       ...s,
       target: p ? point4(p, [0, 0, 0]) : [0, 0, 0],
+      orbitOrigin: p ? point4(p, [0, 0, 0]) : [0, 0, 0],
       distance: selected.length
         ? Math.max(
             400,
@@ -386,6 +390,7 @@ export function SpatialViewport({
         </svg>
         <ThreeDGizmo
           store={store}
+          mode={gizmoMode}
           snapshot={snapshot}
           project={projectPoint}
           width={size.width}
@@ -427,8 +432,8 @@ export function SpatialViewport({
         </div>
       </div>
       <footer>
-        中键绕转 · Shift 中键平移 · 滚轮缩放 · F 聚焦 · 1 / 3 / 7 视图 · 5 正交
-        / 透视 · 网格 100 px
+        双指绕转 · Shift 双指平移 · 捏合缩放 · 中键绕转 · F 聚焦 · 1/3/7 视图 ·
+        5 正交/透视 · 网格 100 px
       </footer>
     </section>
   );
