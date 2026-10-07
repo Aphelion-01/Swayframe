@@ -1384,6 +1384,8 @@ export function Canvas({ store }: { store: EditorStore }) {
               event.preventDefault();
               const id = hitTest(input, point(event), store.textMeasure);
               if (id && !view.selection.includes(id)) store.select(id);
+              store.selectFrames([]);
+              store.selectProperties([]);
               setMenu({ x: event.clientX, y: event.clientY });
             }}
             onDoubleClick={(event) => {

@@ -58,9 +58,7 @@ describe('图层面板 / 属性面板 integration', () => {
     createObject('创建 文字');
     expect(store.getSnapshot().project.compositions[0]?.layers).toHaveLength(3);
     fireEvent.click(screen.getByRole('button', { name: '图层操作' }));
-    fireEvent.click(
-      screen.getByRole('menuitem', { name: '删除选中图层 Delete' }),
-    );
+    fireEvent.click(screen.getByRole('menuitem', { name: '删除选中图层' }));
     expect(store.getSnapshot().project.compositions[0]?.layers).toHaveLength(2);
     fireEvent.click(screen.getByRole('button', { name: '撤销' }));
     expect(store.getSnapshot().project.compositions[0]?.layers).toHaveLength(3);

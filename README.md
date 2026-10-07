@@ -1,6 +1,10 @@
-# Swayframe 0.9.0
+# Swayframe 0.9.12
 
 简体中文本地动效编辑器，支持人工完成 2D 与平面 3D 动画。当前节点模块基线为 `docs/baseline/COMPOSITING_GRAPH_CG0_CG12.txt`，桌面基线为 `docs/baseline/DESKTOP_D0_D10.txt`，前一轮编辑器基线为 `docs/baseline/MOTION_EDITOR_PHASE_A_I.txt`；历史 V0.1 基线保留用于追溯。
+
+## 当前版本：全局信息架构
+
+按用户任务整理七类应用菜单、Scene创建/对象右键、Inspector层级与时间/效果、动画上下文、节点入口、素材操作与可搜索命令。所有Scene修改复用Command/Transaction。后续UI改动先读根 `DESIGN.md` 与 `FEATURE_LOCATION_MATRIX.md`；本轮审计、实际验收与限制见 `UX_INFORMATION_ARCHITECTURE_RESULT.md`。
 
 ## 原生 AI Agent V1
 

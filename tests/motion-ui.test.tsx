@@ -68,8 +68,7 @@ it('面板读取跨属性 Mixed，点击预设即时统一，指定区间模式�
       .keyframes)
       store.selectFrame({ propertyId: p.id, keyframeId: k.id }, true);
   render(<App store={store} />);
-  fireEvent.click(screen.getByText('关键帧 ▾', { selector: 'summary' }));
-  fireEvent.click(screen.getByRole('button', { name: '动画缓动' }));
+  fireEvent.click(screen.getByRole('tab', { name: '缓动曲线' }));
   expect(screen.getByText('混合（Mixed）')).toBeInTheDocument();
   const count = store.commands.undoStack.length;
   fireEvent.click(screen.getByRole('button', { name: '缓出' }));
@@ -132,8 +131,7 @@ it('真实手柄 200 次 pointermove 实时更新画布求值，窗口释放只�
   store.select(layer.id);
   store.setTime(0.5);
   render(<App store={store} />);
-  fireEvent.click(screen.getByText('关键帧 ▾', { selector: 'summary' }));
-  fireEvent.click(screen.getByRole('button', { name: '动画缓动' }));
+  fireEvent.click(screen.getByRole('tab', { name: '缓动曲线' }));
   const before = store.getSnapshot().project,
     count = store.commands.undoStack.length;
   const svg = screen.getByRole('img', { name: '标准化缓动曲线' });

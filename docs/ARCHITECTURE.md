@@ -253,3 +253,7 @@ Timeline复用泛型PointerInteractionState，以互斥载荷管理scrub、marqu
 Graph 与 Timeline 共用 EditorView 的 selectedProperties、frames、time、playing；Timeline 保留唯一的合成播放时钟及 loop。Graph 按关键帧、区间、手柄逐级显示参数；中间关键帧的 incoming 指向前一区间，outgoing 指向后一区间。数值预览使用临时 Property，释放经共享 Command / Transaction 提交；向量及颜色数组保持原类型。Graph 区间右键通过带 segmentId 的 UI 事件打开标准化缓动，直接操作同一动画区间。
 
 两个曲线视图采用字段选择订阅，临时 Property 预览不重建静态 Timeline 树、不保存或序列化 Scene。手柄窗口释放复用 `usePointerRelease`，丢失捕获不隐式取消；Esc / 失焦 / PointerCancel 清空预览。曲线算法、Project schema、渲染引擎、AI Proposal 边界保持。验收与延后事项见 `GRAPH_EDITOR_UX_RESULT.md`。
+
+### 0.9.12 · Global Information Architecture
+
+根 DESIGN.md 与 FEATURE_LOCATION_MATRIX.md 约束功能归属和入口预算。shared/application-menu 维护 Web/Electron 分类与动作ID；workspace/editor-actions 将应用菜单、Palette、Registry与原生适配接入现有Command/Transaction，object-actions复用图层创建。Scene/Canvas/Timeline按上下文过滤layerActions；属性、关键帧、节点、素材各自拥有相关菜单。跨入口读取当前snapshot，节点Edit保留工作区上下文并保护空选择/Source/Output，输入框保留文本编辑。UI菜单/模式/布局不写Scene；Intelligence只输出Proposal不变。文件持久化继续ProjectService与原IPC。

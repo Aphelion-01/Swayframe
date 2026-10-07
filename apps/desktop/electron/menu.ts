@@ -1,4 +1,5 @@
 import { app, Menu } from 'electron';
+import { applicationMenus } from '../../../src/shared/application-menu';
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron';
 import type {
   DesktopAction,
@@ -47,7 +48,10 @@ export function installMenu(
         item('保存', 'save', 'CommandOrControl+S'),
         item('另存为…', 'save-as', 'CommandOrControl+Shift+S'),
         { type: 'separator' },
-        item('导入图片…', 'import'),
+        item('新建合成…', 'new-composition'),
+        item('合成设置…', 'composition-settings'),
+        item('导入图片到素材库…', 'import'),
+        item('设置 · AI…', 'settings'),
         item('导出…', 'export'),
         {
           label: '最近工程',
@@ -83,6 +87,56 @@ export function installMenu(
         item('全选', 'select-all', 'CommandOrControl+A'),
       ],
     },
+    ...applicationMenus
+      .filter((group) => group.label === '图层' || group.label === '动画')
+      .map((group) => ({
+        label: group.label,
+        submenu: group.items.map(([id, label, ...keys]) =>
+          id === 'create-object'
+            ? {
+                label,
+                submenu: [
+                  ['rectangle', '矩形'],
+                  ['ellipse', '椭圆'],
+                  ['polygon', '多边形'],
+                  ['star', '星形'],
+                  ['path', '路径'],
+                  ['text', '文字'],
+                  ['camera', '摄像机'],
+                  ['solid', '纯色'],
+                  ['null', '空对象'],
+                ].map(([kind, name]) =>
+                  item(`创建 ${name}`, `create-${kind}` as DesktopAction),
+                ),
+              }
+            : id === 'align' || id === 'interpolation'
+              ? {
+                  label,
+                  submenu: (id === 'align'
+                    ? [
+                        ['align-0', '左对齐'],
+                        ['align-1', '水平居中'],
+                        ['align-2', '右对齐'],
+                        ['align-3', '顶对齐'],
+                        ['align-4', '垂直居中'],
+                        ['align-5', '底对齐'],
+                        ['align-6', '水平分布'],
+                        ['align-7', '垂直分布'],
+                      ]
+                    : [
+                        ['ease-in', '缓入'],
+                        ['ease-out', '缓出'],
+                        ['ease-both', '缓入缓出'],
+                        ['linear', '线性'],
+                        ['hold', '保持'],
+                      ]
+                  ).map(([action, name]) =>
+                    item(name!, action as DesktopAction),
+                  ),
+                }
+              : item(label, id, keys[0]),
+        ),
+      })),
     {
       label: '视图',
       submenu: [
@@ -91,23 +145,16 @@ export function installMenu(
         item('适合窗口', 'fit'),
         item('实际大小', 'actual-size'),
         { type: 'separator' },
-        item('切换左面板', 'toggle-left'),
-        item('切换属性面板', 'toggle-right'),
-        item('切换时间轴', 'toggle-bottom'),
         { role: 'togglefullscreen' },
-      ],
-    },
-    {
-      label: '动画',
-      submenu: [
-        item('添加位置关键帧', 'keyframe'),
-        item('打开曲线编辑器', 'graph'),
-        item('打开动效曲线', 'motion-curve'),
       ],
     },
     {
       label: '窗口',
       submenu: [
+        ...applicationMenus
+          .find((group) => group.label === '窗口')!
+          .items.map(([id, label]) => item(label, id)),
+        { type: 'separator' },
         { role: 'minimize' },
         {
           label: process.platform === 'darwin' ? '缩放' : '最大化 / 还原',
@@ -116,7 +163,12 @@ export function installMenu(
         },
       ],
     },
-    { label: '帮助', submenu: [item(`关于 ${ProductMetadata.name}`, 'about')] },
+    {
+      label: '帮助',
+      submenu: applicationMenus
+        .find((group) => group.label === '帮助')!
+        .items.map(([id, label, ...keys]) => item(label, id, keys[0])),
+    },
   ];
   Menu.setApplicationMenu(Menu.buildFromTemplate(menus));
   app.setAboutPanelOptions({

@@ -47,7 +47,7 @@ it('正常菜单新建工程清空旧数据和历史，命名合成自动激活�
   render(<App store={store} />);
   openTimelineLayers();
   menu();
-  fireEvent.click(screen.getByRole('button', { name: '新建工程' }));
+  fireEvent.click(screen.getByRole('menuitem', { name: '新建工程' }));
   fireEvent.click(screen.getByRole('button', { name: '创建空白工程' }));
   expect(activeComposition(store.getSnapshot().project).layers).toHaveLength(0);
   expect(store.getSnapshot()).toMatchObject({
@@ -58,7 +58,7 @@ it('正常菜单新建工程清空旧数据和历史，命名合成自动激活�
   });
   expect(store.commands.undoStack).toHaveLength(0);
   menu();
-  fireEvent.click(screen.getByRole('button', { name: '新建合成' }));
+  fireEvent.click(screen.getByRole('menuitem', { name: '新建合成' }));
   fireEvent.change(screen.getByLabelText('合成名称'), {
     target: { value: 'Logo A' },
   });

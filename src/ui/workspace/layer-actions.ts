@@ -10,6 +10,7 @@ import type { MenuItem } from './primitives';
 export function layerActions(
   store: EditorStore,
   rename: () => void,
+  context: 'canvas' | 'scene' | 'timeline' = 'canvas',
 ): MenuItem[] {
   const view = store.getSnapshot(),
     c = activeComposition(view.project),
@@ -24,7 +25,7 @@ export function layerActions(
       );
     }
   };
-  return [
+  const items: MenuItem[] = [
     {
       label: '图层颜色',
       disabled: !layer,
@@ -121,5 +122,86 @@ export function layerActions(
       disabled: !layer,
       action: () => store.align(mode),
     })),
+  ];
+  const structural: MenuItem[] = layer
+    ? [
+        {
+          label: layer.visible ? '隐藏图层' : '显示图层',
+          action: () =>
+            store.run('切换图层可见性', [
+              command({
+                type: 'layer.patch',
+                compositionId: c.id,
+                layerId: layer.id,
+                patch: { visible: !layer.visible },
+              }),
+            ]),
+        },
+        {
+          label: layer.locked ? '解锁图层' : '锁定图层',
+          action: () =>
+            store.run('切换图层锁定', [
+              command({
+                type: 'layer.patch',
+                compositionId: c.id,
+                layerId: layer.id,
+                patch: { locked: !layer.locked },
+              }),
+            ]),
+        },
+        {
+          label: '设置父级',
+          action: () => {},
+          children: [
+            {
+              label: '无父级',
+              action: () =>
+                safely(() => {
+                  store.run(
+                    '解除父级',
+                    view.selection.flatMap((id) =>
+                      parentCommands(view.project, id, null, view.time),
+                    ),
+                  );
+                }),
+            },
+            ...c.layers
+              .filter(
+                (l) => !view.selection.includes(l.id) && l.type !== 'camera',
+              )
+              .map((parent) => ({
+                label: parent.name,
+                action: () =>
+                  safely(() => {
+                    store.run(
+                      '设置父级',
+                      view.selection.flatMap((id) =>
+                        parentCommands(view.project, id, parent.id, view.time),
+                      ),
+                    );
+                  }),
+              })),
+          ],
+        },
+        ...(layer.type === 'precomp'
+          ? [
+              {
+                label: '进入预合成',
+                action: () =>
+                  window.dispatchEvent(
+                    new CustomEvent('motion:open-composition', {
+                      detail: layer.compositionId,
+                    }),
+                  ),
+              },
+            ]
+          : []),
+      ]
+    : [];
+  return [
+    ...items.filter(
+      (item) => context === 'canvas' || !/对齐|居中|分布/.test(item.label),
+    ),
+    ...structural,
   ];
 }

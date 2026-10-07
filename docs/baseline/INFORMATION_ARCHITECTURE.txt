@@ -1,0 +1,1952 @@
+你现在要对 Swayframe 进行一次“全局信息架构与功能入口重构”。
+
+这不是一次普通 UI 美化任务。
+
+当前最严重的问题不是颜色、圆角、字体，而是：
+
+======================================================================
+功能入口失控
+======================================================================
+
+当前 Swayframe 已经积累了大量功能，但出现以下问题：
+
+- 同类功能分散在完全不同的位置；
+- 高频功能被藏进二级甚至更深菜单；
+- 低频功能反而长期占据一级界面；
+- 同一个功能可能同时出现在多个不合理入口；
+- Canvas、Scene、Inspector、Timeline、Graph、Menu 的职责混乱；
+- 用户无法根据专业创作软件的常识预测“这个功能应该在哪里”；
+- 新功能经常采用“实现一个功能 → 找个地方塞一个按钮”的方式接入；
+- 功能虽然存在，但用户很难发现；
+- 不同模块缺乏统一操作逻辑；
+- 用户难以形成肌肉记忆。
+
+本轮目标不是继续新增功能。
+
+而是：
+
+======================================================================
+重新建立 Swayframe 的 Information Architecture
++
+Interaction Architecture
++
+Feature Placement Rules
+======================================================================
+
+并真正重新整理现有软件中的所有功能入口。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第一阶段：安装 UX Skills
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+首先使用 Codex 自带的：
+
+$skill-installer
+
+安装以下三个 Skill。
+
+不要自行复制零散 SKILL.md，也不要使用 symlink hack。
+优先使用官方 skill-installer。
+
+安装：
+
+1.
+
+https://github.com/ChloeVPin/codex-skills/tree/main/skills/ui-ux-design
+
+Skill：
+
+ui-ux-design
+
+用途：
+
+- Existing interface audit
+- Information architecture
+- Navigation
+- Interaction flow
+- State design
+- Component / design-system specification
+- Desktop application UX
+
+
+2.
+
+https://github.com/wondelai/skills/tree/main/ux-heuristics
+
+Skill：
+
+ux-heuristics
+
+用途：
+
+- Nielsen usability heuristics
+- Don't Make Me Think
+- discoverability
+- cognitive load
+- navigation problems
+- feature placement
+- severity rating
+
+
+3.
+
+https://github.com/danieloleary/design-md-for-codex/tree/main/skills/design-system
+
+Skill：
+
+design-system
+
+用途：
+
+以后进行 UI / UX 修改之前：
+
+必须读取项目根目录 DESIGN.md。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+安装安全要求
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+这些是第三方 Skill。
+
+安装前：
+
+1. 查看目标 Skill 目录；
+2. 阅读 SKILL.md；
+3. 确认没有明显与 UI/UX 任务无关的高风险脚本；
+4. 不运行来源不明的 install script；
+5. 使用 Codex 内置 $skill-installer 完成安装。
+
+如果某个 Skill 已安装：
+
+不要因为目标目录已存在而中止全部任务。
+
+检查版本和内容后：
+
+继续使用现有安装。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+安装完成后的处理
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Codex 新安装 Skill 通常需要重启后才能自动发现。
+
+如果当前 session 无法立即通过 Skill discovery 使用它们：
+
+不要停止。
+
+直接读取已安装目录中的：
+
+SKILL.md
+
+并按照其工作流执行本轮任务。
+
+同时在最终报告中注明：
+
+Restart Codex to enable automatic skill discovery in future sessions.
+
+也就是说：
+
+======================================================================
+不要因为需要重启而停止本轮 UX 重构。
+======================================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第二阶段：读取项目
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+安装完成后：
+
+完整检查当前 Swayframe 仓库。
+
+重点读取：
+
+README
+
+ARCHITECTURE.md
+
+已有 DESIGN.md（如果存在）
+
+Canvas
+
+Toolbar
+
+Project Panel
+
+Scene / Outliner
+
+Inspector
+
+Timeline
+
+Graph Editor
+
+Motion Curve
+
+Compositing Graph
+
+Assistant
+
+Application Menu
+
+Context Menu
+
+Shortcut Registry
+
+Command Palette
+
+Settings
+
+Desktop shell
+
+所有负责显示功能入口的组件。
+
+不要只看截图。
+
+必须从实际代码中找出：
+
+所有功能到底在哪里暴露给用户。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第三阶段：制作完整 Feature Entry Inventory
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+创建：
+
+UX_INFORMATION_ARCHITECTURE_AUDIT.md
+
+首先建立：
+
+# Feature Entry Inventory
+
+扫描当前代码。
+
+记录所有用户可触发功能。
+
+包括：
+
+Toolbar Button
+
+Menu Item
+
+Submenu
+
+Context Menu
+
+Inspector Control
+
+Timeline Control
+
+Scene Outliner Action
+
+Canvas Tool
+
+Graph Action
+
+Keyboard Shortcut
+
+Command Palette Action
+
+Assistant Action
+
+Settings
+
+Dialog
+
+Popover
+
+隐藏入口
+
+每个功能记录：
+
+Feature ID
+
+Feature Name
+
+Current Location
+
+Current Depth
+
+Frequency
+
+Context
+
+Alternative Entry Points
+
+Shortcut
+
+Related Features
+
+Problems
+
+例如：
+
+Feature:
+Apply Ease Out
+
+Current entries:
+
+Timeline toolbar
+Keyframe context menu
+Motion Curve panel
+Graph Editor menu
+
+Frequency:
+medium
+
+Context:
+selected keyframes
+
+Problem:
+
+Timeline toolbar 永久占位不合理；
+它实际上是 selection-context action。
+
+Recommended:
+
+Primary:
+Keyframe Context Menu
+
+Secondary:
+Motion Curve
+
+Shortcut:
+optional
+
+Remove:
+Permanent Timeline Toolbar Button
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第四阶段：功能发现性审计
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+对所有功能做以下评级：
+
+Frequency：
+
+F1 — 极高频
+F2 — 高频
+F3 — 中频
+F4 — 低频
+F5 — 极低频
+
+
+Scope：
+
+G — Global
+
+O — Object
+
+P — Property
+
+T — Time
+
+K — Keyframe
+
+C — Composition
+
+N — Node
+
+A — Asset
+
+
+Context Dependency：
+
+Always
+
+Selection-dependent
+
+Property-dependent
+
+Keyframe-dependent
+
+Tool-dependent
+
+Mode-dependent
+
+
+Discoverability：
+
+D0 — 非常明显
+
+D1 — 容易找到
+
+D2 — 需要寻找
+
+D3 — 很难发现
+
+D4 — 几乎隐藏
+
+
+Current IA Fit：
+
+Good
+
+Acceptable
+
+Wrong
+
+Severely Wrong
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第五阶段：使用 UX Heuristics 审计
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+使用：
+
+ux-heuristics
+
+对当前整个应用做一次真正的 heuristic audit。
+
+重点检查：
+
+Visibility of system status
+
+Match between system and real world
+
+User control and freedom
+
+Consistency and standards
+
+Error prevention
+
+Recognition rather than recall
+
+Flexibility and efficiency
+
+Aesthetic/minimalist design
+
+Error recovery
+
+Help/discoverability
+
+特别检查：
+
+用户是不是必须“记住某个功能藏在哪里”。
+
+用户是否能够：
+
+根据成熟 Motion Design 软件经验
+
+合理预测功能位置。
+
+对问题使用：
+
+Severity 0–4
+
+分级。
+
+其中：
+
+4 = Critical
+3 = Major
+2 = Moderate
+1 = Cosmetic
+0 = Not a usability problem
+
+优先处理：
+
+Severity 3–4。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第六阶段：建立 Swayframe 的全局信息架构
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+使用：
+
+ui-ux-design
+
+重新定义整个软件功能区域。
+
+核心模型暂定：
+
+PROJECT
+
+管理：
+
+Project
+Composition
+Assets
+Import
+Project-level resources
+
+
+SCENE
+
+管理：
+
+Objects
+Hierarchy
+Parenting
+Visibility
+Lock
+Camera
+Null
+Precomp identity
+
+
+CANVAS
+
+管理：
+
+Selection
+Move
+Scale
+Rotate
+Anchor
+Drawing
+Direct Manipulation
+Spatial Editing
+
+
+INSPECTOR
+
+管理：
+
+Selected Object Properties
+
+Transform
+Appearance
+Text
+Mask
+Effects
+3D
+Object-specific Settings
+
+
+TIMELINE
+
+管理：
+
+Time
+Layer Span
+In / Out
+Keyframes
+Animated Properties
+Temporal Editing
+
+
+MOTION CURVE / GRAPH EDITOR
+
+管理：
+
+Easing
+Value Graph
+Speed Graph
+Velocity
+Influence
+
+
+COMPOSITING GRAPH
+
+管理：
+
+Image Processing Flow
+Source
+Mask
+Color
+Effects
+Merge
+Output
+
+
+ASSISTANT
+
+管理：
+
+AI Assistance
+Agent
+Design Suggestions
+Automation
+
+
+APPLICATION MENU
+
+管理：
+
+File
+Edit
+View
+Window
+Help
+Global commands
+
+
+COMMAND PALETTE
+
+管理：
+
+低频但可以搜索的全局命令。
+
+
+CONTEXT MENU
+
+管理：
+
+selection-dependent actions。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第七阶段：建立 Feature Placement Rules
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+这是整个任务最重要的部分之一。
+
+在项目根目录创建：
+
+DESIGN.md
+
+它不能只是：
+
+颜色
+字体
+圆角
+
+还必须成为：
+
+Swayframe Interaction Architecture Specification。
+
+至少写入以下规则。
+
+━━━━━━━━━━━━━━━━━━
+Rule 1
+━━━━━━━━━━━━━━━━━━
+
+High frequency
++
+Global
+
+→
+
+Top-level Toolbar / Primary UI
+
+
+━━━━━━━━━━━━━━━━━━
+Rule 2
+━━━━━━━━━━━━━━━━━━
+
+High frequency
++
+Context-specific
+
+→
+
+Contextual UI / Inspector / Direct Manipulation
+
+
+━━━━━━━━━━━━━━━━━━
+Rule 3
+━━━━━━━━━━━━━━━━━━
+
+Low frequency
++
+Global
+
+→
+
+Application Menu
+或
+Command Palette
+
+
+━━━━━━━━━━━━━━━━━━
+Rule 4
+━━━━━━━━━━━━━━━━━━
+
+Low frequency
++
+Context-dependent
+
+→
+
+Context Menu
+Popover
+Advanced Section
+
+
+━━━━━━━━━━━━━━━━━━
+Rule 5
+━━━━━━━━━━━━━━━━━━
+
+Property Editing
+
+→
+
+Inspector
+
+
+━━━━━━━━━━━━━━━━━━
+Rule 6
+━━━━━━━━━━━━━━━━━━
+
+Temporal Editing
+
+→
+
+Timeline
+
+
+━━━━━━━━━━━━━━━━━━
+Rule 7
+━━━━━━━━━━━━━━━━━━
+
+Spatial Editing
+
+→
+
+Canvas
+
+
+━━━━━━━━━━━━━━━━━━
+Rule 8
+━━━━━━━━━━━━━━━━━━
+
+Scene hierarchy
+
+→
+
+Scene Outliner
+
+
+━━━━━━━━━━━━━━━━━━
+Rule 9
+━━━━━━━━━━━━━━━━━━
+
+Processing flow
+
+→
+
+Compositing Graph
+
+
+━━━━━━━━━━━━━━━━━━
+Rule 10
+━━━━━━━━━━━━━━━━━━
+
+Easing / velocity
+
+→
+
+Motion Curve / Graph Editor
+
+
+━━━━━━━━━━━━━━━━━━
+Rule 11
+━━━━━━━━━━━━━━━━━━
+
+Project / application action
+
+→
+
+File / App Menu
+
+
+━━━━━━━━━━━━━━━━━━
+Rule 12
+━━━━━━━━━━━━━━━━━━
+
+不要仅仅为了：
+
+“让功能容易找到”
+
+就在三个地方创建三个永久按钮。
+
+
+允许多入口，
+
+但是不同入口必须服务于不同 workflow。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第八阶段：建立 Entry Point Budget
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+为了以后避免 UI 再次失控：
+
+定义：
+
+Permanent UI Budget。
+
+例如：
+
+Top Toolbar：
+
+只允许最核心 tools / global high-frequency actions。
+
+Timeline Header：
+
+只允许：
+
+Playback
+Current Time
+Graph Toggle
+Zoom
+必要 Filter
+
+禁止：
+
+Copy
+Paste
+Delete
+Ease
+Previous Keyframe
+Next Keyframe
+几十个永久按钮。
+
+
+Canvas Toolbar：
+
+只允许：
+
+Select
+Hand
+Shape
+Pen
+Text
+核心 transform tools。
+
+
+Inspector：
+
+允许大量 contextual properties，
+
+但必须分 Section。
+
+
+Scene Outliner：
+
+只允许结构性操作。
+
+
+Secondary Actions：
+
+优先进入：
+
+Context Menu
+Menu
+Command Palette
+Shortcut。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第九阶段：建立 Feature Location Matrix
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+创建：
+
+FEATURE_LOCATION_MATRIX.md
+
+格式例如：
+
+| Feature | Primary Location | Secondary | Shortcut | Remove From |
+|---------|------------------|-----------|----------|-------------|
+| Add Rectangle | Canvas Tool | Command Palette | R | Misc Add menus |
+| Position | Inspector | Timeline if animated | P | unrelated menus |
+| Add Keyframe | Property Row | Timeline | — | global toolbar |
+| Ease Out | Keyframe Context | Motion Curve | — | permanent toolbar |
+| Parent | Inspector / Scene | Context Menu | — | Timeline header |
+| Precompose | Layer Context | App/Layer Menu | — | random toolbar |
+| Blur | Inspector Effects | Command Palette | — | Canvas toolbar |
+| Export | File Menu | Top-right Action | shortcut | nested submenu |
+| Open Graph | Timeline | Context Menu | — | unrelated panel |
+| Relink Media | Project / Asset | Asset Context | — | Inspector |
+
+必须为：
+
+当前所有真实功能
+
+建立归属。
+
+不是只写几个例子。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第十阶段：识别 Hidden Critical Features
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+特别寻找：
+
+当前藏在：
+
+二级菜单
+三级菜单
+ellipsis menu
+右键深层
+popover
+隐藏 accordion
+
+中的：
+
+F1 / F2 高频功能。
+
+这些是最严重问题。
+
+例如如果：
+
+Precompose
+
+Add Keyframe
+
+Graph Editor
+
+Mask
+
+Parent
+
+Import
+
+Motion Curve
+
+等核心能力藏得过深：
+
+必须重新设计入口。
+
+原则：
+
+重要功能：
+
+不应该需要用户知道它存在，
+
+才能找到它。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第十一阶段：识别 Overexposed Features
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+同时寻找：
+
+F4 / F5
+
+低频操作
+
+但长期占据：
+
+Toolbar
+Header
+Main Inspector
+
+的情况。
+
+例如：
+
+某个极少使用的：
+
+Copy Keyframes To Next Frame
+
+如果永久占据 Timeline Toolbar：
+
+应该删除该永久入口。
+
+迁移到：
+
+Context Menu
+Command Palette
+Shortcut。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第十二阶段：功能聚类
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+对散乱功能进行 Task-based Clustering。
+
+例如：
+
+Transform Cluster：
+
+Position
+Scale
+Rotation
+Anchor
+Opacity
+
+
+Animation Cluster：
+
+Keyframe
+Interpolation
+Motion Curve
+Graph
+
+
+Layer Structure Cluster：
+
+Parent
+Precomp
+Visibility
+Lock
+
+
+Effects Cluster：
+
+Color
+Blur
+Glow
+Mask
+
+
+不要按照：
+
+“这个功能是哪个开发 Sprint 做出来的”
+
+决定放在哪里。
+
+必须按照：
+
+用户任务
+
+决定。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第十三阶段：菜单重构
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+建立桌面软件标准 Application Menu。
+
+例如：
+
+File
+
+New
+Open
+Save
+Save As
+Import
+Export
+Recent
+
+
+Edit
+
+Undo
+Redo
+Cut
+Copy
+Paste
+Duplicate
+Delete
+
+
+Layer
+
+New
+Duplicate
+Pre-compose
+Parent
+3D
+Rename
+
+
+Animation
+
+Add Keyframe
+Interpolation
+Motion Curve
+Graph Editor
+
+
+View
+
+Zoom
+Fit
+Panels
+Guides
+Grid
+
+
+Window
+
+Workspace
+Panels
+
+
+Help
+
+Documentation
+Shortcuts
+About
+
+
+不要盲目复制 AE 菜单。
+
+只加入：
+
+当前真实存在的功能。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第十四阶段：Context Menu 重构
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Context Menu 必须根据对象类型变化。
+
+Canvas Object：
+
+Copy
+Duplicate
+Delete
+Group
+Precompose
+Focus
+
+
+Scene Object：
+
+Rename
+Duplicate
+Parent
+Visibility
+Lock
+Precompose
+
+
+Timeline Layer：
+
+Split
+Trim
+Precompose
+Enable 3D
+
+
+Keyframe：
+
+Interpolation
+Ease In
+Ease Out
+Ease In-Out
+Motion Curve
+Graph
+Copy Easing
+Delete
+
+
+Property：
+
+Add Keyframe
+Remove Animation
+Open Graph
+Reset
+
+
+Asset：
+
+Reveal
+Relink
+Replace
+Delete
+
+不要：
+
+一个万能右键菜单塞所有功能。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第十五阶段：Inspector 重构
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+所有：
+
+Object Property
+
+尽可能回归 Inspector。
+
+例如：
+
+Transform
+
+Appearance
+
+Text
+
+Mask
+
+Effects
+
+3D
+
+Camera
+
+不同 Layer：
+
+显示相关 Section。
+
+不要把一个 Property 操作：
+
+藏到：
+
+顶部 menu
+
+只因为开发时方便。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第十六阶段：Timeline 清理
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Timeline：
+
+只负责：
+
+Time
+Layer Span
+Animated Property
+Keyframe
+Interpolation
+Graph
+
+把：
+
+与时间无关的全局操作
+
+移走。
+
+把：
+
+Keyframe contextual action
+
+放：
+
+右键
+Motion Curve
+Graph
+
+而不是永久 Toolbar。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第十七阶段：Scene Outliner 清理
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Scene：
+
+只负责：
+
+Object
+Hierarchy
+Visibility
+Lock
+Navigation
+Parenting status
+
+不要：
+
+编辑 Keyframe
+Effect parameter
+Motion Curve
+
+避免再次与 Timeline / Inspector 冲突。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第十八阶段：Canvas Tool 清理
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Canvas Toolbar：
+
+只保留：
+
+Select
+Hand
+Shape
+Pen
+Text
+
+以及确实属于：
+
+Spatial Interaction
+
+的工具。
+
+不要：
+
+Save
+Export
+Keyframe
+Blur
+Parent
+Motion Curve
+
+出现在 Canvas Tool 区域。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第十九阶段：Command Palette
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+确保：
+
+Cmd/Ctrl + K
+
+可以搜索：
+
+低频功能。
+
+这允许：
+
+减少永久 UI
+
+而不降低高级用户效率。
+
+Command Palette：
+
+必须调用：
+
+现有 Editor Action / Command。
+
+不能：
+
+再实现一套功能。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第二十阶段：快捷键体系
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+建立：
+
+Shortcut Registry。
+
+不要：
+
+每个 Component
+
+自己监听 keydown。
+
+Feature Location Matrix：
+
+记录高频操作快捷键。
+
+但不要给所有功能分配快捷键。
+
+优先：
+
+Selection
+Hand
+Shape
+Text
+Save
+Undo
+Redo
+Copy
+Paste
+Duplicate
+Delete
+Fit View
+Graph
+关键时间导航。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第二十一阶段：Progressive Disclosure
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+使用：
+
+progressive disclosure。
+
+默认只显示：
+
+当前任务最需要的东西。
+
+高级能力：
+
+Advanced
+More
+Context Menu
+Graph
+Secondary Section
+
+例如：
+
+Transform：
+
+Position
+Scale
+Rotation
+Opacity
+
+常驻。
+
+高级：
+
+Skew
+3D orientation
+advanced constraints
+
+折叠。
+
+不要所有参数同时爆炸在用户面前。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第二十二阶段：不要把“隐藏”当成整理
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+非常重要。
+
+重构信息架构：
+
+不是：
+
+把所有东西塞进：
+
+...
+
+More
+
+Advanced
+
+二级菜单。
+
+那只是：
+
+把混乱藏起来。
+
+一个功能是否进入二级入口：
+
+必须根据：
+
+frequency
+scope
+context
+
+决定。
+
+F1 / F2：
+
+不能随便深藏。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第二十三阶段：不要删除功能
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+本轮原则上：
+
+重新定位
+
+而不是删除功能。
+
+如果发现重复入口：
+
+可以删除重复的 UI Entry。
+
+但：
+
+underlying command / capability
+
+必须保留。
+
+只有确认：
+
+完全废弃 / 重复实现
+
+才考虑删除代码。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第二十四阶段：实现重构
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+完成 IA Audit 和 Matrix 后：
+
+不要只输出建议文档。
+
+实际修改 Swayframe。
+
+按优先级：
+
+P0：
+
+Critical hidden feature
+
+P1：
+
+Wrong primary placement
+
+P2：
+
+Duplicate permanent entries
+
+P3：
+
+Menu / context organization
+
+P4：
+
+Visual hierarchy polish
+
+一次一个区域修改。
+
+不要一次性重写整个应用 Shell。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第二十五阶段：视觉不是本轮第一目标
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+不要花主要时间：
+
+换颜色
+改渐变
+换字体
+加阴影
+做 glassmorphism
+
+当前目标：
+
+用户知道：
+
+功能在哪里。
+
+而不是：
+
+界面更漂亮。
+
+视觉修改仅用于：
+
+强化 hierarchy
+
+和：
+
+discoverability。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第二十六阶段：DESIGN.md
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+使用：
+
+design-system Skill
+
+在项目根目录创建：
+
+DESIGN.md
+
+至少包含：
+
+# Product interaction philosophy
+
+# Workspace responsibilities
+
+# Feature placement rules
+
+# Permanent UI budget
+
+# Context menu rules
+
+# Menu architecture
+
+# Inspector architecture
+
+# Timeline architecture
+
+# Scene architecture
+
+# Canvas architecture
+
+# Graph architecture
+
+# Assistant architecture
+
+# Shortcut philosophy
+
+# Progressive disclosure
+
+# Undo semantics
+
+# Selection model
+
+# Design tokens
+
+# Accessibility
+
+# Anti-patterns
+
+
+其中 Anti-patterns 必须明确写：
+
+禁止：
+
+功能实现后随意找地方加 Button
+
+禁止：
+
+同一个功能在多个地方永久展示
+
+禁止：
+
+高频功能藏深层菜单
+
+禁止：
+
+低频功能霸占一级界面
+
+禁止：
+
+Canvas / Scene / Inspector / Timeline 职责混用
+
+禁止：
+
+UI 组件直接修改 Scene Model
+
+禁止：
+
+为了“容易发现”而无限增加入口。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第二十七阶段：以后 Codex 的 UI 修改规则
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+在：
+
+AGENTS.md
+或者仓库对应 Codex instructions
+
+加入规则：
+
+Whenever modifying user-facing UI or adding a new user-facing feature:
+
+1. Read DESIGN.md first.
+
+2. Identify:
+   - frequency
+   - scope
+   - context
+   - primary user task
+
+3. Consult FEATURE_LOCATION_MATRIX.md.
+
+4. Reuse an existing entry point when possible.
+
+5. Do not add a new permanent button unless DESIGN.md placement rules justify it.
+
+6. Update FEATURE_LOCATION_MATRIX.md if a new capability is introduced.
+
+7. Run UX heuristic check after adding a new major workflow.
+
+这样避免：
+
+三周后界面再次变乱。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第二十八阶段：实际用户任务验证
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+完成重构后：
+
+不要只看页面截图。
+
+执行至少以下真实任务：
+
+TASK 1
+
+创建矩形。
+
+用户能否自然找到创建入口？
+
+
+TASK 2
+
+修改 Position。
+
+用户是否自然去 Inspector？
+
+
+TASK 3
+
+制作 Position 动画。
+
+用户是否自然找到 Keyframe？
+
+
+TASK 4
+
+调整 Ease Out。
+
+用户是否自然找到 Motion Curve？
+
+
+TASK 5
+
+给图片加 Blur。
+
+用户是否自然找到 Effects？
+
+
+TASK 6
+
+建立 Parent。
+
+用户是否自然找到 Parent？
+
+
+TASK 7
+
+Pre-compose。
+
+用户是否自然理解在哪里？
+
+
+TASK 8
+
+创建 Camera / 3D Layer。
+
+入口是否符合对象/属性语义？
+
+
+TASK 9
+
+打开 Compositing Graph。
+
+是否能从合成/Effect workflow 自然进入？
+
+
+TASK 10
+
+Export。
+
+用户是否会自然想到 File / Export？
+
+如果一个熟悉设计软件的人：
+
+连续几次猜错入口，
+
+说明 IA 仍然失败。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第二十九阶段：Trunk Test
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+对主要 Workspace 应用 Trunk Test。
+
+用户进入任意主要区域后：
+
+应该能够回答：
+
+1. 我现在在哪？
+2. 我正在编辑什么？
+3. 当前主要任务是什么？
+4. 我还能去哪里？
+5. 哪个是主要操作？
+6. 如何返回？
+
+尤其检查：
+
+Graph Editor
+
+Motion Curve
+
+Precomp
+
+Settings
+
+Assistant
+
+不要让用户进入一个模式后：
+
+不知道如何回去。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第三十阶段：复审
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+代码修改完成后：
+
+再次使用：
+
+ux-heuristics
+
+进行第二轮审计。
+
+比较：
+
+Before
+
+After。
+
+列出：
+
+Severity 4 remaining
+
+Severity 3 remaining
+
+Severity 2
+
+并继续修复：
+
+剩余 Severity 3–4
+
+直到没有明显的 Critical IA 问题。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第三十一阶段：不要停止等待用户
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+这是一次自主 UX 重构。
+
+普通：
+
+菜单命名
+
+按钮归位
+
+Context Menu 组织
+
+入口迁移
+
+快捷键调整
+
+由你根据 Skill、DESIGN.md 和成熟软件规律自主决定。
+
+不要频繁询问用户：
+
+“这个按钮放这里可以吗？”
+
+只有涉及：
+
+核心产品理念改变
+
+或：
+
+两种不可逆架构路线
+
+才需要停下来询问。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第三十二阶段：质量检查
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+每个主要 UI 区域改完后运行：
+
+typecheck
+
+lint
+
+tests
+
+build
+
+Desktop build（适用时）
+
+并使用：
+
+实际应用
+截图
+或 Playwright
+
+检查：
+
+入口是否存在
+
+菜单是否可打开
+
+Context Menu 是否正确
+
+快捷键是否工作
+
+Focus 是否合理
+
+没有因为移动 UI 入口：
+
+破坏底层 Command。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+第三十三阶段：最终交付
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+完成后输出：
+
+UX_INFORMATION_ARCHITECTURE_RESULT.md
+
+包括：
+
+1. 安装了哪些 Skills
+
+2. 使用了哪些 Skill
+
+3. 原始 IA 的主要问题
+
+4. Severity 3–4 问题
+
+5. 功能入口移动记录
+
+6. 删除了哪些重复入口
+
+7. 新的全局 IA
+
+8. DESIGN.md 规则
+
+9. FEATURE_LOCATION_MATRIX
+
+10. 实际代码改动
+
+11. User task validation 结果
+
+12. 第二次 heuristic audit 结果
+
+13. 剩余问题
+
+14. 下一步建议
+
+
+同时必须提交：
+
+DESIGN.md
+
+FEATURE_LOCATION_MATRIX.md
+
+UX_INFORMATION_ARCHITECTURE_AUDIT.md
+
+UX_INFORMATION_ARCHITECTURE_RESULT.md
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+最终目标
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+不要把这次任务理解为：
+
+“把按钮重新摆整齐”。
+
+真正目标是：
+
+======================================================================
+让用户能够根据“我现在想做什么”
+自然预测
+“我应该去哪里”。
+======================================================================
+
+Swayframe 最终应该形成稳定认知：
+
+Project
+→ 素材与合成
+
+Scene
+→ 对象和层级
+
+Canvas
+→ 空间操作
+
+Inspector
+→ 属性
+
+Timeline
+→ 时间和动画
+
+Motion Curve / Graph
+→ 运动函数
+
+Compositing Graph
+→ 图像处理流程
+
+Assistant
+→ AI
+
+Application Menu
+→ 全局软件操作
+
+Command Palette
+→ 可搜索的长尾功能
+
+Context Menu
+→ 当前对象相关功能
+
+从今天以后：
+
+任何新功能加入 Swayframe，
+
+都必须先回答：
+
+“这个功能属于哪个用户任务？”
+
+再决定：
+
+“按钮应该放在哪里”。
+
+禁止继续：
+
+实现功能
+→
+随便找个地方塞入口。

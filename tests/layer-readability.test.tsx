@@ -41,7 +41,6 @@ it('B4/B5/B6：两个面板共用色标，颜色菜单勾选/Undo/保存/重开�
   );
   const before = store.getSnapshot().project;
   fireEvent.contextMenu(screen.getByRole('button', { name: '选择 图层 1' }));
-  fireEvent.click(screen.getByRole('button', { name: '更多图层操作' }));
   fireEvent.click(screen.getByRole('menuitem', { name: '图层颜色' }));
   expect(screen.getAllByRole('menuitemradio')).toHaveLength(7);
   expect(

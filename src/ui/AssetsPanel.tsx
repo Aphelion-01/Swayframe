@@ -5,11 +5,13 @@ import { activeComposition, createLayer } from '../core/project-model';
 import { command } from '../core/command-system';
 import { addAssetLayer, importImageFile } from './asset-import';
 import type { EditorStore } from './editor-store';
+import { ContextMenu } from './workspace/primitives';
 export function AssetsPanel({ store }: { store: EditorStore }) {
   const view = useSyncExternalStore(store.subscribe, store.getSnapshot),
     ref = useRef<HTMLInputElement>(null),
     c = activeComposition(view.project);
   const [missing, setMissing] = useState<string[]>([]);
+  const [menu, setMenu] = useState<{ x: number; y: number; id: string }>();
   useEffect(() => {
     let live = true;
     void Promise.all(
@@ -86,6 +88,11 @@ export function AssetsPanel({ store }: { store: EditorStore }) {
             title={asset.name}
             key={asset.id}
             draggable
+            onContextMenu={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setMenu({ x: e.clientX, y: e.clientY, id: asset.id });
+            }}
             onDragStart={(e) => {
               e.dataTransfer.setData('application/x-motion-asset', asset.id);
               e.dataTransfer.effectAllowed = 'copy';
@@ -165,6 +172,44 @@ export function AssetsPanel({ store }: { store: EditorStore }) {
       <small>
         拖入图片，或把素材拖到画布 / 时间轴。点击素材名称可重复使用。
       </small>
+      {menu && (
+        <ContextMenu
+          {...menu}
+          onClose={() => setMenu(undefined)}
+          items={[
+            {
+              label: '添加到当前合成',
+              action: () => {
+                void addAssetLayer(store, menu.id).catch((e) =>
+                  store.setStatus(
+                    e instanceof Error ? e.message : '添加失败',
+                    true,
+                  ),
+                );
+              },
+            },
+            ...(desktopService.native &&
+            view.project.assets.find((a) => a.id === menu.id)?.source
+              ? [
+                  {
+                    label: '重新链接',
+                    action: () => {
+                      void relinkAsset(store, menu.id);
+                    },
+                  },
+                ]
+              : []),
+            {
+              label: '删除素材',
+              action: () => {
+                store.run('删除素材', [
+                  command({ type: 'asset.remove', assetId: menu.id }),
+                ]);
+              },
+            },
+          ]}
+        />
+      )}
     </details>
   );
 }

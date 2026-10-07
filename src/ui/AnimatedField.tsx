@@ -2,6 +2,8 @@ import { guidanceFor } from './transform-guidance-controller';
 import type { GuideProperty } from '../core/transform-guidance';
 import { transformPropertyEdit } from './transform-property-edit';
 import { Icon } from './workspace/icons';
+import { useState } from 'react';
+import { ContextMenu } from './workspace/primitives';
 import type { AnimValue, Vec2 } from '../core/core-types';
 import type { Property } from '../core/project-model';
 import { evaluateProperty } from '../core/animation-engine';
@@ -32,6 +34,7 @@ export function AnimatedField({
   linkMode?: AxisLinkMode;
 }) {
   const { linked, toggle } = useAxisLink(property.id);
+  const [menu, setMenu] = useState<{ x: number; y: number }>();
   const guideKind = (
     {
       位置: 'position',
@@ -198,7 +201,16 @@ export function AnimatedField({
       className="animated-field"
       data-kind={typeof value === 'number' ? 'scalar' : 'vector'}
     >
-      <div className="animated-field-heading">
+      <div
+        className="animated-field-heading"
+        onContextMenu={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          store.selectFrames([]);
+          store.selectProperties([property.id]);
+          setMenu({ x: event.clientX, y: event.clientY });
+        }}
+      >
         <span>
           {label}
           <small className="property-unit">{unit.replace(/[（）]/g, '')}</small>
@@ -336,6 +348,32 @@ export function AnimatedField({
             />
           ))}
         </div>
+      )}
+      {menu && (
+        <ContextMenu
+          {...menu}
+          onClose={() => setMenu(undefined)}
+          items={[
+            {
+              label: '添加关键帧',
+              action: () => store.recordPropertyKeyframe(property.id),
+            },
+            {
+              label: '移除动画',
+              disabled: !property.keyframes.length,
+              action: () => store.togglePropertyAnimation(property.id),
+            },
+            {
+              label: '打开曲线编辑器',
+              action: () => window.dispatchEvent(new Event('motion:graph')),
+            },
+            {
+              label: '打开缓动曲线',
+              action: () =>
+                window.dispatchEvent(new Event('motion:motion-curve')),
+            },
+          ]}
+        />
       )}
     </div>
   );

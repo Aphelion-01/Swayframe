@@ -128,3 +128,8 @@ Mac锁屏阻止继续原生文件对话框和鼠标操作；已请求解锁。�
 ## 2026-10-07 · 0.9.11 Graph Editor UX
 
 按 V02_GRAPH_EDITOR_UX 执行专门布局重构：取消固定曲线宽度/宽高比，统一 Graph 与标准化缓动 dock、32px工具栏、250px可折叠/拖宽属性栏和36px预览栏；Timeline过滤与播放控件按模式隐藏。增加按key/segment/handle的精确参数上下文，修正中间帧入/出区间归属及数组值编辑，Motion右键精确传递区间；选择、时间、播放和Command共用原系统。108文件/397测试通过，包含两个曲线视图200次预览与窗口释放一次Undo。真实浏览器验证四尺寸、折叠/拖宽、播放、曲线修改与Undo（位置50→34.919→50）。详见GRAPH_EDITOR_UX_RESULT.md和outputs/graph-editor-ux。
+
+
+## 2026-10-07 · 0.9.12 Global Information Architecture
+
+执行INFORMATION_ARCHITECTURE基线，审查并通过官方installer安装ux-heuristics/design-system；ui-ux-design地址404，记录失败而继续。扫描87文件/442基线代码入口，建立根DESIGN/Matrix/Audit/Result及AGENTS放置规则。实际迁移七菜单、对象右键/显式创建、Inspector层级时间和Effects、搜索、属性/素材上下文、原生动作适配；移除重复播放与Timeline杂项菜单。复审修复窄窗口菜单裁切、节点Edit误操作图层风险和graphSelection订阅。109文件/411测试、lint/typecheck/Web及desktop build通过；独立浏览器完成10任务入口验证、四桌面尺寸与650px窄窗口。导出状态完成但浏览器下载事件超时，未验证本轮文件落盘；原生平台运行边界与启发式评估限制详见根结果文档。

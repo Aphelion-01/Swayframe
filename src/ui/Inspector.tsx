@@ -301,10 +301,13 @@ export function Inspector({ store }: { store: EditorStore }) {
         >
           <ThreeDControls store={store} layer={layer} />
         </Section>
-        <Section title="层级与时间" open={false}>
-          <StructureControls store={store} layer={layer} />
+        <Section title="层级" open>
+          <StructureControls store={store} layer={layer} mode="structure" />
         </Section>
-        <Section title="效果与遮罩" open={false}>
+        <Section title="图层时间" open={false}>
+          <StructureControls store={store} layer={layer} mode="time" />
+        </Section>
+        <Section title="效果与遮罩" open>
           <CompositingControls
             store={store}
             layer={layer}

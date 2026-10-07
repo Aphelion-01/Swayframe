@@ -50,7 +50,7 @@ describe('A-01～A-09 用户流程集成验收', () => {
     const store = start();
     store.setAutoKeyframes(true);
     fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
-    fireEvent.click(screen.getByRole('button', { name: '新建合成' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: '新建合成' }));
     fireEvent.click(screen.getByRole('button', { name: '创建合成' }));
     fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
     createObject('创建 矩形');
@@ -130,7 +130,12 @@ describe('A-01～A-09 用户流程集成验收', () => {
       },
     });
     await waitFor(() =>
-      expect(store.commands.getSnapshot().compositions[0]?.layers).toHaveLength(
+      expect(store.getSnapshot().project.assets).toHaveLength(1),
+    );
+    act(() => window.dispatchEvent(new Event('motion:show-project')));
+    fireEvent.click(screen.getByRole('button', { name: '添加素材 pixel.png' }));
+    await waitFor(() =>
+      expect(store.getSnapshot().project.compositions[0]?.layers).toHaveLength(
         4,
       ),
     );

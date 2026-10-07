@@ -1,28 +1,31 @@
 import { useEditorSlice } from './use-editor-slice';
 import { getProjectService } from '../desktop/project-service';
-import { dispatchShortcut } from './workspace/shortcuts';
-import type { Shortcut } from './workspace/shortcuts';
+import { dispatchShortcut, focusContext } from './workspace/shortcuts';
+import type { Shortcut, FocusContext } from './workspace/shortcuts';
 import { CommandPalette } from './workspace/palette';
-import { layerActions } from './workspace/layer-actions';
+import { buildEditorActions } from './workspace/editor-actions';
+import { ApplicationMenus } from './workspace/ApplicationMenus';
+import { applicationMenus } from '../shared/application-menu';
+import { desktopService } from '../desktop/service';
+import { importNativeAssets } from '../desktop/asset-service';
+import { Modal as HelpModal } from './workspace/primitives';
+import { ProductMetadata } from '../desktop/product';
 import { tools, useTools } from './workspace/tools';
 import { Icon } from './workspace/icons';
-import { MenuDropdown, Modal, IconButton } from './workspace/primitives';
+import { Modal, IconButton } from './workspace/primitives';
 import { ExportDialog } from './ExportDialog';
 import { readFile } from './file-utils';
 import { importImageFile } from './asset-import';
 import { saveProject } from '../core/project-io';
 export { readFile } from './file-utils';
-import { layerKindLabels, displayName } from './labels';
-import { useEffect, useRef, useState } from 'react';
+import { displayName } from './labels';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { command } from '../core/command-system';
 import {
   activeComposition,
   createComposition,
-  createLayer,
   createDefaultProject,
-  layerProperties,
 } from '../core/project-model';
-import type { LayerKind } from '../core/project-model';
 import type { EditorStore } from './editor-store';
 
 export function downloadProject(store: EditorStore): void {
@@ -48,7 +51,28 @@ export function downloadProject(store: EditorStore): void {
 export function Toolbar({ store }: { store: EditorStore }) {
   const { tool, setTool, setSpace } = useTools();
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const view = useEditorSlice(store, ['project', 'selection', 'playing']);
+  const actionContext = useRef<FocusContext>('global');
+  useEffect(() => {
+    const remember = (event: Event) => {
+      const context = focusContext(event.target);
+      if (!['global', 'text', 'numeric'].includes(context))
+        actionContext.current = context;
+    };
+    window.addEventListener('pointerdown', remember, true);
+    window.addEventListener('focusin', remember, true);
+    return () => {
+      window.removeEventListener('pointerdown', remember, true);
+      window.removeEventListener('focusin', remember, true);
+    };
+  }, []);
+
+  const view = useEditorSlice(store, [
+    'project',
+    'selection',
+    'frames',
+    'selectedProperties',
+    'graphSelection',
+  ]);
   const c = activeComposition(view.project);
   const openRef = useRef<HTMLInputElement>(null);
   const imageRef = useRef<HTMLInputElement>(null);
@@ -68,15 +92,7 @@ export function Toolbar({ store }: { store: EditorStore }) {
     if (service) void service.newProject();
     else setResetDialog(true);
   };
-  const create = (kind: Exclude<LayerKind, 'image'>) => {
-    const layer = createLayer(kind, {
-      position: { x: c.width / 2, y: c.height / 2 },
-    });
-    const result = store.run(`创建 ${layerKindLabels[kind]}`, [
-      command({ type: 'layer.create', compositionId: c.id, layer }),
-    ]);
-    if (result.ok) store.select(layer.id);
-  };
+  const [helpOpen, setHelpOpen] = useState<'help' | 'shortcuts' | 'about'>();
   const nudgeGroup = useRef<
     { id: string; selection: string; time: number } | undefined
   >(undefined);
@@ -87,7 +103,7 @@ export function Toolbar({ store }: { store: EditorStore }) {
       key: 'n',
       modifier: true,
       inInput: true,
-      action: newProject,
+      action: () => execute('new'),
     },
     {
       id: 'open-project',
@@ -144,7 +160,7 @@ export function Toolbar({ store }: { store: EditorStore }) {
       key: 'z',
       modifier: true,
       shift: false,
-      action: () => store.undo(),
+      action: () => execute('undo'),
     },
     {
       id: 'redo',
@@ -152,35 +168,49 @@ export function Toolbar({ store }: { store: EditorStore }) {
       key: 'z',
       modifier: true,
       shift: true,
-      action: () => store.redo(),
+      action: () => execute('redo'),
     },
     {
       id: 'redo-alt',
       label: '重做',
       key: 'y',
       modifier: true,
-      action: () => store.redo(),
+      action: () => execute('redo'),
+    },
+    {
+      id: 'cut',
+      label: '剪切',
+      key: 'x',
+      modifier: true,
+      action: () => execute('cut'),
+    },
+    {
+      id: 'open-graph',
+      label: '曲线编辑器',
+      key: 'f3',
+      shift: true,
+      action: () => execute('graph'),
     },
     {
       id: 'copy',
       label: '复制',
       key: 'c',
       modifier: true,
-      action: () => store.copySelection(),
+      action: () => execute('copy'),
     },
     {
       id: 'paste',
       label: '粘贴',
       key: 'v',
       modifier: true,
-      action: () => store.pasteSelection(),
+      action: () => execute('paste'),
     },
     {
       id: 'duplicate',
       label: '复制选中',
       key: 'd',
       modifier: true,
-      action: () => store.duplicateSelection(),
+      action: () => execute('duplicate'),
     },
     {
       id: 'all',
@@ -188,19 +218,8 @@ export function Toolbar({ store }: { store: EditorStore }) {
       key: 'a',
       modifier: true,
       action: (_, context) => {
-        if (context === 'timeline')
-          store.selectFrames(
-            activeComposition(store.getSnapshot().project).layers.flatMap(
-              (layer) =>
-                layerProperties(layer).flatMap(({ property }) =>
-                  property.keyframes.map((frame) => ({
-                    propertyId: property.id,
-                    keyframeId: frame.id,
-                  })),
-                ),
-            ),
-          );
-        else store.selectAll();
+        actionContext.current = context;
+        execute('select-all');
       },
     },
     ...tools.map((tool) => ({
@@ -220,7 +239,7 @@ export function Toolbar({ store }: { store: EditorStore }) {
       ] as const
     ).map(([key, filter]) => ({
       id: `filter-${key}`,
-      label: `筛选 ${filter}`,
+      label: `筛选 ${{ position: '位置', scale: '缩放', rotation: '旋转', opacity: '透明度', animated: '已有动画' }[filter]}`,
       key,
       contexts: ['timeline'] as const,
       action: () => store.setPropertyFilter(filter),
@@ -241,7 +260,7 @@ export function Toolbar({ store }: { store: EditorStore }) {
       id: key,
       label: '删除选中',
       key,
-      action: () => store.deleteSelected(),
+      action: () => execute('delete'),
     })),
     ...['enter', 'f2'].map((key) => ({
       id: `rename-${key}`,
@@ -337,8 +356,11 @@ export function Toolbar({ store }: { store: EditorStore }) {
       })),
     ),
   ];
+  const handleShortcut = useEffectEvent((event: KeyboardEvent) =>
+    dispatchShortcut(event, registry),
+  );
   useEffect(() => {
-    const handler = (event: KeyboardEvent) => dispatchShortcut(event, registry);
+    const handler = (event: KeyboardEvent) => handleShortcut(event);
     const release = (event: KeyboardEvent) => {
       if (event.code === 'Space') setSpace(false);
       if (event.key.startsWith('Arrow')) nudgeGroup.current = undefined;
@@ -355,59 +377,108 @@ export function Toolbar({ store }: { store: EditorStore }) {
       window.removeEventListener('keyup', release);
       window.removeEventListener('blur', blur);
     };
-  });
+  }, []);
   useEffect(() => {
     const open = () => setExportOpen(true);
     window.addEventListener('motion:export', open);
     return () => window.removeEventListener('motion:export', open);
   }, []);
-  const paletteCommands = [
-    {
-      label: '设置 · AI 服务',
-      keywords: 'settings provider model API',
-      action: () => window.dispatchEvent(new Event('swayframe:ai-settings')),
+  const composeDialog = (editing: boolean) => {
+    const live = activeComposition(store.getSnapshot().project);
+    setEditingComposition(editing);
+    setSettings(
+      editing
+        ? {
+            name: live.name,
+            width: live.width,
+            height: live.height,
+            fps: live.fps,
+            duration: live.duration,
+          }
+        : {
+            name: `合成 ${String(store.getSnapshot().project.compositions.length + 1).padStart(2, '0')}`,
+            width: 1920,
+            height: 1080,
+            fps: 30,
+            duration: 5,
+          },
+    );
+    setNewDialog(true);
+  };
+  const uiActions = {
+    new: newProject,
+    open: () => {
+      const service = getProjectService(store);
+      if (service) void service.open();
+      else openRef.current?.click();
     },
-    ...(['rectangle', 'ellipse', 'text', 'path', 'null'] as const).map(
-      (kind) => ({
-        label: `创建 ${layerKindLabels[kind]}`,
-        keywords: `create ${kind}`,
-        action: () => create(kind),
-      }),
-    ),
-    {
-      label: '适合画布',
-      keywords: 'fit canvas',
-      action: () => window.dispatchEvent(new Event('motion:fit')),
+    save: () => downloadProject(store),
+    'save-as': () => {
+      const service = getProjectService(store);
+      if (service) void service.save(true);
+      else downloadProject(store);
     },
-    {
-      label: '打开曲线编辑器',
-      keywords: 'graph editor',
-      action: () => window.dispatchEvent(new Event('motion:graph')),
+    'new-composition': () => composeDialog(false),
+    'composition-settings': () => composeDialog(true),
+    import: () => {
+      window.dispatchEvent(new Event('motion:show-project'));
+      if (desktopService.native) void importNativeAssets(store, false);
+      else imageRef.current?.click();
     },
-    {
-      label: '导出',
-      keywords: 'export png',
-      action: () => setExportOpen(true),
-    },
-    {
-      label: '保存工程',
-      keywords: 'save',
-      action: () => downloadProject(store),
-    },
-    {
-      label: '添加高斯模糊',
-      keywords: 'add blur gaussian',
-      disabled: !view.selection.length,
-      action: () => window.dispatchEvent(new Event('motion:add-blur')),
-    },
-    ...layerActions(store, () =>
-      window.dispatchEvent(new Event('motion:rename')),
-    ),
-  ];
+    export: () => setExportOpen(true),
+    settings: () => window.dispatchEvent(new Event('swayframe:ai-settings')),
+    palette: () => setPaletteOpen(true),
+    help: () => setHelpOpen('help' as const),
+    shortcuts: () => setHelpOpen('shortcuts' as const),
+    about: () => setHelpOpen('about' as const),
+  };
+  const actions = buildEditorActions(
+    store,
+    uiActions,
+    () => actionContext.current,
+  ).map((action) => {
+    const item = applicationMenus
+      .flatMap((group) =>
+        group.items.map((item) => ({ group: group.label, item })),
+      )
+      .find((entry) => entry.item[0] === action.id);
+    return item
+      ? {
+          ...action,
+          label: item.item[1],
+          keywords: `${action.keywords ?? ''} ${item.group} ${action.id}`,
+          shortcut:
+            item.item.length > 2
+              ? item.item[2]
+                  ?.replace('CommandOrControl+', '⌘')
+                  .replace('Shift+', '⇧')
+              : undefined,
+        }
+      : action;
+  });
+  const execute = useEffectEvent((id: string) => {
+    const action = buildEditorActions(
+      store,
+      uiActions,
+      () => actionContext.current,
+    ).find((a) => a.id === id);
+    if (action?.disabled) {
+      store.setStatus('请先选择适用的对象、属性或关键帧');
+      return;
+    }
+    action?.action();
+  });
+  useEffect(() => {
+    const handler = (event: Event) =>
+      execute((event as CustomEvent<string>).detail);
+    window.addEventListener('motion:editor-action', handler);
+    return () => window.removeEventListener('motion:editor-action', handler);
+  }, []);
+  const paletteCommands = actions.filter((a) => !a.children);
   const importImage = async (file?: File) => {
     if (!file) return;
     try {
-      await importImageFile(store, file);
+      await importImageFile(store, file, false);
     } catch (error) {
       store.setStatus(
         error instanceof Error ? error.message : '图片导入失败',
@@ -425,84 +496,14 @@ export function Toolbar({ store }: { store: EditorStore }) {
         />
       )}
       <header className="topbar">
-        <MenuDropdown>
-          <summary title="工程命令">
-            <span className="application-name">
-              <img
-                src="./branding/wordmark.png"
-                alt="Swayframe"
-                draggable={false}
-              />
-            </span>
-            <span>文件</span>
-            <Icon name="chevron" />
-          </summary>
-          <div
-            className="dropdown-menu"
-            onClick={(event) => {
-              if ((event.target as Element).closest('button'))
-                event.currentTarget.closest('details')?.removeAttribute('open');
-            }}
-          >
-            <button
-              onClick={() => {
-                setEditingComposition(false);
-                setSettings({
-                  name: `合成 ${String(view.project.compositions.length + 1).padStart(2, '0')}`,
-                  width: 1920,
-                  height: 1080,
-                  fps: 30,
-                  duration: 5,
-                });
-                setNewDialog(true);
-              }}
-            >
-              新建合成
-            </button>
-            <button
-              onClick={() => {
-                const service = getProjectService(store);
-                if (service) void service.open();
-                else openRef.current?.click();
-              }}
-            >
-              打开工程
-            </button>
-            <button onClick={newProject}>新建工程</button>
-            <button
-              onClick={() => {
-                const service = getProjectService(store);
-                if (service) void service.save(true);
-                else downloadProject(store);
-              }}
-            >
-              工程另存为
-            </button>
-            <button onClick={() => downloadProject(store)}>保存工程 ↗</button>
-            <button
-              onClick={() => {
-                setEditingComposition(true);
-                setSettings({
-                  name: c.name,
-                  width: c.width,
-                  height: c.height,
-                  fps: c.fps,
-                  duration: c.duration,
-                });
-                setNewDialog(true);
-              }}
-            >
-              合成设置
-            </button>
-            <button
-              onClick={() =>
-                window.dispatchEvent(new Event('swayframe:ai-settings'))
-              }
-            >
-              设置 · AI
-            </button>
-          </div>
-        </MenuDropdown>
+        <span className="application-name">
+          <img
+            src="./branding/wordmark.png"
+            alt="Swayframe"
+            draggable={false}
+          />
+        </span>
+        <ApplicationMenus actions={actions} />
         <div className="project-title">
           {displayName(c.name)}
           <span>{displayName(view.project.name)}</span>
@@ -522,13 +523,6 @@ export function Toolbar({ store }: { store: EditorStore }) {
             <Icon name="export" />
             导出
           </button>
-          <IconButton
-            label="播放预览"
-            shortcut="Space"
-            onClick={() => store.setPlaying(!view.playing)}
-          >
-            <Icon name={view.playing ? 'pause' : 'play'} />
-          </IconButton>
           <IconButton
             label="撤销"
             shortcut="⌘Z"
@@ -593,6 +587,81 @@ export function Toolbar({ store }: { store: EditorStore }) {
           void importImage(file);
         }}
       />
+      {helpOpen && (
+        <HelpModal onClose={() => setHelpOpen(undefined)}>
+          <section
+            className="new-dialog entry-help"
+            role="dialog"
+            aria-label={
+              helpOpen === 'help'
+                ? '操作指引'
+                : helpOpen === 'shortcuts'
+                  ? '快捷键'
+                  : '关于 Swayframe'
+            }
+          >
+            <h2>
+              {helpOpen === 'help'
+                ? '操作指引'
+                : helpOpen === 'shortcuts'
+                  ? '快捷键'
+                  : `Swayframe ${ProductMetadata.version}`}
+            </h2>
+            {helpOpen === 'help' ? (
+              <dl>
+                <dt>项目</dt>
+                <dd>合成、素材与导入；双击合成打开。</dd>
+                <dt>图层</dt>
+                <dd>
+                  “创建对象”添加图层；对象右键进行父级、预合成和结构操作。
+                </dd>
+                <dt>画布 / 属性</dt>
+                <dd>
+                  画布绘制和变换；右侧修改属性，秒表开启动画，菱形记录当前时刻。
+                </dd>
+                <dt>时间轴 / 曲线</dt>
+                <dd>
+                  底部编辑时间与关键帧；关键帧右键设置缓动，标签切换曲线和节点。
+                </dd>
+                <dt>效果 / 合成节点</dt>
+                <dd>属性中的“效果与遮罩”添加效果，可直接打开合成节点。</dd>
+                <dt>助手 / 设置</dt>
+                <dd>助手处理 AI 任务；文件 → 设置 · AI 配置服务。</dd>
+                <dt>搜索 / 导出</dt>
+                <dd>Cmd/Ctrl+K 搜索操作；文件 → 导出或右上角导出。</dd>
+              </dl>
+            ) : helpOpen === 'shortcuts' ? (
+              <table>
+                <tbody>
+                  {registry
+                    .filter(
+                      (a) =>
+                        !a.id.startsWith('nudge-') && !a.id.endsWith('alt'),
+                    )
+                    .map((a) => (
+                      <tr key={a.id}>
+                        <td>{a.label}</td>
+                        <td>
+                          <kbd>
+                            {a.modifier ? 'Cmd/Ctrl+' : ''}
+                            {a.shift ? 'Shift+' : ''}
+                            {a.key.toUpperCase()}
+                          </kbd>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            ) : (
+              <p>
+                本地动效创作编辑器 · 工程与动画操作支持撤销。当前版本{' '}
+                {ProductMetadata.version}。
+              </p>
+            )}
+            <button onClick={() => setHelpOpen(undefined)}>关闭</button>
+          </section>
+        </HelpModal>
+      )}
       {exportOpen && (
         <ExportDialog store={store} onClose={() => setExportOpen(false)} />
       )}

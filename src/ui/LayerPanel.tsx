@@ -55,7 +55,22 @@ export function LayerPanel({ store }: { store: EditorStore }) {
     window.addEventListener('motion:assistant', open);
     return () => window.removeEventListener('motion:assistant', open);
   }, []);
-  const items = layerActions(store, rename);
+  const items = layerActions(store, rename, 'scene');
+  useEffect(() => {
+    const change = (next: string) => () => {
+      setTab(next);
+      localStorage.setItem('motion.active-left', next);
+      window.dispatchEvent(new Event('motion:show-left'));
+    };
+    const project = change('项目'),
+      layers = change('图层');
+    window.addEventListener('motion:show-project', project);
+    window.addEventListener('motion:show-layers', layers);
+    return () => {
+      window.removeEventListener('motion:show-project', project);
+      window.removeEventListener('motion:show-layers', layers);
+    };
+  }, []);
   const finishRename = () => {
     if (renaming && name.trim())
       store.run('重命名图层', [
@@ -83,6 +98,17 @@ export function LayerPanel({ store }: { store: EditorStore }) {
           <>
             <div className="panel-heading">
               <h2>项目</h2>
+              <button
+                onClick={() =>
+                  window.dispatchEvent(
+                    new CustomEvent('motion:editor-action', {
+                      detail: 'new-composition',
+                    }),
+                  )
+                }
+              >
+                新建合成
+              </button>
             </div>
             <div className="composition-list">
               {view.project.compositions.map((comp) => (
@@ -114,6 +140,16 @@ export function LayerPanel({ store }: { store: EditorStore }) {
               <h2>
                 图层 <span className="count">{c.layers.length}</span>
               </h2>
+              <button
+                className="create-object-entry"
+                onClick={(event) => {
+                  const r = event.currentTarget.getBoundingClientRect();
+                  setOperations(false);
+                  setMenu({ x: r.left, y: r.bottom + 140 });
+                }}
+              >
+                <span aria-hidden="true">＋</span>创建对象
+              </button>
               <IconButton
                 label="图层操作"
                 onClick={(event) => {
@@ -174,9 +210,12 @@ export function LayerPanel({ store }: { store: EditorStore }) {
                   }}
                   onContextMenu={(event) => {
                     event.preventDefault();
+                    event.stopPropagation();
                     if (!view.selection.includes(layer.id))
                       store.select(layer.id);
-                    setOperations(false);
+                    store.selectFrames([]);
+                    store.selectProperties([]);
+                    setOperations(true);
                     setMenu({ x: event.clientX, y: event.clientY });
                   }}
                 >
@@ -263,6 +302,19 @@ export function LayerPanel({ store }: { store: EditorStore }) {
                         />
                       </span>
                       <span>{displayName(layer.name)}</span>
+                      {layer.editor?.parentId && (
+                        <small
+                          className="parent-identity"
+                          title={`父级：${c.layers.find((l) => l.id === layer.editor?.parentId)?.name ?? ''}`}
+                        >
+                          ↳{' '}
+                          {
+                            c.layers.find(
+                              (l) => l.id === layer.editor?.parentId,
+                            )?.name
+                          }
+                        </small>
+                      )}
                     </button>
                   )}
                 </div>

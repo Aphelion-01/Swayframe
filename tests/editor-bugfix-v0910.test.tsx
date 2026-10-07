@@ -151,9 +151,10 @@ it('right click opens icon creation pie on layers and timeline, file menu contai
     clientX: 100,
     clientY: 150,
   });
-  expect(screen.getAllByRole('menuitem')).toHaveLength(10);
-  for (const item of screen.getAllByRole('menuitem'))
-    expect(item.querySelector('svg')).not.toBeNull();
+  const pie = screen.getByRole('menu', { name: '创建对象' });
+  const choices = pie.querySelectorAll('[role=menuitem]');
+  expect(choices).toHaveLength(10);
+  for (const item of choices) expect(item.querySelector('svg')).not.toBeNull();
   fireEvent.click(screen.getByRole('menuitem', { name: '创建 星形' }));
   expect(
     activeComposition(store.getSnapshot().project).layers.at(-1),

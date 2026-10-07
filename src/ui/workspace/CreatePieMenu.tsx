@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { activeComposition, createLayer } from '../../core/project-model';
-import { command } from '../../core/command-system';
+import { createObject, objectChoices } from './object-actions';
 import { layerKindLabels } from '../labels';
 import { importImageFile } from '../asset-import';
 import { desktopService } from '../../desktop/service';
@@ -10,19 +9,6 @@ import type { EditorStore } from '../editor-store';
 import { ContextMenu } from './primitives';
 import type { MenuItem } from './primitives';
 import { Icon } from './icons';
-import type { IconName } from './icons';
-const choices = [
-  ['rectangle', 'rectangle'],
-  ['ellipse', 'ellipse'],
-  ['polygon', 'polygon'],
-  ['star', 'star'],
-  ['path', 'path'],
-  ['text', 'text'],
-  ['camera', 'camera'],
-  ['solid', 'solid'],
-  ['null', 'null'],
-  ['image', 'image'],
-] as const satisfies readonly (readonly [string, IconName])[];
 export function CreatePieMenu({
   store,
   x,
@@ -51,6 +37,9 @@ export function CreatePieMenu({
   );
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
+    document
+      .querySelectorAll('.toolbar-menu[open]')
+      .forEach((el) => el.removeAttribute('open'));
     root.current?.querySelector<HTMLButtonElement>('button')?.focus();
     return () => {
       if (previous?.isConnected) previous.focus();
@@ -100,7 +89,7 @@ export function CreatePieMenu({
           }
         }}
       >
-        {choices.map(([kind, icon], i) => (
+        {objectChoices.map(([kind, icon], i) => (
           <button
             role="menuitem"
             aria-label={
@@ -119,16 +108,7 @@ export function CreatePieMenu({
                 } else input.current?.click();
                 return;
               }
-              const c = activeComposition(store.getSnapshot().project),
-                layer = createLayer(kind, {
-                  position: { x: c.width / 2, y: c.height / 2 },
-                });
-              if (
-                store.run(`创建 ${layerKindLabels[kind]}`, [
-                  command({ type: 'layer.create', compositionId: c.id, layer }),
-                ]).ok
-              )
-                store.select(layer.id);
+              createObject(store, kind);
               onClose();
             }}
           >

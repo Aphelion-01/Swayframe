@@ -1,3 +1,4 @@
+import { dispatchShortcut } from './workspace/shortcuts';
 import { useLayerMarquee } from './workspace/layer-marquee';
 import { CreatePieMenu } from './workspace/CreatePieMenu';
 import { timelineReorderCommands } from '../core/timeline-reorder';
@@ -22,12 +23,7 @@ import {
   selectedMotionSegments,
 } from '../core/motion-curve-commands';
 import { useInteractionCancel } from './workspace/interaction';
-import {
-  ContextMenu,
-  MenuDropdown,
-  IconButton,
-  Tabs,
-} from './workspace/primitives';
+import { ContextMenu, IconButton, Tabs } from './workspace/primitives';
 import { MotionCurvePanel } from './MotionCurvePanel';
 import { LayerTimeBar } from './LayerTimeBar';
 import { GraphEditor } from './GraphEditor';
@@ -560,9 +556,32 @@ export function Timeline({ store }: { store: EditorStore }) {
       setGraphOpen(false);
       setCompositingOpen(false);
     };
+    const mode = (compositing: boolean) => () => {
+      setGraphOpen(false);
+      setMotionOpen(false);
+      setCompositingOpen(compositing);
+      store.clearGraphSelection();
+    };
+    const timeline = mode(false),
+      compositing = mode(true);
+    const rename = () => {
+      const l = activeComposition(store.getSnapshot().project).layers.find(
+        (l) => l.id === store.getSnapshot().selection[0],
+      );
+      if (l) {
+        setRenaming(l.id);
+        setRenameValue(l.name);
+      }
+    };
+    window.addEventListener('motion:timeline', timeline);
+    window.addEventListener('motion:compositing', compositing);
+    window.addEventListener('motion:timeline-rename', rename);
     window.addEventListener('motion:motion-curve', motion);
     window.addEventListener('motion:graph', open);
     return () => {
+      window.removeEventListener('motion:timeline', timeline);
+      window.removeEventListener('motion:compositing', compositing);
+      window.removeEventListener('motion:timeline-rename', rename);
       window.removeEventListener('motion:graph', open);
       window.removeEventListener('motion:motion-curve', motion);
     };
@@ -624,6 +643,7 @@ export function Timeline({ store }: { store: EditorStore }) {
             }
             onContextMenu={(event) => {
               event.preventDefault();
+              event.stopPropagation();
               if (!view.selection.includes(layer.id)) store.select(layer.id);
               store.selectFrames([]);
               store.selectProperties([]);
@@ -1190,19 +1210,35 @@ export function Timeline({ store }: { store: EditorStore }) {
           )
         )
           return;
-        if (event.code === 'Space') {
-          if (!spacePan.current) spacePanUsed.current = false;
-          spacePan.current = true;
+        if (
+          dispatchShortcut(event.nativeEvent, [
+            {
+              id: 'timeline-space',
+              label: '时间轴平移/播放',
+              key: 'space',
+              contexts: ['timeline'],
+              action: () => {
+                if (!spacePan.current) spacePanUsed.current = false;
+                spacePan.current = true;
+              },
+            },
+            {
+              id: 'timeline-rename',
+              label: '重命名图层',
+              key: 'f2',
+              contexts: ['timeline'],
+              action: () => {
+                const layer = c.layers.find((l) => l.id === view.selection[0]);
+                if (layer) {
+                  setRenaming(layer.id);
+                  setRenameValue(layer.name);
+                }
+              },
+            },
+          ])
+        ) {
           event.preventDefault();
           event.stopPropagation();
-        }
-        if (event.key === 'F2') {
-          const layer = c.layers.find((l) => l.id === view.selection[0]);
-          if (layer) {
-            event.preventDefault();
-            setRenaming(layer.id);
-            setRenameValue(layer.name);
-          }
         }
       }}
     >
@@ -1619,39 +1655,6 @@ export function Timeline({ store }: { store: EditorStore }) {
           value={search}
           onChange={(event) => setSearch(event.target.value)}
         />
-        <MenuDropdown>
-          <summary>关键帧 ▾</summary>
-          <div className="dropdown-menu">
-            <button
-              onClick={() => {
-                setGraphOpen(false);
-                setMotionOpen(true);
-              }}
-            >
-              动画缓动
-            </button>
-            <button aria-label="上一个关键帧" onClick={() => jumpVisible(-1)}>
-              上一个关键帧
-            </button>
-            <button aria-label="下一个关键帧" onClick={() => jumpVisible(1)}>
-              下一个关键帧
-            </button>
-            <button onClick={() => store.copySelection()}>复制</button>
-            <button onClick={() => store.pasteSelection()}>粘贴</button>
-            <button
-              disabled={!view.frames.length}
-              onClick={() => store.duplicateSelection()}
-            >
-              复制关键帧到下一帧
-            </button>
-            <button
-              disabled={!view.frames.length}
-              onClick={() => store.deleteSelected()}
-            >
-              删除关键帧
-            </button>
-          </div>
-        </MenuDropdown>
         <label className="timeline-filter">
           {' '}
           <select
@@ -1761,19 +1764,22 @@ export function Timeline({ store }: { store: EditorStore }) {
         />
       )}
       {layerMenu && (
-        <CreatePieMenu
-          store={store}
+        <ContextMenu
           {...layerMenu}
           items={[
-            ...layerActions(store, () => {
-              const l = c.layers.find(
-                (l) => l.id === store.getSnapshot().selection[0],
-              );
-              if (l) {
-                setRenaming(l.id);
-                setRenameValue(l.name);
-              }
-            }),
+            ...layerActions(
+              store,
+              () => {
+                const l = c.layers.find(
+                  (l) => l.id === store.getSnapshot().selection[0],
+                );
+                if (l) {
+                  setRenaming(l.id);
+                  setRenameValue(l.name);
+                }
+              },
+              'timeline',
+            ),
             {
               label: '在播放头拆分图层',
               action: () => {
@@ -1872,6 +1878,10 @@ export function Timeline({ store }: { store: EditorStore }) {
               label: '粘贴',
               shortcut: '⌘V',
               action: () => store.pasteSelection(),
+            },
+            {
+              label: '复制关键帧到下一帧',
+              action: () => store.duplicateSelection(),
             },
             {
               label: '删除关键帧',

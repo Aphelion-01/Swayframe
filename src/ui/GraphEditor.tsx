@@ -579,15 +579,17 @@ export function GraphEditor({
           )
             e.stopPropagation();
           if (
-            !(e.target as Element).closest('input,textarea,select') &&
-            ['1', '2'].includes(e.key)
-          ) {
-            e.stopPropagation();
-            setMode(e.key === '1' ? 'value' : 'speed');
-            fitCurve();
-          }
-          if (
             dispatchShortcut(e.nativeEvent, [
+              ...['1', '2'].map((key) => ({
+                id: `graph-mode-${key}`,
+                label: key === '1' ? '值曲线' : '速度曲线',
+                key,
+                contexts: ['curvegraph'] as const,
+                action: () => {
+                  setMode(key === '1' ? 'value' : 'speed');
+                  fitCurve();
+                },
+              })),
               {
                 id: 'curve-pan',
                 label: '曲线平移',

@@ -112,6 +112,11 @@ export function CompositingControls({
   return (
     <>
       <div className="section-label">合成</div>
+      <button
+        onClick={() => window.dispatchEvent(new Event('motion:compositing'))}
+      >
+        打开合成节点
+      </button>
       <label className="field">
         混合模式
         <select

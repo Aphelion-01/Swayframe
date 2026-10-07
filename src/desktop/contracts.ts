@@ -1,6 +1,8 @@
 import { aiRequestSchemas } from '../ai/desktop-contracts';
 import type { DesktopAIAPI } from '../ai/desktop-contracts';
 import { z } from 'zod';
+import type { ApplicationActionId } from '../shared/application-menu';
+import { applicationMenus } from '../shared/application-menu';
 export const pathSchema = z
   .string()
   .min(1)
@@ -56,6 +58,29 @@ export interface Recovery {
   timestamp: number;
 }
 export type DesktopAction =
+  | ApplicationActionId
+  | 'create-rectangle'
+  | 'create-ellipse'
+  | 'create-polygon'
+  | 'create-star'
+  | 'create-path'
+  | 'create-text'
+  | 'create-camera'
+  | 'create-solid'
+  | 'create-null'
+  | 'align-0'
+  | 'align-1'
+  | 'align-2'
+  | 'align-3'
+  | 'align-4'
+  | 'align-5'
+  | 'align-6'
+  | 'align-7'
+  | 'ease-in'
+  | 'ease-out'
+  | 'ease-both'
+  | 'linear'
+  | 'hold'
   | 'new'
   | 'open'
   | 'save'
@@ -84,6 +109,29 @@ export type DesktopAction =
   | 'motion-curve'
   | 'about';
 export const actionSchema = z.enum([
+  'create-rectangle',
+  'create-ellipse',
+  'create-polygon',
+  'create-star',
+  'create-path',
+  'create-text',
+  'create-camera',
+  'create-solid',
+  'create-null',
+  'align-0',
+  'align-1',
+  'align-2',
+  'align-3',
+  'align-4',
+  'align-5',
+  'align-6',
+  'align-7',
+  'ease-in',
+  'ease-out',
+  'ease-both',
+  'linear',
+  'hold',
+  ...applicationMenus.flatMap((group) => group.items.map((item) => item[0])),
   'new',
   'open',
   'save',

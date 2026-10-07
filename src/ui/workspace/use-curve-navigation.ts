@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { usePointerRelease } from './pointer-release';
 import { useInteractionCancel } from './interaction';
+import { dispatchShortcut } from './shortcuts';
 /** Navigation lives entirely in view coordinates, independent of animation data. */
 export function useCurveNavigation(
   ref: RefObject<SVGSVGElement | null>,
@@ -91,15 +92,29 @@ export function useCurveNavigation(
     space,
     onKeyDown: (e: ReactKeyboardEvent) => {
       if ((e.target as Element).closest('input,textarea,select')) return;
-      if (e.code === 'Space' || e.key === ' ') {
+      if (
+        dispatchShortcut(e.nativeEvent, [
+          {
+            id: 'motion-pan',
+            label: '缓动曲线平移/播放',
+            key: 'space',
+            contexts: ['curvegraph'],
+            action: () => {
+              space.current = true;
+              used.current = false;
+            },
+          },
+          ...['f', 'home'].map((key) => ({
+            id: `motion-fit-${key}`,
+            label: '适应缓动曲线',
+            key,
+            contexts: ['curvegraph'] as const,
+            action: () => setViewport({ x: 0, y: 0, zoom: 1 }),
+          })),
+        ])
+      ) {
         e.preventDefault();
         e.stopPropagation();
-        space.current = true;
-        used.current = false;
-      }
-      if (e.key.toLowerCase() === 'f') {
-        e.preventDefault();
-        setViewport({ x: 0, y: 0, zoom: 1 });
       }
     },
     onPointerDown: (e: ReactPointerEvent<SVGSVGElement>) => {

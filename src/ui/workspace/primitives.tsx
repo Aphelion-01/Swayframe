@@ -116,6 +116,15 @@ export function ContextMenu({
   const [submenu, setSubmenu] = useState<MenuItem[]>();
   const shownItems = submenu ?? items;
   useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    document
+      .querySelectorAll('.toolbar-menu[open]')
+      .forEach((el) => el.removeAttribute('open'));
+    return () => {
+      if (previous?.isConnected) previous.focus();
+    };
+  }, []);
+  useEffect(() => {
     ref.current
       ?.querySelector<HTMLButtonElement>('button:not(:disabled)')
       ?.focus();
@@ -166,7 +175,7 @@ export function ContextMenu({
     >
       {submenu && (
         <button role="menuitem" onClick={() => setSubmenu(undefined)}>
-          ‹ 返回图层操作
+          ‹ 返回上级菜单
         </button>
       )}
       {shownItems.map((item) => (
@@ -174,6 +183,7 @@ export function ContextMenu({
           role={item.checked === undefined ? 'menuitem' : 'menuitemradio'}
           aria-checked={item.checked}
           aria-haspopup={item.children ? 'menu' : undefined}
+          aria-label={item.label}
           key={item.label}
           disabled={item.disabled}
           onClick={() => {
@@ -303,6 +313,14 @@ export function MenuDropdown({ children }: { children: ReactNode }) {
     <details
       ref={ref}
       className="toolbar-menu"
+      onClickCapture={(event) => {
+        if ((event.target as Element).closest('summary'))
+          document
+            .querySelectorAll<HTMLDetailsElement>('.toolbar-menu[open]')
+            .forEach((el) => {
+              if (el !== event.currentTarget) el.open = false;
+            });
+      }}
       onKeyDown={(event) => {
         const el = ref.current;
         if (!el) return;

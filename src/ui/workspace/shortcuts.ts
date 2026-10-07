@@ -27,7 +27,8 @@ export function focusContext(target: EventTarget | null): FocusContext {
     return element instanceof HTMLInputElement && element.type === 'number'
       ? 'numeric'
       : 'text';
-  if (element?.closest('.graph-dialog')) return 'curvegraph';
+  if (element?.closest('.graph-dialog,.motion-curve-panel'))
+    return 'curvegraph';
   if (element?.closest('.compositing-graph')) return 'compositing';
   if (element?.matches('.scrub-label')) return 'numeric';
   if (element?.closest('.timeline-panel')) return 'timeline';
