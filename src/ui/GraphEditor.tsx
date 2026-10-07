@@ -1,3 +1,4 @@
+import { usePointerRelease } from './workspace/pointer-release';
 import { Modal, IconButton } from './workspace/primitives';
 import { dispatchShortcut } from './workspace/shortcuts';
 import { useInteractionCancel } from './workspace/interaction';
@@ -125,6 +126,12 @@ export function GraphEditor({
     };
     const release = (e: KeyboardEvent) => {
       if (e.code === 'Space' || e.key === ' ') {
+        if (
+          space.current &&
+          !panUsed.current &&
+          !(e.target as Element)?.closest?.('input,textarea,select')
+        )
+          store.setPlaying(!store.getSnapshot().playing);
         space.current = false;
         setGrabbing(false);
       }
@@ -144,6 +151,29 @@ export function GraphEditor({
     setGrabbing(false);
     store.setPropertyPreviews(undefined);
   });
+  const domainRef = useRef<
+    { key: string; min: number; max: number } | undefined
+  >(undefined);
+  const fitCurve = () => {
+    domainRef.current = undefined;
+    setViewport({ x: 0, y: 0, zoom: 1 });
+  };
+  const pointerHandlers = useRef<{
+    move: (event: PointerEvent) => void;
+    finish: () => void;
+  }>({
+    move: () => {},
+    finish: () => {},
+  });
+  usePointerRelease({
+    active: () => !!gesture.current,
+    move: (e) => pointerHandlers.current.move(e),
+    finish: () => pointerHandlers.current.finish(),
+    cancel: () => {
+      gesture.current = undefined;
+      store.setPropertyPreviews(undefined);
+    },
+  });
   const entry =
     entries.find((e) => e.property.id === chosen) ??
     entries.find((e) => e.property.id === view.selectedProperties[0]) ??
@@ -155,6 +185,12 @@ export function GraphEditor({
       <GraphFrame embedded={embedded} onClose={onClose} empty>
         <section className="graph-dialog">
           <h2>曲线编辑器</h2>
+          <button
+            aria-label={view.playing ? '暂停曲线预览' : '播放曲线预览'}
+            onClick={() => store.setPlaying(!view.playing)}
+          >
+            {view.playing ? '暂停' : '播放'}预览
+          </button>
           <p>先选择一个图层。</p>
           <button onClick={onClose}>关闭曲线编辑器</button>
         </section>
@@ -178,6 +214,9 @@ export function GraphEditor({
       : 0,
     left = frames[index],
     right = frames[index + 1];
+  const domainKey = `${original.id}/${left?.id}/${right?.id}/${mode}/${component}`;
+  const fixedDomain =
+    domainRef.current?.key === domainKey ? domainRef.current : undefined;
   const start = frames[0]?.time ?? 0,
     end = Math.max(start + 1 / c.fps, frames.at(-1)?.time ?? c.duration);
   const unit = propertySpeedUnit(entry.key),
@@ -190,8 +229,8 @@ export function GraphEditor({
     rawMin = Math.min(...vals),
     rawMax = Math.max(...vals),
     padding = Math.max(1, (rawMax - rawMin) * 0.15),
-    min = rawMin - padding,
-    max = rawMax + padding;
+    min = fixedDomain?.min ?? rawMin - padding,
+    max = fixedDomain?.max ?? rawMax + padding;
   const X = (t: number) => 50 + ((t - start) / (end - start)) * 580,
     Y = (v: number) => 235 - ((v - min) / (max - min)) * 205;
   const path = samples
@@ -251,7 +290,7 @@ export function GraphEditor({
         ...speed,
         [field]: field.includes('Speed') ? value / factor : value,
       };
-      const controls = controlsFromSpeed(
+      const converted = controlsFromSpeed(
         left,
         right,
         n.outInfluence,
@@ -259,6 +298,10 @@ export function GraphEditor({
         n.outSpeed,
         n.inSpeed,
       );
+      const originalControls = segmentControls(left, right);
+      const controls = field.startsWith('out')
+        ? { out: converted.out, in: originalControls.in }
+        : { out: originalControls.out, in: converted.in };
       if (preview)
         store.setPropertyPreviews(
           previewMotionCurve(
@@ -276,13 +319,94 @@ export function GraphEditor({
       else apply(controls);
     }
   };
-  const curveKey = `${original.id}/${left?.id}/${right?.id}/${mode}/${component}`;
+  const curveKey = domainKey;
   const endGesture = () => {
     const g = gesture.current;
     gesture.current = undefined;
     if (g && g.project === store.getSnapshot().project && g.key === curveKey)
       apply(g.controls);
     else store.setPropertyPreviews(undefined);
+  };
+  pointerHandlers.current = {
+    finish: endGesture,
+    move: (e) => {
+      const g = gesture.current;
+      const which = g?.which;
+      if (!g || !which || !left || !right) return;
+      if (g.project !== view.project || g.key !== curveKey) {
+        gesture.current = undefined;
+        store.setPropertyPreviews(undefined);
+        return;
+      }
+      const svg = svgRef.current!,
+        rect = svg.getBoundingClientRect(),
+        x =
+          viewport.x +
+          ((e.clientX - rect.left) * 680) /
+            Math.max(1, rect.width) /
+            viewport.zoom,
+        y =
+          viewport.y +
+          ((e.clientY - rect.top) * 280) /
+            Math.max(1, rect.height) /
+            viewport.zoom,
+        time =
+          g.domain.start + ((x - 50) / 580) * (g.domain.end - g.domain.start),
+        val = g.domain.min + ((235 - y) / 205) * (g.domain.max - g.domain.min),
+        duration = right.time - left.time;
+      const px = Math.max(
+        0.001,
+        Math.min(0.999, (time - left.time) / duration),
+      );
+      let py = 0;
+      if (mode === 'value') {
+        const delta =
+          valueComponent(right.value, component) -
+          valueComponent(left.value, component);
+        py = delta
+          ? (val - valueComponent(left.value, component)) / delta
+          : which === 'out'
+            ? 0
+            : 1;
+      } else {
+        const delta = spatialEndpointDistances(left, right)[which];
+        const direction =
+          Math.sign(which === 'out' ? speed!.outVelocity : speed!.inVelocity) ||
+          1;
+        py =
+          which === 'out'
+            ? delta
+              ? ((Math.max(0, val) / factor) * direction * duration * px) /
+                delta
+              : 0
+            : delta
+              ? 1 -
+                ((Math.max(0, val) / factor) *
+                  direction *
+                  duration *
+                  (1 - px)) /
+                  delta
+              : 1;
+      }
+      const ctrl = {
+        ...g.controls,
+        [which]: { x: px, y: Math.max(-10, Math.min(10, py)) },
+      };
+      g.controls = ctrl;
+      store.setPropertyPreviews(
+        previewMotionCurve(
+          view.project,
+          [`${original.id}/${left.id}/${right.id}`],
+          {
+            type: 'cubic-bezier',
+            x1: ctrl.out.x,
+            y1: ctrl.out.y,
+            x2: ctrl.in.x,
+            y2: ctrl.in.y,
+          },
+        ),
+      );
+    },
   };
   return (
     <GraphFrame embedded={embedded} onClose={onClose}>
@@ -292,6 +416,11 @@ export function GraphEditor({
         tabIndex={0}
         onKeyDown={(e) => {
           if (
+            e.code === 'Space' &&
+            !(e.target as Element).closest('input,textarea,select')
+          )
+            e.stopPropagation();
+          if (
             dispatchShortcut(e.nativeEvent, [
               {
                 id: 'curve-pan',
@@ -299,6 +428,7 @@ export function GraphEditor({
                 key: 'space',
                 contexts: ['curvegraph'],
                 action: () => {
+                  panUsed.current = false;
                   space.current = true;
                   setGrabbing(true);
                 },
@@ -308,7 +438,7 @@ export function GraphEditor({
                 label: '适应曲线视图',
                 key,
                 contexts: ['curvegraph'] as const,
-                action: () => setViewport({ x: 0, y: 0, zoom: 1 }),
+                action: fitCurve,
               })),
               ...['arrowleft', 'arrowright', 'arrowup', 'arrowdown'].map(
                 (key) => ({
@@ -345,6 +475,12 @@ export function GraphEditor({
       >
         <div className="graph-heading">
           <h2>曲线编辑器</h2>
+          <button
+            aria-label={view.playing ? '暂停曲线预览' : '播放曲线预览'}
+            onClick={() => store.setPlaying(!view.playing)}
+          >
+            {view.playing ? '暂停' : '播放'}预览
+          </button>
           <button
             onClick={() => {
               store.setPropertyPreviews(undefined);
@@ -423,11 +559,7 @@ export function GraphEditor({
           <IconButton label="放大曲线视图" onClick={() => zoomAt(1.25)}>
             ＋
           </IconButton>
-          <IconButton
-            label="适应曲线视图"
-            shortcut="F"
-            onClick={() => setViewport({ x: 0, y: 0, zoom: 1 })}
-          >
+          <IconButton label="适应曲线视图" shortcut="F" onClick={fitCurve}>
             ⛶
           </IconButton>
           <span>
@@ -444,7 +576,13 @@ export function GraphEditor({
           viewBox={`${viewport.x} ${viewport.y} ${680 / viewport.zoom} ${280 / viewport.zoom}`}
           preserveAspectRatio="none"
           tabIndex={0}
-          style={{ touchAction: 'none', cursor: grabbing ? 'grab' : 'default' }}
+          style={{
+            touchAction: 'none',
+            cursor: grabbing ? 'grab' : 'default',
+            maxWidth: embedded
+              ? Math.max(280, (svgSize.height * 680) / 280)
+              : undefined,
+          }}
           onPointerDown={(e) => {
             if (e.button === 0 && !space.current) panUsed.current = false;
             if (e.button !== 1 && !(e.button === 0 && space.current)) return;
@@ -549,7 +687,23 @@ export function GraphEditor({
           {left &&
             right &&
             (['out', 'in'] as const).map((which) => {
-              const h = handlePoint(which),
+              const actual = handlePoint(which),
+                h = {
+                  x: Math.max(
+                    viewport.x + 10 * pixelX,
+                    Math.min(
+                      viewport.x + 680 / viewport.zoom - 10 * pixelX,
+                      actual.x,
+                    ),
+                  ),
+                  y: Math.max(
+                    viewport.y + 10 * pixelY,
+                    Math.min(
+                      viewport.y + 280 / viewport.zoom - 10 * pixelY,
+                      actual.y,
+                    ),
+                  ),
+                },
                 key = which === 'out' ? left : right;
               return (
                 <g key={which}>
@@ -570,6 +724,7 @@ export function GraphEditor({
                     role="slider"
                     aria-label={which === 'out' ? '出切线手柄' : '入切线手柄'}
                     aria-valuenow={controls[which].x}
+                    data-offscreen={h.x !== actual.x || h.y !== actual.y}
                     tabIndex={0}
                     cx={h.x}
                     cy={h.y}
@@ -581,8 +736,10 @@ export function GraphEditor({
                       if (e.button !== 0 || space.current || layer?.locked)
                         return;
                       e.stopPropagation();
+                      store.setPlaying(false);
                       e.currentTarget.focus();
                       e.currentTarget.setPointerCapture(e.pointerId);
+                      domainRef.current = { key: curveKey, min, max };
                       gesture.current = {
                         which,
                         controls,
@@ -590,106 +747,6 @@ export function GraphEditor({
                         key: curveKey,
                         domain: { start, end, min, max },
                       };
-                    }}
-                    onPointerMove={(e) => {
-                      const g = gesture.current;
-                      if (!g || g.which !== which) return;
-                      if (g.project !== view.project || g.key !== curveKey) {
-                        gesture.current = undefined;
-                        store.setPropertyPreviews(undefined);
-                        return;
-                      }
-                      const svg = e.currentTarget.ownerSVGElement!,
-                        rect = svg.getBoundingClientRect(),
-                        x =
-                          viewport.x +
-                          ((e.clientX - rect.left) * 680) /
-                            Math.max(1, rect.width) /
-                            viewport.zoom,
-                        y =
-                          viewport.y +
-                          ((e.clientY - rect.top) * 280) /
-                            Math.max(1, rect.height) /
-                            viewport.zoom,
-                        time =
-                          g.domain.start +
-                          ((x - 50) / 580) * (g.domain.end - g.domain.start),
-                        val =
-                          g.domain.min +
-                          ((235 - y) / 205) * (g.domain.max - g.domain.min),
-                        duration = right.time - left.time;
-                      const px = Math.max(
-                        0.001,
-                        Math.min(0.999, (time - left.time) / duration),
-                      );
-                      let py = 0;
-                      if (mode === 'value') {
-                        const delta =
-                          valueComponent(right.value, component) -
-                          valueComponent(left.value, component);
-                        py = delta
-                          ? (val - valueComponent(left.value, component)) /
-                            delta
-                          : which === 'out'
-                            ? 0
-                            : 1;
-                      } else {
-                        const delta = spatialEndpointDistances(left, right)[
-                          which
-                        ];
-                        const direction =
-                          Math.sign(
-                            which === 'out'
-                              ? speed!.outVelocity
-                              : speed!.inVelocity,
-                          ) || 1;
-                        py =
-                          which === 'out'
-                            ? delta
-                              ? ((Math.max(0, val) / factor) *
-                                  direction *
-                                  duration *
-                                  px) /
-                                delta
-                              : 0
-                            : delta
-                              ? 1 -
-                                ((Math.max(0, val) / factor) *
-                                  direction *
-                                  duration *
-                                  (1 - px)) /
-                                  delta
-                              : 1;
-                      }
-                      const ctrl = {
-                        ...g.controls,
-                        [which]: { x: px, y: Math.max(-10, Math.min(10, py)) },
-                      };
-                      g.controls = ctrl;
-                      store.setPropertyPreviews(
-                        previewMotionCurve(
-                          view.project,
-                          [`${original.id}/${left.id}/${right.id}`],
-                          {
-                            type: 'cubic-bezier',
-                            x1: ctrl.out.x,
-                            y1: ctrl.out.y,
-                            x2: ctrl.in.x,
-                            y2: ctrl.in.y,
-                          },
-                        ),
-                      );
-                    }}
-                    onPointerUp={endGesture}
-                    onPointerCancel={() => {
-                      gesture.current = undefined;
-                      store.setPropertyPreviews(undefined);
-                    }}
-                    onLostPointerCapture={() => {
-                      if (gesture.current) {
-                        gesture.current = undefined;
-                        store.setPropertyPreviews(undefined);
-                      }
                     }}
                     onKeyDown={(e) => {
                       if (layer?.locked) return;

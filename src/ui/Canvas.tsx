@@ -1,3 +1,4 @@
+import { pathSvg } from '../core/shape-geometry';
 import { useEditorSlice } from './use-editor-slice';
 import {
   CanvasInteractionState,
@@ -74,6 +75,24 @@ import { createRenderSnapshot, hitTest } from '../core/renderer-core';
 import { Canvas2DRenderer } from '../renderers/canvas2d';
 import type { EditorStore } from './editor-store';
 
+type PenPoint = Vec2 & { incoming: Vec2; outgoing: Vec2 };
+function penPoint(start: Vec2, end: Vec2): PenPoint {
+  return {
+    ...start,
+    incoming: { x: 2 * start.x - end.x, y: 2 * start.y - end.y },
+    outgoing: end,
+  };
+}
+const penValues = (points: readonly PenPoint[]) =>
+  points.flatMap((p) => [
+    p.x,
+    p.y,
+    p.incoming.x,
+    p.incoming.y,
+    p.outgoing.x,
+    p.outgoing.y,
+  ]);
+
 type CanvasInteractionData = {
   marquee: Exclude<
     | {
@@ -136,7 +155,7 @@ type CanvasInteractionData = {
 };
 
 export function Canvas({ store }: { store: EditorStore }) {
-  const { tool, setTool, space, setSpace } = useTools();
+  const { tool, space, setSpace } = useTools();
   const interaction = useRef(
     new CanvasInteractionState<CanvasInteractionData>(),
   ).current;
@@ -146,8 +165,8 @@ export function Canvas({ store }: { store: EditorStore }) {
     guidanceController.getSnapshot,
   );
 
-  const penPoints = useRef<Vec2[]>([]);
-  const [penPreview, setPenPreview] = useState<readonly Vec2[]>([]);
+  const penPoints = useRef<PenPoint[]>([]);
+  const [penPreview, setPenPreview] = useState<readonly PenPoint[]>([]);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [hoverId, setHoverId] = useState<string>();
   const [panning, setPanning] = useState(false);
@@ -356,7 +375,7 @@ export function Canvas({ store }: { store: EditorStore }) {
     setSpace(false);
   };
   useInteractionCancel(cancelCanvas);
-  const finishPen = () => {
+  const finishPen = (closed = false) => {
     const points = penPoints.current;
     if (points.length < 2) {
       penPoints.current = [];
@@ -380,19 +399,14 @@ export function Canvas({ store }: { store: EditorStore }) {
       ...layer,
       editor: {
         ...editor,
-        pathClosed: false,
+        pathClosed: closed,
         properties: {
           ...editor.properties,
           path: {
             ...path,
-            baseValue: points.flatMap((p) => [
-              p.x - center.x,
-              p.y - center.y,
-              p.x - center.x,
-              p.y - center.y,
-              p.x - center.x,
-              p.y - center.y,
-            ]),
+            baseValue: penValues(points).map(
+              (v, i) => v - (i % 2 ? center.y : center.x),
+            ),
           },
           strokeWidth: { ...stroke, baseValue: 2 },
         },
@@ -406,7 +420,6 @@ export function Canvas({ store }: { store: EditorStore }) {
       store.select(created.id);
     penPoints.current = [];
     setPenPreview([]);
-    setTool('select');
   };
   useEffect(() => {
     const finish = () => finishPen();
@@ -677,8 +690,21 @@ export function Canvas({ store }: { store: EditorStore }) {
     const p = point(event);
     if (tool !== 'select' && tool !== 'hand') {
       event.currentTarget.setPointerCapture(event.pointerId);
+      if (
+        tool === 'pen' &&
+        penPoints.current.length > 2 &&
+        Math.hypot(
+          p.x - penPoints.current[0]!.x,
+          p.y - penPoints.current[0]!.y,
+        ) <
+          8 * uiScale
+      ) {
+        finishPen(true);
+        return;
+      }
       drawing.current = { start: p, end: p, project: view.project };
-      setDrawBox({ start: p, end: p });
+      if (tool === 'pen') setPenPreview([...penPoints.current, penPoint(p, p)]);
+      else setDrawBox({ start: p, end: p });
       return;
     }
     const selected = input.layers.filter(
@@ -829,7 +855,12 @@ export function Canvas({ store }: { store: EditorStore }) {
     }
     if (drawing.current) {
       drawing.current.end = p;
-      setDrawBox({ ...drawing.current });
+      if (tool === 'pen')
+        setPenPreview([
+          ...penPoints.current,
+          penPoint(drawing.current.start, p),
+        ]);
+      else setDrawBox({ ...drawing.current });
       return;
     }
     if (!g) {
@@ -1136,14 +1167,9 @@ export function Canvas({ store }: { store: EditorStore }) {
       const width = Math.max(2, Math.abs(d.end.x - d.start.x)),
         height = Math.max(2, Math.abs(d.end.y - d.start.y));
       if (tool === 'pen') {
-        const push = (p: Vec2) => {
-          const last = penPoints.current.at(-1);
-          if (!last || Math.hypot(last.x - p.x, last.y - p.y) > 1)
-            penPoints.current = [...penPoints.current, p];
-        };
-        push(d.start);
-        if (Math.hypot(d.end.x - d.start.x, d.end.y - d.start.y) > 3)
-          push(d.end);
+        const last = penPoints.current.at(-1);
+        if (!last || Math.hypot(last.x - d.start.x, last.y - d.start.y) > 1)
+          penPoints.current = [...penPoints.current, penPoint(d.start, d.end)];
         setPenPreview([...penPoints.current]);
         return;
       }
@@ -1167,7 +1193,6 @@ export function Canvas({ store }: { store: EditorStore }) {
         ]).ok
       )
         store.select(layer.id);
-      setTool('select');
       return;
     }
     const g = gesture.current;
@@ -1366,7 +1391,7 @@ export function Canvas({ store }: { store: EditorStore }) {
                 finishPen();
                 return;
               }
-              if (space || tool === 'hand') return;
+              if (space || tool !== 'select') return;
               const id = hitTest(input, point(event), store.textMeasure);
               const layer = c.layers.find((l) => l.id === id);
               if (!layer) return;
@@ -1493,8 +1518,8 @@ export function Canvas({ store }: { store: EditorStore }) {
           )}
           {penPreview.length > 0 && (
             <svg className="pen-preview" viewBox={`0 0 ${c.width} ${c.height}`}>
-              <polyline
-                points={penPreview.map((p) => `${p.x},${p.y}`).join(' ')}
+              <path
+                d={pathSvg(penValues(penPreview), false)}
                 fill="none"
                 stroke="#8dafff"
                 strokeWidth={Math.max(
@@ -1503,16 +1528,32 @@ export function Canvas({ store }: { store: EditorStore }) {
                 )}
               />
               {penPreview.map((p, i) => (
-                <circle
-                  key={i}
-                  cx={p.x}
-                  cy={p.y}
-                  r={Math.max(
-                    3,
-                    (c.width / Math.max(1, fitWidth) / view.zoom) * 3,
-                  )}
-                  fill="#8dafff"
-                />
+                <g key={i}>
+                  <line
+                    x1={p.incoming.x}
+                    y1={p.incoming.y}
+                    x2={p.outgoing.x}
+                    y2={p.outgoing.y}
+                    stroke="var(--warning)"
+                    strokeWidth={uiScale}
+                  />
+                  <circle
+                    cx={p.outgoing.x}
+                    cy={p.outgoing.y}
+                    r={3 * uiScale}
+                    fill="var(--warning)"
+                  />
+                  <circle
+                    key={i}
+                    cx={p.x}
+                    cy={p.y}
+                    r={Math.max(
+                      3,
+                      (c.width / Math.max(1, fitWidth) / view.zoom) * 3,
+                    )}
+                    fill="#8dafff"
+                  />
+                </g>
               ))}
             </svg>
           )}
@@ -1527,9 +1568,9 @@ export function Canvas({ store }: { store: EditorStore }) {
               }}
             />
           )}
-          {drawBox && (
+          {drawBox && tool !== 'pen' && (
             <div
-              className="draw-preview"
+              className="draw-preview creation-preview"
               style={{
                 left: `${(Math.min(drawBox.start.x, drawBox.end.x) / c.width) * 100}%`,
                 top: `${(Math.min(drawBox.start.y, drawBox.end.y) / c.height) * 100}%`,
@@ -1584,6 +1625,7 @@ export function Canvas({ store }: { store: EditorStore }) {
                   readonly number[]
                 >
               }
+              closed={layer.editor.pathClosed}
               onClose={() => setInternal(undefined)}
             />
           ) : null;

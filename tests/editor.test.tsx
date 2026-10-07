@@ -1,3 +1,4 @@
+import { createObject } from './creation-test-helpers';
 // @vitest-environment jsdom
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
@@ -20,7 +21,7 @@ describe('图层面板 / 属性面板 integration', () => {
   it('创建三类基础图层、重命名、Transform、显隐、排序与删除均可撤销', () => {
     const store = setup();
     fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
-    fireEvent.click(screen.getByRole('button', { name: '创建 矩形' }));
+    createObject('创建 矩形');
     fireEvent.change(screen.getByLabelText('图层名称'), {
       target: { value: 'Blue box' },
     });
@@ -52,9 +53,9 @@ describe('图层面板 / 属性面板 integration', () => {
     fireEvent.click(screen.getByRole('button', { name: '撤销' }));
     expect(store.commands.getSnapshot()).toEqual(before);
     fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
-    fireEvent.click(screen.getByRole('button', { name: '创建 椭圆' }));
+    createObject('创建 椭圆');
     fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
-    fireEvent.click(screen.getByRole('button', { name: '创建 文字' }));
+    createObject('创建 文字');
     expect(store.getSnapshot().project.compositions[0]?.layers).toHaveLength(3);
     fireEvent.click(screen.getByRole('button', { name: '图层操作' }));
     fireEvent.click(
@@ -67,7 +68,7 @@ describe('图层面板 / 属性面板 integration', () => {
   it('非法 属性面板 输入保留工程值并显示错误', () => {
     const store = setup();
     fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
-    fireEvent.click(screen.getByRole('button', { name: '创建 矩形' }));
+    createObject('创建 矩形');
     const before = store.commands.getSnapshot();
     fireEvent.change(screen.getByLabelText('透明度（%）'), {
       target: { value: '200' },
@@ -79,7 +80,7 @@ describe('图层面板 / 属性面板 integration', () => {
   it('Escape 放弃尚未提交的数值且不增加历史', () => {
     const store = setup();
     fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
-    fireEvent.click(screen.getByRole('button', { name: '创建 矩形' }));
+    createObject('创建 矩形');
     const before = store.commands.getSnapshot();
     const input = screen.getByLabelText('旋转（°）');
     input.focus();
@@ -92,7 +93,7 @@ describe('图层面板 / 属性面板 integration', () => {
   it('语义元数据编辑也经过可撤销 Command', () => {
     const store = setup();
     fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
-    fireEvent.click(screen.getByRole('button', { name: '创建 矩形' }));
+    createObject('创建 矩形');
     const before = store.commands.getSnapshot();
     fireEvent.change(screen.getByLabelText('语义角色'), {
       target: { value: 'main_title' },
@@ -116,7 +117,7 @@ describe('图层面板 / 属性面板 integration', () => {
     const store = createPersistedStore(adapter);
     render(<App store={store} />);
     fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
-    fireEvent.click(screen.getByRole('button', { name: '创建 矩形' }));
+    createObject('创建 矩形');
     const before = store.commands.getSnapshot();
     expect(createPersistedStore(adapter).commands.getSnapshot()).toEqual(
       before,

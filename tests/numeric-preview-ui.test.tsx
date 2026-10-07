@@ -100,7 +100,7 @@ it('100 vertical value moves preview linked XY and release creates one animated 
       .keyframes,
   ).toHaveLength(1);
 });
-it('downward drag decreases with modifiers, cancellation and lost capture never write the project', () => {
+it('downward drag decreases with modifiers and explicit cancellation never writes the project', () => {
   const { store, project, history } = setup();
   fireEvent.click(screen.getByRole('button', { name: '解除位置 X/Y 链接' }));
   const input = screen.getByLabelText('位置 X');
@@ -110,7 +110,7 @@ it('downward drag decreases with modifiers, cancellation and lost capture never 
     x: 957,
     y: 540,
   });
-  fireEvent.lostPointerCapture(input);
+  fireEvent.pointerCancel(input);
   fireEvent.pointerUp(input);
   expect(store.getRenderProject()).toBe(project);
   expect(store.commands.undoStack).toHaveLength(history);
@@ -177,4 +177,21 @@ it('link buttons exist only for XY vectors, never scalar, color or four componen
   );
   expect(screen.getAllByRole('button', { name: /X\/Y 链接/ })).toHaveLength(2);
   expect(screen.queryByRole('button', { name: /区域 X\/Y/ })).toBeNull();
+});
+
+it('lost capture followed by window release commits once instead of rebounding', () => {
+  const { store, history } = setup();
+  const input = screen.getByLabelText('位置 X');
+  fireEvent.pointerDown(input, { button: 0, clientY: 200 });
+  fireEvent.pointerMove(input, { clientY: 150 });
+  fireEvent.lostPointerCapture(input);
+  fireEvent.pointerMove(window, { clientY: 125 });
+  fireEvent.pointerUp(window, { clientY: 125 });
+  expect(
+    activeComposition(store.getSnapshot().project).layers[0]!.transform.position
+      .baseValue.x,
+  ).toBe(1035);
+  expect(store.commands.undoStack).toHaveLength(history + 1);
+  fireEvent.pointerUp(input);
+  expect(store.commands.undoStack).toHaveLength(history + 1);
 });

@@ -1,6 +1,4 @@
 import { useEditorSlice } from './use-editor-slice';
-import { desktopService } from '../desktop/service';
-import { importNativeAssets } from '../desktop/asset-service';
 import { getProjectService } from '../desktop/project-service';
 import { dispatchShortcut } from './workspace/shortcuts';
 import type { Shortcut } from './workspace/shortcuts';
@@ -428,7 +426,7 @@ export function Toolbar({ store }: { store: EditorStore }) {
       )}
       <header className="topbar">
         <MenuDropdown>
-          <summary title="工程与创建命令">
+          <summary title="工程命令">
             <span className="application-name">
               <img
                 src="./branding/wordmark.png"
@@ -502,38 +500,6 @@ export function Toolbar({ store }: { store: EditorStore }) {
               }
             >
               设置 · AI
-            </button>
-            <hr />
-            {(
-              [
-                'rectangle',
-                'ellipse',
-                'polygon',
-                'star',
-                'path',
-                'text',
-                'camera',
-                'solid',
-                'null',
-              ] as const
-            ).map((kind) => (
-              <button
-                key={kind}
-                aria-label={`创建 ${layerKindLabels[kind]}`}
-                onClick={() => create(kind)}
-              >
-                创建 {layerKindLabels[kind]}
-              </button>
-            ))}
-            <button
-              aria-label="导入 图片"
-              onClick={() =>
-                desktopService.native
-                  ? void importNativeAssets(store)
-                  : imageRef.current?.click()
-              }
-            >
-              导入图片
             </button>
           </div>
         </MenuDropdown>

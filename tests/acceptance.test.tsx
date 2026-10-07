@@ -1,3 +1,4 @@
+import { createObject } from './creation-test-helpers';
 import { bridgeFor } from '../src/ui/agent-controller';
 import { DEMO_PROMPT } from '../src/core/agent-contracts';
 // @vitest-environment jsdom
@@ -52,7 +53,7 @@ describe('A-01～A-09 用户流程集成验收', () => {
     fireEvent.click(screen.getByRole('button', { name: '新建合成' }));
     fireEvent.click(screen.getByRole('button', { name: '创建合成' }));
     fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
-    fireEvent.click(screen.getByRole('button', { name: '创建 矩形' }));
+    createObject('创建 矩形');
     openTimelineLayers();
     expect(activeComposition(store.getSnapshot().project)).toMatchObject({
       width: 1920,
@@ -89,7 +90,7 @@ describe('A-01～A-09 用户流程集成验收', () => {
   it('A-03 / A-04：手动 Spring 入场淡入，四类图层与文件在关闭重开后保持一致', async () => {
     const store = start();
     fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
-    fireEvent.click(screen.getByRole('button', { name: '创建 矩形' }));
+    createObject('创建 矩形');
     openTimelineLayers();
     edit('位置 X', '-120');
     edit('透明度（%）', '0');
@@ -114,9 +115,9 @@ describe('A-01～A-09 用户流程集成验收', () => {
     expect(createRenderSnapshot(c, 0.5, []).layers[0]?.opacity).toBe(0.5);
     expect(createRenderSnapshot(c, 1, []).layers[0]?.position.x).toBe(960);
     fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
-    fireEvent.click(screen.getByRole('button', { name: '创建 椭圆' }));
+    createObject('创建 椭圆');
     fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
-    fireEvent.click(screen.getByRole('button', { name: '创建 文字' }));
+    createObject('创建 文字');
     const bytes = Uint8Array.from(
       atob(
         'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Zl1sAAAAASUVORK5CYII=',
@@ -171,7 +172,7 @@ describe('A-01～A-09 用户流程集成验收', () => {
   it('A-08：Provider 输出建议时不修改工程；应用后可撤销', async () => {
     const store = start();
     fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
-    fireEvent.click(screen.getByRole('button', { name: '创建 矩形' }));
+    createObject('创建 矩形');
     openTimelineLayers();
     edit('位置 X', '100');
     const before = store.commands.getSnapshot();
@@ -190,7 +191,7 @@ describe('A-01～A-09 用户流程集成验收', () => {
   it('A-09：真实文件输入拒绝非法 JSON 和未知版本，当前工程不部分变化', async () => {
     const store = start();
     fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
-    fireEvent.click(screen.getByRole('button', { name: '创建 矩形' }));
+    createObject('创建 矩形');
     openTimelineLayers();
     const before = store.commands.getSnapshot();
     const count = store.commands.undoStack.length;

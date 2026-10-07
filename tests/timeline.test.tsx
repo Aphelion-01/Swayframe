@@ -1,3 +1,4 @@
+import { createObject } from './creation-test-helpers';
 // @vitest-environment jsdom
 import { openTimelineLayers } from './timeline-test-helpers';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -19,7 +20,7 @@ describe('时间轴 integration', () => {
     render(<App store={store} />);
     openTimelineLayers();
     fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
-    fireEvent.click(screen.getByRole('button', { name: '创建 矩形' }));
+    createObject('创建 矩形');
     openTimelineLayers();
     for (const key of transformKeys)
       fireEvent.click(
@@ -58,7 +59,7 @@ describe('时间轴 integration', () => {
     render(<App store={store} />);
     openTimelineLayers();
     fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
-    fireEvent.click(screen.getByRole('button', { name: '创建 矩形' }));
+    createObject('创建 矩形');
     openTimelineLayers();
     for (const [label, value] of [
       ['位置 X', '-120'],

@@ -1,3 +1,4 @@
+import { createObject } from './creation-test-helpers';
 // @vitest-environment jsdom
 import {
   act,
@@ -125,7 +126,7 @@ it('切换工作区保留助手草稿和待审建议，生成建议不修改Scen
   const store = new EditorStore(createDefaultProject());
   render(<App store={store} />);
   fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
-  fireEvent.click(screen.getByRole('button', { name: '创建 矩形' }));
+  createObject('创建 矩形');
   const before = store.getSnapshot().project;
   fireEvent.click(screen.getByRole('tab', { name: '助手' }));
   fireEvent.change(screen.getByRole('textbox', { name: 'Agent 需求' }), {

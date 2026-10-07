@@ -1,3 +1,4 @@
+import { usePointerRelease } from './workspace/pointer-release';
 import { Modal } from './workspace/primitives';
 import { useInteractionCancel } from './workspace/interaction';
 import { useRef, useState, useSyncExternalStore } from 'react';
@@ -12,15 +13,33 @@ import {
 } from '../core/shape-geometry';
 import { NumberField } from './fields';
 import type { EditorStore } from './editor-store';
+function fitPath(value: readonly number[]) {
+  const xs = value.filter((_, i) => i % 2 === 0),
+    ys = value.filter((_, i) => i % 2 === 1);
+  const left = Math.min(...xs),
+    right = Math.max(...xs),
+    top = Math.min(...ys),
+    bottom = Math.max(...ys);
+  const width = Math.max(120, right - left + 64, (bottom - top + 64) * 1.5),
+    height = width / 1.5;
+  return {
+    x: (left + right - width) / 2,
+    y: (top + bottom - height) / 2,
+    width,
+    height,
+  };
+}
 export function PathEditor({
   store,
   property,
   title = '路径',
+  closed = true,
   onClose,
 }: {
   store: EditorStore;
   property: Property<readonly number[]>;
   title?: string;
+  closed?: boolean;
   onClose: () => void;
 }) {
   const view = useSyncExternalStore(store.subscribe, store.getSnapshot),
@@ -32,6 +51,7 @@ export function PathEditor({
           handle: 0 | 1 | 2;
           data: readonly number[];
           project: unknown;
+          time: number;
         }
       | undefined
     >(undefined);
@@ -49,16 +69,57 @@ export function PathEditor({
     store.setPropertyPreview(undefined);
     store.run(`编辑${title}`, [store.valueCommand(property.id, data)]);
   };
-  const width = 600,
-    height = 400,
-    point = (e: React.PointerEvent<SVGElement>) => {
-      const svg = e.currentTarget.ownerSVGElement!,
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [viewport, setViewport] = useState(() =>
+    fitPath(evaluateProperty(property, view.time) as readonly number[]),
+  );
+  const width = viewport.width,
+    height = viewport.height,
+    point = (e: { clientX: number; clientY: number }) => {
+      const svg = svgRef.current!,
         r = svg.getBoundingClientRect();
       return {
-        x: ((e.clientX - r.left) * width) / r.width - width / 2,
-        y: ((e.clientY - r.top) * height) / r.height - height / 2,
+        x: ((e.clientX - r.left) * width) / r.width + viewport.x,
+        y: ((e.clientY - r.top) * height) / r.height + viewport.y,
       };
     };
+  usePointerRelease({
+    active: () => !!drag.current,
+    move: (e) => {
+      const g = drag.current;
+      if (!g) return;
+      g.data = movePathPoint(g.data, g.index, point(e), g.handle);
+      const frame = property.keyframes.find(
+        (k) => Math.abs(k.time - view.time) < 1e-8,
+      );
+      store.setPropertyPreview({
+        id: property.id,
+        property: frame
+          ? {
+              ...property,
+              keyframes: property.keyframes.map((k) =>
+                k.id === frame.id ? { ...k, value: g.data } : k,
+              ),
+            }
+          : { ...property, baseValue: g.data, keyframes: [] },
+      });
+    },
+    finish: () => {
+      const g = drag.current;
+      drag.current = undefined;
+      if (
+        g &&
+        g.project === store.getSnapshot().project &&
+        g.time === store.getSnapshot().time
+      )
+        commit(g.data);
+      else store.setPropertyPreview(undefined);
+    },
+    cancel: () => {
+      drag.current = undefined;
+      store.setPropertyPreview(undefined);
+    },
+  });
   return (
     <Modal
       onClose={() => {
@@ -84,25 +145,34 @@ export function PathEditor({
           </button>
         </div>
         <svg
-          viewBox="-300 -200 600 400"
+          ref={svgRef}
+          viewBox={`${viewport.x} ${viewport.y} ${width} ${height}`}
+          preserveAspectRatio="none"
+          style={{
+            width: 600,
+            maxWidth: '100%',
+            height: 'auto',
+            aspectRatio: '3 / 2',
+          }}
           className="path-svg"
           aria-label="可编辑贝塞尔路径"
           onDoubleClick={(e) => {
             const r = e.currentTarget.getBoundingClientRect();
             commit(
               addPathPoint(value, {
-                x: ((e.clientX - r.left) * 600) / r.width - 300,
-                y: ((e.clientY - r.top) * 400) / r.height - 200,
+                x: ((e.clientX - r.left) * width) / r.width + viewport.x,
+                y: ((e.clientY - r.top) * height) / r.height + viewport.y,
               }),
             );
             setSelected(value.length / 6);
           }}
         >
           <path
-            d={pathSvg(value, true)}
+            d={pathSvg(value, closed)}
             fill="var(--selection-overlay)"
             stroke="var(--accent-primary)"
             strokeWidth="2"
+            vectorEffect="non-scaling-stroke"
           />
           {Array.from({ length: value.length / 6 }, (_, index) => {
             const p = value.slice(index * 6, index * 6 + 6);
@@ -134,7 +204,9 @@ export function PathEditor({
                     }
                     style={{ cursor: 'move', touchAction: 'none' }}
                     onPointerDown={(e) => {
+                      if (e.button !== 0) return;
                       e.stopPropagation();
+                      store.setPlaying(false);
                       e.currentTarget.setPointerCapture(e.pointerId);
                       setSelected(index);
                       drag.current = {
@@ -142,42 +214,8 @@ export function PathEditor({
                         handle,
                         data: value,
                         project: view.project,
+                        time: view.time,
                       };
-                    }}
-                    onPointerMove={(e) => {
-                      const g = drag.current;
-                      if (!g) return;
-                      g.data = movePathPoint(
-                        g.data,
-                        g.index,
-                        point(e),
-                        g.handle,
-                      );
-                      const frame = property.keyframes.find(
-                        (k) => Math.abs(k.time - view.time) < 1e-8,
-                      );
-                      store.setPropertyPreview({
-                        id: property.id,
-                        property: frame
-                          ? {
-                              ...property,
-                              keyframes: property.keyframes.map((k) =>
-                                k.id === frame.id ? { ...k, value: g.data } : k,
-                              ),
-                            }
-                          : { ...property, baseValue: g.data, keyframes: [] },
-                      });
-                    }}
-                    onPointerUp={() => {
-                      const g = drag.current;
-                      drag.current = undefined;
-                      if (g && g.project === store.getSnapshot().project)
-                        commit(g.data);
-                      else store.setPropertyPreview(undefined);
-                    }}
-                    onPointerCancel={() => {
-                      drag.current = undefined;
-                      store.setPropertyPreview(undefined);
                     }}
                     onKeyDown={(e) => {
                       if (e.key === 'Delete' && value.length > 6) {
@@ -192,6 +230,50 @@ export function PathEditor({
           })}
         </svg>
         <div className="graph-tools">
+          <button onClick={() => setViewport(fitPath(value))}>
+            适应路径视图
+          </button>
+          <button
+            onClick={() => {
+              const offset = Math.min(selected, value.length / 6 - 1) * 6,
+                x = value[offset]!,
+                y = value[offset + 1]!;
+              const dx =
+                  value[offset + 4]! === x && value[offset + 5]! === y
+                    ? 30
+                    : value[offset + 4]! - x,
+                dy = value[offset + 5]! - y;
+              commit(
+                value.map((v, i) =>
+                  i === offset + 2
+                    ? x - dx
+                    : i === offset + 3
+                      ? y - dy
+                      : i === offset + 4
+                        ? x + dx
+                        : i === offset + 5
+                          ? y + dy
+                          : v,
+                ),
+              );
+            }}
+          >
+            转换为平滑点
+          </button>
+          <button
+            onClick={() => {
+              const offset = Math.min(selected, value.length / 6 - 1) * 6;
+              commit(
+                value.map((v, i) =>
+                  i >= offset + 2 && i < offset + 6
+                    ? value[offset + (i % 2)]!
+                    : v,
+                ),
+              );
+            }}
+          >
+            转换为角点
+          </button>
           <button
             onClick={() => {
               commit(addPathPoint(value, { x: 0, y: 0 }));

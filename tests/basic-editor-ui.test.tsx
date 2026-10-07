@@ -1,3 +1,4 @@
+import { createObject } from './creation-test-helpers';
 // @vitest-environment jsdom
 import { openTimelineLayers } from './timeline-test-helpers';
 import { afterEach, beforeAll, expect, it, vi } from 'vitest';
@@ -19,7 +20,7 @@ it('动画开关、属性筛选、图层快捷键和输入焦点隔离在真实 
   render(<App store={store} />);
   openTimelineLayers();
   fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
-  fireEvent.click(screen.getByRole('button', { name: '创建 矩形' }));
+  createObject('创建 矩形');
   openTimelineLayers();
   fireEvent.click(screen.getByRole('button', { name: '开启 矩形 位置 动画' }));
   expect(

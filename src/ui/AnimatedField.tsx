@@ -190,7 +190,10 @@ export function AnimatedField({
         if (!event.currentTarget.contains(event.relatedTarget as Node | null))
           controller.activate();
       }}
-      onPointerDownCapture={(event) => activity(event.target, 'active')}
+      onPointerDownCapture={(event) => {
+        store.setPlaying(false);
+        activity(event.target, 'active');
+      }}
       onPointerUpCapture={(event) => activity(event.target, 'hover')}
       className="animated-field"
       data-kind={typeof value === 'number' ? 'scalar' : 'vector'}
@@ -270,6 +273,23 @@ export function AnimatedField({
                   value[3] ?? 1,
                 ]);
               }}
+            />
+            <NumberField
+              label={`${label} 透明度（%）`}
+              value={(value[3] ?? 1) * 100}
+              previewValue={
+                Array.isArray(shown) ? (shown[3] ?? 1) * 100 : undefined
+              }
+              min={0}
+              max={100}
+              revision={property}
+              time={time}
+              onPreview={(n) =>
+                preview([value[0]!, value[1]!, value[2]!, n / 100])
+              }
+              onCommit={(n) => edit([value[0]!, value[1]!, value[2]!, n / 100])}
+              onCancel={cancel}
+              onError={(m) => store.setStatus(m, true)}
             />
           </div>
         ) : (

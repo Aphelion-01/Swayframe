@@ -116,3 +116,56 @@ it('缩放后的切线拖动正确换算坐标，100次预览一条事务，Undo
   act(() => store.undo());
   expect(store.getSnapshot().project).toEqual(before);
 });
+it('capture loss and release outside the curve retain the edited controls and axis domain; edge handles stay selectable', () => {
+  const { store, svg } = setup(),
+    before = store.getSnapshot().project;
+  fireEvent.change(screen.getByLabelText('曲线模式'), {
+    target: { value: 'speed' },
+  });
+  const handle = screen.getByRole('slider', { name: '出切线手柄' });
+  const grid = () =>
+    [...svg.querySelectorAll('text')].map((n) => n.textContent);
+  const domain = grid();
+  fireEvent.pointerDown(handle, { button: 0, clientX: 200, clientY: 120 });
+  fireEvent.pointerMove(handle, { clientX: 250, clientY: -400 });
+  fireEvent.lostPointerCapture(handle);
+  fireEvent.pointerMove(window, { clientX: 290, clientY: -500 });
+  expect(store.getSnapshot().project).toBe(before);
+  expect(handle).toHaveAttribute('data-offscreen', 'true');
+  expect(Number(handle.getAttribute('cy'))).toBeGreaterThanOrEqual(0);
+  fireEvent.pointerUp(window, { clientX: 290, clientY: -500 });
+  expect(store.getSnapshot().project).not.toBe(before);
+  expect(store.commands.undoStack).toHaveLength(1);
+  expect(grid()).toEqual(domain);
+  const after = store.getSnapshot().project;
+  fireEvent.pointerUp(handle);
+  expect(store.getSnapshot().project).toBe(after);
+  act(() => store.undo());
+  expect(store.getSnapshot().project).toEqual(before);
+});
+it('graph playback and tap Space work without switching panels; holding Space for pan does not start playback', () => {
+  const { store, svg } = setup();
+  fireEvent.click(screen.getByRole('button', { name: '播放曲线预览' }));
+  expect(store.getSnapshot().playing).toBe(true);
+  fireEvent.click(screen.getByRole('button', { name: '暂停曲线预览' }));
+  fireEvent.keyDown(svg, { key: ' ', code: 'Space' });
+  fireEvent.keyUp(svg, { key: ' ', code: 'Space' });
+  expect(store.getSnapshot().playing).toBe(true);
+  act(() => store.setPlaying(false));
+  fireEvent.keyDown(svg, { key: ' ', code: 'Space' });
+  fireEvent.pointerDown(svg, { button: 0, clientX: 100, clientY: 100 });
+  fireEvent.pointerMove(svg, { clientX: 140, clientY: 120 });
+  fireEvent.pointerUp(svg);
+  fireEvent.keyUp(svg, { key: ' ', code: 'Space' });
+  expect(store.getSnapshot().playing).toBe(false);
+});
+it('editing outgoing influence preserves the incoming endpoint including its zero influence', () => {
+  setup();
+  fireEvent.click(screen.getByRole('button', { name: '缓入' }));
+  expect(screen.getByLabelText('入影响比例（%）')).toHaveValue(0);
+  const field = screen.getByLabelText('出影响比例（%）');
+  fireEvent.change(field, { target: { value: '30' } });
+  fireEvent.blur(field);
+  expect(field).toHaveValue(30);
+  expect(screen.getByLabelText('入影响比例（%）')).toHaveValue(0);
+});

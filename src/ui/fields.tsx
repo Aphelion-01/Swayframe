@@ -1,3 +1,4 @@
+import { usePointerRelease } from './workspace/pointer-release';
 import { useInteractionCancel } from './workspace/interaction';
 import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, KeyboardEvent } from 'react';
@@ -140,7 +141,12 @@ export function NumberField({
       time,
     };
   };
-  const moveDrag = (event: React.PointerEvent<HTMLElement>) => {
+  const moveDrag = (
+    event: Pick<
+      PointerEvent,
+      'clientX' | 'clientY' | 'shiftKey' | 'altKey' | 'preventDefault'
+    >,
+  ) => {
     const d = drag.current;
     if (!d) return;
     if (stale(d)) {
@@ -180,13 +186,16 @@ export function NumberField({
     cancelBlur.current = true;
     input.current?.blur();
   };
+  usePointerRelease({
+    active: () => !!drag.current,
+    move: moveDrag,
+    finish: endDrag,
+    cancel,
+  });
   const dragEvents = {
     onPointerMove: moveDrag,
     onPointerUp: endDrag,
     onPointerCancel: cancel,
-    onLostPointerCapture: () => {
-      if (drag.current) cancel();
-    },
   };
   return (
     <label className="field">

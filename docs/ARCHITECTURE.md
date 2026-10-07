@@ -237,3 +237,11 @@ CanvasSnapContext在pointerDown冻结中心/边缘和相邻等间距候选，使
 Timeline复用泛型PointerInteractionState，以互斥载荷管理scrub、marquee、keyframe move、Layer Span、列宽、水平平移和多层排序。起始工程/refs/时间冻结，释放采样最终坐标，Esc/blur/pointercancel取消；drag期间只更新UI。Span trim不移动关键帧，move复用已有时间偏移命令。轨道与Graph/Motion Curve互斥，仍直接修改唯一Property/Segment。预合成导航事件仅桥接已有Canvas面包屑，不引入另一套Composition状态。
 
 静态rows memo、根CSS delta和时间索引避免逐次pointermove/scrub重建轨道；Span窗口监听仅活动时挂载。100层/500和1000帧用React Profiler测量，保留DOM身份及一次Undo；这些数据不等于真实FPS，当前不引入虚拟化。验收范围和限制见`TIMELINE_UX_RESULT.md`。
+
+### 0.9.10 · 连续创建与可靠释放
+
+`workspace/pointer-release.ts`通过窗口级 Pointer 释放协调 NumberField、GraphEditor 与 PathEditor；捕获丢失不等于取消，PointerCancel / Esc / 失焦继续取消。预览不改 Scene，释放只提交一笔共享 Command Transaction。Graph 固定拖动中的纵轴及提交后的视图范围，边缘代理手柄保留越界切线的访问能力，单端速度输入不重算另一端。播放继续复用 Timeline 的唯一时钟。
+
+`workspace/layer-marquee.tsx`复用可见 DOM 图层行的几何范围，仅更新 UI 选区，不进入工程。`workspace/CreatePieMenu.tsx`将图层/时间轴的创建入口移到右键，操作仍调用共享 layer.create 与资产导入服务，原上下文命令保留在中央操作入口。文件菜单不再承载对象创建列表。
+
+钢笔按下/拖动生成位置及对称入/出切线，沿用现有六数值路径节点、pathSvg、Property 和 Renderer；连续绘制不自动切换选择工具。PathEditor 支持节点类型转换、路径范围适配与开放/闭合预览，AppearanceControls 暴露填充和描边透明度。所有持久化操作仍通过 Command System，无工程 schema 变化。验证和边界见 `EDITOR_BUGFIX_0910.md`。

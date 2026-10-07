@@ -1,3 +1,5 @@
+import { useLayerMarquee } from './workspace/layer-marquee';
+import { CreatePieMenu } from './workspace/CreatePieMenu';
 import { timelineReorderCommands } from '../core/timeline-reorder';
 import { CanvasInteractionState as PointerInteractionState } from './workspace/canvas-interaction';
 import type { FrameRef } from '../core/editing-commands';
@@ -92,6 +94,7 @@ export function Timeline({ store }: { store: EditorStore }) {
   );
   const treeResize = interaction.slot('resizingTree');
   const [viewportWidth, setViewportWidth] = useState(1000);
+  const layerMarquee = useLayerMarquee(store);
   const [renaming, setRenaming] = useState<string>();
   const [renameValue, setRenameValue] = useState('');
   const suppressLayerClick = useRef(false);
@@ -106,6 +109,7 @@ export function Timeline({ store }: { store: EditorStore }) {
   const marquee = interaction.slot('marqueeSelecting');
   const suppressTrackClick = useRef(false);
   const spacePan = useRef(false);
+  const spacePanUsed = useRef(false);
   const [box, setBox] = useState<{
     x: number;
     y: number;
@@ -146,7 +150,11 @@ export function Timeline({ store }: { store: EditorStore }) {
   const c = activeComposition(view.project);
   useEffect(() => {
     const release = (event: KeyboardEvent) => {
-      if (event.code === 'Space') spacePan.current = false;
+      if (event.code === 'Space' && spacePan.current) {
+        if (!spacePanUsed.current)
+          store.setPlaying(!store.getSnapshot().playing);
+        spacePan.current = false;
+      }
     };
     window.addEventListener('keyup', release);
     return () => window.removeEventListener('keyup', release);
@@ -593,6 +601,7 @@ export function Timeline({ store }: { store: EditorStore }) {
         <div className="timeline-layer" key={layer.id} data-layer={layer.id}>
           <div
             className="timeline-layer-heading"
+            data-layer-id={layer.id}
             data-locked={layer.locked}
             data-visible={layer.visible}
             data-insertion={
@@ -1163,9 +1172,6 @@ export function Timeline({ store }: { store: EditorStore }) {
       }
       aria-label="时间轴"
       tabIndex={0}
-      onKeyUp={(event) => {
-        if (event.code === 'Space') spacePan.current = false;
-      }}
       onKeyDown={(event) => {
         if (
           (event.target as Element).closest(
@@ -1174,6 +1180,7 @@ export function Timeline({ store }: { store: EditorStore }) {
         )
           return;
         if (event.code === 'Space') {
+          if (!spacePan.current) spacePanUsed.current = false;
           spacePan.current = true;
           event.preventDefault();
           event.stopPropagation();
@@ -1315,11 +1322,13 @@ export function Timeline({ store }: { store: EditorStore }) {
           }}
           onPointerDownCapture={(event) => {
             if (interaction.state.type !== 'idle') return;
+            if (!spacePan.current && layerMarquee.begin(event)) return;
             suppressTrackClick.current = false;
             if (event.button !== 1 && !(event.button === 0 && spacePan.current))
               return;
             event.preventDefault();
             event.stopPropagation();
+            spacePanUsed.current = true;
             interaction.slot('panning').current = {
               x: event.clientX,
               scroll: event.currentTarget.scrollLeft,
@@ -1662,8 +1671,10 @@ export function Timeline({ store }: { store: EditorStore }) {
           />
         </label>
       </div>
+      {layerMarquee.overlay}
       {blankMenu && (
-        <ContextMenu
+        <CreatePieMenu
+          store={store}
           {...blankMenu}
           onClose={() => setBlankMenu(undefined)}
           items={[
@@ -1718,7 +1729,8 @@ export function Timeline({ store }: { store: EditorStore }) {
         />
       )}
       {layerMenu && (
-        <ContextMenu
+        <CreatePieMenu
+          store={store}
           {...layerMenu}
           items={[
             ...layerActions(store, () => {

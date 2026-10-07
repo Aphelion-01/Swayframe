@@ -1,5 +1,9 @@
 import type { SVGProps } from 'react';
 export type IconName =
+  | 'polygon'
+  | 'star'
+  | 'path'
+  | 'solid'
   | 'select'
   | 'hand'
   | 'rectangle'
@@ -37,6 +41,10 @@ export type IconName =
   | 'save'
   | 'export';
 const paths: Record<IconName, string> = {
+  polygon: 'M8 2l6 4v6l-6 3-6-3V6Z',
+  star: 'M8 1l2 4 4.5.6-3.3 3.2.8 4.5L8 11.2l-4 2.1.8-4.5L1.5 5.6 6 5Z',
+  path: 'M2 12C3 1 13 15 14 4 M1 11h2v2H1Z M13 3h2v2h-2Z',
+  solid: 'M2 2h12v12H2Z M3 12L12 3 M3 8l5-5 M8 13l5-5',
   select: 'M3 2.5 12 8l-4 .9-1.9 4.3Z M8 9l3 4',
   hand: 'M5.5 8V4a1 1 0 0 1 2 0v3 M7.5 6V3a1 1 0 0 1 2 0v4 M9.5 6V4a1 1 0 0 1 2 0v4 M11.5 7V6a1 1 0 0 1 2 0v4c0 2.5-1.5 4-4 4H8c-1.5 0-2.3-.7-3-1.8L2.5 9a1 1 0 0 1 1.6-1.2L5.5 9',
   rectangle: 'M3 3h10v10H3Z',

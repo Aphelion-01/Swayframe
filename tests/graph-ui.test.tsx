@@ -1,3 +1,4 @@
+import { createObject } from './creation-test-helpers';
 // @vitest-environment jsdom
 import { openTimelineLayers } from './timeline-test-helpers';
 import { afterEach, beforeAll, expect, it, vi } from 'vitest';
@@ -19,7 +20,7 @@ it('曲线面板缓出与速度输入真实修改动画，撤销恢复', () => {
   render(<App store={store} />);
   openTimelineLayers();
   fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
-  fireEvent.click(screen.getByRole('button', { name: '创建 矩形' }));
+  createObject('创建 矩形');
   openTimelineLayers();
   fireEvent.click(screen.getByRole('button', { name: '开启 矩形 位置 动画' }));
   store.setTime(1);

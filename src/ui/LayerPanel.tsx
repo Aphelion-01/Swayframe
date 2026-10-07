@@ -1,3 +1,5 @@
+import { useLayerMarquee } from './workspace/layer-marquee';
+import { CreatePieMenu } from './workspace/CreatePieMenu';
 import { LayerAccentChip } from './LayerAccentChip';
 import { Icon } from './workspace/icons';
 import { useEditorSlice } from './use-editor-slice';
@@ -24,6 +26,8 @@ export function LayerPanel({ store }: { store: EditorStore }) {
     [renaming, setRenaming] = useState<string>(),
     [name, setName] = useState(''),
     [menu, setMenu] = useState<{ x: number; y: number }>();
+  const [operations, setOperations] = useState(false);
+  const layerMarquee = useLayerMarquee(store);
   const dragging = useRef<string | undefined>(undefined);
   const rename = () => {
     const layer = c.layers.find(
@@ -114,6 +118,7 @@ export function LayerPanel({ store }: { store: EditorStore }) {
                 label="图层操作"
                 onClick={(event) => {
                   const r = event.currentTarget.getBoundingClientRect();
+                  setOperations(true);
                   setMenu({ x: r.left, y: r.bottom });
                 }}
               >
@@ -122,13 +127,22 @@ export function LayerPanel({ store }: { store: EditorStore }) {
             </div>
             {!c.layers.length && (
               <div className="empty-note">
-                <p>在画布上绘制或导入素材</p>
+                <p>在画布上绘制，或在此右键创建对象</p>
               </div>
             )}
-            <div className="layer-list">
+            <div
+              className="layer-list"
+              onPointerDownCapture={layerMarquee.begin}
+              onContextMenu={(event) => {
+                event.preventDefault();
+                setOperations(false);
+                setMenu({ x: event.clientX, y: event.clientY });
+              }}
+            >
               {[...c.layers].reverse().map((layer) => (
                 <div
                   key={layer.id}
+                  data-layer-id={layer.id}
                   className={`layer-row ${view.selection.includes(layer.id) ? 'selected' : ''}`}
                   draggable={!renaming}
                   onDragStart={(event) => {
@@ -162,6 +176,7 @@ export function LayerPanel({ store }: { store: EditorStore }) {
                     event.preventDefault();
                     if (!view.selection.includes(layer.id))
                       store.select(layer.id);
+                    setOperations(false);
                     setMenu({ x: event.clientX, y: event.clientY });
                   }}
                 >
@@ -264,8 +279,17 @@ export function LayerPanel({ store }: { store: EditorStore }) {
           <ProposalPanel store={store} />
         </div>
       </div>
-      {menu && (
+      {layerMarquee.overlay}
+      {menu && operations && (
         <ContextMenu
+          items={items}
+          {...menu}
+          onClose={() => setMenu(undefined)}
+        />
+      )}
+      {menu && !operations && (
+        <CreatePieMenu
+          store={store}
           items={items}
           {...menu}
           onClose={() => setMenu(undefined)}

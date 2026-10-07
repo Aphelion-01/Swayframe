@@ -1724,3 +1724,86 @@ textarea,
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Creation and selection have different visual identities. */
+.creation-preview {
+  border: 2px dashed var(--warning);
+  background: color-mix(in srgb, var(--warning) 8%, transparent);
+}
+.timeline-layer-heading > .timeline-layer-name.active {
+  box-shadow:
+    inset 0 1px var(--timeline-selection),
+    inset 0 -1px var(--timeline-selection);
+}
+.graph-inline .graph-dialog {
+  grid-template-columns: minmax(280px, 720px) minmax(240px, 1fr);
+}
+.graph-inline .graph-svg {
+  max-width: 720px;
+}
+.graph-svg [data-offscreen='true'] {
+  fill: var(--surface-raised);
+  stroke: var(--warning);
+  stroke-width: 2px;
+  vector-effect: non-scaling-stroke;
+}
+.creation-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+}
+.creation-pie {
+  position: fixed;
+  border-radius: 50%;
+  background: var(--surface-raised, #292d33);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 8px 36px #0008;
+}
+.creation-pie > button {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 64px;
+  height: 54px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: transparent;
+  border: 0;
+  font-size: 11px;
+}
+.creation-pie > button .ui-icon {
+  width: 21px;
+  height: 21px;
+}
+.creation-pie > button:hover,
+.creation-pie > button:focus-visible {
+  background: var(--surface-selected);
+  color: var(--accent-primary);
+  border-radius: 12px;
+}
+.creation-pie-center {
+  position: absolute;
+  inset: 36%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 11px;
+}
+.creation-pie-center button {
+  display: flex;
+  align-items: center;
+  padding: 2px 4px;
+}
+.layer-list {
+  min-height: 100px;
+}
+.layer-row {
+  padding-left: 12px;
+}
+.layer-list .timeline-marquee {
+  pointer-events: none;
+}

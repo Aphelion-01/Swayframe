@@ -191,6 +191,13 @@ export function AppearanceControls({
           )}
           {layer.shapeKind === 'path' && (
             <>
+              <div className="section-label">贝塞尔路径 · 填充与描边</div>
+              <AnimatedField
+                store={store}
+                property={editor.properties.fill!}
+                label="路径填充"
+                color
+              />
               <button onClick={() => setPathOpen(true)}>编辑贝塞尔路径</button>
               <label className="checkbox-field">
                 <input
@@ -250,6 +257,7 @@ export function AppearanceControls({
         <PathEditor
           store={store}
           property={editor.properties.path as Property<readonly number[]>}
+          closed={editor.pathClosed}
           onClose={() => setPathOpen(false)}
         />
       )}
