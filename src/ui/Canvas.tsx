@@ -1,3 +1,17 @@
+import { useEditorSlice } from './use-editor-slice';
+import {
+  CanvasInteractionState,
+  canvasInteractionTokens,
+  canvasInteractionModifiers,
+} from './workspace/canvas-interaction';
+import type { PointerEvent as ReactPointerEvent } from 'react';
+import {
+  screenToComposition,
+  continuousRotation,
+  scaleCursor,
+} from '../core/canvas-coordinates';
+import { boundsCorners, getWorldBounds } from '../core/layer-bounds';
+import { localTransformValues } from '../core/transform-editing';
 import {
   createTransformGuideModel,
   hitTransformRotationGuide,
@@ -23,7 +37,6 @@ import type { TransformContext } from '../core/transform-context';
 import { Icon } from './workspace/icons';
 import { sameVisualProject } from '../core/render-invalidation';
 import type { Project } from '../core/project-model';
-import { readAxisLink } from './axis-link';
 import { canvasSnapContext, snapCanvasDelta } from '../core/canvas-snapping';
 import type { CanvasSnapContext, SnapGuide } from '../core/canvas-snapping';
 import { useInteractionCancel } from './workspace/interaction';
@@ -31,7 +44,6 @@ import { ContextMenu } from './workspace/primitives';
 import { layerActions } from './workspace/layer-actions';
 import { PathEditor } from './PathEditor';
 import { TextField } from './fields';
-import { layerToWorld } from '../core/transform-geometry';
 import { useTools } from './workspace/tools';
 import { createLayer } from '../core/project-model';
 import { command } from '../core/command-system';
@@ -62,8 +74,72 @@ import { createRenderSnapshot, hitTest } from '../core/renderer-core';
 import { Canvas2DRenderer } from '../renderers/canvas2d';
 import type { EditorStore } from './editor-store';
 
+type CanvasInteractionData = {
+  marquee: Exclude<
+    | {
+        start: Vec2;
+        end: Vec2;
+        selection: readonly string[];
+        additive: boolean;
+      }
+    | undefined,
+    undefined
+  >;
+  drawing: Exclude<
+    { start: Vec2; end: Vec2; project: unknown } | undefined,
+    undefined
+  >;
+  moveSnap: Exclude<
+    | {
+        context: CanvasSnapContext;
+        transform: TransformContext;
+        axis?: 'x' | 'y';
+        lockedAxis?: 'x' | 'y';
+        duplicate?: boolean;
+        start: Vec2;
+        project: unknown;
+        time: number;
+      }
+    | undefined,
+    undefined
+  >;
+  gesture: Exclude<
+    | {
+        kind: HandleKind;
+        context?: TransformContext;
+        previewContext?: TransformContext;
+        settings: unknown;
+        point: Vec2;
+        items: readonly RenderLayer[];
+        project: unknown;
+        time: number;
+        direction?: Vec2;
+        linked: boolean;
+        moved?: boolean;
+        lastAngle?: number;
+        angle?: number;
+      }
+    | undefined,
+    undefined
+  >;
+  pan: Exclude<
+    | {
+        x: number;
+        y: number;
+        left: number;
+        top: number;
+        offset: { x: number; y: number };
+      }
+    | undefined,
+    undefined
+  >;
+};
+
 export function Canvas({ store }: { store: EditorStore }) {
   const { tool, setTool, space, setSpace } = useTools();
+  const interaction = useRef(
+    new CanvasInteractionState<CanvasInteractionData>(),
+  ).current;
   const guidanceController = guidanceFor(store);
   const guidance = useSyncExternalStore(
     guidanceController.subscribe,
@@ -73,21 +149,17 @@ export function Canvas({ store }: { store: EditorStore }) {
   const penPoints = useRef<Vec2[]>([]);
   const [penPreview, setPenPreview] = useState<readonly Vec2[]>([]);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [hoverId, setHoverId] = useState<string>();
+  const [panning, setPanning] = useState(false);
+  const viewportMode = useRef<'fit' | 'manual'>('fit');
+  const breadcrumbs = useRef<string[]>([]);
+  const [navigation, setNavigation] = useState<readonly string[]>([]);
   const [menu, setMenu] = useState<{ x: number; y: number }>();
   const [internal, setInternal] = useState<string>();
-  const marquee = useRef<
-    | {
-        start: Vec2;
-        end: Vec2;
-        selection: readonly string[];
-        additive: boolean;
-      }
-    | undefined
-  >(undefined);
+  const outsideInteraction = useRef(false);
+  const marquee = interaction.slot('marquee');
   const [marqueeBox, setMarqueeBox] = useState<{ start: Vec2; end: Vec2 }>();
-  const drawing = useRef<
-    { start: Vec2; end: Vec2; project: unknown } | undefined
-  >(undefined);
+  const drawing = interaction.slot('drawing');
   const [drawBox, setDrawBox] = useState<{ start: Vec2; end: Vec2 }>();
   const zoomAnchor = useRef<
     { x: number; y: number; u: number; v: number } | undefined
@@ -101,33 +173,8 @@ export function Canvas({ store }: { store: EditorStore }) {
     }
   });
   const [snapGuides, setSnapGuides] = useState<readonly SnapGuide[]>([]);
-  const moveSnap = useRef<
-    | {
-        context: CanvasSnapContext;
-        transform: TransformContext;
-        axis?: 'x' | 'y';
-        start: Vec2;
-        project: unknown;
-        time: number;
-      }
-    | undefined
-  >(undefined);
-  const gesture = useRef<
-    | {
-        kind: HandleKind;
-        context?: TransformContext;
-        previewContext?: TransformContext;
-        settings: unknown;
-        point: Vec2;
-        items: readonly RenderLayer[];
-        project: unknown;
-        time: number;
-        direction?: Vec2;
-        linked: boolean;
-        moved?: boolean;
-      }
-    | undefined
-  >(undefined);
+  const moveSnap = interaction.slot('moveSnap');
+  const gesture = interaction.slot('gesture');
   const [transformPreview, updateTransformPreview] = useState<
     readonly RenderLayer[] | undefined
   >();
@@ -136,11 +183,62 @@ export function Canvas({ store }: { store: EditorStore }) {
   );
   const setTransformPreview = (items: readonly RenderLayer[] | undefined) => {
     latestTransformPreview.current = items;
+    if (items) {
+      const snapshot = createRenderSnapshot(
+        activeComposition(store.getSnapshot().project),
+        store.getSnapshot().time,
+        [],
+        undefined,
+        store.getSnapshot().project,
+      );
+      store.setPropertyPreviews(
+        localTransformValues(snapshot, items).flatMap((item) => [
+          {
+            ...item.source.transform.position,
+            baseValue: item.position,
+            keyframes: [],
+          },
+          {
+            ...item.source.transform.scale,
+            baseValue: item.scale,
+            keyframes: [],
+          },
+          {
+            ...item.source.transform.rotation,
+            baseValue: item.rotation,
+            keyframes: [],
+          },
+          ...(item.anchor && item.source.editor?.properties.anchor
+            ? [
+                {
+                  ...item.source.editor.properties.anchor,
+                  baseValue: item.anchor,
+                  keyframes: [],
+                },
+              ]
+            : []),
+        ]),
+      );
+    } else store.setPropertyPreviews(undefined);
     updateTransformPreview(items);
   };
   const [measureVersion, setMeasureVersion] = useState(0);
-  const view = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const view = useEditorSlice(store, [
+    'project',
+    'selection',
+    'time',
+    'zoom',
+    'transformSettings',
+    'autoKeyframes',
+    'preview',
+    'propertyPreview',
+    'propertyPreviews',
+  ]);
   const c = activeComposition(view.project);
+  useEffect(() => {
+    breadcrumbs.current = [];
+    setNavigation([]);
+  }, [view.project.id]);
   const ref = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
@@ -152,17 +250,9 @@ export function Canvas({ store }: { store: EditorStore }) {
       store.textMeasure = undefined;
     };
   }, [store]);
-  const pan = useRef<
-    | {
-        x: number;
-        y: number;
-        left: number;
-        top: number;
-        offset: { x: number; y: number };
-      }
-    | undefined
-  >(undefined);
+  const pan = interaction.slot('pan');
   const [fitWidth, setFitWidth] = useState(0);
+  const fitWidthRef = useRef(0);
   const renderer = useRef(new Canvas2DRenderer());
   useEffect(() => {
     const adapter = renderer.current;
@@ -174,6 +264,7 @@ export function Canvas({ store }: { store: EditorStore }) {
     const wheel = (event: WheelEvent) => {
       if (event.ctrlKey || event.metaKey) {
         event.preventDefault();
+        viewportMode.current = 'manual';
         const rect = container.getBoundingClientRect();
         const canvas = ref.current?.getBoundingClientRect();
         if (canvas)
@@ -212,14 +303,23 @@ export function Canvas({ store }: { store: EditorStore }) {
         }));
       zoomAnchor.current = undefined;
     }
-  }, [view.zoom]);
-  useInteractionCancel(() => {
+  }, [view.zoom, fitWidth]);
+  const cancelMarquee = () => {
+    const m = marquee.current;
+    if (m) {
+      store.select(null);
+      for (const id of m.selection) store.select(id, true);
+    }
+    marquee.current = undefined;
+    outsideInteraction.current = false;
+    setMarqueeBox(undefined);
+  };
+  const cancelCanvas = () => {
     penPoints.current = [];
     setPenPreview([]);
     setInternal(undefined);
     setMenu(undefined);
-    marquee.current = undefined;
-    setMarqueeBox(undefined);
+    cancelMarquee();
     drawing.current = undefined;
     setDrawBox(undefined);
     gesture.current = undefined;
@@ -229,8 +329,11 @@ export function Canvas({ store }: { store: EditorStore }) {
     setSnapGuides([]);
     if (pan.current) setOffset(pan.current.offset);
     pan.current = undefined;
+    setPanning(false);
+    setHoverId(undefined);
     setSpace(false);
-  });
+  };
+  useInteractionCancel(cancelCanvas);
   const finishPen = () => {
     const points = penPoints.current;
     if (points.length < 2) {
@@ -287,6 +390,7 @@ export function Canvas({ store }: { store: EditorStore }) {
     const finish = () => finishPen();
     window.addEventListener('motion:finish-path', finish);
     const fit = () => {
+      viewportMode.current = 'fit';
       setOffset({ x: 0, y: 0 });
       store.setZoom(1);
       if (containerRef.current) {
@@ -295,17 +399,32 @@ export function Canvas({ store }: { store: EditorStore }) {
       }
     };
     const actual = () => {
+      viewportMode.current = 'manual';
       store.setZoom(c.width / Math.max(1, fitWidth));
     };
+    const zoomIn = () => {
+      viewportMode.current = 'manual';
+      store.setZoom(store.getSnapshot().zoom * 1.25);
+    };
+    const zoomOut = () => {
+      viewportMode.current = 'manual';
+      store.setZoom(store.getSnapshot().zoom / 1.25);
+    };
+    window.addEventListener('motion:zoom-in', zoomIn);
+    window.addEventListener('motion:zoom-out', zoomOut);
     window.addEventListener('motion:actual-size', actual);
     window.addEventListener('motion:fit', fit);
     return () => {
       window.removeEventListener('motion:finish-path', finish);
       window.removeEventListener('motion:fit', fit);
+      window.removeEventListener('motion:zoom-in', zoomIn);
+      window.removeEventListener('motion:zoom-out', zoomOut);
       window.removeEventListener('motion:actual-size', actual);
     };
   });
-  const rawRenderProject = store.getRenderProject();
+  const rawRenderProject = gesture.current
+    ? view.project
+    : store.getRenderProject();
   const lastVisualProject = useRef<Project | undefined>(undefined);
   const renderProject = useMemo(() => {
     const previous = lastVisualProject.current;
@@ -437,7 +556,18 @@ export function Canvas({ store }: { store: EditorStore }) {
         container.clientHeight -
         parseFloat(style.paddingTop) -
         parseFloat(style.paddingBottom);
-      setFitWidth(Math.max(1, Math.min(width, (height * c.width) / c.height)));
+      const next = Math.max(1, Math.min(width, (height * c.width) / c.height));
+      const previous = fitWidthRef.current;
+      fitWidthRef.current = next;
+      if (
+        previous > 0 &&
+        (viewportMode.current === 'manual' || store.getSnapshot().zoom !== 1) &&
+        Math.abs(next - previous) > 0.1
+      ) {
+        viewportMode.current = 'manual';
+        store.setZoom((store.getSnapshot().zoom * previous) / next);
+      }
+      setFitWidth(next);
     });
     observer.observe(container);
     return () => observer.disconnect();
@@ -486,34 +616,602 @@ export function Canvas({ store }: { store: EditorStore }) {
     };
   }, [view.project.assets, store]);
   const point = (event: {
-    currentTarget: HTMLCanvasElement;
+    currentTarget: HTMLElement;
     clientX: number;
     clientY: number;
   }) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    return {
-      x: ((event.clientX - rect.left) * c.width) / rect.width,
-      y: ((event.clientY - rect.top) * c.height) / rect.height,
-    };
+    const rect = ref.current!.getBoundingClientRect();
+    return screenToComposition({ x: event.clientX, y: event.clientY }, rect, {
+      x: c.width,
+      y: c.height,
+    });
+  };
+  const isCornerRotation = (p: Vec2) => {
+    return gizmo.box.some((corner) => {
+      const center = {
+        x: gizmo.box.reduce((sum, p) => sum + p.x / 4, 0),
+        y: gizmo.box.reduce((sum, p) => sum + p.y / 4, 0),
+      };
+      const d = Math.hypot(corner.x - center.x, corner.y - center.y) || 1;
+      return (
+        Math.hypot(
+          p.x -
+            corner.x -
+            ((corner.x - center.x) / d) *
+              canvasInteractionTokens.rotationOffset *
+              uiScale,
+          p.y -
+            corner.y -
+            ((corner.y - center.y) / d) *
+              canvasInteractionTokens.rotationOffset *
+              uiScale,
+        ) <
+        6 * uiScale
+      );
+    });
+  };
+  const onPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
+    if (event.button !== 0 || interaction.state.type !== 'idle') return;
+    const p = point(event);
+    if (tool !== 'select' && tool !== 'hand') {
+      event.currentTarget.setPointerCapture(event.pointerId);
+      drawing.current = { start: p, end: p, project: view.project };
+      setDrawBox({ start: p, end: p });
+      return;
+    }
+    const selected = input.layers.filter(
+      (l) => view.selection.includes(l.source.id) && !l.source.locked,
+    );
+    const cornerRotate = isCornerRotation(p);
+    const arcHit =
+      cornerRotate ||
+      hitTransformRotationGuide(
+        guideModel,
+        p,
+        canvasInteractionTokens.hitRadius * uiScale,
+      );
+    const handle = !selected.length
+      ? undefined
+      : arcHit
+        ? { kind: 'rotate' as const, point: p }
+        : spatialSelection
+          ? selected
+              .map((l) =>
+                hitTransformHandle(
+                  l,
+                  p,
+                  canvasInteractionTokens.hitRadius * uiScale,
+                  anchorMode,
+                  uiScale,
+                ),
+              )
+              .find(Boolean)
+          : [
+              ...(anchorMode
+                ? selected.map((l) => ({
+                    kind: 'anchor' as const,
+                    point: l.position,
+                  }))
+                : []),
+              ...gizmo.handles,
+            ]
+              .filter(
+                (h) =>
+                  Math.hypot(h.point.x - p.x, h.point.y - p.y) <=
+                  canvasInteractionTokens.hitRadius * uiScale,
+              )
+              .sort(
+                (a, b) =>
+                  Math.hypot(a.point.x - p.x, a.point.y - p.y) -
+                  Math.hypot(b.point.x - p.x, b.point.y - p.y),
+              )[0];
+    if (handle) {
+      event.currentTarget.setPointerCapture(event.pointerId);
+      store.setPlaying(false);
+      guidanceController.activate({
+        property:
+          handle.kind === 'move'
+            ? 'position'
+            : handle.kind === 'rotate'
+              ? 'rotation'
+              : handle.kind === 'anchor'
+                ? 'anchor'
+                : 'scale',
+        phase: 'active',
+        axis:
+          'axis' in handle
+            ? handle.axis
+            : handle.kind === 'scale' && 'direction' in handle
+              ? handle.direction?.x === 0
+                ? 'y'
+                : handle.direction?.y === 0
+                  ? 'x'
+                  : undefined
+              : undefined,
+      });
+      if (handle.kind === 'move') {
+        store.beginDrag(selected[0]!.source.id, p);
+        moveSnap.current = {
+          start: p,
+          project: view.project,
+          time: view.time,
+          transform: store.getDragTransformContext()!,
+          axis: handle.axis,
+          context: canvasSnapContext(
+            evaluated,
+            view.selection,
+            store.textMeasure,
+          ),
+        };
+        return;
+      }
+      gesture.current = {
+        kind: handle.kind,
+        direction: 'direction' in handle ? handle.direction : undefined,
+        linked:
+          'direction' in handle &&
+          !!handle.direction?.x &&
+          !!handle.direction?.y,
+        point: p,
+        items: selected,
+        project: view.project,
+        time: view.time,
+        context:
+          spatialSelection || handle.kind === 'anchor'
+            ? undefined
+            : transformContext,
+        settings: view.transformSettings,
+      };
+      setTransformPreview(selected);
+      return;
+    }
+    const id = hitTest(input, p, store.textMeasure);
+    if (id) {
+      event.currentTarget.setPointerCapture(event.pointerId);
+      if (event.shiftKey || event.metaKey || event.ctrlKey)
+        store.select(id, true);
+      else {
+        store.beginDrag(id, p, canvasInteractionModifiers.duplicate(event));
+        moveSnap.current = {
+          start: p,
+          duplicate: canvasInteractionModifiers.duplicate(event),
+          project: store.getSnapshot().project,
+          time: store.getSnapshot().time,
+          transform: store.getDragTransformContext()!,
+          context: canvasSnapContext(
+            evaluated,
+            store.getSnapshot().selection,
+            store.textMeasure,
+          ),
+        };
+      }
+    } else {
+      marquee.current = {
+        start: p,
+        end: p,
+        selection: view.selection,
+        additive: event.shiftKey,
+      };
+      event.currentTarget.setPointerCapture(event.pointerId);
+      setMarqueeBox({ start: p, end: p });
+      if (!event.shiftKey) store.select(null);
+    }
+  };
+  const onPointerMove = (event: ReactPointerEvent<HTMLElement>) => {
+    const g = gesture.current,
+      p = point(event);
+    if (marquee.current) {
+      marquee.current.end = p;
+      setMarqueeBox({ ...marquee.current });
+      return;
+    }
+    if (drawing.current) {
+      drawing.current.end = p;
+      setDrawBox({ ...drawing.current });
+      return;
+    }
+    if (!g) {
+      const move = moveSnap.current;
+      if (!move) {
+        setHoverId(
+          tool === 'select' && !space && !internal
+            ? (hitTest(input, p, store.textMeasure) ?? undefined)
+            : undefined,
+        );
+        if (space || tool === 'hand') {
+          event.currentTarget.style.cursor = '';
+          return;
+        }
+        if (tool === 'select' && !internal) {
+          const hover = view.selection.length
+            ? gizmo.handles.find(
+                (h) =>
+                  Math.hypot(h.point.x - p.x, h.point.y - p.y) <=
+                  canvasInteractionTokens.hitRadius * uiScale,
+              )
+            : undefined;
+          const overArc =
+            view.selection.length > 0 &&
+            (isCornerRotation(p) ||
+              hitTransformRotationGuide(
+                guideModel,
+                p,
+                canvasInteractionTokens.hitRadius * uiScale,
+              ));
+          const property =
+            overArc || hover?.kind === 'rotate'
+              ? 'rotation'
+              : hover?.kind === 'scale'
+                ? 'scale'
+                : 'position';
+          if (guidance.activity?.phase !== 'active')
+            guidanceController.activate({
+              property,
+              phase: 'hover',
+              axis:
+                hover?.axis ??
+                (hover?.kind === 'scale'
+                  ? hover.direction?.x === 0
+                    ? 'y'
+                    : hover.direction?.y === 0
+                      ? 'x'
+                      : undefined
+                  : undefined),
+            });
+          event.currentTarget.style.cursor =
+            overArc || hover?.kind === 'rotate'
+              ? 'crosshair'
+              : hover?.kind === 'scale'
+                ? scaleCursor(
+                    hover.direction ?? { x: 1, y: 1 },
+                    (Math.atan2(
+                      transformContext.basis.x.y,
+                      transformContext.basis.x.x,
+                    ) *
+                      180) /
+                      Math.PI,
+                  )
+                : hover?.axis === 'x'
+                  ? 'ew-resize'
+                  : hover?.axis === 'y'
+                    ? 'ns-resize'
+                    : hitTest(input, p, store.textMeasure)
+                      ? 'move'
+                      : 'default';
+        }
+        return;
+      }
+      if (move.project !== view.project || move.time !== view.time) {
+        moveSnap.current = undefined;
+        setSnapGuides([]);
+        store.cancelDrag();
+        return;
+      }
+      const delta = { x: p.x - move.start.x, y: p.y - move.start.y };
+      const constrained = constrainedMove(
+        move.transform,
+        delta,
+        event.shiftKey,
+        move.axis ?? (event.shiftKey ? move.lockedAxis : undefined),
+      );
+      if (
+        event.shiftKey &&
+        !move.lockedAxis &&
+        Math.hypot(delta.x, delta.y) > 2 * uiScale
+      )
+        move.lockedAxis = constrained.axis;
+      if (!event.shiftKey) move.lockedAxis = undefined;
+      const axis = constrained.worldAxis;
+      const snapped = snapCanvasDelta(
+        move.context,
+        constrained.delta,
+        snapping &&
+          !canvasInteractionModifiers.snapBypass(event) &&
+          (!constrained.axis || axis !== undefined)
+          ? (canvasInteractionTokens.snapThreshold * c.width) /
+              Math.max(1, ref.current!.getBoundingClientRect().width)
+          : -1,
+        axis,
+      );
+      setSnapGuides(snapped.guides);
+      store.moveDrag({
+        x: move.start.x + snapped.delta.x,
+        y: move.start.y + snapped.delta.y,
+      });
+      return;
+    }
+    if (g.project !== view.project || g.time !== view.time) {
+      gesture.current = undefined;
+      setTransformPreview(undefined);
+      return;
+    }
+    g.moved = g.moved || Math.hypot(p.x - g.point.x, p.y - g.point.y) > 1e-8;
+    if (g.settings !== view.transformSettings) {
+      gesture.current = undefined;
+      setTransformPreview(undefined);
+      return;
+    }
+    if (g.context) {
+      try {
+        const context =
+          event.altKey && g.kind === 'scale'
+            ? createTransformContext(
+                g.context.snapshot,
+                g.context.selectedLayerIds,
+                { ...g.context.settings, pivotMode: 'anchor' },
+                store.textMeasure,
+              )
+            : g.context;
+        g.previewContext = context;
+        let operation = pointerTransformOperation(
+          context,
+          g.kind as 'scale' | 'rotate',
+          g.point,
+          p,
+          g.direction,
+          g.linked ? !event.shiftKey : event.shiftKey,
+        );
+        if (operation.kind === 'rotate') {
+          const currentAngle = Math.atan2(
+            p.y - context.pivot.y,
+            p.x - context.pivot.x,
+          );
+          const previousAngle =
+            g.lastAngle ??
+            Math.atan2(
+              g.point.y - context.pivot.y,
+              g.point.x - context.pivot.x,
+            );
+          g.angle = continuousRotation(
+            previousAngle,
+            currentAngle,
+            g.angle ?? 0,
+          );
+          g.lastAngle = currentAngle;
+          operation = {
+            ...operation,
+            angle: (g.angle * 180) / Math.PI,
+          };
+        }
+        if (operation.kind === 'rotate' && event.shiftKey)
+          operation = {
+            ...operation,
+            angle: Math.round(operation.angle / 15) * 15,
+          };
+        setTransformPreview(transformItems(context, operation));
+      } catch (error) {
+        setTransformPreview(undefined);
+        store.setStatus(
+          error instanceof Error ? error.message : '无法计算变换',
+          true,
+        );
+      }
+      return;
+    }
+    const center = g.items.reduce(
+      (v, l) => ({
+        x: v.x + l.position.x / g.items.length,
+        y: v.y + l.position.y / g.items.length,
+      }),
+      { x: 0, y: 0 },
+    );
+    const screenCenter = g.items.reduce(
+      (v, l) => {
+        const p = transformHandles(l).find((h) => h.kind === 'anchor')!.point;
+        return {
+          x: v.x + p.x / g.items.length,
+          y: v.y + p.y / g.items.length,
+        };
+      },
+      { x: 0, y: 0 },
+    );
+    const ratio = Math.max(
+      0.001,
+      Math.hypot(p.x - screenCenter.x, p.y - screenCenter.y) /
+        Math.max(
+          1,
+          Math.hypot(g.point.x - screenCenter.x, g.point.y - screenCenter.y),
+        ),
+    );
+    let angle =
+      Math.atan2(p.y - screenCenter.y, p.x - screenCenter.x) -
+      Math.atan2(g.point.y - screenCenter.y, g.point.x - screenCenter.x);
+    if (event.shiftKey && g.kind === 'rotate')
+      angle = Math.round(angle / (Math.PI / 12)) * (Math.PI / 12);
+    setTransformPreview(
+      g.items.map((l) =>
+        g.kind === 'scale'
+          ? {
+              ...l,
+              scale: { x: l.scale.x * ratio, y: l.scale.y * ratio },
+              position: {
+                x: center.x + (l.position.x - center.x) * ratio,
+                y: center.y + (l.position.y - center.y) * ratio,
+              },
+            }
+          : g.kind === 'rotate'
+            ? {
+                ...l,
+                rotation: l.rotation + (angle * 180) / Math.PI,
+                position: {
+                  x:
+                    center.x +
+                    (l.position.x - center.x) * Math.cos(angle) -
+                    (l.position.y - center.y) * Math.sin(angle),
+                  y:
+                    center.y +
+                    (l.position.x - center.x) * Math.sin(angle) +
+                    (l.position.y - center.y) * Math.cos(angle),
+                },
+              }
+            : {
+                ...l,
+                position: {
+                  x: l.position.x + p.x - g.point.x,
+                  y: l.position.y + p.y - g.point.y,
+                },
+                anchor: {
+                  x:
+                    (l.anchor?.x ?? 0) +
+                    worldToLayer(l, p).x -
+                    worldToLayer(l, g.point).x,
+                  y:
+                    (l.anchor?.y ?? 0) +
+                    worldToLayer(l, p).y -
+                    worldToLayer(l, g.point).y,
+                },
+              },
+      ),
+    );
+  };
+  const onPointerUp = () => {
+    moveSnap.current = undefined;
+    setSnapGuides([]);
+    const m = marquee.current;
+    marquee.current = undefined;
+    setMarqueeBox(undefined);
+    if (m) {
+      const left = Math.min(m.start.x, m.end.x),
+        right = Math.max(m.start.x, m.end.x),
+        top = Math.min(m.start.y, m.end.y),
+        bottom = Math.max(m.start.y, m.end.y);
+      if (
+        Math.hypot(right - left, bottom - top) >
+        canvasInteractionTokens.marqueeThreshold * uiScale
+      ) {
+        const ids = input.layers
+          .filter((item) => {
+            if (
+              item.source.locked ||
+              !item.source.visible ||
+              item.active === false ||
+              item.opacity === 0 ||
+              item.source.type === 'camera'
+            )
+              return false;
+            const q = boundsCorners(
+              getWorldBounds(item, view.time, store.textMeasure),
+            );
+            return (
+              Math.min(...q.map((p) => p.x)) <= right &&
+              Math.max(...q.map((p) => p.x)) >= left &&
+              Math.min(...q.map((p) => p.y)) <= bottom &&
+              Math.max(...q.map((p) => p.y)) >= top
+            );
+          })
+          .map((item) => item.source.id);
+        store.select(null);
+        for (const id of new Set([...(m.additive ? m.selection : []), ...ids]))
+          store.select(id, true);
+      }
+      return;
+    }
+    const d = drawing.current;
+    drawing.current = undefined;
+    setDrawBox(undefined);
+    if (d) {
+      if (d.project !== store.getSnapshot().project) return;
+      const width = Math.max(2, Math.abs(d.end.x - d.start.x)),
+        height = Math.max(2, Math.abs(d.end.y - d.start.y));
+      if (tool === 'pen') {
+        const push = (p: Vec2) => {
+          const last = penPoints.current.at(-1);
+          if (!last || Math.hypot(last.x - p.x, last.y - p.y) > 1)
+            penPoints.current = [...penPoints.current, p];
+        };
+        push(d.start);
+        if (Math.hypot(d.end.x - d.start.x, d.end.y - d.start.y) > 3)
+          push(d.end);
+        setPenPreview([...penPoints.current]);
+        return;
+      }
+      const kind =
+        tool === 'text' ? 'text' : tool === 'ellipse' ? 'ellipse' : 'rectangle';
+      const layer = createLayer(kind, {
+        position: {
+          x: (d.start.x + d.end.x) / 2,
+          y: (d.start.y + d.end.y) / 2,
+        },
+        width: kind === 'text' && width <= 2 ? 360 : width,
+        height: kind === 'text' && height <= 2 ? 90 : height,
+      });
+      if (
+        store.run('画布创建图层', [
+          command({
+            type: 'layer.create',
+            compositionId: c.id,
+            layer,
+          }),
+        ]).ok
+      )
+        store.select(layer.id);
+      setTool('select');
+      return;
+    }
+    const g = gesture.current;
+    gesture.current = undefined;
+    guidanceController.activate();
+    if (
+      g &&
+      g.moved &&
+      latestTransformPreview.current &&
+      g.project === store.getSnapshot().project &&
+      g.time === store.getSnapshot().time &&
+      g.settings === store.getSnapshot().transformSettings
+    ) {
+      const commands = transformEditCommands(
+        view.project,
+        evaluated,
+        latestTransformPreview.current,
+        g.kind,
+        view.time,
+        view.autoKeyframes,
+      );
+      if (commands.length) store.run('画布变换', commands);
+    } else if (!g) store.endDrag();
+    setTransformPreview(undefined);
   };
   return (
     <section
       className="canvas-panel"
       aria-label="画布区域"
+      data-interaction={interaction.state.type}
       tabIndex={0}
       onPointerDownCapture={(event) => event.currentTarget.focus()}
       style={{
-        cursor:
-          space || tool === 'hand'
+        cursor: panning
+          ? 'grabbing'
+          : space || tool === 'hand'
             ? 'grab'
             : tool === 'select'
               ? 'default'
-              : 'crosshair',
+              : tool === 'text'
+                ? 'text'
+                : 'crosshair',
       }}
     >
       <div className="canvas-caption">
         <span className="composition-caption">
           <Icon name="comp" />
+          {navigation.map((id, index) => (
+            <button
+              key={`${id}-${index}`}
+              aria-label={`返回合成 ${view.project.compositions.find((c) => c.id === id)?.name}`}
+              onClick={() => {
+                store.run('返回合成', [
+                  command({ type: 'project.activate', compositionId: id }),
+                ]);
+                store.select(null);
+                breadcrumbs.current = navigation.slice(0, index);
+                setNavigation(breadcrumbs.current);
+              }}
+            >
+              {displayName(
+                view.project.compositions.find((c) => c.id === id)?.name ?? '',
+              )}{' '}
+              ›
+            </button>
+          ))}
           {displayName(c.name)}
         </span>
         <div className="viewport-tools">
@@ -528,7 +1226,7 @@ export function Canvas({ store }: { store: EditorStore }) {
           <button
             aria-label="画布吸附"
             aria-pressed={snapping}
-            title="吸附到合成与图层边缘/中心 · Alt 临时关闭 · Shift 锁定方向"
+            title={`吸附到合成与图层边缘/中心及等间距 · ${canvasInteractionModifiers.snapHint} · Shift 锁定方向`}
             onClick={() => {
               const next = !snapping;
               setSnapping(next);
@@ -551,9 +1249,11 @@ export function Canvas({ store }: { store: EditorStore }) {
         ref={containerRef}
         onPointerDownCapture={(event) => {
           if (event.button !== 1 && !space && tool !== 'hand') return;
+          if (interaction.state.type !== 'idle') return;
           event.preventDefault();
           event.stopPropagation();
           event.currentTarget.setPointerCapture(event.pointerId);
+          setPanning(true);
           pan.current = {
             x: event.clientX,
             y: event.clientY,
@@ -563,16 +1263,40 @@ export function Canvas({ store }: { store: EditorStore }) {
           };
         }}
         onPointerMove={(event) => {
-          if (!pan.current) return;
+          if (!pan.current) {
+            if (outsideInteraction.current) onPointerMove(event);
+            return;
+          }
           setOffset({
             x: pan.current.offset.x + event.clientX - pan.current.x,
             y: pan.current.offset.y + event.clientY - pan.current.y,
           });
         }}
+        onPointerDown={(event) => {
+          if (
+            event.target === event.currentTarget &&
+            event.button === 0 &&
+            !space &&
+            tool !== 'hand'
+          ) {
+            outsideInteraction.current = true;
+            onPointerDown(event);
+          }
+        }}
         onPointerUp={() => {
+          if (outsideInteraction.current) {
+            onPointerUp();
+            outsideInteraction.current = false;
+          }
           pan.current = undefined;
+          setPanning(false);
+        }}
+        onLostPointerCapture={() => {
+          if (interaction.state.type !== 'idle') cancelCanvas();
         }}
         onPointerCancel={() => {
+          cancelCanvas();
+          setPanning(false);
           if (pan.current) setOffset(pan.current.offset);
           pan.current = undefined;
         }}
@@ -591,504 +1315,27 @@ export function Canvas({ store }: { store: EditorStore }) {
             ref={ref}
             aria-label="合成画布"
             data-testid="canvas"
+            style={
+              space || tool === 'hand'
+                ? { cursor: panning ? 'grabbing' : 'grab' }
+                : tool === 'text'
+                  ? { cursor: 'text' }
+                  : tool !== 'select'
+                    ? { cursor: 'crosshair' }
+                    : undefined
+            }
             width={c.width}
             height={c.height}
-            onPointerDown={(event) => {
-              if (event.button !== 0) return;
-              const p = point(event);
-              if (tool !== 'select' && tool !== 'hand') {
-                event.currentTarget.setPointerCapture(event.pointerId);
-                drawing.current = { start: p, end: p, project: view.project };
-                setDrawBox({ start: p, end: p });
-                return;
-              }
-              const selected = input.layers.filter(
-                (l) => view.selection.includes(l.source.id) && !l.source.locked,
-              );
-              const arcHit = hitTransformRotationGuide(
-                guideModel,
-                p,
-                8 * uiScale,
-              );
-              const handle = arcHit
-                ? { kind: 'rotate' as const, point: p }
-                : spatialSelection
-                  ? selected
-                      .map((l) =>
-                        hitTransformHandle(
-                          l,
-                          p,
-                          8 * uiScale,
-                          anchorMode,
-                          uiScale,
-                        ),
-                      )
-                      .find(Boolean)
-                  : [
-                      ...(anchorMode
-                        ? selected.map((l) => ({
-                            kind: 'anchor' as const,
-                            point: l.position,
-                          }))
-                        : []),
-                      ...gizmo.handles,
-                    ]
-                      .filter(
-                        (h) =>
-                          Math.hypot(h.point.x - p.x, h.point.y - p.y) <=
-                          8 * uiScale,
-                      )
-                      .sort(
-                        (a, b) =>
-                          Math.hypot(a.point.x - p.x, a.point.y - p.y) -
-                          Math.hypot(b.point.x - p.x, b.point.y - p.y),
-                      )[0];
-              if (handle) {
-                event.currentTarget.setPointerCapture(event.pointerId);
-                store.setPlaying(false);
-                guidanceController.activate({
-                  property:
-                    handle.kind === 'move'
-                      ? 'position'
-                      : handle.kind === 'rotate'
-                        ? 'rotation'
-                        : handle.kind === 'anchor'
-                          ? 'anchor'
-                          : 'scale',
-                  phase: 'active',
-                  axis:
-                    'axis' in handle
-                      ? handle.axis
-                      : handle.kind === 'scale' &&
-                          !readAxisLink(
-                            selected[0]!.source.transform.scale.id,
-                          ) &&
-                          'direction' in handle
-                        ? handle.direction?.x === 0
-                          ? 'y'
-                          : handle.direction?.y === 0
-                            ? 'x'
-                            : undefined
-                        : undefined,
-                });
-                if (handle.kind === 'move') {
-                  store.beginDrag(selected[0]!.source.id, p);
-                  moveSnap.current = {
-                    start: p,
-                    project: view.project,
-                    time: view.time,
-                    transform: store.getDragTransformContext()!,
-                    axis: handle.axis,
-                    context: canvasSnapContext(evaluated, view.selection),
-                  };
-                  return;
-                }
-                gesture.current = {
-                  kind: handle.kind,
-                  direction:
-                    'direction' in handle ? handle.direction : undefined,
-                  linked: readAxisLink(selected[0]!.source.transform.scale.id),
-                  point: p,
-                  items: selected,
-                  project: view.project,
-                  time: view.time,
-                  context:
-                    spatialSelection || handle.kind === 'anchor'
-                      ? undefined
-                      : transformContext,
-                  settings: view.transformSettings,
-                };
-                setTransformPreview(selected);
-                return;
-              }
-              const id = hitTest(input, p);
-              if (id) {
-                event.currentTarget.setPointerCapture(event.pointerId);
-                if (event.shiftKey || event.metaKey || event.ctrlKey)
-                  store.select(id, true);
-                else {
-                  store.beginDrag(id, p);
-                  moveSnap.current = {
-                    start: p,
-                    project: store.getSnapshot().project,
-                    time: store.getSnapshot().time,
-                    transform: store.getDragTransformContext()!,
-                    context: canvasSnapContext(
-                      evaluated,
-                      store.getSnapshot().selection,
-                    ),
-                  };
-                }
-              } else {
-                marquee.current = {
-                  start: p,
-                  end: p,
-                  selection: view.selection,
-                  additive: event.shiftKey,
-                };
-                event.currentTarget.setPointerCapture(event.pointerId);
-                setMarqueeBox({ start: p, end: p });
-                if (!event.shiftKey) store.select(null);
-              }
-            }}
-            onPointerMove={(event) => {
-              const g = gesture.current,
-                p = point(event);
-              if (marquee.current) {
-                marquee.current.end = p;
-                setMarqueeBox({ ...marquee.current });
-                return;
-              }
-              if (drawing.current) {
-                drawing.current.end = p;
-                setDrawBox({ ...drawing.current });
-                return;
-              }
-              if (!g) {
-                const move = moveSnap.current;
-                if (!move) {
-                  if (tool === 'select' && !internal) {
-                    const hover = gizmo.handles.find(
-                      (h) =>
-                        Math.hypot(h.point.x - p.x, h.point.y - p.y) <=
-                        8 * uiScale,
-                    );
-                    const overArc = hitTransformRotationGuide(
-                      guideModel,
-                      p,
-                      8 * uiScale,
-                    );
-                    const property =
-                      overArc || hover?.kind === 'rotate'
-                        ? 'rotation'
-                        : hover?.kind === 'scale'
-                          ? 'scale'
-                          : 'position';
-                    if (guidance.activity?.phase !== 'active')
-                      guidanceController.activate({
-                        property,
-                        phase: 'hover',
-                        axis:
-                          hover?.axis ??
-                          (hover?.kind === 'scale' &&
-                          !readAxisLink(
-                            input.layers.find((l) =>
-                              view.selection.includes(l.source.id),
-                            )!.source.transform.scale.id,
-                          )
-                            ? hover.direction?.x === 0
-                              ? 'y'
-                              : hover.direction?.y === 0
-                                ? 'x'
-                                : undefined
-                            : undefined),
-                      });
-                    event.currentTarget.style.cursor =
-                      overArc || hover?.kind === 'rotate'
-                        ? 'crosshair'
-                        : hover?.kind === 'scale'
-                          ? hover.direction?.x && hover.direction?.y
-                            ? 'nwse-resize'
-                            : hover.direction?.x
-                              ? 'ew-resize'
-                              : 'ns-resize'
-                          : hover?.axis === 'x'
-                            ? 'ew-resize'
-                            : hover?.axis === 'y'
-                              ? 'ns-resize'
-                              : 'default';
-                  }
-                  return;
-                }
-                if (move.project !== view.project || move.time !== view.time) {
-                  moveSnap.current = undefined;
-                  setSnapGuides([]);
-                  store.cancelDrag();
-                  return;
-                }
-                const delta = { x: p.x - move.start.x, y: p.y - move.start.y };
-                const constrained = constrainedMove(
-                  move.transform,
-                  delta,
-                  event.shiftKey,
-                  move.axis,
-                );
-                const axis = constrained.worldAxis;
-                const snapped = snapCanvasDelta(
-                  move.context,
-                  constrained.delta,
-                  snapping &&
-                    !event.altKey &&
-                    (!constrained.axis || axis !== undefined)
-                    ? (6 * c.width) /
-                        Math.max(
-                          1,
-                          event.currentTarget.getBoundingClientRect().width,
-                        )
-                    : -1,
-                  axis,
-                );
-                setSnapGuides(snapped.guides);
-                store.moveDrag({
-                  x: move.start.x + snapped.delta.x,
-                  y: move.start.y + snapped.delta.y,
-                });
-                return;
-              }
-              if (g.project !== view.project || g.time !== view.time) {
-                gesture.current = undefined;
-                setTransformPreview(undefined);
-                return;
-              }
-              g.moved = Math.hypot(p.x - g.point.x, p.y - g.point.y) > 1e-8;
-              if (g.settings !== view.transformSettings) {
-                gesture.current = undefined;
-                setTransformPreview(undefined);
-                return;
-              }
-              if (g.context) {
-                try {
-                  const context =
-                    event.altKey && g.kind === 'scale'
-                      ? createTransformContext(
-                          g.context.snapshot,
-                          g.context.selectedLayerIds,
-                          { ...g.context.settings, pivotMode: 'anchor' },
-                          store.textMeasure,
-                        )
-                      : g.context;
-                  g.previewContext = context;
-                  let operation = pointerTransformOperation(
-                    context,
-                    g.kind as 'scale' | 'rotate',
-                    g.point,
-                    p,
-                    g.direction,
-                    g.linked || event.shiftKey,
-                  );
-                  if (operation.kind === 'rotate' && event.shiftKey)
-                    operation = {
-                      ...operation,
-                      angle: Math.round(operation.angle / 15) * 15,
-                    };
-                  setTransformPreview(transformItems(context, operation));
-                } catch (error) {
-                  setTransformPreview(undefined);
-                  store.setStatus(
-                    error instanceof Error ? error.message : '无法计算变换',
-                    true,
-                  );
-                }
-                return;
-              }
-              const center = g.items.reduce(
-                (v, l) => ({
-                  x: v.x + l.position.x / g.items.length,
-                  y: v.y + l.position.y / g.items.length,
-                }),
-                { x: 0, y: 0 },
-              );
-              const screenCenter = g.items.reduce(
-                (v, l) => {
-                  const p = transformHandles(l).find(
-                    (h) => h.kind === 'anchor',
-                  )!.point;
-                  return {
-                    x: v.x + p.x / g.items.length,
-                    y: v.y + p.y / g.items.length,
-                  };
-                },
-                { x: 0, y: 0 },
-              );
-              const ratio = Math.max(
-                0.001,
-                Math.hypot(p.x - screenCenter.x, p.y - screenCenter.y) /
-                  Math.max(
-                    1,
-                    Math.hypot(
-                      g.point.x - screenCenter.x,
-                      g.point.y - screenCenter.y,
-                    ),
-                  ),
-              );
-              let angle =
-                Math.atan2(p.y - screenCenter.y, p.x - screenCenter.x) -
-                Math.atan2(
-                  g.point.y - screenCenter.y,
-                  g.point.x - screenCenter.x,
-                );
-              if (event.shiftKey && g.kind === 'rotate')
-                angle = Math.round(angle / (Math.PI / 12)) * (Math.PI / 12);
-              setTransformPreview(
-                g.items.map((l) =>
-                  g.kind === 'scale'
-                    ? {
-                        ...l,
-                        scale: { x: l.scale.x * ratio, y: l.scale.y * ratio },
-                        position: {
-                          x: center.x + (l.position.x - center.x) * ratio,
-                          y: center.y + (l.position.y - center.y) * ratio,
-                        },
-                      }
-                    : g.kind === 'rotate'
-                      ? {
-                          ...l,
-                          rotation: l.rotation + (angle * 180) / Math.PI,
-                          position: {
-                            x:
-                              center.x +
-                              (l.position.x - center.x) * Math.cos(angle) -
-                              (l.position.y - center.y) * Math.sin(angle),
-                            y:
-                              center.y +
-                              (l.position.x - center.x) * Math.sin(angle) +
-                              (l.position.y - center.y) * Math.cos(angle),
-                          },
-                        }
-                      : {
-                          ...l,
-                          position: {
-                            x: l.position.x + p.x - g.point.x,
-                            y: l.position.y + p.y - g.point.y,
-                          },
-                          anchor: {
-                            x:
-                              (l.anchor?.x ?? 0) +
-                              worldToLayer(l, p).x -
-                              worldToLayer(l, g.point).x,
-                            y:
-                              (l.anchor?.y ?? 0) +
-                              worldToLayer(l, p).y -
-                              worldToLayer(l, g.point).y,
-                          },
-                        },
-                ),
-              );
-            }}
-            onPointerUp={() => {
-              moveSnap.current = undefined;
-              setSnapGuides([]);
-              const m = marquee.current;
-              marquee.current = undefined;
-              setMarqueeBox(undefined);
-              if (m) {
-                const left = Math.min(m.start.x, m.end.x),
-                  right = Math.max(m.start.x, m.end.x),
-                  top = Math.min(m.start.y, m.end.y),
-                  bottom = Math.max(m.start.y, m.end.y);
-                if (Math.hypot(right - left, bottom - top) > 3) {
-                  const ids = input.layers
-                    .filter((item) => {
-                      if (item.source.locked) return false;
-                      const q =
-                        item.quad ??
-                        [
-                          {
-                            x: -item.source.width / 2,
-                            y: -item.source.height / 2,
-                          },
-                          {
-                            x: item.source.width / 2,
-                            y: -item.source.height / 2,
-                          },
-                          {
-                            x: item.source.width / 2,
-                            y: item.source.height / 2,
-                          },
-                          {
-                            x: -item.source.width / 2,
-                            y: item.source.height / 2,
-                          },
-                        ].map((p) => layerToWorld(item, p));
-                      return (
-                        Math.min(...q.map((p) => p.x)) <= right &&
-                        Math.max(...q.map((p) => p.x)) >= left &&
-                        Math.min(...q.map((p) => p.y)) <= bottom &&
-                        Math.max(...q.map((p) => p.y)) >= top
-                      );
-                    })
-                    .map((item) => item.source.id);
-                  store.select(null);
-                  for (const id of new Set([
-                    ...(m.additive ? m.selection : []),
-                    ...ids,
-                  ]))
-                    store.select(id, true);
-                }
-                return;
-              }
-              const d = drawing.current;
-              drawing.current = undefined;
-              setDrawBox(undefined);
-              if (d) {
-                if (d.project !== store.getSnapshot().project) return;
-                const width = Math.max(2, Math.abs(d.end.x - d.start.x)),
-                  height = Math.max(2, Math.abs(d.end.y - d.start.y));
-                if (tool === 'pen') {
-                  const push = (p: Vec2) => {
-                    const last = penPoints.current.at(-1);
-                    if (!last || Math.hypot(last.x - p.x, last.y - p.y) > 1)
-                      penPoints.current = [...penPoints.current, p];
-                  };
-                  push(d.start);
-                  if (Math.hypot(d.end.x - d.start.x, d.end.y - d.start.y) > 3)
-                    push(d.end);
-                  setPenPreview([...penPoints.current]);
-                  return;
-                }
-                const kind =
-                  tool === 'text'
-                    ? 'text'
-                    : tool === 'ellipse'
-                      ? 'ellipse'
-                      : 'rectangle';
-                const layer = createLayer(kind, {
-                  position: {
-                    x: (d.start.x + d.end.x) / 2,
-                    y: (d.start.y + d.end.y) / 2,
-                  },
-                  width: kind === 'text' && width <= 2 ? 360 : width,
-                  height: kind === 'text' && height <= 2 ? 90 : height,
-                });
-                if (
-                  store.run('画布创建图层', [
-                    command({
-                      type: 'layer.create',
-                      compositionId: c.id,
-                      layer,
-                    }),
-                  ]).ok
-                )
-                  store.select(layer.id);
-                setTool('select');
-                return;
-              }
-              const g = gesture.current;
-              gesture.current = undefined;
-              guidanceController.activate();
-              if (
-                g &&
-                g.moved &&
-                latestTransformPreview.current &&
-                g.project === store.getSnapshot().project &&
-                g.time === store.getSnapshot().time &&
-                g.settings === store.getSnapshot().transformSettings
-              ) {
-                const commands = transformEditCommands(
-                  view.project,
-                  evaluated,
-                  latestTransformPreview.current,
-                  g.kind,
-                  view.time,
-                  view.autoKeyframes,
-                );
-                if (commands.length) store.run('画布变换', commands);
-              } else if (!g) store.endDrag();
-              setTransformPreview(undefined);
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerLeave={() => {
+              setHoverId(undefined);
+              if (ref.current) ref.current.style.cursor = '';
             }}
             onContextMenu={(event) => {
               event.preventDefault();
-              const id = hitTest(input, point(event));
+              const id = hitTest(input, point(event), store.textMeasure);
               if (id && !view.selection.includes(id)) store.select(id);
               setMenu({ x: event.clientX, y: event.clientY });
             }}
@@ -1097,11 +1344,14 @@ export function Canvas({ store }: { store: EditorStore }) {
                 finishPen();
                 return;
               }
-              const id = hitTest(input, point(event));
+              if (space || tool === 'hand') return;
+              const id = hitTest(input, point(event), store.textMeasure);
               const layer = c.layers.find((l) => l.id === id);
               if (!layer) return;
               store.select(layer.id);
               if (layer.type === 'precomp' && layer.compositionId) {
+                breadcrumbs.current = [...breadcrumbs.current, c.id];
+                setNavigation(breadcrumbs.current);
                 store.run('进入预合成', [
                   command({
                     type: 'project.activate',
@@ -1114,8 +1364,7 @@ export function Canvas({ store }: { store: EditorStore }) {
             }}
             onPointerCancel={() => {
               guidanceController.activate();
-              marquee.current = undefined;
-              setMarqueeBox(undefined);
+              cancelMarquee();
               drawing.current = undefined;
               setDrawBox(undefined);
               gesture.current = undefined;
@@ -1126,8 +1375,7 @@ export function Canvas({ store }: { store: EditorStore }) {
             }}
             onLostPointerCapture={() => {
               guidanceController.activate();
-              marquee.current = undefined;
-              setMarqueeBox(undefined);
+              cancelMarquee();
               drawing.current = undefined;
               setDrawBox(undefined);
               gesture.current = undefined;
@@ -1137,6 +1385,28 @@ export function Canvas({ store }: { store: EditorStore }) {
               setSnapGuides([]);
             }}
           />
+          {hoverId &&
+            !view.selection.includes(hoverId) &&
+            tool === 'select' &&
+            !space &&
+            (() => {
+              const item = input.layers.find((l) => l.source.id === hoverId);
+              if (!item) return null;
+              const q =
+                item.quad ??
+                boundsCorners(
+                  getWorldBounds(item, view.time, store.textMeasure),
+                );
+              return (
+                <svg
+                  className="canvas-hover-outline"
+                  aria-label="悬停对象轮廓"
+                  viewBox={`0 0 ${c.width} ${c.height}`}
+                >
+                  <polygon points={q.map((p) => `${p.x},${p.y}`).join(' ')} />
+                </svg>
+              );
+            })()}
           {!spatialSelection &&
             view.selection.length > 0 &&
             tool === 'select' &&
@@ -1157,15 +1427,46 @@ export function Canvas({ store }: { store: EditorStore }) {
               aria-label="画布吸附参考线"
               viewBox={`0 0 ${c.width} ${c.height}`}
             >
-              {snapGuides.map((guide) => (
-                <line
-                  key={guide.axis}
-                  x1={guide.axis === 'x' ? guide.value : 0}
-                  x2={guide.axis === 'x' ? guide.value : c.width}
-                  y1={guide.axis === 'y' ? guide.value : 0}
-                  y2={guide.axis === 'y' ? guide.value : c.height}
-                />
-              ))}
+              {snapGuides.map((guide) =>
+                guide.spacing ? (
+                  <g key={guide.axis} aria-label="等间距参考线">
+                    {guide.spacing.spans.map(([a, b], i) => (
+                      <g key={i}>
+                        <line
+                          x1={guide.axis === 'x' ? a : guide.spacing!.cross}
+                          x2={guide.axis === 'x' ? b : guide.spacing!.cross}
+                          y1={guide.axis === 'y' ? a : guide.spacing!.cross}
+                          y2={guide.axis === 'y' ? b : guide.spacing!.cross}
+                        />
+                        <text
+                          x={
+                            guide.axis === 'x'
+                              ? (a + b) / 2
+                              : guide.spacing!.cross + 8 * uiScale
+                          }
+                          y={
+                            guide.axis === 'y'
+                              ? (a + b) / 2
+                              : guide.spacing!.cross - 8 * uiScale
+                          }
+                          fontSize={11 * uiScale}
+                          textAnchor="middle"
+                        >
+                          {Math.round(guide.spacing!.distance * 10) / 10}
+                        </text>
+                      </g>
+                    ))}
+                  </g>
+                ) : (
+                  <line
+                    key={guide.axis}
+                    x1={guide.axis === 'x' ? guide.value : 0}
+                    x2={guide.axis === 'x' ? guide.value : c.width}
+                    y1={guide.axis === 'y' ? guide.value : 0}
+                    y2={guide.axis === 'y' ? guide.value : c.height}
+                  />
+                ),
+              )}
             </svg>
           )}
           {penPreview.length > 0 && (
@@ -1292,13 +1593,9 @@ export function Canvas({ store }: { store: EditorStore }) {
             const selected = input.layers.filter((l) =>
               view.selection.includes(l.source.id),
             );
-            const points = selected.flatMap<Vec2>(
-              (item) =>
-                item.quad ??
-                [
-                  { x: -item.source.width / 2, y: -item.source.height / 2 },
-                  { x: item.source.width / 2, y: item.source.height / 2 },
-                ].map((p) => layerToWorld(item, p)),
+            viewportMode.current = 'manual';
+            const points = selected.flatMap((item) =>
+              boundsCorners(getWorldBounds(item, view.time, store.textMeasure)),
             );
             const left = Math.min(...points.map((p) => p.x)),
               right = Math.max(...points.map((p) => p.x)),
@@ -1329,32 +1626,43 @@ export function Canvas({ store }: { store: EditorStore }) {
           缩放{' '}
           <select
             aria-label="画布缩放"
-            value={view.zoom}
+            value={
+              viewportMode.current === 'fit' && view.zoom === 1
+                ? 'fit'
+                : String(
+                    Math.round(((fitWidth * view.zoom) / c.width) * 10000) /
+                      100,
+                  )
+            }
             onChange={(event) => {
-              if (event.target.value === 'actual')
-                store.setZoom(c.width / Math.max(1, fitWidth));
-              else if (event.target.value === 'double')
-                store.setZoom((c.width * 2) / Math.max(1, fitWidth));
+              if (event.target.value === 'fit')
+                window.dispatchEvent(new Event('motion:fit'));
               else {
-                store.setZoom(Number(event.target.value));
-                if (Number(event.target.value) === 1) {
-                  setOffset({ x: 0, y: 0 });
-                  if (containerRef.current) {
-                    containerRef.current.scrollLeft = 0;
-                    containerRef.current.scrollTop = 0;
-                  }
-                }
+                viewportMode.current = 'manual';
+                store.setZoom(
+                  ((c.width / Math.max(1, fitWidth)) *
+                    Number(event.target.value)) /
+                    100,
+                );
               }
             }}
           >
-            <option value={0.5}>50%</option>
-            <option value={1}>适合窗口</option>
-            <option value="actual">100% 实际尺寸</option>
-            <option value="double">200% 实际尺寸</option>
-            <option value={2}>200%</option>
-            <option value={4}>400%</option>
-            {![0.5, 1, 1.5, 2, 4].includes(view.zoom) && (
-              <option value={view.zoom}>{Math.round(view.zoom * 100)}%</option>
+            <option value="fit">适合窗口</option>
+            {[25, 50, 100, 200, 400].map((percent) => (
+              <option key={percent} value={percent}>
+                {percent}%
+              </option>
+            ))}
+            {![25, 50, 100, 200, 400].includes(
+              Math.round(((fitWidth * view.zoom) / c.width) * 10000) / 100,
+            ) && (
+              <option
+                value={
+                  Math.round(((fitWidth * view.zoom) / c.width) * 10000) / 100
+                }
+              >
+                {Math.round(((fitWidth * view.zoom) / c.width) * 100)}%
+              </option>
             )}
           </select>
         </label>

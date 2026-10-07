@@ -16,6 +16,7 @@ export function NumberField({
   time,
   previewValue,
   compactLabel,
+  mixed = false,
 }: {
   label: string;
   value: number;
@@ -30,6 +31,7 @@ export function NumberField({
   time?: number;
   previewValue?: number;
   compactLabel?: string;
+  mixed?: boolean;
 }) {
   const format = (v: number) => String(Number(v.toFixed(3)));
   const [draft, setDraft] = useState(format(value));
@@ -207,10 +209,15 @@ export function NumberField({
         ref={input}
         className="scrub-value"
         aria-label={label}
-        title="向上拖动增大 · 向下拖动减小 · 点击输入 · Shift 大步长 · Alt 小步长"
+        title={
+          mixed
+            ? '混合值（Mixed）· 输入或拖动统一调整'
+            : '向上拖动增大 · 向下拖动减小 · 点击输入 · Shift 大步长 · Alt 小步长'
+        }
         type="number"
         step="any"
-        value={draft}
+        value={mixed && !editing.current && !drag.current ? '' : draft}
+        placeholder={mixed ? '—' : undefined}
         onPointerDown={(event) => beginDrag(event, true)}
         {...dragEvents}
         onFocus={() => {

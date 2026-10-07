@@ -219,3 +219,11 @@ Transform矩阵分解允许塌缩的零轴，以存活轴或既有角度保持�
 ### 0.9.7 · Professional Proposal 约束
 
 IntelligenceService 的 submitProposal 使用当前工具逐项约束的参数 schema，步骤上限与内部校验同为12。格式、步数或工具名无效时仅允许一次模型纠正，取消与传输异常直接传播；纠正不执行任何命令，最终计划仍由原 Registry/Transaction 校验与提交。工具范围不放宽，不支持的效果需说明近似方案的边界。
+
+### 0.9.8 · Canvas Direct Manipulation
+
+`core/canvas-coordinates.ts`集中 CSS 屏幕/合成/图层矩阵转换，devicePixelRatio只用于绘制像素密度。`workspace/canvas-interaction.ts`以discriminated union互斥管理Pointer载荷，modifier registry规定Ctrl/Cmd临时关闭吸附、Alt/Option起始复制。Canvas使用useEditorSlice订阅相关字段；手势起始TransformContext固定，连续旋转累计相邻角差，避免跨角度分支跳变。
+
+临时Move继续使用PositionPreview；Scale/Rotate/Anchor同时更新临时PropertyPreviews供Inspector读取，计算与提交仍以未修改的起始Scene为准。Alt复制只在getRenderProject中暂时展示副本，释放以同一drag Transaction创建并定位副本；取消不写Scene。CommandSystem.coalesceRecent仅接受显式相邻匹配历史ID、同标签且无Redo的Scene事务，用于同次按键repeat，不是任意时间窗口自动合并。
+
+CanvasSnapContext在pointerDown冻结中心/边缘和相邻等间距候选，使用实际WorldBounds/TextMeasure，排除随父级移动的子层；阈值由CSS屏幕像素换算。mask-hit为只读几何选择过滤，非渲染器替代。蒙版软边、逐像素alpha与3D蒙版精确命中限制单列验收文档。项目格式、GUI/Agent共享Command以及Intelligence只输出Proposal的边界保持。

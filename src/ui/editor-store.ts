@@ -86,6 +86,7 @@ export class EditorStore {
   #frameClipboard: readonly CopiedFrame[] = [];
   #drag?: {
     layerId: ID;
+    duplicates?: readonly { sourceId: ID; layer: Layer }[];
     context: TransformContext;
     pointer: Vec2;
     position: Vec2;
@@ -215,7 +216,17 @@ export class EditorStore {
     this.#set({ propertyPreview: undefined, propertyPreviews: undefined });
   }
   getRenderProject(): Project {
-    return this.#renderPreview ?? this.#view.project;
+    const base = this.#renderPreview ?? this.#view.project;
+    const copies = this.#drag?.duplicates;
+    if (!copies || !this.#view.preview) return base;
+    return {
+      ...base,
+      compositions: base.compositions.map((c) =>
+        c.id === base.activeCompositionId
+          ? { ...c, layers: [...copies.map((c) => c.layer), ...c.layers] }
+          : c,
+      ),
+    };
   }
   setStatus(status: string, error = false): void {
     this.#set({ status, error });
@@ -660,7 +671,7 @@ export class EditorStore {
   getDragTransformContext(): TransformContext | undefined {
     return this.#drag?.context;
   }
-  beginDrag(layerId: ID, pointer: Vec2): void {
+  beginDrag(layerId: ID, pointer: Vec2, duplicate = false): void {
     this.cancelDrag();
     if (!this.#view.selection.includes(layerId)) this.select(layerId);
     this.setPlaying(false);
@@ -717,7 +728,28 @@ export class EditorStore {
         ];
       }),
     );
+    const sources = composition.layers.filter(
+      (l) => this.#view.selection.includes(l.id) && !l.locked,
+    );
+    const copies = duplicate
+      ? sources.map((source) => ({
+          sourceId: source.id,
+          layer: cloneLayer(source),
+        }))
+      : undefined;
+    if (copies)
+      for (const copy of copies) {
+        const parent = copies.find(
+          (c) => c.sourceId === copy.layer.editor?.parentId,
+        );
+        if (parent && copy.layer.editor)
+          copy.layer = {
+            ...copy.layer,
+            editor: { ...copy.layer.editor, parentId: parent.layer.id },
+          };
+      }
     this.#drag = {
+      duplicates: copies,
       layerId: root.id,
       context: createTransformContext(
         snapshot,
@@ -818,6 +850,52 @@ export class EditorStore {
     )
       drag.edit.cancel();
     else {
+      if (drag.duplicates) {
+        const c = activeComposition(this.#view.project);
+        const positions = [
+          { layerId: drag.layerId, position: preview.position },
+          ...(preview.others ?? []),
+        ];
+        const created = drag.duplicates.map((copy) => copy.layer);
+        const draft = {
+          ...this.#view.project,
+          compositions: this.#view.project.compositions.map((comp) =>
+            comp.id === c.id
+              ? { ...comp, layers: [...comp.layers, ...created] }
+              : comp,
+          ),
+        };
+        const commands = created.map((layer) =>
+          command({ type: 'layer.create', compositionId: c.id, layer }),
+        );
+        for (const copy of drag.duplicates) {
+          const position = positions.find(
+            (p) => p.layerId === copy.sourceId,
+          )?.position;
+          if (position)
+            commands.push(
+              ...animationEdit(
+                draft,
+                copy.layer.transform.position.id,
+                drag.time,
+                position,
+                this.#view.autoKeyframes,
+              ),
+            );
+        }
+        const result = drag.edit.commit(commands);
+        if (result.ok)
+          this.#set({
+            selection: created.map((l) => l.id),
+            frames: [],
+            preview: undefined,
+          });
+        else {
+          this.#set({ preview: undefined });
+          this.setStatus(result.error, true);
+        }
+        return;
+      }
       const layer = activeComposition(this.#view.project).layers.find(
         (item) => item.id === drag.layerId,
       )!;

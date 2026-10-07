@@ -1515,3 +1515,38 @@ textarea,
 .transform-overlay.guide-active .guide-fixed circle {
   stroke-width: 2;
 }
+
+/* Interaction geometry is in CSS pixels; overlays follow the composition viewBox. */
+:root {
+  --canvas-selection: var(--accent-primary);
+  --canvas-guide: var(--accent-primary);
+  --canvas-hover: var(--accent-muted, #7391ba);
+  --canvas-handle-px: 6;
+  --canvas-hit-px: 16;
+}
+.canvas-hover-outline {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+.canvas-hover-outline polygon {
+  fill: none;
+  stroke: var(--canvas-hover);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.transform-overlay .transform-box {
+  stroke: var(--canvas-selection);
+  stroke-dasharray: none;
+}
+
+.canvas-snap-guides text {
+  fill: var(--canvas-guide);
+  stroke: var(--surface-primary);
+  stroke-width: 3px;
+  paint-order: stroke;
+  font-variant-numeric: tabular-nums;
+}

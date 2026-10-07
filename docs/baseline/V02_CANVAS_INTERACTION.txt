@@ -1,0 +1,1654 @@
+你现在开始进行 Swayframe V0.2 的第二轮专项优化：
+
+======================================================================
+Canvas Interaction / Direct Manipulation
+======================================================================
+
+本轮唯一目标：
+
+把 Swayframe 的 Canvas 从“能显示和编辑对象”
+
+提升到：
+
+“真正具有专业设计软件操作手感的直接编辑画布”。
+
+交互体验参考：
+
+Figma
+After Effects
+Illustrator
+
+但不要照抄其 UI 视觉。
+
+重点学习：
+
+Selection
+Direct Manipulation
+Transform
+Pan / Zoom
+Multi-selection
+Bounding Box
+Anchor
+Snapping
+Drag Behavior
+Undo Semantics
+
+本轮不要：
+
+重构 Timeline
+
+增加新 Effects
+
+开发 AI Agent
+
+扩张 Compositing Graph
+
+开发高级 3D
+
+新增大量 Layer Type
+
+除非某个问题直接阻塞 Canvas。
+
+======================================================================
+一、先审计现有 Canvas
+======================================================================
+
+先检查当前：
+
+Canvas Component
+
+Selection Model
+
+Transform Tool
+
+Pointer Events
+
+Mouse Events
+
+Zoom / Pan
+
+Scene Model
+
+Command System
+
+History
+
+Renderer
+
+Bounding Box
+
+Anchor
+
+然后创建：
+
+CANVAS_UX_AUDIT.md
+
+列出：
+
+Working
+
+Partial
+
+Broken
+
+Missing
+
+Interaction conflicts
+
+Performance problems
+
+完成后直接开始修复。
+
+不要停下来等待用户。
+
+======================================================================
+二、建立明确 Tool System
+======================================================================
+
+Canvas 不应该依赖大量独立按钮触发行为。
+
+建立统一：
+
+Tool System
+
+至少支持：
+
+Selection Tool
+
+Hand Tool
+
+Rectangle Tool
+
+Ellipse Tool
+
+Pen Tool
+
+Text Tool
+
+如果当前部分工具尚未完整：
+
+重点先做：
+
+Selection
+Hand
+
+其他保持现有能力。
+
+Tool 状态必须是统一来源。
+
+不要：
+
+Canvas 一个 tool state
+
+Toolbar 又一个 tool state。
+
+======================================================================
+三、Selection Tool
+======================================================================
+
+Selection Tool 是当前最高优先级。
+
+基础行为：
+
+Click Object
+
+→ Select
+
+Click Empty Area
+
+→ Clear Selection
+
+Shift + Click
+
+→ Add / Remove selection
+
+Cmd/Ctrl + Click
+
+根据当前交互规范：
+
+支持层级内选择或追加选择。
+
+行为必须统一。
+
+选中对象后：
+
+Canvas
+
+Layer Panel
+
+Inspector
+
+Timeline
+
+保持同步。
+
+不要多个 Panel 自己维护 selection。
+
+======================================================================
+四、点击命中检测
+======================================================================
+
+实现稳定 Hit Testing。
+
+用户点击对象时：
+
+选择视觉上真正位于鼠标下方的对象。
+
+考虑：
+
+Layer Z order
+
+Transform
+
+Rotation
+
+Scale
+
+Nested composition
+
+Mask
+
+3D Layer projection（如果已有）
+
+对于重叠对象：
+
+默认选择最上层可见对象。
+
+后续可通过：
+
+Cmd/Ctrl + Click cycling
+
+或 Context Selection
+
+选择下层对象。
+
+第一阶段至少保证顶层选择正确。
+
+======================================================================
+五、Marquee Selection
+======================================================================
+
+在空白 Canvas 拖动：
+
+创建 Selection Marquee。
+
+支持：
+
+左上 → 右下
+
+右下 → 左上
+
+选择与框选区域相交 / 完全包含对象的规则要统一。
+
+建议第一版：
+
+只要 Bounding Box 与 Marquee 相交即可选中。
+
+Shift + Marquee：
+
+添加到当前 selection。
+
+Alt/Option：
+
+如果设计合理，可用于减选。
+
+必须提供清晰 selection rectangle。
+
+======================================================================
+六、Multi-selection
+======================================================================
+
+选中多个对象后：
+
+显示 Combined Bounding Box。
+
+拖动 Combined Bounding Box：
+
+所有对象一起移动。
+
+Scale：
+
+围绕共同 pivot / bounding box。
+
+Rotate：
+
+整体旋转。
+
+Inspector：
+
+如果属性不同：
+
+显示 Mixed。
+
+例如：
+
+Position X:
+
+—
+
+而不是显示其中一个对象的值。
+
+当前阶段至少完成：
+
+Move
+
+Scale
+
+Rotate
+
+多选。
+
+======================================================================
+七、Bounding Box
+======================================================================
+
+选中单个对象后：
+
+显示专业 Bounding Box。
+
+至少有：
+
+四角 Scale Handles
+
+四边 Scale Handles
+
+Rotation interaction
+
+Bounding Box 必须跟随：
+
+Position
+
+Scale
+
+Rotation
+
+实时更新。
+
+不要：
+
+对象旋转后 Bounding Box 仍是 axis-aligned 外框
+
+如果当前 Transform Engine 支持 oriented bounds：
+
+优先使用。
+
+======================================================================
+八、Scale
+======================================================================
+
+拖角点：
+
+Uniform / proportional scaling。
+
+Shift：
+
+根据当前产品规则：
+
+锁定 / 解除比例。
+
+确定一个统一规则并保持一致。
+
+不要不同 Shape 行为不同。
+
+拖边：
+
+单轴 Scale。
+
+支持：
+
+负 Scale
+
+如果当前模型允许。
+
+Scale 不允许因为：
+
+Canvas Zoom
+
+导致鼠标敏感度变化错误。
+
+Transform 计算必须使用：
+
+Canvas Space
+→
+World / Composition Space
+
+正确转换。
+
+======================================================================
+九、Rotation
+======================================================================
+
+用户把鼠标移动到 Bounding Box 边角外：
+
+显示 Rotate Cursor。
+
+Drag：
+
+Rotation。
+
+围绕：
+
+Anchor / Pivot
+
+旋转。
+
+支持：
+
+Shift
+
+Angle snapping：
+
+15°
+
+或者项目统一角度。
+
+Rotation 应连续流畅。
+
+跨越：
+
+359°
+→
+0°
+
+不能出现突然跳变。
+
+======================================================================
+十、Anchor / Pivot
+======================================================================
+
+Anchor 是 Motion Design 的核心能力。
+
+选中对象：
+
+显示 Anchor Point。
+
+提供：
+
+Anchor Tool
+
+或者：
+
+Alt/Option + interaction
+
+用于移动 Anchor。
+
+移动 Anchor 时：
+
+默认保持对象视觉位置不变。
+
+即：
+
+改变 Anchor
+
+同时补偿 Position。
+
+这是专业动画软件应有行为。
+
+如果当前项目已有 Anchor：
+
+检查数学是否正确。
+
+特别测试：
+
+Rotation 后移动 Anchor
+
+Scale 后移动 Anchor
+
+Parented Layer
+
+3D Layer
+
+第一阶段至少保证 2D 正确。
+
+======================================================================
+十一、Move
+======================================================================
+
+Drag selected object：
+
+Move。
+
+拖动过程中：
+
+实时 Preview。
+
+Mouse Up：
+
+Commit Command。
+
+整个 drag：
+
+只产生一个 Undo Step。
+
+实现：
+
+Drag Start
+
+Drag Update
+
+Drag Commit
+
+Drag Cancel
+
+Esc：
+
+取消本次 Drag
+
+恢复到 Drag Start 状态。
+
+禁止：
+
+mousemove 每次写入 History。
+
+======================================================================
+十二、Axis Constraint
+======================================================================
+
+移动对象时：
+
+Shift：
+
+锁定水平 / 垂直移动。
+
+判断依据：
+
+初始拖动方向。
+
+例如：
+
+开始偏水平
+
+→ lock X movement
+
+开始偏垂直
+
+→ lock Y movement。
+
+行为要稳定。
+
+不要鼠标略微抖动就在 X/Y 间来回切换。
+
+======================================================================
+十三、Duplicate Drag
+======================================================================
+
+如果平台习惯允许：
+
+Alt / Option + Drag
+
+复制对象并移动。
+
+行为：
+
+Drag Start
+
+创建 duplicate preview
+
+Drag Commit
+
+最终成为一次 Transaction。
+
+Undo：
+
+一步删除复制结果。
+
+不要：
+
+Duplicate
+
+和：
+
+Move
+
+分别产生两个 Undo Steps。
+
+======================================================================
+十四、Pan
+======================================================================
+
+实现专业 Canvas Pan。
+
+推荐：
+
+Space + Drag
+
+→ Pan
+
+Middle Mouse Drag
+
+→ Pan
+
+Hand Tool
+
+→ Drag Pan
+
+当 Space 按下：
+
+临时切换 Hand behavior。
+
+松开：
+
+返回之前 Tool。
+
+如果正在：
+
+Text Editing
+
+Numeric Input
+
+不要错误拦截 Space。
+
+======================================================================
+十五、Zoom
+======================================================================
+
+Zoom 是本轮重点。
+
+必须支持：
+
+Cmd/Ctrl + Wheel
+
+或项目统一鼠标规则。
+
+关键要求：
+
+======================================================================
+Zoom around cursor
+======================================================================
+
+缩放中心必须是：
+
+鼠标所在 Canvas Point。
+
+不能每次围绕：
+
+Composition Center。
+
+数学上保证：
+
+Zoom 前
+
+鼠标下的 composition point
+
+Zoom 后
+
+仍尽量位于鼠标下。
+
+这是 Figma 类工具手感的重要来源。
+
+======================================================================
+十六、Zoom Presets
+======================================================================
+
+提供：
+
+Fit to View
+
+100%
+
+200%
+
+Zoom In
+
+Zoom Out
+
+快捷键可参考：
+
+Cmd/Ctrl + 0
+Fit
+
+Cmd/Ctrl + 1
+100%
+
+具体如果与现有 Shortcut 冲突：
+
+按项目整体规范处理。
+
+不要把 Zoom 做成巨大 Dropdown。
+
+可以在 Canvas Bottom Corner：
+
+显示：
+
+100% ▼
+
+======================================================================
+十七、Fit to View
+======================================================================
+
+Fit：
+
+根据 Composition Size
+
+和：
+
+Canvas viewport
+
+自动计算：
+
+zoom
+
+pan。
+
+保留合理 margin。
+
+窗口 resize 后：
+
+不要自动打断用户当前 zoom，
+
+除非用户主动 Fit。
+
+======================================================================
+十八、Coordinate Conversion
+======================================================================
+
+建立清晰统一：
+
+Screen Space
+
+Canvas Viewport Space
+
+Composition Space
+
+Layer Local Space
+
+Parent Space
+
+之间转换。
+
+禁止：
+
+每一个 interaction
+
+自己写：
+
+(mouseX - offset) / zoom
+
+之类临时代码。
+
+创建统一工具，例如：
+
+screenToComposition()
+
+compositionToScreen()
+
+compositionToLayerLocal()
+
+layerLocalToComposition()
+
+这会成为：
+
+Transform
+Hit Testing
+Snap
+Mask
+Path Editor
+3D
+
+共同基础。
+
+======================================================================
+十九、Snapping 系统 V0.1
+======================================================================
+
+加入简单但真正好用的 Snapping。
+
+至少支持：
+
+Composition Center X
+
+Composition Center Y
+
+Composition Edge
+
+Other Layer Edge
+
+Other Layer Center
+
+拖动接近 Snap Target 时：
+
+显示 Guide。
+
+例如：
+
+蓝 / 紫色参考线
+
+具体颜色沿用现有 Design Token。
+
+Snap Threshold：
+
+必须使用 screen pixel threshold，
+
+例如：
+
+5–8 px
+
+而不是 composition unit。
+
+这样不同 Zoom 下手感一致。
+
+======================================================================
+二十、Snap Modifier
+======================================================================
+
+提供临时关闭 Snap 的方式。
+
+例如：
+
+Cmd/Ctrl
+
+或项目统一 modifier。
+
+不要和其他关键交互冲突。
+
+定义到：
+
+Shortcut / Interaction Registry。
+
+======================================================================
+二十一、Smart Guides
+======================================================================
+
+如果基础 snapping 已完成：
+
+增加：
+
+Equal Distance
+
+Center Alignment
+
+Edge Alignment
+
+但不要为了 Smart Guides
+
+拖延基本 Move/Scale/Rotate。
+
+优先顺序：
+
+Center
+
+Edge
+
+Layer Center
+
+再做 spacing。
+
+======================================================================
+二十二、Nudge
+======================================================================
+
+选中 Layer：
+
+Arrow Key
+
+→ Move 1 px / unit
+
+Shift + Arrow
+
+→ Move 10。
+
+必须走：
+
+Command System。
+
+连续 key repeat：
+
+可以合并为合理 History Step，
+
+不要生成几十个不可用 Undo。
+
+具体合并策略自行设计。
+
+======================================================================
+二十三、Transform 数值同步
+======================================================================
+
+Canvas 直接操作时：
+
+Inspector 数值必须实时变化。
+
+例如：
+
+Drag Layer
+
+Position X / Y：
+
+实时显示。
+
+Scale Drag：
+
+Scale 数值实时更新。
+
+Rotation：
+
+实时更新。
+
+但 History：
+
+Mouse Up 后只 Commit 一次。
+
+即：
+
+UI Preview State
+
+和：
+
+Committed Scene State
+
+概念要清楚。
+
+======================================================================
+二十四、Direct Editing Text
+======================================================================
+
+如果 Text Layer 已经存在：
+
+Double Click Text
+
+→ Text Editing Mode。
+
+显示真实文本编辑光标。
+
+输入文字。
+
+Esc：
+
+退出编辑。
+
+Selection Tool：
+
+再次正常工作。
+
+文字编辑状态下：
+
+V
+R
+T
+Space
+
+不能错误触发全局 Tool Shortcut。
+
+======================================================================
+二十五、Shape Editing 入口
+======================================================================
+
+如果已有 Bezier / Path：
+
+Double Click Shape
+
+或：
+
+Enter Path Edit Mode
+
+允许选择：
+
+Anchor Point
+
+Bezier Handle。
+
+本轮不要全面重写 Path Editor。
+
+只保证：
+
+Canvas Selection Mode
+
+和：
+
+Path Edit Mode
+
+不会冲突。
+
+Esc：
+
+返回上一级编辑状态。
+
+======================================================================
+二十六、Nested Composition Navigation
+======================================================================
+
+如果已有 Precomp：
+
+Double Click Precomp
+
+→ Open Composition。
+
+需要：
+
+Breadcrumb
+
+例如：
+
+Main Comp
+>
+Title Precomp
+
+用户可以返回 Parent Composition。
+
+这一项如果当前 Precomp 尚未稳定：
+
+可以标记 Deferred。
+
+不要阻塞 Canvas 主任务。
+
+======================================================================
+二十七、Cursor System
+======================================================================
+
+不同交互使用不同 Cursor。
+
+Selection:
+
+default / move
+
+Scale:
+
+nwse-resize
+nesw-resize
+ew-resize
+ns-resize
+
+Rotate:
+
+自定义或合适 cursor
+
+Hand:
+
+grab
+
+Dragging Hand:
+
+grabbing
+
+Text:
+
+text
+
+Pen:
+
+crosshair / custom
+
+禁止 Canvas 全程：
+
+default cursor。
+
+这是操作手感的重要组成。
+
+======================================================================
+二十八、Hover Feedback
+======================================================================
+
+鼠标 hover 可选择对象时：
+
+提供轻量 Outline / highlight。
+
+不要太明显。
+
+目的：
+
+让用户知道：
+
+“我现在点击会选中哪个对象。”
+
+当对象重叠时：
+
+Hover 应对应 hit-test top candidate。
+
+======================================================================
+二十九、Selection Visual Style
+======================================================================
+
+Selection Border
+
+Handle
+
+Anchor
+
+Guide
+
+Marquee
+
+必须使用统一视觉语言。
+
+建立：
+
+Canvas Interaction Tokens
+
+例如：
+
+selection.color
+
+selection.handleSize
+
+selection.lineWidth
+
+guide.color
+
+marquee.fill
+
+不要组件各自硬编码颜色。
+
+======================================================================
+三十、Handle Hit Area
+======================================================================
+
+视觉 Handle 可以很小。
+
+但 Hit Area 应更大。
+
+例如：
+
+视觉 6 px
+
+可点击范围：
+
+12–16 px
+
+这样鼠标容易抓住。
+
+Hit Area 应使用：
+
+screen pixels
+
+避免 Zoom 改变后：
+
+Handle 变得难点。
+
+======================================================================
+三十一、High DPI
+======================================================================
+
+确保：
+
+Retina
+
+Windows 125%
+150%
+200%
+
+下：
+
+Canvas Hit Testing
+
+Handle
+
+Cursor
+
+Selection Border
+
+不出现严重偏移。
+
+不要混淆：
+
+CSS pixel
+
+device pixel。
+
+如果使用 Canvas：
+
+正确处理：
+
+devicePixelRatio。
+
+======================================================================
+三十二、Canvas Resize
+======================================================================
+
+左侧 Panel
+
+右侧 Inspector
+
+Timeline Height
+
+变化后：
+
+Canvas viewport
+
+必须立即重新布局。
+
+不要导致：
+
+Composition 跳到奇怪位置。
+
+如果用户当前是：
+
+Fit Mode
+
+可以重新 Fit。
+
+如果用户是：
+
+Manual Zoom
+
+尽量保持当前 composition center。
+
+======================================================================
+三十三、Layer Visibility / Lock
+======================================================================
+
+Locked Layer：
+
+不能被 Canvas Drag 修改。
+
+默认也不能选中，
+
+或者：
+
+允许选中但禁止 transform。
+
+选择其中一种统一语义。
+
+建议参考成熟软件习惯。
+
+Hidden Layer：
+
+不参与：
+
+Hit Test。
+
+======================================================================
+三十四、Undo / Redo 验收
+======================================================================
+
+测试：
+
+Move
+
+Scale
+
+Rotate
+
+Anchor Move
+
+Multi Move
+
+Multi Scale
+
+Alt Duplicate Drag
+
+Nudge
+
+每一种：
+
+一次完整用户动作
+
+尽量对应：
+
+一个合理 Undo Step。
+
+Undo 后：
+
+Canvas
+Inspector
+Timeline
+Scene
+
+全部一致。
+
+======================================================================
+三十五、性能
+======================================================================
+
+目标：
+
+Drag / Scale / Rotate
+
+视觉响应尽可能接近实时。
+
+禁止每个 pointermove：
+
+JSON.stringify(Project)
+
+Save Project
+
+Rebuild entire Scene
+
+Recalculate unrelated Layer
+
+全局 React tree rerender。
+
+分析：
+
+Profiler
+
+必要时使用：
+
+memoization
+local preview state
+selector-based state subscription
+requestAnimationFrame
+
+但不要为了性能：
+
+重写整个框架。
+
+======================================================================
+三十六、Pointer Events
+======================================================================
+
+优先统一使用：
+
+Pointer Events
+
+而不是：
+
+mousedown
+mousemove
+touchstart
+
+三套逻辑。
+
+支持：
+
+setPointerCapture()
+
+确保拖出 Canvas 后：
+
+Drag 仍然可靠。
+
+Pointer Up / Cancel：
+
+正确 cleanup。
+
+======================================================================
+三十七、Interaction State Machine
+======================================================================
+
+如果当前 Canvas 事件逻辑已经复杂：
+
+建立轻量 Interaction State。
+
+例如：
+
+idle
+
+hovering
+
+marqueeSelecting
+
+moving
+
+scaling
+
+rotating
+
+panning
+
+editingText
+
+editingPath
+
+movingAnchor
+
+不要让：
+
+几十个 boolean
+
+互相冲突。
+
+无需引入大型 State Machine 库。
+
+使用清晰 discriminated union 即可。
+
+例如：
+
+type CanvasInteraction =
+  | { type: "idle" }
+  | { type: "moving"; ... }
+  | { type: "scaling"; ... }
+  | { type: "rotating"; ... }
+
+======================================================================
+三十八、不要直接修改 Scene
+======================================================================
+
+正式修改继续遵循：
+
+UI
+
+→ Command System
+
+→ Scene Model
+
+Drag 时可以存在：
+
+Temporary Preview
+
+但最终 Mouse Up：
+
+Commit Command。
+
+未来 Agent 也必须能够调用同一个：
+
+MoveLayerCommand
+
+SetTransformCommand
+
+等核心操作。
+
+======================================================================
+三十九、测试场景 A
+======================================================================
+
+创建：
+
+Rectangle。
+
+选择。
+
+拖动到右侧。
+
+Scale。
+
+Rotate。
+
+移动 Anchor。
+
+Undo 五次。
+
+Redo 五次。
+
+每一步：
+
+位置和 Inspector 数据完全正确。
+
+======================================================================
+四十、测试场景 B
+======================================================================
+
+创建：
+
+Rectangle
+
+Ellipse
+
+Text。
+
+Shift + Click
+
+选三个。
+
+Move。
+
+Scale。
+
+Rotate。
+
+Undo。
+
+全部对象恢复。
+
+======================================================================
+四十一、测试场景 C
+======================================================================
+
+两个矩形。
+
+拖 Rectangle A
+
+靠近 Rectangle B。
+
+出现：
+
+Center Guide
+
+Edge Guide。
+
+自动 Snap。
+
+按临时 modifier：
+
+关闭 Snap。
+
+行为正确。
+
+======================================================================
+四十二、测试场景 D
+======================================================================
+
+Zoom：
+
+25%
+
+50%
+
+100%
+
+200%
+
+400%。
+
+每一级：
+
+Hit Testing
+
+Bounding Box
+
+Handles
+
+Snap
+
+Drag
+
+都正确。
+
+尤其：
+
+400%
+
+时不能出现：
+
+鼠标与对象位置错位。
+
+======================================================================
+四十三、测试场景 E
+======================================================================
+
+将鼠标放到 Composition 左上附近。
+
+Cmd/Ctrl + Wheel Zoom。
+
+缩放后：
+
+鼠标下的画面位置基本保持不变。
+
+然后在右下角执行同样操作。
+
+验证：
+
+Zoom around cursor。
+
+======================================================================
+四十四、测试场景 F
+======================================================================
+
+Space + Drag：
+
+Pan。
+
+松开 Space。
+
+自动返回 Selection Tool。
+
+Selection 不丢失。
+
+======================================================================
+四十五、测试场景 G
+======================================================================
+
+拖动 Layer：
+
+从 x=100 到 x=1000。
+
+过程中产生大量 pointermove。
+
+History：
+
+只新增一个 Move Command。
+
+Undo 一次：
+
+回到 x=100。
+
+======================================================================
+四十六、完成条件
+======================================================================
+
+本轮完成的判断方式：
+
+不是：
+
+Canvas 多了很多按钮。
+
+而是：
+
+用户不看说明书，
+
+能够自然完成：
+
+Select
+
+Move
+
+Scale
+
+Rotate
+
+Multi-select
+
+Marquee
+
+Pan
+
+Zoom
+
+Snap
+
+Anchor
+
+并且：
+
+操作符合已有设计软件形成的肌肉记忆。
+
+======================================================================
+四十七、输出文档
+======================================================================
+
+完成后输出：
+
+CANVAS_UX_RESULT.md
+
+包含：
+
+Implemented
+
+Improved
+
+Deferred
+
+Known bugs
+
+Performance observations
+
+Tests
+
+并列出：
+
+下一轮 Timeline 专项中
+
+最需要解决的 10 个问题。
+
+======================================================================
+最终目标
+======================================================================
+
+Swayframe Canvas 应从：
+
+“画面显示区”
+
+升级为：
+
+“用户愿意持续几个小时直接进行设计工作的专业画布”。
+
+评价重点：
+
+不是功能数量。
+
+而是：
+
+鼠标手感
+
+选择逻辑
+
+变换一致性
+
+缩放体验
+
+撤销逻辑
+
+视觉反馈
+
+交互可靠性
+
+性能。
+
+本轮只把 Canvas 做好。

@@ -719,6 +719,37 @@ export class CommandSystem {
     this.#emit();
     return { ok: true, transactionId: tx.id };
   }
+  /** Merge only explicitly identified adjacent human actions (keyboard repeat). */
+  coalesceRecent(previousId: ID, currentId: ID): boolean {
+    const a = this.#undo.at(-2),
+      b = this.#undo.at(-1);
+    if (
+      !a ||
+      !b ||
+      a.workspace ||
+      b.workspace ||
+      this.#redo.length ||
+      a.transaction.id !== previousId ||
+      b.transaction.id !== currentId ||
+      a.transaction.source !== 'human' ||
+      b.transaction.source !== 'human' ||
+      a.transaction.label !== b.transaction.label
+    )
+      return false;
+    this.#undo.splice(
+      -2,
+      2,
+      deepFreeze({
+        transaction: {
+          ...a.transaction,
+          commands: [...a.transaction.commands, ...b.transaction.commands],
+        },
+        applied: [...a.applied, ...b.applied],
+      }),
+    );
+    this.#emit();
+    return true;
+  }
   undo(): TransactionResult {
     const entry = this.#undo.at(-1);
     if (!entry) return { ok: false, error: '没有可撤销的操作' };

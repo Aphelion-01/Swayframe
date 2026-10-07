@@ -1,3 +1,6 @@
+import { getLocalBounds } from './layer-bounds';
+import type { TextMeasure } from './text-geometry';
+import { maskHit } from './mask-hit';
 import {
   transform4,
   multiply4,
@@ -292,10 +295,15 @@ export function createRenderSnapshot(
   }
   return snapshot;
 }
-export function hitTest(snapshot: RenderSnapshot, point: Vec2): ID | null {
+export function hitTest(
+  snapshot: RenderSnapshot,
+  point: Vec2,
+  measure?: TextMeasure,
+): ID | null {
   for (const layer of [...snapshot.layers].reverse()) {
     if (
       !layer.source.visible ||
+      layer.source.locked ||
       layer.active === false ||
       layer.source.type === 'camera' ||
       layer.opacity === 0 ||
@@ -310,14 +318,21 @@ export function hitTest(snapshot: RenderSnapshot, point: Vec2): ID | null {
     const inverse = layer.matrix ? inverse2D(layer.matrix) : null;
     if (!inverse) continue;
     const { x, y } = apply2D(inverse, point);
+    const bounds = getLocalBounds(layer, snapshot.time, measure);
     const inside =
       layer.source.type === 'shape' && layer.source.shapeKind === 'ellipse'
         ? (x / (layer.source.width / 2)) ** 2 +
             (y / (layer.source.height / 2)) ** 2 <=
           1
-        : Math.abs(x) <= layer.source.width / 2 &&
-          Math.abs(y) <= layer.source.height / 2;
-    if (inside) return layer.source.id;
+        : x >= bounds.minX &&
+          x <= bounds.maxX &&
+          y >= bounds.minY &&
+          y <= bounds.maxY;
+    if (
+      inside &&
+      maskHit(layer.source.editor?.masks ?? [], { x, y }, snapshot.time)
+    )
+      return layer.source.id;
   }
   return null;
 }

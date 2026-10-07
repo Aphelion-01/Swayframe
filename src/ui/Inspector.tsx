@@ -33,6 +33,51 @@ export function Inspector({ store }: { store: EditorStore }) {
         </div>
       </aside>
     );
+  if (view.selection.length > 1)
+    return (
+      <aside className="inspector-panel" aria-label="属性面板">
+        <div className="panel-heading">
+          <h2>属性</h2>
+          <span>{view.selection.length} 个图层</span>
+        </div>
+        <div className="inspector-body">
+          <Section title="变换">
+            <PivotSelector
+              store={store}
+              disabled={c.layers.some(
+                (l) => view.selection.includes(l.id) && l.editor?.is3D,
+              )}
+            />
+            <AnimatedField
+              store={store}
+              property={layer.transform.position}
+              label="位置"
+            />
+            <AnimatedField
+              store={store}
+              property={layer.transform.scale}
+              label="缩放"
+              linkMode="ratio"
+              factor={100}
+              unit="（%）"
+            />
+            <AnimatedField
+              store={store}
+              property={layer.transform.rotation}
+              label="旋转"
+              unit="（°）"
+            />
+            <AnimatedField
+              store={store}
+              property={layer.transform.opacity}
+              label="透明度"
+              factor={100}
+              unit="（%）"
+            />
+          </Section>
+        </div>
+      </aside>
+    );
   const node =
     view.graphSelection?.layerId === layer.id
       ? layer.editor?.graph?.nodes.find(

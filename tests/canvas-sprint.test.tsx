@@ -52,7 +52,7 @@ function setup() {
   });
   return { store, layer, canvas };
 }
-it('画布吸附实际进入共享命令；移动时显示参考线，松手一条 Undo，Alt 临时关闭', () => {
+it('画布吸附实际进入共享命令；移动时显示参考线，松手一条 Undo，Ctrl 临时关闭', () => {
   const { store, canvas } = setup();
   const before = store.getSnapshot().project;
   fireEvent.pointerDown(canvas, { button: 0, clientX: 400, clientY: 200 });
@@ -69,7 +69,7 @@ it('画布吸附实际进入共享命令；移动时显示参考线，松手一�
   act(() => store.undo());
   expect(store.getSnapshot().project).toEqual(before);
   fireEvent.pointerDown(canvas, { button: 0, clientX: 400, clientY: 200 });
-  fireEvent.pointerMove(canvas, { clientX: 957, clientY: 539, altKey: true });
+  fireEvent.pointerMove(canvas, { clientX: 957, clientY: 539, ctrlKey: true });
   fireEvent.pointerUp(canvas);
   expect(
     activeComposition(store.getSnapshot().project).layers[0]!.transform.position

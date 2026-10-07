@@ -7,6 +7,7 @@ import type { Property } from '../core/project-model';
 import { evaluateProperty } from '../core/animation-engine';
 import { newId } from '../core/core-types';
 import { command } from '../core/command-system';
+import { activeComposition } from '../core/project-model';
 import { NumberField, TextField } from './fields';
 import type { EditorStore } from './editor-store';
 import { AxisLinkButton, linkedAxisValues, useAxisLink } from './axis-link';
@@ -66,6 +67,30 @@ export function AnimatedField({
   const edit = (value: AnimValue) => {
     if (transformPropertyEdit(store, property.id, value, true)) return;
     store.setPropertyPreview(undefined);
+    const selected = activeComposition(
+      store.getSnapshot().project,
+    ).layers.filter(
+      (l) => store.getSnapshot().selection.includes(l.id) && !l.locked,
+    );
+    if (selected.length > 1 && (label === '位置' || label === '透明度')) {
+      const before = evaluateProperty(property, time);
+      return store.run(
+        `修改${label}`,
+        selected.map((l) => {
+          const p =
+            label === '位置' ? l.transform.position : l.transform.opacity;
+          const old = evaluateProperty(p as Property<AnimValue>, time);
+          const next =
+            label === '位置'
+              ? {
+                  x: (old as Vec2).x + (value as Vec2).x - (before as Vec2).x,
+                  y: (old as Vec2).y + (value as Vec2).y - (before as Vec2).y,
+                }
+              : value;
+          return store.valueCommand(p.id, next);
+        }),
+      );
+    }
     return store.run(`修改${label}`, [store.valueCommand(property.id, value)]);
   };
   const preview = (value: AnimValue) => {
@@ -94,8 +119,18 @@ export function AnimatedField({
     return Array.isArray(value) ? result : { x: result[0]!, y: result[1]! };
   };
   const propertyPreview = store.getSnapshot().propertyPreview;
+  const viewNow = store.getSnapshot();
+  const positionLayer = activeComposition(viewNow.project).layers.find(
+    (layer) => layer.transform.position.id === property.id,
+  );
+  const moving = positionLayer
+    ? viewNow.preview?.layerId === positionLayer.id
+      ? viewNow.preview
+      : viewNow.preview?.others?.find((p) => p.layerId === positionLayer.id)
+    : undefined;
   const shown =
-    propertyPreview?.id === property.id
+    moving?.position ??
+    (propertyPreview?.id === property.id
       ? evaluateProperty(propertyPreview.property, time)
       : store.getSnapshot().propertyPreviews?.find((p) => p.id === property.id)
         ? evaluateProperty(
@@ -104,7 +139,34 @@ export function AnimatedField({
               .propertyPreviews!.find((p) => p.id === property.id)!,
             time,
           )
-        : value;
+        : value);
+  const mixed = (axis?: 'x' | 'y') => {
+    const view = store.getSnapshot();
+    const key = (
+      {
+        位置: 'position',
+        缩放: 'scale',
+        旋转: 'rotation',
+        透明度: 'opacity',
+      } as const
+    )[label as '位置'];
+    if (!key || view.selection.length < 2) return false;
+    const vals = activeComposition(view.project)
+      .layers.filter((l) => view.selection.includes(l.id))
+      .map((layer) => {
+        const p = layer.transform[key];
+        const preview = view.propertyPreviews?.find((v) => v.id === p.id);
+        const moving =
+          key === 'position'
+            ? view.preview?.layerId === layer.id
+              ? view.preview
+              : view.preview?.others?.find((v) => v.layerId === layer.id)
+            : undefined;
+        const v = moving?.position ?? evaluateProperty(preview ?? p, time);
+        return axis ? (v as Vec2)[axis] : v;
+      });
+    return vals.some((v) => v !== vals[0]);
+  };
   const hex = (a: readonly number[]) =>
     '#' +
     a
@@ -180,6 +242,7 @@ export function AnimatedField({
           revision={property}
           time={time}
           label={`${label}${unit}`}
+          mixed={mixed()}
           value={value * factor}
           previewValue={typeof shown === 'number' ? shown * factor : undefined}
           min={min}
@@ -256,6 +319,7 @@ export function AnimatedField({
               key={k}
               compactLabel={k.toUpperCase()}
               label={`${label} ${k.toUpperCase()}${unit}`}
+              mixed={mixed(k)}
               value={(value as Vec2)[k] * factor}
               previewValue={(shown as Vec2)[k] * factor}
               onPreview={(n) =>

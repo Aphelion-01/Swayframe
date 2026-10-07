@@ -1,12 +1,27 @@
 import type { Vec2 } from './core-types';
 import type { RenderLayer, RenderSnapshot } from './renderer-core';
-import { layerToWorld } from './transform-geometry';
+import { getWorldBounds, boundsCorners } from './layer-bounds';
+import type { TextMeasure } from './text-geometry';
 
 export interface SnapGuide {
   readonly axis: 'x' | 'y';
   readonly value: number;
+  readonly spacing?: {
+    readonly spans: readonly (readonly [number, number])[];
+    readonly cross: number;
+    readonly distance: number;
+  };
+}
+interface SpacingTarget {
+  axis: 'x' | 'y';
+  start: number;
+  end: number;
+  crossMin: number;
+  crossMax: number;
+  delta: number;
 }
 export interface CanvasSnapContext {
+  readonly spacing?: readonly SpacingTarget[];
   readonly moving: {
     readonly x: readonly number[];
     readonly y: readonly number[];
@@ -16,16 +31,13 @@ export interface CanvasSnapContext {
     readonly y: readonly number[];
   };
 }
-function bounds(layers: readonly RenderLayer[]) {
-  const points = layers.flatMap<Vec2>(
-    (item) =>
-      item.quad ??
-      [
-        { x: -item.source.width / 2, y: -item.source.height / 2 },
-        { x: item.source.width / 2, y: -item.source.height / 2 },
-        { x: item.source.width / 2, y: item.source.height / 2 },
-        { x: -item.source.width / 2, y: item.source.height / 2 },
-      ].map((p) => layerToWorld(item, p)),
+function bounds(
+  layers: readonly RenderLayer[],
+  time: number,
+  measure?: TextMeasure,
+) {
+  const points = layers.flatMap<Vec2>((item) =>
+    boundsCorners(getWorldBounds(item, time, measure)),
   );
   if (!points.length) return { x: [], y: [] };
   const xs = points.map((p) => p.x),
@@ -43,6 +55,7 @@ function bounds(layers: readonly RenderLayer[]) {
 export function canvasSnapContext(
   snapshot: RenderSnapshot,
   selection: readonly string[],
+  measure?: TextMeasure,
 ): CanvasSnapContext {
   const ids = new Set(selection),
     byId = new Map(snapshot.layers.map((l) => [l.source.id, l]));
@@ -59,16 +72,46 @@ export function canvasSnapContext(
   const usable = (l: RenderLayer) =>
     l.source.visible &&
     l.active !== false &&
+    l.opacity > 0 &&
     !['null', 'camera'].includes(l.source.type);
   const candidates = snapshot.layers
     .filter((l) => usable(l) && !carried(l))
-    .map((l) => bounds([l]));
-  return {
-    moving: bounds(
-      snapshot.layers.filter(
-        (l) => usable(l) && ids.has(l.source.id) && !l.source.locked,
-      ),
+    .map((l) => bounds([l], snapshot.time, measure));
+  const moving = bounds(
+    snapshot.layers.filter(
+      (l) => usable(l) && ids.has(l.source.id) && !l.source.locked,
     ),
+    snapshot.time,
+    measure,
+  );
+  const spacing: SpacingTarget[] = [];
+  for (const axis of ['x', 'y'] as const) {
+    const cross = axis === 'x' ? 'y' : 'x';
+    const sorted = candidates
+      .filter((b) => b[axis].length)
+      .sort((a, b) => a[axis][0]! - b[axis][0]!);
+    const size = moving[axis][2]! - moving[axis][0]!;
+    for (let i = 1; i < sorted.length; i++) {
+      const a = sorted[i - 1]!,
+        b = sorted[i]!;
+      const start = a[axis][2]!,
+        end = b[axis][0]!;
+      const crossMin = Math.max(a[cross][0]!, b[cross][0]!),
+        crossMax = Math.min(a[cross][2]!, b[cross][2]!);
+      if (end - start >= size && crossMin <= crossMax)
+        spacing.push({
+          axis,
+          start,
+          end,
+          crossMin,
+          crossMax,
+          delta: (start + end - size) / 2 - moving[axis][0]!,
+        });
+    }
+  }
+  return {
+    moving,
+    spacing,
     targets: {
       x: [
         0,
@@ -113,9 +156,42 @@ export function snapCanvasDelta(
           guide = target;
         }
       }
+    let equal: SpacingTarget | undefined;
+    const cross = key === 'x' ? 'y' : 'x';
+    for (const target of context.spacing ?? []) {
+      if (
+        target.axis !== key ||
+        context.moving[cross][2]! + delta[cross] < target.crossMin ||
+        context.moving[cross][0]! + delta[cross] > target.crossMax
+      )
+        continue;
+      const distance = target.delta - result[key];
+      if (
+        Math.abs(distance) <= tolerance &&
+        (correction === undefined || Math.abs(distance) < Math.abs(correction))
+      ) {
+        correction = distance;
+        equal = target;
+      }
+    }
     if (correction !== undefined) {
       result[key] += correction;
-      guides.push({ axis: key, value: guide });
+      if (equal) {
+        const start = context.moving[key][0]! + result[key],
+          end = context.moving[key][2]! + result[key];
+        guides.push({
+          axis: key,
+          value: (start + end) / 2,
+          spacing: {
+            spans: [
+              [equal.start, start],
+              [end, equal.end],
+            ],
+            cross: context.moving[cross][1]! + result[cross],
+            distance: start - equal.start,
+          },
+        });
+      } else guides.push({ axis: key, value: guide });
     }
   }
   return { delta: result, guides };

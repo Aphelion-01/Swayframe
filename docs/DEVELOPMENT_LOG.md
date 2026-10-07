@@ -112,3 +112,7 @@ Mac锁屏阻止继续原生文件对话框和鼠标操作；已请求解锁。�
 ## 2026-10-07 — 专业 Proposal 约束修复 / Swayframe 0.9.7
 
 顶部字标由 124×26 调整为 104×22。定位到 IntelligenceService 对外使用最多100步的通用Plan schema，内部却最多12步且不允许范围外工具；模型未预先获知同一约束，错误直接终止。现为专业Proposal生成匹配12步上限、当前工具名及各工具参数的JSON Schema，并明确不支持能力须说明可编辑近似方案。无效响应最多自动纠正一次；仍失败时分别显示格式、步数或不可用工具名称，取消/传输异常不重试。不放宽权限、无新增工具，Proposal仍只读，实际执行继续通过Registry校验和共享Transaction。新增上限与schema、超限纠正、越权拒绝和取消回归；全量102文件/319tests、lint及Web/desktop build通过。视觉证据outputs/proposal-fix/editor.jpg。未调用用户付费模型，真实供应商响应仍须用户复测；本修复不新增形状布尔融合/液态融合能力。
+
+### 2026-10-07 · 0.9.8 Canvas Interaction
+
+执行 `V02_CANVAS_INTERACTION.txt`，完成审计、互斥Pointer交互、共享坐标、边界外框选/锁定命中、连续旋转、单轴/等比缩放、Alt复制Transaction、实时Inspector/Mixed、真实倍率/resize、hover/角外旋转、预合成返回、repeat微调合并及基础等间距引导。A～G及父级锚点等专项测试通过；实际浏览器验证鼠标拖动、Undo、单轴缩放、90°旋转、Hand平移和真实倍率。完整门禁、安装包校验及限制见CANVAS_UX_RESULT.md与outputs/canvas-ux/verification.json。本轮没有扩展Timeline、AI、Effects或高级3D。

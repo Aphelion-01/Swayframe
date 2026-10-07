@@ -1,3 +1,4 @@
+import { canvasInteractionTokens } from './workspace/canvas-interaction';
 import { useId, useRef } from 'react';
 import type { RefObject } from 'react';
 import { useInteractionCancel } from './workspace/interaction';
@@ -105,10 +106,10 @@ export function TransformOverlay({
             <rect
               key={i}
               className="guide-scale-handle"
-              x={h.point.x - 4 * uiScale}
-              y={h.point.y - 4 * uiScale}
-              width={8 * uiScale}
-              height={8 * uiScale}
+              x={h.point.x - (canvasInteractionTokens.handleSize / 2) * uiScale}
+              y={h.point.y - (canvasInteractionTokens.handleSize / 2) * uiScale}
+              width={canvasInteractionTokens.handleSize * uiScale}
+              height={canvasInteractionTokens.handleSize * uiScale}
             />
           ) : (
             <circle

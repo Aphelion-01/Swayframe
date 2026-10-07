@@ -79,6 +79,9 @@ export function Toolbar({ store }: { store: EditorStore }) {
     ]);
     if (result.ok) store.select(layer.id);
   };
+  const nudgeGroup = useRef<
+    { id: string; selection: string; time: number } | undefined
+  >(undefined);
   const registry: Shortcut[] = [
     {
       id: 'new-project',
@@ -247,6 +250,18 @@ export function Toolbar({ store }: { store: EditorStore }) {
           ),
         ),
     })),
+    ...[
+      { key: '0', label: '适合窗口', event: 'motion:fit' },
+      { key: '1', label: '100% 实际尺寸', event: 'motion:actual-size' },
+      { key: '=', label: '放大', event: 'motion:zoom-in' },
+      { key: '-', label: '缩小', event: 'motion:zoom-out' },
+    ].map((item) => ({
+      id: item.event,
+      label: item.label,
+      key: item.key,
+      modifier: true,
+      action: () => window.dispatchEvent(new Event(item.event)),
+    })),
     {
       id: 'space',
       label: '播放 / 平移',
@@ -286,11 +301,31 @@ export function Toolbar({ store }: { store: EditorStore }) {
                 (key === 'arrowleft' ? -step : step) /
                   activeComposition(store.getSnapshot().project).fps,
             );
-          } else
+          } else {
+            const previous = nudgeGroup.current;
+            const startId = store.commands.undoStack.at(-1)?.transaction.id;
             store.nudge(
               key === 'arrowleft' ? -step : key === 'arrowright' ? step : 0,
               key === 'arrowup' ? -step : key === 'arrowdown' ? step : 0,
             );
+            const nextId = store.commands.undoStack.at(-1)?.transaction.id;
+            const selection = store.getSnapshot().selection.join(',');
+            const time = store.getSnapshot().time;
+            if (nextId && nextId !== startId) {
+              const merged =
+                event.repeat &&
+                !!previous &&
+                previous.id === startId &&
+                previous.selection === selection &&
+                previous.time === time &&
+                store.commands.coalesceRecent(previous.id, nextId);
+              nudgeGroup.current = {
+                id: merged ? previous!.id : nextId,
+                selection,
+                time,
+              };
+            }
+          }
         },
       })),
     ),
@@ -299,8 +334,12 @@ export function Toolbar({ store }: { store: EditorStore }) {
     const handler = (event: KeyboardEvent) => dispatchShortcut(event, registry);
     const release = (event: KeyboardEvent) => {
       if (event.code === 'Space') setSpace(false);
+      if (event.key.startsWith('Arrow')) nudgeGroup.current = undefined;
     };
-    const blur = () => setSpace(false);
+    const blur = () => {
+      setSpace(false);
+      nudgeGroup.current = undefined;
+    };
     window.addEventListener('keydown', handler);
     window.addEventListener('keyup', release);
     window.addEventListener('blur', blur);

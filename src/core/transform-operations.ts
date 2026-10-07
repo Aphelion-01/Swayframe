@@ -57,8 +57,7 @@ function decompose(
       : sy !== 0
         ? (Math.atan2(-m[2] / sy, m[3] / sy) * 180) / Math.PI
         : reference + rotationDelta;
-  const targetReference =
-    sx === 0 && sy === 0 ? reference + rotationDelta : reference;
+  const targetReference = reference + rotationDelta;
   rotation += 360 * Math.round((targetReference - rotation) / 360);
   const clean = (n: number) => Number(n.toPrecision(14));
   if (Math.abs(rotation - reference) < 1e-9) rotation = reference;
@@ -142,15 +141,11 @@ export function transformItems(
             multiply2D(inverse, world),
             item,
             context.snapshot.time,
-            operation.kind === 'scale' &&
-              context.settings.orientation === 'local'
-              ? operation.factor.x
-              : 1,
-            operation.kind === 'scale' &&
-              context.settings.orientation === 'local'
-              ? operation.factor.y
-              : 1,
-            operation.kind === 'rotate' ? operation.angle : 0,
+            operation.kind === 'scale' ? operation.factor.x : 1,
+            operation.kind === 'scale' ? operation.factor.y : 1,
+            operation.kind === 'rotate' && !(parentId && targets.has(parentId))
+              ? operation.angle
+              : 0,
           );
     return {
       ...item,

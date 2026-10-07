@@ -84,3 +84,30 @@ it('旋转后的世界包围框、多选整体边界，排除随选中父级移�
   );
   expect(multi.moving.x).toEqual([300, 505, 710]);
 });
+it('equal spacing snaps between neighbors with paired distances; unrelated rows do not attract', () => {
+  const c = createDefaultProject().compositions[0]!;
+  const make = (x: number, y = 200) =>
+    createLayer('rectangle', { position: { x, y }, width: 100, height: 100 });
+  const moving = make(900),
+    a = make(200),
+    b = make(600);
+  const context = canvasSnapContext(
+    createRenderSnapshot({ ...c, layers: [a, b, moving] }, 0, []),
+    [moving.id],
+  );
+  const snapped = snapCanvasDelta(context, { x: -502, y: 0 }, 6);
+  expect(snapped.delta.x).toBe(-500);
+  expect(snapped.guides.find((g) => g.axis === 'x')!.spacing).toEqual({
+    spans: [
+      [250, 350],
+      [450, 550],
+    ],
+    cross: 200,
+    distance: 100,
+  });
+  expect(
+    snapCanvasDelta(context, { x: -502, y: 400 }, 6).guides.some(
+      (g) => g.spacing,
+    ),
+  ).toBe(false);
+});
