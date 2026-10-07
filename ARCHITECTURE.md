@@ -14,3 +14,5 @@ GUI 与 Agent 共用 Command System；复杂操作走 Transaction；Intelligence
 当前执行基线：`docs/baseline/NATIVE_AI_AGENT_V1.txt`。Agent独立应用服务、结构化Tool与共享Command/Transaction闭环；进度见AGENT_IMPLEMENTATION_STATUS.md。
 
 当前执行基线：`docs/baseline/V02_WORKFLOW_OPTIMIZATION.txt`。仅打通已有创作闭环。0.9.4 修复新建/状态清理与零缩放，不扩功能；结果和未验收范围见 `V0.2_WORKFLOW_RESULT.md`。
+
+当前执行基线：`docs/baseline/V02_TIMELINE_INTERACTION.txt`。0.9.9完成Timeline三层树、冻结列、多选排序/关键帧手势、帧时间与共享记录入口、曲线往返及单事务验收；GUI/Agent共用Command/Transaction，UI偏好不进入Scene。审计与结果见`TIMELINE_UX_AUDIT.md`、`TIMELINE_UX_RESULT.md`。

@@ -116,3 +116,7 @@ Mac锁屏阻止继续原生文件对话框和鼠标操作；已请求解锁。�
 ### 2026-10-07 · 0.9.8 Canvas Interaction
 
 执行 `V02_CANVAS_INTERACTION.txt`，完成审计、互斥Pointer交互、共享坐标、边界外框选/锁定命中、连续旋转、单轴/等比缩放、Alt复制Transaction、实时Inspector/Mixed、真实倍率/resize、hover/角外旋转、预合成返回、repeat微调合并及基础等间距引导。A～G及父级锚点等专项测试通过；实际浏览器验证鼠标拖动、Undo、单轴缩放、90°旋转、Hand平移和真实倍率。完整门禁、安装包校验及限制见CANVAS_UX_RESULT.md与outputs/canvas-ux/verification.json。本轮没有扩展Timeline、AI、Effects或高级3D。
+
+## 2026-10-07 · 0.9.9 Timeline / Keyframe Editing
+
+以V02_TIMELINE_INTERACTION为本轮基线，先审计再完成树结构、列宽/冻结、过滤、动态刻度、关键帧手势与单步Undo、跨属性粘贴、Graph往返和已有Span操作。真实UI验证额外发现框选未同步Layer、原生HTML拖放不稳定、Pointer捕获阻断双击；分别修复选区同步、统一Pointer排序和label双击入口，并补回归。播放头索引和CSS拖动预览保持轨道DOM，100层/500及1000帧压力测试通过。完整门禁106文件/379测试通过；安装包0.9.9单独核对归档构建一致性。浏览器下载事件超时、真实FPS和Windows运行边界写入结果，不以截图或测试PASS替代。

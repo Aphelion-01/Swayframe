@@ -42,7 +42,12 @@ export function GraphEditor({
 }) {
   const view = useSyncExternalStore(store.subscribe, store.getSnapshot),
     c = activeComposition(view.project),
-    layer = c.layers.find((l) => l.id === view.selection[0]);
+    layer =
+      c.layers.find((l) =>
+        visibleProperties(l).some(
+          (e) => e.property.id === view.selectedProperties[0],
+        ),
+      ) ?? c.layers.find((l) => l.id === view.selection[0]);
   const entries = layer ? visibleProperties(layer) : [];
   const [chosen, setChosen] = useState(''),
     [mode, setMode] = useState<'value' | 'speed'>('value'),
@@ -141,6 +146,7 @@ export function GraphEditor({
   });
   const entry =
     entries.find((e) => e.property.id === chosen) ??
+    entries.find((e) => e.property.id === view.selectedProperties[0]) ??
     entries.find((e) => e.property.id === view.frames[0]?.propertyId) ??
     entries.find((e) => e.property.keyframes.length > 1) ??
     entries[0];

@@ -1,5 +1,6 @@
 import { layerEffects } from '../src/core/compositing-migration';
 // @vitest-environment jsdom
+import { openTimelineLayers } from './timeline-test-helpers';
 import { afterEach, beforeAll, expect, it, vi } from 'vitest';
 import {
   act,
@@ -39,6 +40,7 @@ function setup() {
   ]);
   store.select(layer.id);
   render(<App store={store} />);
+  openTimelineLayers();
   return { store, layer };
 }
 it('scrub 在松手前只预览，单笔提交；Escape 恢复工程和历史', () => {

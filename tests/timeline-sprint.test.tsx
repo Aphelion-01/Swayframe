@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { openTimelineLayers } from './timeline-test-helpers';
 import { expect, it, vi, beforeAll, afterEach } from 'vitest';
 import {
   act,
@@ -61,6 +62,7 @@ function setup() {
   });
   store.select(layer.id);
   render(<App store={store} />);
+  openTimelineLayers();
   return { store, layer, position };
 }
 it('多选关键帧100次拖动只提交一次，预览与实际提交均夹到边界并可撤销', () => {
@@ -82,7 +84,9 @@ it('多选关键帧100次拖动只提交一次，预览与实际提交均夹到�
   for (let i = 0; i < 100; i++)
     fireEvent.pointerMove(frame, { clientX: 1000 + i });
   expect(store.getSnapshot().project).toBe(before);
-  expect(frame.style.left).toBe('80%');
+  expect(document.querySelector('.timeline-panel')).toHaveStyle(
+    '--timeline-key-delta: 60%',
+  );
   fireEvent.pointerUp(frame, { clientX: 1099 });
   expect(
     activeComposition(
@@ -155,7 +159,7 @@ it('图层时间条越界拖动保持有效范围；右键不会启动移动', (
   fireEvent.pointerDown(start, { button: 0, clientX: 0 });
   fireEvent.pointerMove(bar, { clientX: 1000 });
   expect(parseFloat(bar.style.width)).toBeGreaterThan(0);
-  fireEvent.pointerUp(bar);
+  fireEvent.pointerUp(bar, { clientX: 1000 });
   const edited = activeComposition(store.getSnapshot().project).layers[0]!
     .editor!;
   expect(edited.inPoint).toBeCloseTo(5 - 1 / 30);

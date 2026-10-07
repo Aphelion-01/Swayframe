@@ -1,6 +1,6 @@
 import { layerTimeDragDelta } from '../core/timeline-snapping';
 import { useInteractionCancel } from './workspace/interaction';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Layer, Composition } from '../core/project-model';
 import { moveLayerInTime } from '../core/composition-editing';
 import { command } from '../core/command-system';
@@ -9,27 +9,113 @@ export function LayerTimeBar({
   store,
   layer,
   composition: c,
+  claimInteraction,
+  releaseInteraction,
 }: {
   store: EditorStore;
   layer: Layer;
   composition: Composition;
+  claimInteraction?: (cancel: () => void) => boolean;
+  releaseInteraction?: () => void;
 }) {
-  const ref = useRef<HTMLDivElement>(null),
-    drag = useRef<
-      | {
-          x: number;
-          start: number;
-          end: number;
-          mode: 'move' | 'start' | 'end';
-          delta: number;
-          project: unknown;
-        }
-      | undefined
-    >(undefined),
-    [preview, setPreview] = useState<{ start: number; end: number }>();
-  useInteractionCancel(() => {
+  const ref = useRef<HTMLDivElement>(null);
+  const drag = useRef<
+    | {
+        x: number;
+        width: number;
+        start: number;
+        end: number;
+        mode: 'move' | 'start' | 'end';
+        delta: number;
+        project: unknown;
+      }
+    | undefined
+  >(undefined);
+  const [preview, setPreview] = useState<{ start: number; end: number }>();
+  const cancel = () => {
+    if (!drag.current) return;
     drag.current = undefined;
     setPreview(undefined);
+    releaseInteraction?.();
+  };
+  useInteractionCancel(cancel);
+  const update = (clientX: number) => {
+    const g = drag.current;
+    if (!g) return;
+    if (g.project !== store.getSnapshot().project) {
+      cancel();
+      return;
+    }
+    g.delta = layerTimeDragDelta(
+      g.start,
+      g.end,
+      ((clientX - g.x) / g.width) * c.duration,
+      g.mode,
+      c.duration,
+      c.fps,
+    );
+    setPreview({
+      start: g.mode === 'end' ? g.start : g.start + g.delta,
+      end: g.mode === 'start' ? g.end : g.end + g.delta,
+    });
+  };
+  const finish = (clientX: number) => {
+    update(clientX);
+    const g = drag.current;
+    cancel();
+    if (
+      !g ||
+      !g.delta ||
+      g.project !== store.getSnapshot().project ||
+      !layer.editor
+    )
+      return;
+    try {
+      store.run(
+        g.mode === 'move'
+          ? '移动图层时间'
+          : g.mode === 'start'
+            ? '调整图层入点'
+            : '调整图层出点',
+        g.mode === 'move'
+          ? moveLayerInTime(store.getSnapshot().project, layer, g.delta)
+          : [
+              command({
+                type: 'layer.replace',
+                compositionId: c.id,
+                layer: {
+                  ...layer,
+                  editor: {
+                    ...layer.editor,
+                    inPoint:
+                      g.mode === 'start'
+                        ? g.start + g.delta
+                        : layer.editor.inPoint,
+                    outPoint:
+                      g.mode === 'end'
+                        ? g.end + g.delta
+                        : layer.editor.outPoint,
+                  },
+                },
+              }),
+            ],
+      );
+    } catch (e) {
+      store.setStatus(e instanceof Error ? e.message : '时间编辑失败', true);
+    }
+  };
+  useEffect(() => {
+    if (!preview) return;
+    const move = (event: PointerEvent) => update(event.clientX),
+      up = (event: PointerEvent) => finish(event.clientX);
+    window.addEventListener('pointermove', move, true);
+    window.addEventListener('pointerup', up, true);
+    window.addEventListener('pointercancel', cancel, true);
+    return () => {
+      window.removeEventListener('pointermove', move, true);
+      window.removeEventListener('pointerup', up, true);
+      window.removeEventListener('pointercancel', cancel, true);
+    };
   });
   const e = layer.editor;
   if (!e) return null;
@@ -38,100 +124,42 @@ export function LayerTimeBar({
   return (
     <div className="layer-time-row">
       <span>
-        {e.inPoint.toFixed(2)} – {Math.min(c.duration, e.outPoint).toFixed(2)}{' '}
-        秒
+        {start.toFixed(2)} – {end.toFixed(2)} 秒
       </span>
       <div ref={ref} className="layer-time-track">
         <div
           className="layer-time-bar"
+          data-locked={layer.locked}
           style={{
             left: `${(start / c.duration) * 100}%`,
             width: `${((end - start) / c.duration) * 100}%`,
           }}
           aria-label={`${layer.name}时间范围`}
+          title={`拖动移动图层时间，边缘调整入点/出点 · ${start.toFixed(2)}–${end.toFixed(2)} 秒`}
           onPointerDown={(event) => {
-            if (event.button !== 0 || layer.locked) return;
+            if (event.button !== 0 || layer.locked || drag.current) return;
+            if (claimInteraction && !claimInteraction(cancel)) return;
+            event.preventDefault();
             event.stopPropagation();
             event.currentTarget.setPointerCapture(event.pointerId);
-            const mode = (event.target as HTMLElement).dataset.edge as
-              'start' | 'end' | undefined;
-            drag.current = {
-              x: event.clientX,
+            store.setPlaying(false);
+            setPreview({
               start: e.inPoint,
               end: Math.min(c.duration, e.outPoint),
-              mode: mode ?? 'move',
+            });
+            drag.current = {
+              x: event.clientX,
+              width: Math.max(1, ref.current!.getBoundingClientRect().width),
+              start: e.inPoint,
+              end: Math.min(c.duration, e.outPoint),
+              mode:
+                ((event.target as HTMLElement).dataset.edge as
+                  'start' | 'end' | undefined) ?? 'move',
               delta: 0,
               project: store.getSnapshot().project,
             };
           }}
-          onPointerMove={(event) => {
-            const g = drag.current;
-            if (!g) return;
-            if (g.project !== store.getSnapshot().project) {
-              drag.current = undefined;
-              setPreview(undefined);
-              return;
-            }
-            g.delta = layerTimeDragDelta(
-              g.start,
-              g.end,
-              ((event.clientX - g.x) /
-                Math.max(1, ref.current?.getBoundingClientRect().width ?? 1)) *
-                c.duration,
-              g.mode,
-              c.duration,
-              c.fps,
-            );
-            setPreview({
-              start: g.mode === 'end' ? g.start : g.start + g.delta,
-              end: g.mode === 'start' ? g.end : g.end + g.delta,
-            });
-          }}
-          onPointerUp={() => {
-            const g = drag.current;
-            drag.current = undefined;
-            setPreview(undefined);
-            if (!g || g.project !== store.getSnapshot().project || !g.delta)
-              return;
-            try {
-              store.run(
-                '编辑图层时间',
-                g.mode === 'move'
-                  ? moveLayerInTime(store.getSnapshot().project, layer, g.delta)
-                  : [
-                      command({
-                        type: 'layer.replace',
-                        compositionId: c.id,
-                        layer: {
-                          ...layer,
-                          editor: {
-                            ...e,
-                            inPoint:
-                              g.mode === 'start'
-                                ? g.start + g.delta
-                                : e.inPoint,
-                            outPoint:
-                              g.mode === 'end' ? g.end + g.delta : e.outPoint,
-                          },
-                        },
-                      }),
-                    ],
-              );
-            } catch (error) {
-              store.setStatus(
-                error instanceof Error ? error.message : '时间编辑失败',
-                true,
-              );
-            }
-          }}
-          onPointerCancel={() => {
-            drag.current = undefined;
-            setPreview(undefined);
-          }}
-          onLostPointerCapture={() => {
-            drag.current = undefined;
-            setPreview(undefined);
-          }}
+          onPointerCancel={cancel}
         >
           <span
             data-edge="start"

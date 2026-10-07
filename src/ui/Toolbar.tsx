@@ -224,11 +224,20 @@ export function Toolbar({ store }: { store: EditorStore }) {
       id: `filter-${key}`,
       label: `筛选 ${filter}`,
       key,
-      contexts:
-        key === 'u' || key === 's'
-          ? (['timeline', 'global'] as const)
-          : (['timeline'] as const),
+      contexts: ['timeline'] as const,
       action: () => store.setPropertyFilter(filter),
+    })),
+    ...(
+      [
+        ['j', 'previous'],
+        ['k', 'next'],
+      ] as const
+    ).map(([key, direction]) => ({
+      id: `timeline-${direction}-key`,
+      label: direction === 'previous' ? '上一个关键帧' : '下一个关键帧',
+      key,
+      contexts: ['timeline'] as const,
+      action: () => window.dispatchEvent(new Event(`motion:${direction}-key`)),
     })),
     ...['delete', 'backspace'].map((key) => ({
       id: key,

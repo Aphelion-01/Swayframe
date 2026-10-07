@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { openTimelineLayers } from './timeline-test-helpers';
 import { afterEach, beforeAll, expect, it, vi } from 'vitest';
 import {
   act,
@@ -43,6 +44,7 @@ it('正常菜单新建工程清空旧数据和历史，命名合成自动激活�
   store.setTime(2);
   store.setPlaying(true);
   render(<App store={store} />);
+  openTimelineLayers();
   menu();
   fireEvent.click(screen.getByRole('button', { name: '新建工程' }));
   fireEvent.click(screen.getByRole('button', { name: '创建空白工程' }));
@@ -69,6 +71,7 @@ it('正常菜单新建工程清空旧数据和历史，命名合成自动激活�
   });
   menu();
   fireEvent.click(screen.getByRole('button', { name: '创建 椭圆' }));
+  openTimelineLayers();
   const created = activeComposition(store.getSnapshot().project).layers[0]!;
   expect(store.getSnapshot().selection).toEqual([created.id]);
   expect(screen.getByLabelText('图层名称')).toHaveValue('椭圆');
@@ -79,8 +82,10 @@ it('正常菜单新建工程清空旧数据和历史，命名合成自动激活�
 it('BENCH-A Inspector数值实际完成0→115→100；Scene、Timeline与Undo一致', () => {
   const store = new EditorStore(createDefaultProject());
   render(<App store={store} />);
+  openTimelineLayers();
   menu();
   fireEvent.click(screen.getByRole('button', { name: '创建 椭圆' }));
+  openTimelineLayers();
   edit('缩放 X（%）', '0');
   fireEvent.click(screen.getByRole('button', { name: '开启缩放动画' }));
   edit('当前时间（秒）', '0.5');

@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { openTimelineLayers } from './timeline-test-helpers';
 import { afterEach, beforeAll, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
@@ -16,8 +17,10 @@ afterEach(cleanup);
 it('动画开关、属性筛选、图层快捷键和输入焦点隔离在真实 UI 中协同工作', () => {
   const store = new EditorStore(createDefaultProject());
   render(<App store={store} />);
+  openTimelineLayers();
   fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
   fireEvent.click(screen.getByRole('button', { name: '创建 矩形' }));
+  openTimelineLayers();
   fireEvent.click(screen.getByRole('button', { name: '开启 矩形 位置 动画' }));
   expect(
     screen
@@ -35,7 +38,7 @@ it('动画开关、属性筛选、图层快捷键和输入焦点隔离在真实 
     activeComposition(store.getSnapshot().project).layers[0]!.transform.position
       .keyframes,
   ).toHaveLength(2);
-  fireEvent.keyDown(window, { key: 'u' });
+  fireEvent.keyDown(document.querySelector('.timeline-panel')!, { key: 'u' });
   expect(screen.queryByRole('group', { name: '矩形 缩放 轨道' })).toBeNull();
   fireEvent.change(screen.getByLabelText('时间轴属性筛选'), {
     target: { value: 'all' },

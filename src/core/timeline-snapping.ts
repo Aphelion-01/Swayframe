@@ -1,3 +1,4 @@
+import { snapToFrame } from './timeline-time';
 /** A single shared delta preserves relative spacing of a multi-keyframe selection. */
 export function snapTimeDelta(
   times: readonly number[],
@@ -11,11 +12,12 @@ export function snapTimeDelta(
   const lower = -Math.min(...times),
     upper = duration - Math.max(...times);
   const clamp = (value: number) => Math.max(lower, Math.min(upper, value));
-  let delta = clamp(Math.round(desired * fps) / fps);
+  let delta = clamp(snapToFrame(desired, fps));
   let correction: number | undefined, snapTime: number | undefined;
   for (const time of times)
     for (const target of targets) {
-      const candidate = target - time,
+      const alignedTarget = snapToFrame(target, fps);
+      const candidate = alignedTarget - time,
         distance = candidate - delta;
       if (
         candidate >= lower - 1e-8 &&
@@ -24,7 +26,7 @@ export function snapTimeDelta(
         (correction === undefined || Math.abs(distance) < Math.abs(correction))
       ) {
         correction = distance;
-        snapTime = target;
+        snapTime = alignedTarget;
       }
     }
   if (correction !== undefined) delta = clamp(delta + correction);
@@ -45,5 +47,5 @@ export function layerTimeDragDelta(
   const frame = Math.min(1 / fps, end - start);
   const lower = mode === 'end' ? start + frame - end : -start;
   const upper = mode === 'start' ? end - start - frame : duration - end;
-  return Math.max(lower, Math.min(upper, Math.round(desired * fps) / fps));
+  return Math.max(lower, Math.min(upper, snapToFrame(desired, fps)));
 }

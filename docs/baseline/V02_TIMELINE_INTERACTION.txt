@@ -1,0 +1,2238 @@
+你现在开始进行 Swayframe V0.2 的第三轮专项优化：
+
+======================================================================
+Timeline / Keyframe Editing 专项
+======================================================================
+
+本轮唯一目标：
+
+把当前 Timeline 从“能显示关键帧、能做基础动画”
+
+提升为：
+
+“真正具有专业 Motion Design 软件操作效率的动画时间轴”。
+
+交互逻辑重点参考：
+
+After Effects
++
+现代桌面创作软件
+
+但不要直接复制其视觉风格或代码。
+
+本轮重点：
+
+Layer Tree
+Property Tree
+Keyframe
+Playhead
+Timeline Navigation
+Selection
+Drag
+Copy / Paste
+Snapping
+In / Out Point
+Timeline Zoom
+Property Filtering
+Graph Editor 入口
+Undo Semantics
+Performance
+
+本轮不要：
+
+大改 Canvas
+新增 Effects
+增加 AI Agent
+扩张 Compositing Graph
+开发高级 3D
+新增大量 Layer Type
+
+除非某项直接阻塞 Timeline。
+
+======================================================================
+一、首先审计当前 Timeline
+======================================================================
+
+先完整检查：
+
+Timeline Component
+Timeline State
+Layer Rows
+Property Rows
+Playhead
+Current Time
+Keyframe UI
+Keyframe Data
+Selection Model
+Animation Engine
+Motion Curve
+Graph Editor
+History / Command System
+Zoom / Scroll
+Keyboard Shortcuts
+
+创建：
+
+TIMELINE_UX_AUDIT.md
+
+内容：
+
+Working
+
+Partial
+
+Broken
+
+Missing
+
+Interaction conflicts
+
+Performance issues
+
+Architecture risks
+
+完成后直接开始修复。
+
+不要停下来等待用户。
+
+======================================================================
+二、Timeline 必须形成明确三层结构
+======================================================================
+
+Timeline 的视觉和数据层级统一为：
+
+Layer
+↓
+Property Group
+↓
+Animated Property
+
+例如：
+
+▾ Rectangle
+   ▾ Transform
+      Position
+      Scale
+      Rotation
+      Opacity
+
+不要：
+
+把所有 Property 永久平铺。
+
+默认 Layer：
+
+Collapsed。
+
+点击：
+
+▸ / ▾
+
+展开。
+
+层级状态只属于 UI State。
+
+不要写进 Scene 的核心动画数据。
+
+======================================================================
+三、Timeline 左右区域必须明确分离
+======================================================================
+
+Timeline 结构：
+
+┌──────────────────────┬──────────────────────────────┐
+│ Layer / Property     │ Time Area                    │
+│                      │                              │
+│ Rectangle            │ ───────────────              │
+│   Position           │ ◆             ◆              │
+│   Scale              │ ◆             ◆              │
+│   Rotation           │                              │
+└──────────────────────┴──────────────────────────────┘
+
+左侧：
+
+Layer / Property Tree
+
+右侧：
+
+Time Ruler
+Layer Span
+Keyframes
+Playhead
+
+必须保证：
+
+纵向滚动同步。
+
+左侧 Property Row：
+
+和右侧 Keyframe Track：
+
+严格对齐。
+
+======================================================================
+四、Timeline Header 大幅精简
+======================================================================
+
+检查当前 Timeline Header。
+
+删除永久存在的大量：
+
+复制
+粘贴
+删除
+上一个关键帧
+下一个关键帧
+缓动
+曲线编辑
+
+等按钮。
+
+Timeline Header 只保留：
+
+Playback Controls
+
+Current Time
+
+Loop
+
+Graph Editor Toggle
+
+Timeline Zoom / Fit
+
+必要筛选
+
+低频操作：
+
+迁移到：
+
+Shortcut
+Context Menu
+Command Palette
+Menu
+
+原则：
+
+实现一个功能
+
+不等于：
+
+必须增加一个永久按钮。
+
+======================================================================
+五、Layer Row
+======================================================================
+
+每个 Layer Row 至少显示：
+
+Visibility
+
+Lock
+
+Layer Type Icon
+
+Layer Name
+
+Expand Arrow
+
+必要时：
+
+Solo
+
+3D Status
+
+Parent Indicator
+
+但保持克制。
+
+支持：
+
+Single Click
+
+Select Layer。
+
+Shift + Click
+
+Multi-select。
+
+Cmd/Ctrl + Click
+
+根据整体 Selection 规则追加 / 移除。
+
+Timeline Layer Selection：
+
+必须同步：
+
+Canvas
+
+Layer Panel
+
+Inspector。
+
+======================================================================
+六、Layer Row Drag Reorder
+======================================================================
+
+支持：
+
+拖 Layer Row
+
+调整 Z Order。
+
+拖动时：
+
+显示 insertion indicator。
+
+支持：
+
+multi-layer reorder
+
+如果当前架构合理。
+
+整个 reorder：
+
+一次 Undo Step。
+
+不能拖到自己内部导致非法结构。
+
+Precomp / nested composition：
+
+按当前 Layer Model 正确处理。
+
+======================================================================
+七、Property Tree
+======================================================================
+
+属性应该按逻辑分组。
+
+例如：
+
+Transform
+
+Position
+Scale
+Rotation
+Opacity
+Anchor
+
+Effects
+
+Gaussian Blur
+  Radius
+
+Masks
+
+Mask 1
+  Path
+  Feather
+  Opacity
+
+3D
+
+Position Z
+Rotation X
+Rotation Y
+Rotation Z
+
+不同 Layer：
+
+只显示存在的 Group。
+
+不要所有 Layer 都显示一堆空属性。
+
+======================================================================
+八、Property Filtering
+======================================================================
+
+实现专业属性过滤。
+
+至少支持：
+
+Search Field
+
+以及：
+
+Animated Only
+
+Selected Properties
+
+如果快捷键体系允许：
+
+可支持 AE 风格快速过滤：
+
+P
+Position
+
+S
+Scale
+
+R
+Rotation
+
+T
+Opacity
+
+但只有 Timeline Focus 时生效。
+
+不要与 Canvas Tool Shortcut 冲突。
+
+优先确保：
+
+输入框 / Text Editing
+
+不会误触。
+
+======================================================================
+九、Animated Only
+======================================================================
+
+提供：
+
+Show Animated Properties Only
+
+开启后：
+
+只显示当前具有 Keyframe / Expression / Animation 的 Property。
+
+这是处理复杂工程时非常重要的功能。
+
+不要只是视觉隐藏：
+
+Tree navigation
+
+Selection
+
+Keyboard focus
+
+必须仍然正确。
+
+======================================================================
+十、Time Ruler
+======================================================================
+
+Time Ruler 必须稳定显示：
+
+seconds
+
+frames
+
+major ticks
+
+minor ticks。
+
+根据 Zoom：
+
+自动调整刻度密度。
+
+例如：
+
+低 Zoom：
+
+0s
+5s
+10s
+
+高 Zoom：
+
+1.00
+1.10
+1.20
+
+不要每一帧永远显示标签。
+
+避免文字拥挤。
+
+======================================================================
+十一、时间显示
+======================================================================
+
+支持：
+
+Seconds
+
+Timecode / Frames
+
+至少内部统一：
+
+seconds
+
+或：
+
+frame index
+
+不要两个体系混乱。
+
+时间转换：
+
+frame = round(time * fps)
+
+或者项目现有统一规则。
+
+整个项目必须有：
+
+一个明确时间表示标准。
+
+Timeline、Renderer、Animation Engine：
+
+不能各自舍入。
+
+======================================================================
+十二、Playhead
+======================================================================
+
+Playhead 支持：
+
+Click Ruler
+
+→ Jump。
+
+Drag Playhead
+
+→ Scrub。
+
+Scrub 时：
+
+Canvas 实时更新。
+
+拖到 Timeline 之外：
+
+如果 pointer capture 已建立：
+
+继续可靠拖动。
+
+Playhead 必须始终对应：
+
+Project / Composition currentTime
+
+单一数据源。
+
+======================================================================
+十三、Scrubbing Performance
+======================================================================
+
+拖 Playhead 时：
+
+优先响应 Current Frame。
+
+不要每次 scrub：
+
+Save Project
+
+重新构建全部 Timeline
+
+重新创建所有 Layer DOM。
+
+允许：
+
+Preview Quality 降低。
+
+但时间和画面必须正确。
+
+使用：
+
+requestAnimationFrame
+
+或合理 throttle。
+
+======================================================================
+十四、Playback
+======================================================================
+
+Timeline Playback：
+
+Play
+
+Pause
+
+Loop
+
+Jump to Start
+
+Jump to End / Work Area End
+
+播放时：
+
+Playhead 平滑移动。
+
+Canvas：
+
+根据真实时间 Evaluate。
+
+不要通过简单：
+
+frame++
+
+累计产生明显时间漂移。
+
+播放停止后：
+
+currentTime
+
+Canvas
+
+Timeline
+
+保持一致。
+
+======================================================================
+十五、Layer Span
+======================================================================
+
+Timeline 右侧：
+
+显示 Layer 的时间范围。
+
+例如：
+
+In Point
+Out Point
+
+通过一条 Layer Bar 表示。
+
+支持：
+
+Drag Layer Bar
+
+整体移动 Layer 时间。
+
+支持：
+
+Trim Start
+
+Trim End。
+
+这三个行为：
+
+Move Layer in Time
+Trim In
+Trim Out
+
+必须明确区分。
+
+======================================================================
+十六、In / Out Point
+======================================================================
+
+允许：
+
+拖 Layer Bar 左端：
+
+修改 In Point。
+
+拖右端：
+
+修改 Out Point。
+
+不能影响原动画 Keyframe 时间：
+
+除非现有数据模型明确如此。
+
+例如：
+
+Trim Layer
+
+和：
+
+Move Keyframes
+
+不是同一件事。
+
+建立清晰语义。
+
+======================================================================
+十七、Split Layer
+======================================================================
+
+如果当前 Layer Model 支持：
+
+在 Playhead：
+
+Split Layer。
+
+快捷入口可通过：
+
+Context Menu
+Menu
+Command Palette。
+
+不要增加巨大按钮。
+
+Split 后：
+
+两个 Layer 时间范围正确。
+
+内容引用可共享。
+
+Undo：
+
+一次恢复原 Layer。
+
+如果当前架构还不适合：
+
+Deferred。
+
+不要因此阻塞核心 Timeline。
+
+======================================================================
+十八、Keyframe Visual
+======================================================================
+
+统一 Keyframe 图形。
+
+至少区分：
+
+Linear
+Bezier / Ease
+Hold
+
+可以通过：
+
+不同 Shape
+
+或小型视觉区别。
+
+不要使用过多颜色。
+
+Selection：
+
+明确高亮。
+
+Hover：
+
+提供轻量反馈。
+
+Current-time keyframe：
+
+可适当突出。
+
+======================================================================
+十九、添加关键帧
+======================================================================
+
+Timeline Property Row：
+
+提供轻量：
+
+Diamond / Keyframe Toggle。
+
+Inspector 属性旁：
+
+也使用同一逻辑。
+
+Add Keyframe：
+
+必须调用统一：
+
+AddKeyframeCommand。
+
+不要 Timeline 自己修改 Property。
+
+======================================================================
+二十、关键帧选择
+======================================================================
+
+支持：
+
+Click
+
+单选。
+
+Shift + Click
+
+追加 / 移除。
+
+Marquee Drag
+
+框选多个 Keyframe。
+
+点击空白 Track：
+
+清除 Keyframe Selection。
+
+Layer Selection
+
+和：
+
+Keyframe Selection
+
+必须明确区分。
+
+不要选了 Keyframe：
+
+反而把整个 Layer Selection 清空。
+
+======================================================================
+二十一、Keyframe Marquee
+======================================================================
+
+在 Time Area 空白处：
+
+拖动形成框选区域。
+
+选择：
+
+位于矩形范围内的 Keyframe。
+
+支持：
+
+Shift + Marquee
+
+Add Selection。
+
+视觉样式使用统一 Timeline Selection Token。
+
+Marquee：
+
+不能误触：
+
+Playhead
+
+Layer Trim
+
+Scrollbar。
+
+需要清晰 hit priority。
+
+======================================================================
+二十二、多关键帧拖动
+======================================================================
+
+选择多个 Keyframe：
+
+Drag 任意选中 Keyframe
+
+→ 所有 Selection 一起移动。
+
+保持：
+
+相对时间距离。
+
+限制：
+
+不能拖到非法负时间，
+
+除非 Composition 支持。
+
+如果部分 keyframe 会越界：
+
+整体 clamp，
+
+不要改变它们彼此间距。
+
+======================================================================
+二十三、Keyframe Drag Undo
+======================================================================
+
+这是重点。
+
+100 次 pointermove
+
+只能形成：
+
+1 个 Undo Step。
+
+流程：
+
+Drag Start
+
+记录：
+
+original times。
+
+Drag Update：
+
+Preview。
+
+Drag Commit：
+
+MoveKeyframesCommand。
+
+Esc：
+
+Cancel。
+
+恢复 original。
+
+======================================================================
+二十四、时间吸附
+======================================================================
+
+Keyframe Drag：
+
+支持 snapping。
+
+优先吸附：
+
+Playhead
+
+Other Keyframes
+
+Layer In / Out Point
+
+Composition Start / End
+
+Frame Grid
+
+Snap Threshold：
+
+使用 screen pixel
+
+而不是时间单位。
+
+不同 Timeline Zoom：
+
+手感保持一致。
+
+======================================================================
+二十五、Frame Snapping
+======================================================================
+
+关键帧默认：
+
+落在 Frame Grid。
+
+如果用户使用：
+
+30 fps
+
+则 keyframe time：
+
+与 frame index 对齐。
+
+除非项目支持 subframe。
+
+若未来支持 subframe：
+
+再允许 modifier 临时关闭 Frame Snap。
+
+当前优先稳定。
+
+======================================================================
+二十六、Copy / Paste Keyframes
+======================================================================
+
+Cmd/Ctrl + C
+
+复制 Keyframe Selection。
+
+Paste：
+
+以：
+
+Playhead
+
+或者：
+
+first selected keyframe reference
+
+为基准。
+
+确定明确语义。
+
+建议：
+
+复制数据保存：
+
+Property compatibility
+relativeTime
+value
+interpolation
+
+Paste：
+
+第一个 keyframe
+
+对齐 currentTime。
+
+其余保持 relative offset。
+
+======================================================================
+二十七、跨属性复制
+======================================================================
+
+如果类型兼容：
+
+Number → Number
+
+Vec2 → Vec2
+
+可以 Paste。
+
+类型不兼容：
+
+拒绝并提供轻量反馈。
+
+不要：
+
+Color Keyframe
+
+粘到 Position
+
+导致 runtime error。
+
+建立：
+
+Property Value Type compatibility。
+
+======================================================================
+二十八、Duplicate Keyframes
+======================================================================
+
+支持：
+
+Alt / Option + Drag
+
+复制 Keyframes。
+
+或者：
+
+Duplicate Command。
+
+如果 Alt Drag：
+
+整个行为：
+
+一次 Transaction。
+
+Undo：
+
+删除 duplicate。
+
+不要：
+
+先 duplicate command
+
+再 move command
+
+生成两个 Undo Steps。
+
+======================================================================
+二十九、Delete Keyframes
+======================================================================
+
+Delete / Backspace
+
+删除：
+
+selected keyframes。
+
+如果 focus 在 Text Input：
+
+不能触发。
+
+支持：
+
+Undo。
+
+删除后：
+
+Property 是否仍保持 animated：
+
+按照统一 Property 规则。
+
+例如：
+
+最后一个 Keyframe 删除后：
+
+可以：
+
+保留 animation enabled
+
+或者回到 static value。
+
+必须定义一致语义。
+
+======================================================================
+三十、Keyframe Interpolation Context Menu
+======================================================================
+
+右键 Keyframe：
+
+Linear
+
+Hold
+
+Ease In
+
+Ease Out
+
+Ease In-Out
+
+Open Motion Curve
+
+Open Graph Editor
+
+Copy Easing
+
+Paste Easing
+
+不要把这些功能：
+
+全部放 Timeline Header。
+
+======================================================================
+三十一、Motion Curve Integration
+======================================================================
+
+Timeline 与 Motion Curve：
+
+必须真正连接。
+
+选择：
+
+一个 Segment
+
+或：
+
+两个连续 Keyframe
+
+↓
+
+Open Motion Curve
+
+↓
+
+显示当前 Curve
+
+↓
+
+修改
+
+↓
+
+Timeline Keyframe visual
+
+和：
+
+Animation Evaluation
+
+立即更新。
+
+Undo：
+
+恢复。
+
+======================================================================
+三十二、Segment Selection
+======================================================================
+
+Motion Curve 本质：
+
+控制：
+
+K1 → K2
+
+Segment。
+
+Timeline 应允许：
+
+明确知道当前编辑哪个 Segment。
+
+可以：
+
+点击两个 Keyframe
+
+或者：
+
+点击 Keyframe 之间的 segment area。
+
+第一版不需要复杂 Segment UI。
+
+但内部状态必须明确：
+
+selected keyframes
+selected segments
+
+不要模糊。
+
+======================================================================
+三十三、Graph Editor Toggle
+======================================================================
+
+Timeline Header：
+
+保留一个明显入口：
+
+Graph Editor。
+
+点击：
+
+Timeline Track Area
+
+切换：
+
+Keyframe Timeline
+
+↔
+
+Graph Editor。
+
+不要：
+
+Timeline
+Motion Curve
+Graph Editor
+
+同时垂直挤在一起。
+
+Graph Editor：
+
+继续共用当前 Property / Keyframe Selection。
+
+======================================================================
+三十四、Graph Editor 返回
+======================================================================
+
+用户在 Graph Editor：
+
+修改 Value / Speed。
+
+返回 Timeline：
+
+Keyframe
+
+Interpolation
+
+必须立即反映变化。
+
+不要建立：
+
+Graph 专用动画数据。
+
+======================================================================
+三十五、Timeline Zoom
+======================================================================
+
+Timeline Zoom 是本轮重点之一。
+
+必须支持：
+
+Wheel + modifier
+
+或统一快捷方式。
+
+关键要求：
+
+Zoom around cursor
+
+或：
+
+Zoom around playhead
+
+选择一套一致规则。
+
+推荐：
+
+鼠标在 Time Area：
+
+围绕 cursor time zoom。
+
+这样用户放大：
+
+某组 Keyframes
+
+时不会跳走。
+
+======================================================================
+三十六、Horizontal Pan
+======================================================================
+
+支持：
+
+Shift + Wheel
+
+或：
+
+Middle Mouse / Space Drag
+
+根据当前交互规范。
+
+Timeline 需要：
+
+水平滚动
+
+纵向滚动。
+
+避免：
+
+整个页面滚动。
+
+Timeline 自己处理区域滚动。
+
+======================================================================
+三十七、Fit Timeline
+======================================================================
+
+增加：
+
+Fit Composition
+
+将：
+
+0 → duration
+
+完整显示。
+
+另外可考虑：
+
+Fit Selected Keyframes
+
+不是本轮必需。
+
+======================================================================
+三十八、Track Height
+======================================================================
+
+Timeline Row Height：
+
+统一。
+
+可以设置：
+
+compact
+
+normal
+
+未来再考虑。
+
+当前不要允许每行随意不同高度。
+
+确保：
+
+Layer Tree
+
+Time Area
+
+始终完全对齐。
+
+======================================================================
+三十九、Timeline Resize
+======================================================================
+
+Timeline 整体高度：
+
+通过上边界拖动调整。
+
+保存：
+
+workspace preference。
+
+Timeline Resize：
+
+不能破坏：
+
+Canvas current center
+
+或导致 Timeline 内容错位。
+
+设置：
+
+min height。
+
+允许 Collapse Timeline。
+
+======================================================================
+四十、Horizontal Divider
+======================================================================
+
+Layer/Property Column：
+
+和：
+
+Time Area
+
+之间：
+
+支持调宽。
+
+用户可以增加：
+
+Property Name
+
+区域宽度。
+
+保存 workspace preference。
+
+不要写进 project file。
+
+======================================================================
+四十一、Long Layer Names
+======================================================================
+
+Layer Name 过长：
+
+ellipsis。
+
+Hover：
+
+Tooltip 完整名称。
+
+Rename：
+
+Double Click
+
+或：
+
+Enter / F2。
+
+编辑时：
+
+不要触发 Timeline shortcuts。
+
+======================================================================
+四十二、Timeline Context Menu
+======================================================================
+
+Timeline 空白：
+
+Add Marker（未来）
+Paste
+Fit Timeline
+
+Layer Row：
+
+Rename
+Duplicate
+Delete
+Pre-compose
+Split
+Enable 3D
+
+Property Row：
+
+Add Keyframe
+Remove Animation
+Open Graph
+Open Motion Curve
+
+Keyframe：
+
+Interpolation
+Copy
+Paste
+Delete
+
+根据 Context：
+
+显示对应内容。
+
+不要所有菜单都有全部项。
+
+======================================================================
+四十三、Keyboard Navigation
+======================================================================
+
+支持：
+
+Left / Right
+
+在 keyframe / time context 中合理移动。
+
+Page Up / Down
+
+或：
+
+J/K/L
+
+不是当前必须。
+
+但至少：
+
+Previous Keyframe
+
+Next Keyframe
+
+应该有 Shortcut / Command。
+
+无需永久按钮。
+
+======================================================================
+四十四、Previous / Next Keyframe
+======================================================================
+
+实现：
+
+Go to Previous Keyframe
+
+Go to Next Keyframe。
+
+作用范围：
+
+selected property
+
+或：
+
+visible animated properties
+
+需要统一。
+
+优先：
+
+Selected Property。
+
+如果没有 selected property：
+
+可以：
+
+所有 visible keyframes。
+
+避免不确定跳转。
+
+======================================================================
+四十五、Layer Color / Type Indicator
+======================================================================
+
+如果需要 Timeline 可读性：
+
+可以给 Layer：
+
+小型 type color / indicator。
+
+不要像 AE 那样一开始引入复杂大量 Label Colors。
+
+保持简洁。
+
+当前重点是：
+
+层级和对齐。
+
+======================================================================
+四十六、Current Value Preview
+======================================================================
+
+Property Row：
+
+可显示当前时间 Value。
+
+例如：
+
+Position
+
+960, 540
+
+但不要让 Timeline 过度拥挤。
+
+如果 Inspector 已经承担：
+
+精确 Property 编辑
+
+Timeline 可保持更简洁。
+
+避免两个地方重复大量 Input。
+
+======================================================================
+四十七、Layer Lock
+======================================================================
+
+Locked Layer：
+
+Timeline Keyframe：
+
+可以查看。
+
+是否允许选择：
+
+可。
+
+但：
+
+不能修改 keyframe。
+
+或者统一禁止 edit。
+
+视觉：
+
+disabled / locked state。
+
+Canvas 和 Timeline Lock 语义必须一致。
+
+======================================================================
+四十八、Hidden Layer
+======================================================================
+
+Hidden Layer：
+
+Timeline 仍然显示。
+
+但 Canvas 不 Render。
+
+Visibility Toggle：
+
+产生 Command。
+
+如果 Visibility 是可动画属性：
+
+未来再做。
+
+当前不需要。
+
+======================================================================
+四十九、Nested Precomp
+======================================================================
+
+Precomp Layer：
+
+Timeline 显示为普通 Layer。
+
+Double Click：
+
+Open nested Composition。
+
+Breadcrumb：
+
+同步更新。
+
+Precomp 内 Timeline：
+
+显示对应 Composition duration。
+
+当前 playhead：
+
+根据设计决定：
+
+独立时间
+
+或：
+
+映射 parent time。
+
+先保持当前已有逻辑。
+
+不要本轮大改。
+
+======================================================================
+五十、Markers 先预留，不重点开发
+======================================================================
+
+Timeline未来可能支持：
+
+Composition Marker
+
+Layer Marker
+
+Beat Marker
+
+AI Annotation
+
+本轮只需要：
+
+数据结构不阻塞。
+
+不要花大量时间实现。
+
+======================================================================
+五十一、Audio Waveform 不是本轮重点
+======================================================================
+
+如果当前 Audio Layer 不成熟：
+
+不要为了 Timeline：
+
+开始开发复杂 waveform engine。
+
+可以预留 row area。
+
+本轮优先动画 keyframe。
+
+======================================================================
+五十二、Interaction State
+======================================================================
+
+Timeline 交互建议统一：
+
+idle
+
+scrubbing
+
+marqueeSelecting
+
+movingKeyframes
+
+trimmingLayerStart
+
+trimmingLayerEnd
+
+movingLayerSpan
+
+resizingPanel
+
+panningTimeline
+
+不要：
+
+几十个 boolean 状态互相冲突。
+
+可以使用 discriminated union。
+
+======================================================================
+五十三、Pointer Events
+======================================================================
+
+Timeline Drag：
+
+统一优先 Pointer Events。
+
+使用：
+
+pointer capture。
+
+避免 keyframe 拖出 track 后：
+
+drag 丢失。
+
+Pointer Cancel：
+
+正确清理。
+
+======================================================================
+五十四、Command System
+======================================================================
+
+所有正式修改：
+
+Timeline UI
+↓
+Command System
+↓
+Scene / Animation Model
+
+例如：
+
+MoveKeyframesCommand
+
+DeleteKeyframesCommand
+
+TrimLayerCommand
+
+MoveLayerTimeCommand
+
+SetInterpolationCommand
+
+ReorderLayersCommand
+
+UI 不得直接永久写数据。
+
+Drag Preview：
+
+可以临时 state。
+
+Mouse Up：
+
+Commit。
+
+======================================================================
+五十五、Timeline Performance
+======================================================================
+
+重点检查：
+
+100 Layers
+
+500 Keyframes
+
+1000 Keyframes
+
+Timeline 是否还能操作。
+
+不要求达到大型 AE 工程性能。
+
+但不能：
+
+20 个 Layer
+
+就明显卡顿。
+
+优化重点：
+
+避免所有 pointermove 引起整个 tree rerender。
+
+只订阅：
+
+相关 rows。
+
+长 Timeline：
+
+必要时可考虑 virtualization。
+
+但只有测到真实问题后再引入。
+
+======================================================================
+五十六、不要过早虚拟化
+======================================================================
+
+如果当前 Layer 数量规模：
+
+很小。
+
+不要为了理论性能：
+
+直接引入复杂 virtualization
+
+破坏：
+
+scroll sync
+marquee
+drag
+
+先 profiler。
+
+再决定。
+
+======================================================================
+五十七、Visual Hierarchy
+======================================================================
+
+Timeline 视觉：
+
+高信息密度
+低装饰
+清晰层级
+
+避免：
+
+巨大按钮
+大量卡片
+重阴影
+过多颜色。
+
+Layer
+
+Property Group
+
+Property
+
+需要：
+
+通过：
+
+indentation
+
+font weight
+
+icon
+
+divider
+
+区分。
+
+不要每层都不同背景色。
+
+======================================================================
+五十八、Selection Color
+======================================================================
+
+统一：
+
+Layer selection
+
+Keyframe selection
+
+Playhead
+
+Range selection
+
+Marquee
+
+Graph selection
+
+颜色 token。
+
+不要组件各自硬编码。
+
+======================================================================
+五十九、关键验收 A
+======================================================================
+
+创建 Rectangle。
+
+Position：
+
+0s
+◆
+
+1s
+◆
+
+2s
+◆
+
+框选三个 keyframe。
+
+拖动：
+
++1 秒。
+
+三个 keyframe：
+
+保持相对间距。
+
+Undo：
+
+全部回到原位置。
+
+Redo：
+
+恢复。
+
+======================================================================
+六十、关键验收 B
+======================================================================
+
+创建：
+
+Rectangle
+
+Text
+
+Image。
+
+分别添加：
+
+Position
+Scale
+Opacity
+
+Keyframes。
+
+使用：
+
+Animated Only
+
+只显示动画 Property。
+
+关闭：
+
+恢复完整 Tree。
+
+======================================================================
+六十一、关键验收 C
+======================================================================
+
+Timeline：
+
+缩放到：
+
+5 秒完整显示。
+
+将鼠标放在：
+
+1 秒附近。
+
+Zoom In。
+
+1 秒附近：
+
+保持在鼠标位置附近。
+
+继续放大：
+
+frame tick 自动细化。
+
+======================================================================
+六十二、关键验收 D
+======================================================================
+
+拖动 Playhead：
+
+0 → 5 秒。
+
+Canvas：
+
+实时正确更新。
+
+快速来回 scrub：
+
+不崩溃
+
+不产生 History
+
+不修改项目数据。
+
+======================================================================
+六十三、关键验收 E
+======================================================================
+
+复制：
+
+Position 两个 Keyframe。
+
+Playhead 放到：
+
+3 秒。
+
+Paste。
+
+复制 keyframe：
+
+从 3 秒开始。
+
+相对时间间隔保持。
+
+Undo：
+
+删除 paste。
+
+======================================================================
+六十四、关键验收 F
+======================================================================
+
+右键：
+
+Keyframe。
+
+选择：
+
+Ease Out。
+
+动画改变。
+
+打开：
+
+Motion Curve。
+
+显示对应 curve。
+
+Undo：
+
+恢复之前 interpolation。
+
+======================================================================
+六十五、关键验收 G
+======================================================================
+
+选择：
+
+两个 keyframes。
+
+进入 Graph Editor。
+
+修改 curve。
+
+返回 Timeline。
+
+Keyframe / Interpolation 状态正确。
+
+播放：
+
+动画效果与 Graph 一致。
+
+======================================================================
+六十六、关键验收 H
+======================================================================
+
+Layer Span：
+
+0 → 5s。
+
+拖 In Point 到：
+
+1s。
+
+Out Point 到：
+
+4s。
+
+Layer：
+
+只在 1–4 秒有效。
+
+动画数据保持合理。
+
+Undo：
+
+一步一步恢复。
+
+======================================================================
+六十七、关键验收 I
+======================================================================
+
+连续拖某个 keyframe：
+
+2 秒 → 4 秒
+
+过程中：
+
+200 次 pointermove。
+
+History：
+
+只增加：
+
+1 Step。
+
+Undo 一次：
+
+回到 2 秒。
+
+======================================================================
+六十八、关键验收 J
+======================================================================
+
+保存 Project。
+
+重新打开。
+
+Timeline：
+
+Layer order
+
+expanded state 可以作为 workspace/session state
+
+而核心：
+
+Keyframe
+Time
+Interpolation
+Layer In/Out
+
+必须完全保持。
+
+======================================================================
+六十九、测试
+======================================================================
+
+补充核心测试：
+
+Time ↔ Frame conversion
+
+Move keyframe
+
+Move multi-keyframe
+
+Clamp multi-keyframe
+
+Copy / Paste relative time
+
+Delete
+
+Undo / Redo
+
+Layer in/out
+
+Timeline snapping
+
+Interpolation application
+
+Animated-only filtering
+
+Project round-trip
+
+不要过度测试 CSS。
+
+优先数据逻辑。
+
+======================================================================
+七十、本轮明确不做
+======================================================================
+
+不要新增：
+
+完整 Audio Editor
+
+复杂 Marker System
+
+Time Remap 高级系统
+
+Roving Keyframe 高级逻辑
+
+大量 Timeline Themes
+
+AI Timeline Agent
+
+高级 Dope Sheet
+
+大型 NLE 剪辑功能
+
+本轮目标：
+
+专业 Motion Design Timeline。
+
+不是：
+
+Premiere。
+
+======================================================================
+七十一、输出
+======================================================================
+
+完成后生成：
+
+TIMELINE_UX_RESULT.md
+
+包含：
+
+Implemented
+
+Fixed
+
+Performance improvements
+
+Known issues
+
+Deferred
+
+Test results
+
+并明确列出：
+
+下一轮 Inspector / Property Editing 专项
+
+最值得修复的具体问题。
+
+======================================================================
+最终目标
+======================================================================
+
+用户面对 Timeline：
+
+应该能够自然理解：
+
+哪个 Layer
+
+哪个 Property
+
+哪个时间
+
+哪个 Keyframe
+
+当前 Playhead
+
+以及动画如何发生。
+
+常用操作：
+
+Select
+Move
+Copy
+Paste
+Delete
+Ease
+Zoom
+Scrub
+
+应主要依赖：
+
+直接操作
+快捷键
+Context Menu
+
+而不是：
+
+顶部一排巨大按钮。
+
+最终评价标准：
+
+不是 Timeline 功能数量。
+
+而是：
+
+可读性
+操作效率
+时间精度
+关键帧手感
+缩放手感
+Undo 一致性
+动画数据可靠性
+性能。
+
+本轮只把 Timeline 做好。

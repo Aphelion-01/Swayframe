@@ -65,6 +65,7 @@ it('面板读取跨属性 Mixed，点击预设即时统一，指定区间模式�
       .keyframes)
       store.selectFrame({ propertyId: p.id, keyframeId: k.id }, true);
   render(<App store={store} />);
+  fireEvent.click(screen.getByText('关键帧 ▾', { selector: 'summary' }));
   fireEvent.click(screen.getByRole('button', { name: '动画缓动' }));
   expect(screen.getByText('混合（Mixed）')).toBeInTheDocument();
   const count = store.commands.undoStack.length;
@@ -128,6 +129,7 @@ it('真实手柄 pointermove 在 pointerup 之前更新画布求值，只在松�
   store.select(layer.id);
   store.setTime(0.5);
   render(<App store={store} />);
+  fireEvent.click(screen.getByText('关键帧 ▾', { selector: 'summary' }));
   fireEvent.click(screen.getByRole('button', { name: '动画缓动' }));
   const before = store.getSnapshot().project,
     count = store.commands.undoStack.length;

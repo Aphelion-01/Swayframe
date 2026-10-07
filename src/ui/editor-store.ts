@@ -1,3 +1,4 @@
+import { snapToFrame } from '../core/timeline-time';
 import type { TextMeasure } from '../core/text-geometry';
 import { createTransformContext } from '../core/transform-resolvers';
 import { transformItems } from '../core/transform-operations';
@@ -20,6 +21,7 @@ import { parentCommands } from '../core/composition-editing';
 import { displayName } from './labels';
 import {
   animationEdit,
+  recordKeyframeCommand,
   toggleAnimation,
   cloneLayer,
   copyFrames,
@@ -56,9 +58,16 @@ export interface EditorView {
   readonly zoom: number;
   readonly autoKeyframes: boolean;
   readonly frames: readonly FrameRef[];
+  readonly selectedProperties: readonly ID[];
   readonly timelineZoom: number;
   readonly propertyFilter:
-    'all' | 'animated' | 'position' | 'scale' | 'rotation' | 'opacity';
+    | 'all'
+    | 'animated'
+    | 'selected'
+    | 'position'
+    | 'scale'
+    | 'rotation'
+    | 'opacity';
   readonly preview?: PositionPreview;
   readonly propertyPreviews?: readonly Property<AnimValue>[];
   readonly propertyPreview?: {
@@ -107,6 +116,7 @@ export class EditorStore {
       zoom: 1,
       autoKeyframes: false,
       frames: [],
+      selectedProperties: [],
       timelineZoom: 1,
       propertyFilter: 'all',
       status: '准备就绪',
@@ -132,6 +142,11 @@ export class EditorStore {
             : undefined,
         propertyPreview: undefined,
         propertyPreviews: undefined,
+        selectedProperties: this.#view.selectedProperties.filter((id) =>
+          c.layers.some((layer) =>
+            layerProperties(layer).some((entry) => entry.property.id === id),
+          ),
+        ),
         frames: this.#view.frames.filter((ref) => {
           try {
             return !!findProperty(
@@ -240,6 +255,7 @@ export class EditorStore {
   select(id: ID | null, additive = false): void {
     this.#set({
       graphSelection: undefined,
+      selectedProperties: [],
       selection: id
         ? additive
           ? this.#view.selection.includes(id)
@@ -251,7 +267,41 @@ export class EditorStore {
     });
   }
   selectFrames(frames: readonly FrameRef[]): void {
-    this.#set({ frames: [...frames] });
+    const owners = frames.map(
+      (ref) => findProperty(this.#view.project, ref.propertyId).layer.id,
+    );
+    this.#set({
+      frames: [...frames],
+      selection: owners.every((id) => this.#view.selection.includes(id))
+        ? this.#view.selection
+        : [...new Set([...this.#view.selection, ...owners])],
+      ...(frames.length
+        ? {
+            selectedProperties: [
+              ...new Set(frames.map((ref) => ref.propertyId)),
+            ],
+          }
+        : {}),
+    });
+  }
+  selectProperties(ids: readonly ID[]): void {
+    const c = activeComposition(this.#view.project);
+    const entries = c.layers.flatMap((layer) =>
+      layerProperties(layer).map(({ property }) => ({
+        layerId: layer.id,
+        id: property.id,
+      })),
+    );
+    const selected = entries.filter((entry) => ids.includes(entry.id));
+    this.#set({
+      selectedProperties: selected.map((entry) => entry.id),
+      selection: [
+        ...new Set([
+          ...this.#view.selection,
+          ...selected.map((entry) => entry.layerId),
+        ]),
+      ],
+    });
   }
   selectAll(): void {
     this.#set({
@@ -266,7 +316,7 @@ export class EditorStore {
     this.#set({ propertyFilter: value });
   }
   setTimelineZoom(value: number): void {
-    this.#set({ timelineZoom: Math.max(1, Math.min(8, value)) });
+    this.#set({ timelineZoom: Math.max(1, Math.min(32, value)) });
   }
   selectFrame(ref: FrameRef, additive = false): void {
     const exists = this.#view.frames.some(
@@ -274,9 +324,8 @@ export class EditorStore {
     );
     const layerId = findProperty(this.#view.project, ref.propertyId).layer.id;
     this.#set({
-      selection: additive
-        ? [...new Set([...this.#view.selection, layerId])]
-        : [layerId],
+      selection: [...new Set([...this.#view.selection, layerId])],
+      selectedProperties: [ref.propertyId],
       frames: additive
         ? exists
           ? this.#view.frames.filter((r) => r.keyframeId !== ref.keyframeId)
@@ -286,10 +335,19 @@ export class EditorStore {
           : [ref],
     });
   }
+  recordPropertyKeyframe(id: ID): void {
+    this.run('记录属性关键帧', [
+      recordKeyframeCommand(this.#view.project, id, this.#view.time),
+    ]);
+  }
   togglePropertyAnimation(id: ID): void {
     this.run(
       '切换属性动画',
-      toggleAnimation(this.#view.project, id, this.#view.time),
+      toggleAnimation(
+        this.#view.project,
+        id,
+        snapToFrame(this.#view.time, activeComposition(this.#view.project).fps),
+      ),
     );
   }
   deleteSelected(): void {
@@ -351,6 +409,13 @@ export class EditorStore {
           this.#frameClipboard,
           this.#view.time,
           this.#view.selection,
+          new Set(
+            this.#frameClipboard.map(
+              (item) => `${item.layerId}:${item.property}`,
+            ),
+          ).size === 1
+            ? this.#view.selectedProperties
+            : [],
         );
         if (commands.length) this.run('粘贴关键帧', commands);
       } else {
@@ -449,9 +514,13 @@ export class EditorStore {
           this.#view.selection.includes(l.id),
       )
       .flatMap((l) =>
-        layerProperties(l).flatMap(({ property }) =>
-          property.keyframes.map((k) => k.time),
-        ),
+        layerProperties(l)
+          .filter(
+            ({ property }) =>
+              !this.#view.selectedProperties.length ||
+              this.#view.selectedProperties.includes(property.id),
+          )
+          .flatMap(({ property }) => property.keyframes.map((k) => k.time)),
       );
     const next = times
       .filter((t) =>
@@ -641,7 +710,7 @@ export class EditorStore {
       });
       this.#frameClipboard = [];
       this.#layerClipboard = [];
-      this.#set({ frames: [] });
+      this.#set({ frames: [], selectedProperties: [] });
       this.setStatus('工程已打开 · 历史已清空');
       return true;
     } catch (error) {
@@ -664,7 +733,7 @@ export class EditorStore {
     return editPropertyCommand(
       this.#view.project,
       propertyId,
-      this.#view.time,
+      snapToFrame(this.#view.time, activeComposition(this.#view.project).fps),
       value,
     );
   }

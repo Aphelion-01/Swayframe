@@ -5,8 +5,6 @@ import { Icon } from './workspace/icons';
 import type { AnimValue, Vec2 } from '../core/core-types';
 import type { Property } from '../core/project-model';
 import { evaluateProperty } from '../core/animation-engine';
-import { newId } from '../core/core-types';
-import { command } from '../core/command-system';
 import { activeComposition } from '../core/project-model';
 import { NumberField, TextField } from './fields';
 import type { EditorStore } from './editor-store';
@@ -218,20 +216,7 @@ export function AnimatedField({
             title={`记录${label}关键帧`}
             aria-label={`记录${label}关键帧`}
             disabled={current}
-            onClick={() =>
-              store.run(`记录${label}`, [
-                command({
-                  type: 'keyframe.add',
-                  propertyId: property.id,
-                  keyframe: {
-                    id: newId(),
-                    time,
-                    value,
-                    interpolation: { type: 'linear' },
-                  },
-                }),
-              ])
-            }
+            onClick={() => store.recordPropertyKeyframe(property.id)}
           >
             <Icon name="diamond" />
           </button>

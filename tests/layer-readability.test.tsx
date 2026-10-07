@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { openTimelineLayers } from './timeline-test-helpers';
 import { afterEach, expect, it } from 'vitest';
 import {
   act,
@@ -70,8 +71,9 @@ it('B2/B3/B9：100属性行交替连续；播放头移动保留静态DOM，折�
   const { store, layers } = setup(25);
   for (const l of layers) store.select(l.id, true);
   const r = render(<Timeline store={store} />);
+  openTimelineLayers();
   const properties = [...r.container.querySelectorAll('.timeline-row')];
-  expect(properties).toHaveLength(100);
+  expect(properties).toHaveLength(200);
   const check = () =>
     [...r.container.querySelectorAll('[data-row-index]')].forEach(
       (el, index) => {
@@ -86,11 +88,11 @@ it('B2/B3/B9：100属性行交替连续；播放头移动保留静态DOM，折�
     properties,
   );
   fireEvent.click(screen.getByRole('button', { name: '展开 图层 25 属性' }));
-  expect(r.container.querySelectorAll('.timeline-row')).toHaveLength(96);
+  expect(r.container.querySelectorAll('.timeline-row')).toHaveLength(192);
   check();
   fireEvent.change(screen.getByLabelText('时间轴属性筛选'), {
     target: { value: 'position' },
   });
-  expect(r.container.querySelectorAll('.timeline-row')).toHaveLength(24);
+  expect(r.container.querySelectorAll('.timeline-row')).toHaveLength(25);
   check();
 });

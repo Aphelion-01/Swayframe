@@ -79,6 +79,7 @@ export function MotionCurvePanel({
         s.from.id === view.frames[0]?.keyframeId ||
         s.to.id === view.frames[0]?.keyframeId,
     ) ??
+    available.find((s) => s.propertyId === view.selectedProperties[0]) ??
     available[0];
   const targets =
     scope === 'selection' && selected.length

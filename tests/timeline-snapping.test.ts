@@ -7,8 +7,8 @@ it('关键帧批量移动保持间距、帧网格与合成边界，最近目标�
   expect(snapTimeDelta([1, 2], 10, 5, 30).delta).toBe(3);
   expect(snapTimeDelta([1, 2], -10, 5, 30).delta).toBe(-1);
   const snapped = snapTimeDelta([1, 2], 0.99, 5, 30, [3.05], 0.08);
-  expect(snapped.delta).toBeCloseTo(1.05);
-  expect(snapped.snapTime).toBe(3.05);
+  expect(snapped.delta).toBeCloseTo(32 / 30);
+  expect(snapped.snapTime).toBe(92 / 30);
   expect(snapTimeDelta([1, 2], 0.99, 5, 30, [3.05], -1).delta).toBe(1);
   expect(snapTimeDelta([1, 2], 3, 5, 30, [5.1], 1).delta).toBe(3);
   expect(snapTimeDelta([], 2, 5, 30).delta).toBe(0);

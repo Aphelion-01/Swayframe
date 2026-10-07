@@ -239,6 +239,28 @@ export function Canvas({ store }: { store: EditorStore }) {
     breadcrumbs.current = [];
     setNavigation([]);
   }, [view.project.id]);
+  useEffect(() => {
+    const open = (event: Event) => {
+      const id = (event as CustomEvent<string>).detail;
+      const current = activeComposition(store.getSnapshot().project);
+      if (
+        !store
+          .getSnapshot()
+          .project.compositions.some((comp) => comp.id === id) ||
+        current.id === id
+      )
+        return;
+      cancelCanvas();
+      breadcrumbs.current = [...breadcrumbs.current, current.id];
+      setNavigation(breadcrumbs.current);
+      store.run('进入预合成', [
+        command({ type: 'project.activate', compositionId: id }),
+      ]);
+      store.select(null);
+    };
+    window.addEventListener('motion:open-composition', open);
+    return () => window.removeEventListener('motion:open-composition', open);
+  });
   const ref = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {

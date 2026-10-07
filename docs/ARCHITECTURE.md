@@ -227,3 +227,13 @@ IntelligenceService 的 submitProposal 使用当前工具逐项约束的参数 s
 临时Move继续使用PositionPreview；Scale/Rotate/Anchor同时更新临时PropertyPreviews供Inspector读取，计算与提交仍以未修改的起始Scene为准。Alt复制只在getRenderProject中暂时展示副本，释放以同一drag Transaction创建并定位副本；取消不写Scene。CommandSystem.coalesceRecent仅接受显式相邻匹配历史ID、同标签且无Redo的Scene事务，用于同次按键repeat，不是任意时间窗口自动合并。
 
 CanvasSnapContext在pointerDown冻结中心/边缘和相邻等间距候选，使用实际WorldBounds/TextMeasure，排除随父级移动的子层；阈值由CSS屏幕像素换算。mask-hit为只读几何选择过滤，非渲染器替代。蒙版软边、逐像素alpha与3D蒙版精确命中限制单列验收文档。项目格式、GUI/Agent共享Command以及Intelligence只输出Proposal的边界保持。
+
+### 0.9.9 · Timeline / Keyframe Editing
+
+执行基线 `docs/baseline/V02_TIMELINE_INTERACTION.txt`。`timeline-visible-rows`按真实Property分类形成Layer/Group/Property树，单一可见行模型驱动冻结树列和轨道，28px行高；搜索、展开、组折叠、列宽均为UI状态，列宽单独写workspace偏好，不写Project。`selectedProperties`属于EditorView，显式属性选择用于粘贴和Graph目标；关键帧选区同步属性及所属Layer，并保留其他Layer选区，清空帧选区不隐式清空Layer。
+
+`timeline-time`集中round秒↔帧、时间码和刻度。Playback仍用elapsed seconds；新记录用`recordKeyframeCommand`供Inspector/Timeline共用，按属性所属Composition帧率取整并更新同时间帧；底层模型保留seconds及旧工程subframe数据。`pasteFrames`支持显式属性目标，仅同源属性跨兼容值类型，拒绝非活动Composition、锁定、不兼容及越界。排序helper将前到后的Timeline顺序映射为Scene后到前顺序，整笔Command Transaction保留多选内部次序。
+
+Timeline复用泛型PointerInteractionState，以互斥载荷管理scrub、marquee、keyframe move、Layer Span、列宽、水平平移和多层排序。起始工程/refs/时间冻结，释放采样最终坐标，Esc/blur/pointercancel取消；drag期间只更新UI。Span trim不移动关键帧，move复用已有时间偏移命令。轨道与Graph/Motion Curve互斥，仍直接修改唯一Property/Segment。预合成导航事件仅桥接已有Canvas面包屑，不引入另一套Composition状态。
+
+静态rows memo、根CSS delta和时间索引避免逐次pointermove/scrub重建轨道；Span窗口监听仅活动时挂载。100层/500和1000帧用React Profiler测量，保留DOM身份及一次Undo；这些数据不等于真实FPS，当前不引入虚拟化。验收范围和限制见`TIMELINE_UX_RESULT.md`。

@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { openTimelineLayers } from './timeline-test-helpers';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
@@ -16,8 +17,10 @@ describe('时间轴 integration', () => {
   it('四个 Transform 可创建关键帧；Spring 和删除操作可撤销', () => {
     const store = new EditorStore(createDefaultProject());
     render(<App store={store} />);
+    openTimelineLayers();
     fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
     fireEvent.click(screen.getByRole('button', { name: '创建 矩形' }));
+    openTimelineLayers();
     for (const key of transformKeys)
       fireEvent.click(
         screen.getByRole('button', {
@@ -53,8 +56,10 @@ describe('时间轴 integration', () => {
   it('Position 与 Opacity 在相同时间由统一引擎求值', () => {
     const store = new EditorStore(createDefaultProject());
     render(<App store={store} />);
+    openTimelineLayers();
     fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
     fireEvent.click(screen.getByRole('button', { name: '创建 矩形' }));
+    openTimelineLayers();
     for (const [label, value] of [
       ['位置 X', '-120'],
       ['透明度（%）', '0'],

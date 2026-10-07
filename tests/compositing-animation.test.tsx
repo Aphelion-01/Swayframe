@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { openTimelineLayers } from './timeline-test-helpers';
 import { expect, it, beforeAll, afterEach, vi } from 'vitest';
 import {
   act,
@@ -39,6 +40,7 @@ it('节点 Inspector 开启半径动画 0→30，同一轨道/曲线属性，保
   store.select(l.id);
   store.selectGraphNodes(l.id, [node.id]);
   render(<App store={store} />);
+  openTimelineLayers();
   expect(screen.getByLabelText('节点属性面板')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: '开启半径动画' }));
   act(() => store.setTime(1));

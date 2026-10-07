@@ -1,6 +1,7 @@
 import { bridgeFor } from '../src/ui/agent-controller';
 import { DEMO_PROMPT } from '../src/core/agent-contracts';
 // @vitest-environment jsdom
+import { openTimelineLayers } from './timeline-test-helpers';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
   act,
@@ -39,6 +40,7 @@ const edit = (label: string, value: string) => {
 const start = () => {
   const store = new EditorStore(createDefaultProject());
   render(<App store={store} />);
+  openTimelineLayers();
   return store;
 };
 
@@ -51,6 +53,7 @@ describe('A-01～A-09 用户流程集成验收', () => {
     fireEvent.click(screen.getByRole('button', { name: '创建合成' }));
     fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
     fireEvent.click(screen.getByRole('button', { name: '创建 矩形' }));
+    openTimelineLayers();
     expect(activeComposition(store.getSnapshot().project)).toMatchObject({
       width: 1920,
       height: 1080,
@@ -87,6 +90,7 @@ describe('A-01～A-09 用户流程集成验收', () => {
     const store = start();
     fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
     fireEvent.click(screen.getByRole('button', { name: '创建 矩形' }));
+    openTimelineLayers();
     edit('位置 X', '-120');
     edit('透明度（%）', '0');
     fireEvent.click(
@@ -134,6 +138,7 @@ describe('A-01～A-09 用户流程集成验收', () => {
     cleanup();
     const reopened = new EditorStore(loadProject(saved));
     render(<App store={reopened} />);
+    openTimelineLayers();
     expect(reopened.commands.getSnapshot()).toEqual(before);
     expect(reopened.commands.undoStack).toHaveLength(0);
     expect(reopened.save()).toBe(saved);
@@ -167,6 +172,7 @@ describe('A-01～A-09 用户流程集成验收', () => {
     const store = start();
     fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
     fireEvent.click(screen.getByRole('button', { name: '创建 矩形' }));
+    openTimelineLayers();
     edit('位置 X', '100');
     const before = store.commands.getSnapshot();
     fireEvent.click(screen.getByRole('tab', { name: '助手' }));
@@ -185,6 +191,7 @@ describe('A-01～A-09 用户流程集成验收', () => {
     const store = start();
     fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
     fireEvent.click(screen.getByRole('button', { name: '创建 矩形' }));
+    openTimelineLayers();
     const before = store.commands.getSnapshot();
     const count = store.commands.undoStack.length;
     for (const [data, message] of [

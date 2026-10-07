@@ -1,3 +1,13 @@
+import { timelineReorderCommands } from '../core/timeline-reorder';
+import { CanvasInteractionState as PointerInteractionState } from './workspace/canvas-interaction';
+import type { FrameRef } from '../core/editing-commands';
+import { useEditorSlice } from './use-editor-slice';
+import {
+  formatTimecode,
+  snapToFrame,
+  timelineTicks,
+} from '../core/timeline-time';
+import { splitLayerCommands } from '../core/composition-editing';
 import { layerActions } from './workspace/layer-actions';
 import { LayerAccentChip } from './LayerAccentChip';
 import { timelineVisibleRows } from './timeline-visible-rows';
@@ -5,7 +15,10 @@ import { Icon } from './workspace/icons';
 import { snapTimeDelta } from '../core/timeline-snapping';
 import { CompositingGraphPanel } from './CompositingGraph';
 import { motionSegments, segmentMotionCurve } from '../core/motion-curve';
-import { applyMotionCurveCommands } from '../core/motion-curve-commands';
+import {
+  applyMotionCurveCommands,
+  selectedMotionSegments,
+} from '../core/motion-curve-commands';
 import { useInteractionCancel } from './workspace/interaction';
 import {
   ContextMenu,
@@ -18,37 +31,81 @@ import { LayerTimeBar } from './LayerTimeBar';
 import { GraphEditor } from './GraphEditor';
 import { visibleProperties, propertyLabel } from './property-labels';
 import { interpolationLabels, displayName } from './labels';
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from 'react';
+import { useEffect, useMemo, useRef, useState, Fragment } from 'react';
 import type { CSSProperties } from 'react';
 import { command } from '../core/command-system';
 import { newId } from '../core/core-types';
-import { evaluateProperty } from '../core/animation-engine';
 import { findProperty, activeComposition } from '../core/project-model';
 import type { Interpolation } from '../core/project-model';
 import type { EditorStore } from './editor-store';
 import { advancePlayback } from './playback';
 
+type TimelinePointerPayloads = {
+  scrubbing: { time: number; left: number; width: number };
+  panning: { x: number; scroll: number };
+  marqueeSelecting: {
+    x: number;
+    y: number;
+    endX: number;
+    endY: number;
+    start: readonly FrameRef[];
+  };
+  movingKeyframes: {
+    id: string;
+    x: number;
+    width: number;
+    delta: number;
+    snapshot: unknown;
+    duplicate: boolean;
+    time: number;
+    times: readonly number[];
+    targets: readonly number[];
+    refs: readonly FrameRef[];
+  };
+  resizingTree: { x: number; width: number };
+  layerSpan: { cancel: () => void };
+  reorderingLayers: {
+    ids: readonly string[];
+    x: number;
+    y: number;
+    snapshot: unknown;
+    moved: boolean;
+    target?: { id: string; after: boolean };
+  };
+};
 export function Timeline({ store }: { store: EditorStore }) {
+  const interaction = useRef(
+    new PointerInteractionState<TimelinePointerPayloads>(),
+  ).current;
   const scrollRef = useRef<HTMLDivElement>(null);
   const zoomAnchor = useRef<{ time: number; x: number } | undefined>(undefined);
-  const rulerDrag = useRef<{ time: number } | undefined>(undefined);
+  const rulerDrag = interaction.slot('scrubbing');
+  const [search, setSearch] = useState('');
+  const [treeWidth, setTreeWidth] = useState(() =>
+    Math.max(
+      220,
+      Math.min(
+        480,
+        Number(localStorage.getItem('motion.timeline-tree-width')) || 260,
+      ),
+    ),
+  );
+  const treeResize = interaction.slot('resizingTree');
+  const [viewportWidth, setViewportWidth] = useState(1000);
+  const [renaming, setRenaming] = useState<string>();
+  const [renameValue, setRenameValue] = useState('');
+  const suppressLayerClick = useRef(false);
+  const [insertion, setInsertion] = useState<{ id: string; after: boolean }>();
+  const [propertyMenu, setPropertyMenu] = useState<{
+    x: number;
+    y: number;
+    id: string;
+  }>();
+  const [blankMenu, setBlankMenu] = useState<{ x: number; y: number }>();
   const [snapping, setSnapping] = useState(true);
-  const marquee = useRef<
-    | {
-        x: number;
-        y: number;
-        endX: number;
-        endY: number;
-        start: readonly import('../core/editing-commands').FrameRef[];
-      }
-    | undefined
-  >(undefined);
+  const marquee = interaction.slot('marqueeSelecting');
+  const suppressTrackClick = useRef(false);
+  const spacePan = useRef(false);
   const [box, setBox] = useState<{
     x: number;
     y: number;
@@ -72,23 +129,39 @@ export function Timeline({ store }: { store: EditorStore }) {
     id: string;
     delta: number;
     snapTime?: number;
+    width?: number;
   }>();
-  const dragRef = useRef<
-    | {
-        id: string;
-        x: number;
-        width: number;
-        delta: number;
-        snapshot: unknown;
-        duplicate: boolean;
-        time: number;
-        times: readonly number[];
-        targets: readonly number[];
-      }
-    | undefined
-  >(undefined);
-  const view = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const [duplicating, setDuplicating] = useState(false);
+  const dragRef = interaction.slot('movingKeyframes');
+  const view = useEditorSlice(store, [
+    'project',
+    'selection',
+    'frames',
+    'selectedProperties',
+    'time',
+    'playing',
+    'timelineZoom',
+    'propertyFilter',
+  ]);
   const c = activeComposition(view.project);
+  useEffect(() => {
+    const release = (event: KeyboardEvent) => {
+      if (event.code === 'Space') spacePan.current = false;
+    };
+    window.addEventListener('keyup', release);
+    return () => window.removeEventListener('keyup', release);
+  }, []);
+  useEffect(() => {
+    localStorage.setItem('motion.timeline-tree-width', String(treeWidth));
+  }, [treeWidth]);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => setViewportWidth(el.clientWidth));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [graphOpen, compositingOpen, motionOpen]);
+
   useEffect(() => {
     if (!view.playing) return;
     let frame = 0;
@@ -115,16 +188,16 @@ export function Timeline({ store }: { store: EditorStore }) {
     if (!el) return;
     const cursor =
       x ??
-      220 +
+      treeWidth +
         (view.time / c.duration) *
-          Math.max(1, el.clientWidth - 310) *
+          Math.max(1, el.clientWidth - treeWidth - 28) *
           view.timelineZoom -
         el.scrollLeft;
     const time =
       x === undefined
         ? view.time
-        : ((el.scrollLeft + cursor - 220) /
-            Math.max(1, el.clientWidth - 310) /
+        : ((el.scrollLeft + cursor - treeWidth) /
+            Math.max(1, el.clientWidth - treeWidth - 28) /
             view.timelineZoom) *
           c.duration;
     zoomAnchor.current = { time, x: cursor };
@@ -135,24 +208,29 @@ export function Timeline({ store }: { store: EditorStore }) {
       el = scrollRef.current;
     if (!a || !el) return;
     el.scrollLeft =
-      220 +
+      treeWidth +
       (a.time / c.duration) *
-        Math.max(1, el.clientWidth - 310) *
+        Math.max(1, el.clientWidth - treeWidth - 28) *
         view.timelineZoom -
       a.x;
     zoomAnchor.current = undefined;
-  }, [view.timelineZoom, c.duration]);
+  }, [view.timelineZoom, c.duration, treeWidth]);
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     const wheel = (event: WheelEvent) => {
+      if (event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        event.preventDefault();
+        el.scrollLeft += event.deltaY || event.deltaX;
+        return;
+      }
       if (!event.ctrlKey && !event.metaKey && !event.altKey) return;
       event.preventDefault();
       const current = store.getSnapshot();
       const x = event.clientX - el.getBoundingClientRect().left;
       const time =
-        ((el.scrollLeft + x - 220) /
-          Math.max(1, el.clientWidth - 310) /
+        ((el.scrollLeft + x - treeWidth) /
+          Math.max(1, el.clientWidth - treeWidth - 28) /
           current.timelineZoom) *
         c.duration;
       zoomAnchor.current = { time, x };
@@ -162,10 +240,22 @@ export function Timeline({ store }: { store: EditorStore }) {
     };
     el.addEventListener('wheel', wheel, { passive: false });
     return () => el.removeEventListener('wheel', wheel);
-  }, [store, c.duration]);
+  }, [store, c.duration, treeWidth, graphOpen, compositingOpen, motionOpen]);
   useInteractionCancel(() => {
+    spacePan.current = false;
+    interaction.slot('panning').current = undefined;
+    interaction.slot('layerSpan').current?.cancel();
+    interaction.slot('layerSpan').current = undefined;
+    if (treeResize.current) setTreeWidth(treeResize.current.width);
+    treeResize.current = undefined;
+    setInsertion(undefined);
+    interaction.slot('reorderingLayers').current = undefined;
+    setPropertyMenu(undefined);
+    setBlankMenu(undefined);
+    setRenaming(undefined);
     dragRef.current = undefined;
     setFrameDrag(undefined);
+    setDuplicating(false);
     marquee.current = undefined;
     setBox(undefined);
     if (rulerDrag.current) store.setTime(rulerDrag.current.time);
@@ -177,13 +267,73 @@ export function Timeline({ store }: { store: EditorStore }) {
   // capture must not discard the final pointer position / release.
   useEffect(() => {
     const clear = () => {
+      if (rulerDrag.current) store.setTime(rulerDrag.current.time);
+      rulerDrag.current = undefined;
+      interaction.slot('panning').current = undefined;
+      interaction.slot('reorderingLayers').current = undefined;
+      setInsertion(undefined);
       dragRef.current = undefined;
       setFrameDrag(undefined);
+      setDuplicating(false);
     };
     const move = (event: PointerEvent) => {
+      const reorder = interaction.slot('reorderingLayers').current;
+      if (reorder) {
+        if (reorder.snapshot !== store.getSnapshot().project) {
+          clear();
+          return;
+        }
+        if (
+          !reorder.moved &&
+          Math.hypot(event.clientX - reorder.x, event.clientY - reorder.y) < 4
+        )
+          return;
+        reorder.moved = true;
+        const heading = [
+          ...(scrollRef.current?.querySelectorAll<HTMLElement>(
+            '.timeline-layer-heading',
+          ) ?? []),
+        ].find((el) => {
+          const r = el.getBoundingClientRect();
+          return event.clientY >= r.top && event.clientY <= r.bottom;
+        });
+        if (heading) {
+          const r = heading.getBoundingClientRect();
+          const target = {
+            id: heading.parentElement!.dataset.layer!,
+            after: event.clientY >= r.top + r.height / 2,
+          };
+          reorder.target = target;
+          setInsertion((old) =>
+            old?.id === target.id && old.after === target.after ? old : target,
+          );
+        } else {
+          reorder.target = undefined;
+          setInsertion(undefined);
+        }
+        return;
+      }
+
+      const scrub = rulerDrag.current;
+      if (scrub) {
+        store.setTime(
+          snapToFrame(
+            ((event.clientX - scrub.left) / scrub.width) * c.duration,
+            c.fps,
+          ),
+        );
+        return;
+      }
       const drag = dragRef.current;
       if (!drag) return;
-      if (drag.snapshot !== store.getSnapshot().project) {
+      if (
+        drag.snapshot !== store.getSnapshot().project ||
+        drag.refs.length !== store.getSnapshot().frames.length ||
+        !drag.refs.every(
+          (ref, i) =>
+            ref.keyframeId === store.getSnapshot().frames[i]?.keyframeId,
+        )
+      ) {
         clear();
         return;
       }
@@ -198,9 +348,38 @@ export function Timeline({ store }: { store: EditorStore }) {
           : -1,
       );
       drag.delta = result.delta;
-      setFrameDrag({ id: drag.id, ...result });
+      setFrameDrag({ id: drag.id, ...result, width: drag.width });
     };
     const finish = (event: PointerEvent) => {
+      if (interaction.slot('reorderingLayers').current) {
+        move(event);
+        const reorder = interaction.slot('reorderingLayers').current;
+        clear();
+        if (
+          reorder?.moved &&
+          reorder.target &&
+          reorder.snapshot === store.getSnapshot().project
+        ) {
+          try {
+            const commands = timelineReorderCommands(
+              c,
+              reorder.ids,
+              reorder.target.id,
+              reorder.target.after,
+            );
+            if (commands.length) store.run('调整时间轴图层顺序', commands);
+          } catch (e) {
+            store.setStatus(e instanceof Error ? e.message : '排序失败', true);
+          }
+        }
+        return;
+      }
+
+      if (rulerDrag.current) {
+        move(event);
+        rulerDrag.current = undefined;
+        return;
+      }
       const initial = dragRef.current;
       if (!initial) return;
       move(event);
@@ -215,7 +394,7 @@ export function Timeline({ store }: { store: EditorStore }) {
         return;
       }
       if (drag.duplicate) {
-        const commands = store.getSnapshot().frames.map((ref) => {
+        const commands = drag.refs.map((ref) => {
           const source = findProperty(
             store.getSnapshot().project,
             ref.propertyId,
@@ -231,8 +410,18 @@ export function Timeline({ store }: { store: EditorStore }) {
             },
           });
         });
-        store.run('拖动复制关键帧', commands);
-      } else store.moveSelectedFrames(drag.delta);
+        if (store.run('拖动复制关键帧', commands).ok)
+          store.selectFrames(
+            commands.flatMap((c) =>
+              c.type === 'keyframe.add'
+                ? [{ propertyId: c.propertyId, keyframeId: c.keyframe.id }]
+                : [],
+            ),
+          );
+      } else {
+        store.selectFrames(drag.refs);
+        store.moveSelectedFrames(drag.delta);
+      }
     };
     window.addEventListener('pointermove', move, true);
     window.addEventListener('pointerup', finish, true);
@@ -243,8 +432,57 @@ export function Timeline({ store }: { store: EditorStore }) {
       window.removeEventListener('pointercancel', clear, true);
     };
   }, [store, c, snapping]);
+  const jumpVisible = (direction: -1 | 1) => {
+    const live = store.getSnapshot();
+    const visible = timelineVisibleRows(
+      c.layers,
+      live.selection,
+      expanded,
+      transforms,
+      live.propertyFilter,
+      live.frames,
+      search,
+      live.selectedProperties,
+    ).flatMap((row) => row.properties);
+    const props = live.selectedProperties.length
+      ? c.layers
+          .flatMap(visibleProperties)
+          .filter((entry) =>
+            live.selectedProperties.includes(entry.property.id),
+          )
+      : visible;
+    const times = props
+      .flatMap(({ property }) => property.keyframes.map((k) => k.time))
+      .filter((time) =>
+        direction < 0 ? time < live.time - 1e-8 : time > live.time + 1e-8,
+      )
+      .sort((a, b) => (direction < 0 ? b - a : a - b));
+    if (times[0] !== undefined) {
+      store.setPlaying(false);
+      store.setTime(times[0]);
+    }
+  };
+  useEffect(() => {
+    const previous = () => jumpVisible(-1),
+      next = () => jumpVisible(1);
+    window.addEventListener('motion:previous-key', previous);
+    window.addEventListener('motion:next-key', next);
+    return () => {
+      window.removeEventListener('motion:previous-key', previous);
+      window.removeEventListener('motion:next-key', next);
+    };
+  });
   const easingSegments = () => {
     const selected = store.getSnapshot().frames;
+    const explicit = selectedMotionSegments(
+      store.getSnapshot().project,
+      selected,
+    );
+    if (explicit.length)
+      return c.layers
+        .flatMap(visibleProperties)
+        .flatMap(({ property }) => motionSegments(property))
+        .filter((segment) => explicit.includes(segment.id));
     return [
       ...new Map(
         selected.flatMap((ref) => {
@@ -301,9 +539,14 @@ export function Timeline({ store }: { store: EditorStore }) {
     const open = () => {
       setCompositingOpen(false);
       setGraphOpen(true);
+      setMotionOpen(false);
       store.clearGraphSelection();
     };
-    const motion = () => setMotionOpen(true);
+    const motion = () => {
+      setMotionOpen(true);
+      setGraphOpen(false);
+      setCompositingOpen(false);
+    };
     window.addEventListener('motion:motion-curve', motion);
     window.addEventListener('motion:graph', open);
     return () => {
@@ -316,18 +559,19 @@ export function Timeline({ store }: { store: EditorStore }) {
       'motion.active-timeline',
       compositingOpen ? 'compositing' : graphOpen ? 'graph' : 'timeline',
     );
-  }, [graphOpen, compositingOpen]);
-  const timelineFrames = useMemo(
-    () =>
-      c.layers.flatMap((layer) =>
-        visibleProperties(layer).flatMap(({ property }) => property.keyframes),
-      ),
-    [c],
-  );
-  const currentFrameSignature = timelineFrames
-    .filter((frame) => Math.abs(frame.time - view.time) < 1e-8)
-    .map((frame) => frame.id)
-    .join(',');
+  }, [graphOpen, compositingOpen, motionOpen]);
+  const frameSignatures = useMemo(() => {
+    const index = new Map<number, string[]>();
+    for (const layer of c.layers)
+      for (const { property } of visibleProperties(layer))
+        for (const frame of property.keyframes) {
+          const time = Math.round(frame.time * 1e8);
+          index.set(time, [...(index.get(time) ?? []), frame.id]);
+        }
+    return index;
+  }, [c]);
+  const currentFrameSignature =
+    frameSignatures.get(Math.round(view.time * 1e8))?.join(',') ?? '';
   const currentFrameIds = useMemo(
     () => new Set(currentFrameSignature.split(',')),
     [currentFrameSignature],
@@ -343,66 +587,228 @@ export function Timeline({ store }: { store: EditorStore }) {
         transforms,
         view.propertyFilter,
         view.frames,
-      ).map(
-        ({ layer, headerIndex, groupIndex, open, groupOpen, properties }) => (
-          <div className="timeline-layer" key={layer.id} data-layer={layer.id}>
+        search,
+        view.selectedProperties,
+      ).map(({ layer, headerIndex, open, propertyGroups }) => (
+        <div className="timeline-layer" key={layer.id} data-layer={layer.id}>
+          <div
+            className="timeline-layer-heading"
+            data-locked={layer.locked}
+            data-visible={layer.visible}
+            data-insertion={
+              insertion?.id === layer.id
+                ? insertion.after
+                  ? 'after'
+                  : 'before'
+                : undefined
+            }
+            onContextMenu={(event) => {
+              event.preventDefault();
+              if (!view.selection.includes(layer.id)) store.select(layer.id);
+              store.selectFrames([]);
+              store.selectProperties([]);
+              setLayerMenu({ x: event.clientX, y: event.clientY });
+            }}
+            data-row-index={headerIndex}
+            data-zebra={headerIndex % 2 ? 'b' : 'a'}
+            data-selected={view.selection.includes(layer.id)}
+          >
             <div
-              className="timeline-layer-heading"
-              onContextMenu={(event) => {
-                event.preventDefault();
-                if (!view.selection.includes(layer.id)) store.select(layer.id);
-                setLayerMenu({ x: event.clientX, y: event.clientY });
+              className="timeline-layer-label"
+              onDoubleClick={(event) => {
+                if (
+                  event.target !== event.currentTarget &&
+                  !(event.target as Element).closest('.timeline-layer-name')
+                )
+                  return;
+                if (layer.type === 'precomp' && layer.compositionId) {
+                  window.dispatchEvent(
+                    new CustomEvent('motion:open-composition', {
+                      detail: layer.compositionId,
+                    }),
+                  );
+                } else {
+                  setRenaming(layer.id);
+                  setRenameValue(layer.name);
+                }
               }}
-              data-row-index={headerIndex}
-              data-zebra={headerIndex % 2 ? 'b' : 'a'}
-              data-selected={view.selection.includes(layer.id)}
+              onPointerDown={(event) => {
+                suppressLayerClick.current = false;
+                if (
+                  event.button !== 0 ||
+                  renaming ||
+                  layer.locked ||
+                  interaction.state.type !== 'idle' ||
+                  !(event.target as Element).closest('.timeline-layer-name')
+                )
+                  return;
+                event.preventDefault();
+                if (
+                  !view.selection.includes(layer.id) ||
+                  event.shiftKey ||
+                  event.ctrlKey ||
+                  event.metaKey
+                )
+                  store.select(
+                    layer.id,
+                    event.shiftKey || event.ctrlKey || event.metaKey,
+                  );
+                event.currentTarget.setPointerCapture(event.pointerId);
+                suppressLayerClick.current = true;
+                interaction.slot('reorderingLayers').current = {
+                  ids: [...store.getSnapshot().selection],
+                  x: event.clientX,
+                  y: event.clientY,
+                  snapshot: store.getSnapshot().project,
+                  moved: false,
+                };
+              }}
+              onClickCapture={(event) => {
+                if (suppressLayerClick.current) {
+                  suppressLayerClick.current = false;
+                  event.preventDefault();
+                  event.stopPropagation();
+                }
+              }}
             >
               <button
                 className="layer-disclosure"
                 aria-label={`展开 ${displayName(layer.name)} 属性`}
-                aria-expanded={
-                  expanded[layer.id] ?? view.selection.includes(layer.id)
-                }
+                aria-expanded={open}
                 onClick={() =>
                   setExpanded({
                     ...expanded,
-                    [layer.id]: !(
-                      expanded[layer.id] ?? view.selection.includes(layer.id)
-                    ),
+                    [layer.id]: !open,
                   })
                 }
               >
-                {(expanded[layer.id] ?? view.selection.includes(layer.id))
-                  ? '▾'
-                  : '▸'}
+                {open ? '▾' : '▸'}
               </button>
               <button
-                className={`timeline-layer-name ${view.selection.includes(layer.id) ? 'active' : ''}`}
-                onClick={(event) => store.select(layer.id, event.shiftKey)}
+                aria-label={`${layer.visible ? '隐藏' : '显示'} ${displayName(layer.name)} 图层`}
+                onClick={() =>
+                  store.run('切换图层可见性', [
+                    command({
+                      type: 'layer.patch',
+                      compositionId: c.id,
+                      layerId: layer.id,
+                      patch: { visible: !layer.visible },
+                    }),
+                  ])
+                }
               >
-                <LayerAccentChip layer={layer} />
-                {displayName(layer.name)}
+                <Icon name="eye" />
               </button>
-              <LayerTimeBar store={store} layer={layer} composition={c} />
-            </div>
-            {open && (
-              <>
+              <button
+                aria-label={`${layer.locked ? '解锁' : '锁定'} ${displayName(layer.name)} 图层`}
+                aria-pressed={layer.locked}
+                onClick={() =>
+                  store.run('切换图层锁定', [
+                    command({
+                      type: 'layer.patch',
+                      compositionId: c.id,
+                      layerId: layer.id,
+                      patch: { locked: !layer.locked },
+                    }),
+                  ])
+                }
+              >
+                <Icon name="lock" />
+              </button>
+              {renaming === layer.id ? (
+                <input
+                  autoFocus
+                  aria-label="时间轴图层名称"
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  onBlur={() => {
+                    if (renameValue.trim() && renameValue !== layer.name)
+                      store.run('重命名图层', [
+                        command({
+                          type: 'layer.patch',
+                          compositionId: c.id,
+                          layerId: layer.id,
+                          patch: { name: renameValue.trim() },
+                        }),
+                      ]);
+                    setRenaming(undefined);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') e.currentTarget.blur();
+                    if (e.key === 'Escape') {
+                      e.preventDefault();
+                      setRenaming(undefined);
+                    }
+                  }}
+                />
+              ) : (
                 <button
-                  className="transform-disclosure"
-                  data-row-index={groupIndex}
-                  data-zebra={groupIndex! % 2 ? 'b' : 'a'}
-                  aria-expanded={transforms[layer.id] ?? true}
-                  onClick={() =>
-                    setTransforms({
-                      ...transforms,
-                      [layer.id]: !(transforms[layer.id] ?? true),
-                    })
+                  className={`timeline-layer-name ${view.selection.includes(layer.id) ? 'active' : ''}`}
+                  title={layer.name}
+                  onClick={(event) =>
+                    store.select(
+                      layer.id,
+                      event.shiftKey || event.ctrlKey || event.metaKey,
+                    )
                   }
                 >
-                  {(transforms[layer.id] ?? true) ? '▾' : '▸'} 变换与动画属性
+                  <LayerAccentChip layer={layer} />
+                  <Icon
+                    name={
+                      layer.type === 'text'
+                        ? 'text'
+                        : layer.type === 'image'
+                          ? 'image'
+                          : layer.type === 'shape'
+                            ? 'rectangle'
+                            : 'comp'
+                    }
+                  />
+                  <span className="timeline-layer-text">
+                    {displayName(layer.name)}
+                  </span>
                 </button>
-                {groupOpen &&
-                  properties.map(({ key, property, rowIndex }) => {
+              )}
+            </div>
+            <LayerTimeBar
+              store={store}
+              layer={layer}
+              composition={c}
+              claimInteraction={(cancel) => {
+                if (interaction.state.type !== 'idle') return false;
+                interaction.slot('layerSpan').current = { cancel };
+                return true;
+              }}
+              releaseInteraction={() => {
+                interaction.slot('layerSpan').current = undefined;
+              }}
+            />
+            <span />
+          </div>
+          {open &&
+            propertyGroups.map((group) => (
+              <Fragment key={group.id}>
+                <div
+                  className="timeline-group-row"
+                  data-row-index={group.rowIndex}
+                  data-zebra={group.rowIndex % 2 ? 'b' : 'a'}
+                >
+                  <button
+                    className="transform-disclosure"
+                    aria-expanded={group.open}
+                    onClick={() =>
+                      setTransforms({
+                        ...transforms,
+                        [`${layer.id}:${group.id}`]: !group.open,
+                      })
+                    }
+                  >
+                    {group.open ? '▾' : '▸'} {group.label}
+                  </button>
+                  <span />
+                </div>
+                {group.open &&
+                  group.properties.map(({ key, property, rowIndex }) => {
                     const current = property.keyframes.find((frame) =>
                       currentFrameIds.has(frame.id),
                     );
@@ -418,7 +824,35 @@ export function Timeline({ store }: { store: EditorStore }) {
                         role="group"
                         aria-label={`${displayName(layer.name)} ${propertyLabel(key, layer)} 轨道`}
                       >
-                        <div className="property-name">
+                        <div
+                          className="property-name"
+                          data-property-selected={view.selectedProperties.includes(
+                            property.id,
+                          )}
+                          onClick={(event) => {
+                            if ((event.target as Element).closest('button'))
+                              return;
+                            store.selectProperties(
+                              event.shiftKey
+                                ? [
+                                    ...new Set([
+                                      ...view.selectedProperties,
+                                      property.id,
+                                    ]),
+                                  ]
+                                : [property.id],
+                            );
+                          }}
+                          onContextMenu={(event) => {
+                            event.preventDefault();
+                            store.selectProperties([property.id]);
+                            setPropertyMenu({
+                              x: event.clientX,
+                              y: event.clientY,
+                              id: property.id,
+                            });
+                          }}
+                        >
                           <button
                             className={`animation-switch ${property.keyframes.length ? 'enabled' : ''}`}
                             aria-label={`${property.keyframes.length ? '关闭' : '开启'} ${displayName(layer.name)} ${propertyLabel(key, layer)} 动画`}
@@ -443,21 +877,7 @@ export function Timeline({ store }: { store: EditorStore }) {
                             aria-label={`添加 ${displayName(layer.name)} ${propertyLabel(key, layer)} 关键帧`}
                             disabled={!!current || layer.locked}
                             onClick={() =>
-                              store.run('添加关键帧', [
-                                command({
-                                  type: 'keyframe.add',
-                                  propertyId: property.id,
-                                  keyframe: {
-                                    id: newId(),
-                                    time: store.getSnapshot().time,
-                                    value: evaluateProperty(
-                                      property,
-                                      store.getSnapshot().time,
-                                    ),
-                                    interpolation: { type: 'linear' },
-                                  },
-                                }),
-                              ])
+                              store.recordPropertyKeyframe(property.id)
                             }
                           >
                             <Icon name="diamond" />
@@ -481,8 +901,14 @@ export function Timeline({ store }: { store: EditorStore }) {
                         <div
                           className="keyframe-track"
                           onClick={(event) => {
+                            if (suppressTrackClick.current) {
+                              suppressTrackClick.current = false;
+                              return;
+                            }
                             const r =
                               event.currentTarget.getBoundingClientRect();
+                            store.selectFrames([]);
+                            store.selectProperties([property.id]);
                             store.setPlaying(false);
                             store.setTime(
                               Math.round(
@@ -521,17 +947,30 @@ export function Timeline({ store }: { store: EditorStore }) {
                               }}
                               className={`keyframe-diamond ${current?.id === frame.id ? 'current' : ''} ${view.frames.some((ref) => ref.keyframeId === frame.id) ? 'selected' : ''}`}
                               style={{
-                                left: `${((frame.time + (frameDrag && view.frames.some((ref) => ref.keyframeId === frame.id) ? frameDrag.delta : 0)) / c.duration) * 100}%`,
+                                left:
+                                  !duplicating &&
+                                  view.frames.some(
+                                    (ref) => ref.keyframeId === frame.id,
+                                  )
+                                    ? `calc(${(frame.time / c.duration) * 100}% + var(--timeline-key-delta))`
+                                    : `${(frame.time / c.duration) * 100}%`,
                               }}
                               aria-label={`关键帧 ${displayName(layer.name)} ${propertyLabel(key, layer)} ${frame.time.toFixed(3)} 秒`}
                               title={`${frame.time} 秒 · ${interpolationLabels[frame.interpolation.type]}`}
                               onPointerDown={(event) => {
-                                if (event.button !== 0 || layer.locked) return;
+                                if (
+                                  event.button !== 0 ||
+                                  layer.locked ||
+                                  interaction.state.type !== 'idle'
+                                )
+                                  return;
                                 event.stopPropagation();
                                 event.preventDefault();
                                 store.setPlaying(false);
                                 if (
                                   event.shiftKey ||
+                                  event.ctrlKey ||
+                                  event.metaKey ||
                                   !view.frames.some(
                                     (ref) => ref.keyframeId === frame.id,
                                   )
@@ -541,12 +980,24 @@ export function Timeline({ store }: { store: EditorStore }) {
                                       propertyId: property.id,
                                       keyframeId: frame.id,
                                     },
-                                    event.shiftKey,
+                                    event.shiftKey ||
+                                      event.ctrlKey ||
+                                      event.metaKey,
                                   );
+                                if (
+                                  !store
+                                    .getSnapshot()
+                                    .frames.some(
+                                      (ref) => ref.keyframeId === frame.id,
+                                    )
+                                )
+                                  return;
                                 event.currentTarget.setPointerCapture(
                                   event.pointerId,
                                 );
+                                setDuplicating(event.altKey);
                                 dragRef.current = {
+                                  refs: [...store.getSnapshot().frames],
                                   id: frame.id,
                                   x: event.clientX,
                                   width:
@@ -572,6 +1023,17 @@ export function Timeline({ store }: { store: EditorStore }) {
                                   targets: [
                                     0,
                                     c.duration,
+                                    ...c.layers.flatMap((l) =>
+                                      l.editor
+                                        ? [
+                                            l.editor.inPoint,
+                                            Math.min(
+                                              c.duration,
+                                              l.editor.outPoint,
+                                            ),
+                                          ]
+                                        : [],
+                                    ),
                                     store.getSnapshot().time,
                                     ...c.layers
                                       .flatMap(visibleProperties)
@@ -607,6 +1069,15 @@ export function Timeline({ store }: { store: EditorStore }) {
                               }}
                             >
                               <span className="diamond-shape" />
+                              {duplicating &&
+                                view.frames.some(
+                                  (ref) => ref.keyframeId === frame.id,
+                                ) && (
+                                  <span
+                                    className="diamond-shape duplicate-keyframe-ghost"
+                                    aria-hidden="true"
+                                  />
+                                )}
                             </button>
                           ))}
                         </div>
@@ -654,20 +1125,24 @@ export function Timeline({ store }: { store: EditorStore }) {
                       </div>
                     );
                   })}
-              </>
-            )}
-          </div>
-        ),
-      ),
+              </Fragment>
+            ))}
+        </div>
+      )),
     [
       c,
       view.project,
       view.selection,
       view.frames,
       view.propertyFilter,
+      view.selectedProperties,
+      search,
+      renaming,
+      renameValue,
+      insertion,
+      duplicating,
       expanded,
       transforms,
-      frameDrag,
       snapping,
       currentFrameIds,
       store,
@@ -677,9 +1152,41 @@ export function Timeline({ store }: { store: EditorStore }) {
   return (
     <section
       className="timeline-panel"
-      style={{ '--timeline-playhead': playhead } as CSSProperties}
+      data-interaction={interaction.state.type}
+      style={
+        {
+          '--timeline-playhead': playhead,
+          '--timeline-tree-width': `${treeWidth}px`,
+          '--timeline-key-delta': `${((frameDrag?.delta ?? 0) / c.duration) * 100}%`,
+          '--timeline-key-delta-px': `${((frameDrag?.delta ?? 0) / c.duration) * (frameDrag?.width ?? 0)}px`,
+        } as CSSProperties
+      }
       aria-label="时间轴"
       tabIndex={0}
+      onKeyUp={(event) => {
+        if (event.code === 'Space') spacePan.current = false;
+      }}
+      onKeyDown={(event) => {
+        if (
+          (event.target as Element).closest(
+            'input,textarea,select,[contenteditable=true]',
+          )
+        )
+          return;
+        if (event.code === 'Space') {
+          spacePan.current = true;
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        if (event.key === 'F2') {
+          const layer = c.layers.find((l) => l.id === view.selection[0]);
+          if (layer) {
+            event.preventDefault();
+            setRenaming(layer.id);
+            setRenameValue(layer.name);
+          }
+        }
+      }}
     >
       <div className="timeline-toolbar">
         <div className="playback-controls">
@@ -692,6 +1199,15 @@ export function Timeline({ store }: { store: EditorStore }) {
           >
             <Icon name="start" />
           </button>
+          <IconButton
+            label="回到终点"
+            onClick={() => {
+              store.setPlaying(false);
+              store.setTime(c.duration);
+            }}
+          >
+            <Icon name="start" style={{ transform: 'rotate(180deg)' }} />
+          </IconButton>
           <button
             aria-label={view.playing ? '暂停' : '播放'}
             className="play-button"
@@ -709,7 +1225,7 @@ export function Timeline({ store }: { store: EditorStore }) {
               value={Number(view.time.toFixed(3))}
               onChange={(event) => {
                 store.setPlaying(false);
-                store.setTime(Number(event.target.value));
+                store.setTime(snapToFrame(Number(event.target.value), c.fps));
               }}
             />
             <span>秒</span>
@@ -744,7 +1260,7 @@ export function Timeline({ store }: { store: EditorStore }) {
             onClick={() => setTimecode(!timecode)}
           >
             {timecode
-              ? `${String(Math.floor(view.time / 3600)).padStart(2, '0')}:${String(Math.floor(view.time / 60) % 60).padStart(2, '0')}:${String(Math.floor(view.time) % 60).padStart(2, '0')}:${String(Math.floor((view.time % 1) * c.fps)).padStart(2, '0')}`
+              ? formatTimecode(view.time, c.fps)
               : `${view.time.toFixed(3)} s`}
           </button>
         </div>
@@ -756,6 +1272,7 @@ export function Timeline({ store }: { store: EditorStore }) {
           onChange={(tab) => {
             store.setPropertyPreview(undefined);
             store.setPropertyPreviews(undefined);
+            setMotionOpen(false);
             setGraphOpen(tab === '曲线编辑器');
             setCompositingOpen(tab === '合成节点');
             if (tab !== '合成节点') store.clearGraphSelection();
@@ -782,13 +1299,37 @@ export function Timeline({ store }: { store: EditorStore }) {
           onClose={() => setGraphOpen(false)}
         />
       )}
-      {!graphOpen && !compositingOpen && (
+      {!graphOpen && !compositingOpen && !motionOpen && (
         <div
           className="timeline-scroll"
           ref={scrollRef}
+          onContextMenu={(event) => {
+            if (
+              (event.target as Element).closest(
+                'button,.property-name,.timeline-layer-label',
+              )
+            )
+              return;
+            event.preventDefault();
+            setBlankMenu({ x: event.clientX, y: event.clientY });
+          }}
+          onPointerDownCapture={(event) => {
+            if (interaction.state.type !== 'idle') return;
+            suppressTrackClick.current = false;
+            if (event.button !== 1 && !(event.button === 0 && spacePan.current))
+              return;
+            event.preventDefault();
+            event.stopPropagation();
+            interaction.slot('panning').current = {
+              x: event.clientX,
+              scroll: event.currentTarget.scrollLeft,
+            };
+            event.currentTarget.setPointerCapture(event.pointerId);
+          }}
           onPointerDown={(event) => {
             if (
               event.button !== 0 ||
+              interaction.state.type !== 'idle' ||
               !(event.target instanceof Element) ||
               !event.target.closest('.keyframe-track') ||
               event.target.closest('button')
@@ -806,6 +1347,12 @@ export function Timeline({ store }: { store: EditorStore }) {
             event.currentTarget.setPointerCapture(event.pointerId);
           }}
           onPointerMove={(event) => {
+            const pan = interaction.slot('panning').current;
+            if (pan) {
+              event.currentTarget.scrollLeft =
+                pan.scroll + pan.x - event.clientX;
+              return;
+            }
             const m = marquee.current;
             if (!m) return;
             m.endX = event.clientX;
@@ -813,10 +1360,21 @@ export function Timeline({ store }: { store: EditorStore }) {
             setBox({ ...m });
           }}
           onPointerUp={(event) => {
+            if (interaction.slot('panning').current) {
+              interaction.slot('panning').current = undefined;
+              suppressTrackClick.current = true;
+              return;
+            }
             const m = marquee.current;
+            if (m) {
+              m.endX = event.clientX;
+              m.endY = event.clientY;
+            }
             marquee.current = undefined;
             setBox(undefined);
             if (!m) return;
+            suppressTrackClick.current =
+              Math.hypot(m.endX - m.x, m.endY - m.y) > 3;
             const left = Math.min(m.x, m.endX),
               right = Math.max(m.x, m.endX),
               top = Math.min(m.y, m.endY),
@@ -841,6 +1399,7 @@ export function Timeline({ store }: { store: EditorStore }) {
             store.selectFrames(refs);
           }}
           onPointerCancel={() => {
+            interaction.slot('panning').current = undefined;
             marquee.current = undefined;
             setBox(undefined);
           }}
@@ -859,11 +1418,66 @@ export function Timeline({ store }: { store: EditorStore }) {
           <div
             style={{
               minWidth: 680,
-              width: `calc(310px + (100% - 310px) * ${view.timelineZoom})`,
+              width: `calc(${treeWidth + 28}px + (100% - ${treeWidth + 28}px) * ${view.timelineZoom})`,
             }}
           >
             <div className="timeline-ruler">
-              <span>图层 / 属性</span>
+              <span className="timeline-tree-heading">
+                图层 / 属性
+                <span
+                  role="separator"
+                  aria-label="时间轴属性列宽"
+                  aria-orientation="vertical"
+                  tabIndex={0}
+                  className="timeline-column-resizer"
+                  onKeyDown={(event) => {
+                    if (
+                      event.key === 'ArrowLeft' ||
+                      event.key === 'ArrowRight'
+                    ) {
+                      event.preventDefault();
+                      setTreeWidth((w) =>
+                        Math.max(
+                          220,
+                          Math.min(
+                            480,
+                            w + (event.key === 'ArrowLeft' ? -10 : 10),
+                          ),
+                        ),
+                      );
+                    }
+                  }}
+                  onPointerDown={(event) => {
+                    if (event.button !== 0 || interaction.state.type !== 'idle')
+                      return;
+                    event.preventDefault();
+                    event.currentTarget.setPointerCapture(event.pointerId);
+                    treeResize.current = { x: event.clientX, width: treeWidth };
+                  }}
+                  onPointerMove={(event) => {
+                    if (treeResize.current)
+                      setTreeWidth(
+                        Math.max(
+                          220,
+                          Math.min(
+                            480,
+                            treeResize.current.width +
+                              event.clientX -
+                              treeResize.current.x,
+                          ),
+                        ),
+                      );
+                  }}
+                  onPointerUp={() => {
+                    treeResize.current = undefined;
+                  }}
+                  onPointerCancel={() => {
+                    if (treeResize.current)
+                      setTreeWidth(treeResize.current.width);
+                    treeResize.current = undefined;
+                  }}
+                />
+              </span>
               <div
                 className="ruler-track"
                 role="slider"
@@ -882,10 +1496,15 @@ export function Timeline({ store }: { store: EditorStore }) {
                   }
                 }}
                 onPointerDown={(event) => {
-                  if (event.button !== 0) return;
-                  rulerDrag.current = { time: store.getSnapshot().time };
-                  event.currentTarget.setPointerCapture(event.pointerId);
+                  if (event.button !== 0 || interaction.state.type !== 'idle')
+                    return;
                   const r = event.currentTarget.getBoundingClientRect();
+                  rulerDrag.current = {
+                    time: store.getSnapshot().time,
+                    left: r.left,
+                    width: Math.max(1, r.width),
+                  };
+                  event.currentTarget.setPointerCapture(event.pointerId);
                   store.setPlaying(false);
                   store.setTime(
                     Math.round(
@@ -909,10 +1528,6 @@ export function Timeline({ store }: { store: EditorStore }) {
                   if (rulerDrag.current) store.setTime(rulerDrag.current.time);
                   rulerDrag.current = undefined;
                 }}
-                onLostPointerCapture={() => {
-                  if (rulerDrag.current) store.setTime(rulerDrag.current.time);
-                  rulerDrag.current = undefined;
-                }}
               >
                 {frameDrag?.snapTime !== undefined && (
                   <span
@@ -926,9 +1541,19 @@ export function Timeline({ store }: { store: EditorStore }) {
                 <span className="ruler-playhead" style={{ left: playhead }}>
                   ▼
                 </span>
-                {Array.from({ length: 6 }, (_, i) => (
-                  <span key={i}>
-                    {Number(((c.duration * i) / 5).toFixed(2))} 秒
+                {timelineTicks(
+                  c.duration,
+                  c.fps,
+                  Math.max(1, viewportWidth - treeWidth - 28) *
+                    view.timelineZoom,
+                  timecode,
+                ).map((tick) => (
+                  <span
+                    key={tick.time}
+                    className={`timeline-tick ${tick.major ? 'major' : 'minor'}`}
+                    style={{ left: `${(tick.time / c.duration) * 100}%` }}
+                  >
+                    {tick.label}
                   </span>
                 ))}
               </div>
@@ -946,20 +1571,28 @@ export function Timeline({ store }: { store: EditorStore }) {
         </div>
       )}
       <div className="timeline-footer" hidden={compositingOpen}>
-        <button onClick={() => setMotionOpen((v) => !v)}>动画缓动</button>
+        <input
+          className="timeline-search"
+          aria-label="搜索时间轴属性"
+          placeholder="搜索图层 / 属性"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+        />
         <MenuDropdown>
           <summary>关键帧 ▾</summary>
           <div className="dropdown-menu">
             <button
-              aria-label="上一个关键帧"
-              onClick={() => store.jumpFrame(-1)}
+              onClick={() => {
+                setGraphOpen(false);
+                setMotionOpen(true);
+              }}
             >
+              动画缓动
+            </button>
+            <button aria-label="上一个关键帧" onClick={() => jumpVisible(-1)}>
               上一个关键帧
             </button>
-            <button
-              aria-label="下一个关键帧"
-              onClick={() => store.jumpFrame(1)}
-            >
+            <button aria-label="下一个关键帧" onClick={() => jumpVisible(1)}>
               下一个关键帧
             </button>
             <button onClick={() => store.copySelection()}>复制</button>
@@ -993,6 +1626,7 @@ export function Timeline({ store }: { store: EditorStore }) {
               [
                 ['all', '全部'],
                 ['animated', '已有动画'],
+                ['selected', '所选属性'],
                 ['position', '位置'],
                 ['scale', '缩放'],
                 ['rotation', '旋转'],
@@ -1005,25 +1639,122 @@ export function Timeline({ store }: { store: EditorStore }) {
             ))}
           </select>
         </label>
+        <button
+          onClick={() => {
+            zoomAnchor.current = undefined;
+            store.setTimelineZoom(1);
+            if (scrollRef.current) scrollRef.current.scrollLeft = 0;
+          }}
+          aria-label="适合合成时长"
+        >
+          适合时长
+        </button>
         <label className="timeline-zoom">
           缩放
           <input
             type="range"
             aria-label="时间轴缩放"
             min={1}
-            max={8}
+            max={32}
             step={0.1}
             value={view.timelineZoom}
             onChange={(event) => setZoom(Number(event.target.value))}
           />
         </label>
       </div>
+      {blankMenu && (
+        <ContextMenu
+          {...blankMenu}
+          onClose={() => setBlankMenu(undefined)}
+          items={[
+            { label: '粘贴', action: () => store.pasteSelection() },
+            {
+              label: '适合合成时长',
+              action: () => {
+                store.setTimelineZoom(1);
+                if (scrollRef.current) scrollRef.current.scrollLeft = 0;
+              },
+            },
+          ]}
+        />
+      )}
+      {propertyMenu && (
+        <ContextMenu
+          {...propertyMenu}
+          onClose={() => setPropertyMenu(undefined)}
+          items={[
+            {
+              label: '添加关键帧',
+              action: () => {
+                store.recordPropertyKeyframe(propertyMenu.id);
+              },
+            },
+            {
+              label: '移除动画',
+              action: () => {
+                const p = findProperty(
+                  store.getSnapshot().project,
+                  propertyMenu.id,
+                ).property;
+                if (p.keyframes.length) store.togglePropertyAnimation(p.id);
+              },
+            },
+            { label: '粘贴到此属性', action: () => store.pasteSelection() },
+            {
+              label: '打开曲线编辑器',
+              action: () => {
+                setMotionOpen(false);
+                setGraphOpen(true);
+              },
+            },
+            {
+              label: '打开动画缓动',
+              action: () => {
+                setGraphOpen(false);
+                setMotionOpen(true);
+              },
+            },
+          ]}
+        />
+      )}
       {layerMenu && (
         <ContextMenu
           {...layerMenu}
-          items={layerActions(store, () =>
-            window.dispatchEvent(new Event('motion:rename')),
-          )}
+          items={[
+            ...layerActions(store, () => {
+              const l = c.layers.find(
+                (l) => l.id === store.getSnapshot().selection[0],
+              );
+              if (l) {
+                setRenaming(l.id);
+                setRenameValue(l.name);
+              }
+            }),
+            {
+              label: '在播放头拆分图层',
+              action: () => {
+                try {
+                  store.run(
+                    '拆分图层',
+                    store
+                      .getSnapshot()
+                      .selection.flatMap((id) =>
+                        splitLayerCommands(
+                          store.getSnapshot().project,
+                          id,
+                          store.getSnapshot().time,
+                        ),
+                      ),
+                  );
+                } catch (e) {
+                  store.setStatus(
+                    e instanceof Error ? e.message : '拆分失败',
+                    true,
+                  );
+                }
+              },
+            },
+          ]}
           onClose={() => setLayerMenu(undefined)}
         />
       )}
@@ -1045,7 +1776,20 @@ export function Timeline({ store }: { store: EditorStore }) {
             { label: '缓入缓出', action: () => interpolation('bezier') },
             { label: '线性', action: () => interpolation('linear') },
             { label: '保持', action: () => interpolation('hold') },
-            { label: '打开曲线编辑器', action: () => setGraphOpen(true) },
+            {
+              label: '打开曲线编辑器',
+              action: () => {
+                setMotionOpen(false);
+                setGraphOpen(true);
+              },
+            },
+            {
+              label: '打开动画缓动',
+              action: () => {
+                setGraphOpen(false);
+                setMotionOpen(true);
+              },
+            },
             {
               label: '复制缓动',
               action: () => {

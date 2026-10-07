@@ -1,3 +1,4 @@
+import { snapToFrame } from './timeline-time';
 import { command, editPropertyCommand } from './command-system';
 import type { Command } from './command-system';
 import { newId } from './core-types';
@@ -19,6 +20,37 @@ export interface CopiedFrame {
   readonly layerId: ID;
   readonly property: string;
   readonly frame: Keyframe<AnimValue>;
+}
+/** Inspector and Timeline record the same evaluated, frame-aligned property value. */
+export function recordKeyframeCommand(
+  project: Project,
+  propertyId: ID,
+  time: number,
+): Command {
+  const { property, composition } = findProperty(project, propertyId);
+  const at = Math.max(
+    0,
+    Math.min(composition.duration, snapToFrame(time, composition.fps)),
+  );
+  const value = evaluateProperty(property, at);
+  const existing = property.keyframes.find((k) => Math.abs(k.time - at) < 1e-8);
+  return existing
+    ? command({
+        type: 'keyframe.update',
+        propertyId,
+        keyframeId: existing.id,
+        patch: { value },
+      })
+    : command({
+        type: 'keyframe.add',
+        propertyId,
+        keyframe: {
+          id: newId(),
+          time: at,
+          value,
+          interpolation: { type: 'linear' },
+        },
+      });
 }
 export function animationEdit(
   project: Project,
@@ -184,24 +216,52 @@ export function pasteFrames(
   copied: readonly CopiedFrame[],
   time: number,
   selection: readonly ID[],
+  targetProperties: readonly ID[] = [],
 ): Command[] {
   if (!copied.length) return [];
   const c = activeComposition(project),
     origin = Math.min(...copied.map((k) => k.frame.time));
   const oneSource = new Set(copied.map((k) => k.layerId)).size === 1;
+  const oneProperty =
+    new Set(copied.map((k) => `${k.layerId}:${k.property}`)).size === 1;
+  if (targetProperties.length && !oneProperty)
+    throw Error('跨属性粘贴请只复制一个属性的关键帧');
+  const kind = (v: AnimValue) =>
+    typeof v === 'number'
+      ? 'number'
+      : Array.isArray(v)
+        ? `array:${v.length}`
+        : 'vec2';
   const commands: Command[] = [];
   for (const item of copied) {
-    const targets = oneSource && selection.length ? selection : [item.layerId];
-    for (const id of targets) {
-      const layer = c.layers.find((l) => l.id === id);
+    const destinations = targetProperties.length
+      ? targetProperties.map((id) => {
+          const found = findProperty(project, id);
+          if (!c.layers.some((layer) => layer.id === found.layer.id))
+            throw Error('粘贴目标属性不属于当前合成');
+          return { layer: found.layer, property: found.property };
+        })
+      : (oneSource && selection.length ? selection : [item.layerId]).map(
+          (id) => {
+            const layer = c.layers.find((l) => l.id === id);
+            return {
+              layer,
+              property:
+                layer &&
+                layerProperties(layer).find((p) => p.key === item.property)
+                  ?.property,
+            };
+          },
+        );
+    for (const { layer, property } of destinations) {
       if (!layer) throw new Error('粘贴目标图层不存在');
       const at = Math.min(c.duration, time + item.frame.time - origin);
       if (time + item.frame.time - origin > c.duration + 1e-8)
         throw new Error('粘贴的关键帧超出合成时长');
-      const property = layerProperties(layer).find(
-        (p) => p.key === item.property,
-      )?.property;
       if (!property) throw new Error('粘贴属性不存在');
+      if (kind(property.baseValue) !== kind(item.frame.value))
+        throw Error('关键帧类型不兼容，无法粘贴到所选属性');
+      if (layer.locked) throw Error('粘贴目标图层已锁定');
       const existing = property.keyframes.find(
         (k) => Math.abs(k.time - at) < 1e-8,
       );
