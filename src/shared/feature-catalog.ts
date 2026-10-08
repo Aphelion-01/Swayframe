@@ -604,4 +604,49 @@ for (const [id, title] of [
       '三维 Section 中切换直接操控模式；操作状态位于 EditorView，变换仍经 Command/Transaction',
   });
 
+add(
+  'effect-browser',
+  '添加效果',
+  'INSPECTOR',
+  ['Effect'],
+  ['Process'],
+  'panel.inspector.effects',
+  {
+    frequency: 'F2',
+    contexts: ['LayerSelection'],
+    when: ['hasLayerSelection'],
+    description:
+      '统一效果浏览器：搜索、分类、内置与用户效果；实例仍由共享节点图保存',
+  },
+);
+add(
+  'create-radial-generator',
+  '创建 径向渐变',
+  'SCENE',
+  ['Layer'],
+  ['Create'],
+  'panel.scene',
+  {
+    contexts: ['Composition'],
+    parentId: 'create-object',
+    icon: 'solid',
+    keywords: ['radial', 'generator', '渐变'],
+    description: '创建使用统一径向渐变能力的独立生成器图层',
+  },
+);
+add(
+  'effect-forge',
+  '程序化效果草稿',
+  'INSPECTOR',
+  ['Effect'],
+  ['Process'],
+  'panel.inspector.effects',
+  {
+    contexts: ['LayerSelection'],
+    when: ['hasLayerSelection'],
+    frequency: 'F4',
+    description:
+      '效果浏览器内的导入、受控编译、真实像素预览、确认应用与显式保存；不新增常驻入口',
+  },
+);
 features.validatePermanentBudgets();

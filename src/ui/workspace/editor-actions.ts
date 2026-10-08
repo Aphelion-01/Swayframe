@@ -1,3 +1,4 @@
+import { createGeneratorLayer } from '../../core/generator-layer';
 import { evaluateProperty } from '../../core/animation-engine';
 import { features } from '../../shared/feature-catalog';
 import { scopedCommands } from './scoped-commands';
@@ -468,6 +469,31 @@ export function buildEditorActions(
         'assistant',
       ] as const
     ).map((id) => ({ id, label: id, action: emit(id) })),
+    {
+      id: 'create-radial-generator',
+      label: '创建 径向渐变',
+      action: () => {
+        const layer = createGeneratorLayer(c, 'radialGradient');
+        if (
+          store.run('创建径向渐变生成器', [
+            command({ type: 'layer.create', compositionId: c.id, layer }),
+          ]).ok
+        )
+          store.select(layer.id);
+      },
+    },
+    {
+      id: 'effect-forge',
+      label: '程序化效果草稿',
+      disabled: selected.length !== 1 || !editable,
+      action: emit('effect-browser'),
+    },
+    {
+      id: 'effect-browser',
+      label: '添加效果',
+      disabled: selected.length !== 1 || !editable || !selected[0]?.editor,
+      action: emit('effect-browser'),
+    },
     ...effectKinds.map((kind) => ({
       id: `effect-${kind}`,
       label: `添加${effectDefinitions[kind].label}`,

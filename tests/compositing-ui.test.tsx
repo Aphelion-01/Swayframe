@@ -37,10 +37,9 @@ it('GUI 遮罩、羽化动画与效果排序均进入共享命令历史', () => 
       .feather.keyframes,
   ).toHaveLength(2);
   fireEvent.click(screen.getByRole('button', { name: '添加效果' }));
-  fireEvent.change(screen.getByLabelText('添加效果类型'), {
-    target: { value: 'gaussianBlur' },
-  });
+  fireEvent.click(screen.getByRole('button', { name: /^曝光 / }));
   fireEvent.click(screen.getByRole('button', { name: '添加效果' }));
+  fireEvent.click(screen.getByRole('button', { name: /^高斯模糊 / }));
   const before = store.commands.getSnapshot();
   fireEvent.click(screen.getByRole('button', { name: '上移效果2' }));
   expect(

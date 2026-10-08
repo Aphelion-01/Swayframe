@@ -1,4 +1,8 @@
-import { nodeDefinition } from '../core/compositing-registry';
+import {
+  radialGradientDefinition,
+  gradientPropertyKey,
+} from '../core/radial-gradient';
+import { nodeDefinitionFor } from '../core/compositing-registry';
 import { layerProperties } from '../core/project-model';
 import type { Layer, PropertyEntry } from '../core/project-model';
 export const propertyNames: Record<string, string> = {
@@ -67,8 +71,12 @@ export function propertyLabel(key: string, layer?: Layer): string {
     name = parts.at(-1)!;
   if (key.includes('.graph.nodes.')) {
     const node = layer?.editor?.graph?.nodes[Number(parts[3])];
-    return `${node?.name ?? '节点 ' + (Number(parts[3]) + 1)} · ${nodeDefinition(node?.type ?? '')?.params[name]?.label ?? propertyNames[name] ?? name}`;
+    return `${node?.name ?? '节点 ' + (Number(parts[3]) + 1)} · ${(node ? nodeDefinitionFor(node)?.params[name]?.label : undefined) ?? propertyNames[name] ?? name}`;
   }
+  const radial = radialGradientDefinition.parameters.find(
+    (p) => gradientPropertyKey(p.id) === name,
+  );
+  if (radial) return '径向渐变 · ' + radial.name;
   if (key.startsWith('transform.')) return propertyNames[key]!;
   if (key.includes('.masks.'))
     return `遮罩 ${Number(parts[2]) + 1} · ${propertyNames[name] ?? name}`;
@@ -114,6 +122,7 @@ export function visibleProperties(layer: Layer): PropertyEntry[] {
     if (name === 'sides')
       return layer.shapeKind === 'polygon' || layer.shapeKind === 'star';
     if (name === 'innerRadius') return layer.shapeKind === 'star';
+    if (name.startsWith('radial_')) return layer.editor?.gradient === 'radial';
     if (name === 'gradientEnd')
       return !!layer.editor?.gradient && layer.editor.gradient !== 'none';
     if (name === 'stroke' || name === 'strokeWidth') return true;

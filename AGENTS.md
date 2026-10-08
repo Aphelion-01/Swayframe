@@ -27,3 +27,7 @@ Before adding any user-facing feature:
 10. Run Feature Placement Review and registry validation tests.
 
 局部参数表单与直接操控手势由注册 Section/Tool 管理；不得绕过 Command System 修改 Scene。禁止新建 Misc/Other 分类或远程插件框架。
+
+## V0.3 Effect runtime
+
+效果能力通过 VisualCapabilityDefinition 与共享 Graph 实例扩展。Fill/Generator/Graph 不能各自复制同一算法。程序化包只能使用已验证的 declarative-pixel-v1；禁止 eval、动态 Function、任意脚本、外部资源下载或由 Agent 修改核心源码。保持内容哈希和精确版本，不用用户库最新版覆盖工程内嵌包。未知程序化节点保留并诊断；错误效果必须阻止导出。草稿、库、信任和 UI 状态不进入 Scene，Agent 应用仍通过 AgentTransaction，正式库保存必须由用户明确决定。

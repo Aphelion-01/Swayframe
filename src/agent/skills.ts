@@ -80,7 +80,7 @@ export const builtinSkills: readonly AgentSkill[] = [
     'compositing',
     '合成助手',
     'Compositing Assistant',
-    'Inspect real graph topology and existing nodes. Use registered graph/effect tools, preserve source/output invariants and editability. Respect branched graphs; never flatten them as linear stacks.',
+    'Inspect real graph topology and existing nodes. Use registered graph/effect tools, preserve source/output invariants and editability. Respect branched graphs; never flatten them as linear stacks. Search effect_search first. Reuse native gaussianBlur/radialGradient; compose existing capabilities before inventing programs. For custom procedural textures use effect_createDraft, effect_validate, effect_compile, effect_preview, effect_evaluate and effect_applyDraft. Never silently save to the user library.',
     ['模糊', '效果', '节点', 'blur', 'compositing', 'graph'],
   ),
   builtin(

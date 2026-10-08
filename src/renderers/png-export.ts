@@ -64,6 +64,7 @@ export async function exportPngSequence(
           1,
           false,
         );
+      if (!output) renderer.assertNoEffectErrors();
       const data = new Uint8Array(
         await (await png(output?.draw(time) ?? canvas)).arrayBuffer(),
       );
@@ -128,6 +129,7 @@ export async function exportCurrentFrame(
       createRenderSnapshot(c, time, [], undefined, project),
       canvas,
     );
+    renderer.assertNoEffectErrors();
     return await png(canvas);
   } finally {
     renderer.dispose();

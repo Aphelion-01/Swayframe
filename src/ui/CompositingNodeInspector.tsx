@@ -1,6 +1,8 @@
+import { CapabilityParameters } from './CapabilityParameters';
+import { visualCapabilities } from '../core/visual-capabilities';
 import type { Layer } from '../core/project-model';
 import type { CompositingGraph, GraphNode } from '../core/compositing-graph';
-import { nodeDefinition } from '../core/compositing-registry';
+import { nodeDefinitionFor } from '../core/compositing-registry';
 import { graphCommand } from '../core/compositing-commands';
 import {
   patchGraphNode,
@@ -21,7 +23,7 @@ export function CompositingNodeInspector({
   graph: CompositingGraph;
   node: GraphNode;
 }) {
-  const def = nodeDefinition(node.type);
+  const def = nodeDefinitionFor(node);
   const commit = (label: string, g: CompositingGraph) =>
     store.run(label, [graphCommand(store.getSnapshot().project, layer.id, g)]);
   return (
@@ -58,24 +60,38 @@ export function CompositingNodeInspector({
           </label>
         )}
         <Section title="节点参数">
-          {Object.entries(node.params).map(([key, property]) => {
-            const spec = def?.params[key],
-              scale = key === 'scale';
-            return (
-              <AnimatedField
-                key={property.id}
-                store={store}
-                property={property}
-                label={spec?.label ?? key}
-                color={spec?.color}
-                min={spec?.min}
-                max={spec?.max}
-                factor={scale ? 100 : 1}
-                linkMode={scale ? 'ratio' : 'offset'}
-                unit={scale ? '（%）' : undefined}
-              />
-            );
-          })}
+          {node.effectPackage && def ? (
+            <CapabilityParameters
+              store={store}
+              parameters={node.effectPackage.parameters}
+              properties={node.params}
+            />
+          ) : visualCapabilities.get(node.type) ? (
+            <CapabilityParameters
+              store={store}
+              parameters={visualCapabilities.get(node.type)!.parameters}
+              properties={node.params}
+            />
+          ) : (
+            Object.entries(node.params).map(([key, property]) => {
+              const spec = def?.params[key],
+                scale = key === 'scale';
+              return (
+                <AnimatedField
+                  key={property.id}
+                  store={store}
+                  property={property}
+                  label={spec?.label ?? key}
+                  color={spec?.color}
+                  min={spec?.min}
+                  max={spec?.max}
+                  factor={scale ? 100 : 1}
+                  linkMode={scale ? 'ratio' : 'offset'}
+                  unit={scale ? '（%）' : undefined}
+                />
+              );
+            })
+          )}
           {!Object.keys(node.params).length && (
             <p className="empty-note">此节点无需参数</p>
           )}

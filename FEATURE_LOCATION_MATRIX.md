@@ -123,3 +123,6 @@
 | text-animator 文本动画 | panel.inspector.text |  | — | context/menu/section |
 | spatial-translate 三维移动手柄 | panel.inspector.3d |  | — | context/menu/section |
 | spatial-rotate 三维旋转手柄 | panel.inspector.3d |  | — | context/menu/section |
+| effect-browser 添加效果 | panel.inspector.effects |  | — | context/menu/section |
+| create-radial-generator 创建 径向渐变 | panel.scene |  | — | context/menu/section |
+| effect-forge 程序化效果草稿 | panel.inspector.effects |  | — | context/menu/section |

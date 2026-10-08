@@ -1,3 +1,10 @@
+import {
+  compileEffect,
+  assertEffectContext,
+} from '../core/programmable-effect';
+import type { EffectPackage, EffectContext } from '../core/programmable-effect';
+import { isEffectTrusted } from '../core/effect-trust';
+import { radialPixels } from '../core/radial-gradient';
 import type { GraphExecutionCache } from '../core/compositing-cache';
 import { mergePixels } from '../core/compositing-pixels';
 import type { AnimValue, Vec2 } from '../core/core-types';
@@ -11,7 +18,52 @@ export class CanvasGraphBackend implements NodeBackend<HTMLCanvasElement> {
     readonly content: HTMLCanvasElement,
     readonly layer: Layer,
     readonly padding: number,
+    readonly fps = 30,
   ) {}
+  get cacheKey() {
+    return [this.layer.width, this.layer.height, this.padding, this.fps].join(
+      ':',
+    );
+  }
+  capability(id: string, params: Readonly<Record<string, AnimValue>>) {
+    if (id !== 'radialGradient') throw Error('未知视觉能力');
+    const out = this.transparent(),
+      ctx = out.getContext('2d')!;
+    const w = Math.ceil(this.layer.width),
+      h = Math.ceil(this.layer.height),
+      pixels = ctx.createImageData(w, h);
+    pixels.data.set(radialPixels(w, h, params));
+    ctx.putImageData(pixels, this.padding, this.padding);
+    return out;
+  }
+  programmable(
+    effect: EffectPackage,
+    params: Readonly<Record<string, AnimValue>>,
+    context: EffectContext,
+    input?: HTMLCanvasElement,
+  ) {
+    if (!isEffectTrusted(effect.contentHash))
+      throw Error('自定义效果尚未信任，请在效果属性中确认启用');
+    const width = Math.ceil(this.layer.width),
+      height = Math.ceil(this.layer.height),
+      runtimeContext = {
+        ...context,
+        width,
+        height,
+        frame: Math.round(context.time * this.fps),
+      };
+    assertEffectContext(effect, runtimeContext);
+    const out = this.transparent(),
+      ctx = out.getContext('2d')!;
+    const source = input
+      ?.getContext('2d')!
+      .getImageData(this.padding, this.padding, width, height).data;
+    const data = compileEffect(effect).render(params, runtimeContext, source);
+    const pixels = ctx.createImageData(width, height);
+    pixels.data.set(data);
+    ctx.putImageData(pixels, this.padding, this.padding);
+    return out;
+  }
   source() {
     return this.content;
   }
@@ -141,13 +193,14 @@ export function renderCompositingGraph(
   padding: number,
   cache?: GraphExecutionCache<HTMLCanvasElement>,
   sourceKey = '',
+  fps = 30,
 ) {
   const graph = layer.editor?.graph;
   return graph
     ? executeGraph(
         compileGraph(graph),
         time,
-        new CanvasGraphBackend(content, layer, padding),
+        new CanvasGraphBackend(content, layer, padding, fps),
         cache,
         sourceKey,
       )

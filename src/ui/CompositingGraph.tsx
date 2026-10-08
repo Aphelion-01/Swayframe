@@ -18,6 +18,7 @@ import { compileGraph } from '../core/compositing-compiler';
 import { migrateLayerGraph } from '../core/compositing-migration';
 import {
   nodeDefinition,
+  nodeDefinitionFor,
   graphNodeRegistry,
 } from '../core/compositing-registry';
 import {
@@ -645,7 +646,7 @@ function GraphWorkspace({
             )}
           </svg>
           {display.nodes.map((node) => {
-            const def = nodeDefinition(node.type),
+            const def = nodeDefinitionFor(node),
               errors = [...diagnostics, ...runtimeErrors].filter(
                 (e) => e.nodeId === node.id,
               ),

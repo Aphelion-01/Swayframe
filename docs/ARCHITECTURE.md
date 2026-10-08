@@ -307,3 +307,7 @@ Text Section 负责内容、字体与样式，Text Animator Section 负责范围
 Timeline 三种工作区复用同一 rulerHeader，曲线页复用同一 layerRows；节点内容面板不变。PreviewFrameCache 仅存实际已绘制位图，16 帧/64 MiB 上限，视觉工程或素材变化失效；UI 渲染条显示真实缓存位置与本帧耗时，不假装完成后台预渲染。
 
 output-settings 提供合成与导出共用的尺寸/帧率预设、适配矩形和预算校验。OutputFrameRenderer 用同一动画引擎与 Canvas2DRenderer 逐帧绘制，再适配输出分辨率；输出不含选择、网格、标尺或手柄。video-export 按需加载 Mediabunny，先检查设备编码能力，再通过 WebCodecs 离线生成 H.264/H.265 MP4/MOV 或 VP9 WebM；时间戳从零开始，读取完整目标帧率，不依赖实时播放速度。PNG 序列共用输出设置并保留透明背景。取消中止编码并释放资源，文件沿用既有受限 IPC 写入，未新增文件系统或网络权限。视频当前为 SDR 8-bit、无音轨，透明通道使用 PNG；编码支持因平台而异。
+
+## V0.3 Unified Effect Engine
+
+统一能力注册表为内置滤镜、径向渐变和声明式效果定义端口与参数。Graph 继续作为实例唯一来源；Inspector 和 Timeline 复用标准 Property。自定义效果包内嵌于节点，使用精确版本和 SHA256，受限指令运行时不执行任意脚本。缓存区分参数、时间、尺寸、fps 和输入。效果草稿/库/信任通过平台适配器保存，不进入 Scene。应用走 Command/AgentTransaction，保存到正式库需要用户明确操作；导出遇到效果错误立即停止。细节见根目录 EFFECT_ENGINE_ARCHITECTURE.md 与 PROGRAMMABLE_EFFECT_SPEC.md。

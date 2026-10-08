@@ -50,6 +50,7 @@ export interface RenderLayer {
 }
 export interface RenderSnapshot {
   readonly compositionId: ID;
+  readonly fps?: number;
   readonly backgroundColor?: Color;
   readonly project?: Project;
   readonly camera?: CameraSnapshot;
@@ -289,6 +290,7 @@ export function createRenderSnapshot(
     project,
     camera,
     compositionId: composition.id,
+    fps: composition.fps,
     backgroundColor: composition.backgroundColor,
     width: composition.width,
     height: composition.height,

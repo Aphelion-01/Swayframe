@@ -1,3 +1,8 @@
+import {
+  radialGradientDefinition,
+  gradientPropertyKey,
+} from './radial-gradient';
+import { parameterError } from './visual-capabilities';
 import { layerAccentIds } from './layer-accent';
 import { createGraphSchema } from './compositing-graph-schema';
 import { effectDefinitions } from './effect-model';
@@ -169,7 +174,11 @@ export const editorSchema = z
       const values = [p.baseValue, ...p.keyframes.map((k) => k.value)];
       for (const v of values) {
         let valid = true;
-        if (['anchor'].includes(key))
+        const radialSpec = radialGradientDefinition.parameters.find(
+          (p) => gradientPropertyKey(p.id) === key,
+        );
+        if (radialSpec) valid = !parameterError(radialSpec, v);
+        else if (['anchor'].includes(key))
           valid = !!v && typeof v === 'object' && !Array.isArray(v) && 'x' in v;
         else if (['fill', 'stroke', 'gradientEnd'].includes(key))
           valid =

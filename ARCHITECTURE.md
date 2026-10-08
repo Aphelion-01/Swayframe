@@ -18,3 +18,7 @@ GUI 与 Agent 共用 Command System；复杂操作走 Transaction；Intelligence
 当前执行基线：`docs/baseline/V02_TIMELINE_INTERACTION.txt`。0.9.9完成Timeline三层树、冻结列、多选排序/关键帧手势、帧时间与共享记录入口、曲线往返及单事务验收；GUI/Agent共用Command/Transaction，UI偏好不进入Scene。审计与结果见`TIMELINE_UX_AUDIT.md`、`TIMELINE_UX_RESULT.md`。
 
 当前执行基线：`docs/baseline/SPATIAL_CAMERA_MODEL.txt`。0.9.16 新增静态网格资产、摄像机光学参数及二维/三维贝塞尔路径直接操控；Project schema 为 0.7.0，兼容旧工程迁移。领域实现及边界见 `docs/ARCHITECTURE.md`，验收见 `SPATIAL_CAMERA_MODEL_RESULT.md`。
+
+## V0.3 Unified Effect Engine
+
+详见 EFFECT_ENGINE_ARCHITECTURE.md、PROGRAMMABLE_EFFECT_SPEC.md、EFFECT_FORGE_AGENT_SPEC.md。VisualCapabilityRegistry 是统一能力协议；Graph 是处理实例唯一数据源，Property 是唯一动画系统。径向渐变复用同一像素算法；自定义包由受控声明式 CPU Runtime 执行并内嵌精确内容哈希。Preview 与 Export 经过同一 CanvasGraphBackend；导出拒绝未解析/未信任/超限效果。Forge Workspace 与效果库独立于 Scene，接受后只生成共享 Command/Transaction。

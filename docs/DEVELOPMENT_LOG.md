@@ -137,3 +137,7 @@ Mac锁屏阻止继续原生文件对话框和鼠标操作；已请求解锁。�
 ## 2026-10-08 · 0.9.17
 
 完成用户 12 项创作体验专项改动；执行与限制见 EDITOR_POLISH_RESULT.md。注册 canvas-aids / text-animator / spatial-translate / spatial-rotate，未新增全局工具栏按钮。保留共享 Command/Transaction、Proposal 边界，更新入口库存与位置矩阵。新增实时光学、文本范围动画、输出采样/取消、路径直接操控和帧缓存预算回归。
+
+## 2026-10-08 — V0.3 Unified Effect Engine
+
+按 Phase0→Phase7 顺序推进：真实架构审计；十项内置效果兼容注册；统一浏览器和独立预设；径向渐变共用算法；受控声明式 CPU Runtime；自包含版本库和草稿生命周期；Agent Forge工具；集成与实际Canvas验收。阶段测试数量依次为466、468、469、472、476、479、481，最终结果见 EFFECT_ENGINE_TEST_REPORT.md。真实浏览器逐像素验证 Fill/Generator/Graph、预览/PNG导出、重开及关键帧；优化1080p渐变运算从约583ms到6.4ms。该结果仅是本机单次基准，不能推广为复杂自定义效果实时帧率。

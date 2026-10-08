@@ -34,6 +34,7 @@ export class OutputFrameRenderer {
       1,
       s.transparent,
     );
+    this.renderer.assertNoEffectErrors();
     const ctx = this.canvas.getContext('2d')!,
       rect = outputRect(this.c.width, this.c.height, s);
     ctx.clearRect(0, 0, s.width, s.height);

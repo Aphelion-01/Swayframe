@@ -6,7 +6,7 @@ import type {
   GraphDiagnostic,
   GraphNode,
 } from './compositing-graph';
-import { nodeDefinition } from './compositing-registry';
+import { nodeDefinitionFor } from './compositing-registry';
 import type { NodeBackend } from './compositing-registry';
 export interface CompiledNode {
   readonly node: GraphNode;
@@ -51,7 +51,7 @@ export function compileGraph(graph: CompositingGraph): CompiledGraph {
       } else if (port.required && node.enabled)
         diagnostics.push({ nodeId: id, message: `缺少输入：${port.name}` });
     }
-    if (!nodeDefinition(node.type))
+    if (node.enabled && !nodeDefinitionFor(node))
       diagnostics.push({ nodeId: id, message: `未知节点：${node.type}` });
     nodes.push({
       node,
@@ -110,15 +110,41 @@ export function executeGraph<T>(
         Object.entries(step.inputs).map(([p, id]) => [p, results.get(id)!]),
       );
     const fallback = () =>
-      inputs.in ?? inputs.b ?? inputs.a ?? backend.transparent();
+      inputs.in ??
+      inputs.b ??
+      inputs.a ??
+      (!node.inputs.length &&
+      (node.type === 'radialGradient' || node.type.startsWith('fx.'))
+        ? backend.source()
+        : backend.transparent());
     const params = Object.fromEntries(
       Object.entries(node.params).map(([k, p]) => [
         k,
-        evaluateProperty(p, time),
+        (() => {
+          const value = evaluateProperty(p, time),
+            spec = node.effectPackage?.parameters?.find((s) => s.id === k);
+          return spec &&
+            ['integer', 'boolean', 'enum'].includes(spec.type) &&
+            typeof value === 'number'
+            ? Math.max(
+                spec.min ?? (spec.type === 'integer' ? -Infinity : 0),
+                Math.min(
+                  spec.max ??
+                    (spec.type === 'boolean'
+                      ? 1
+                      : spec.type === 'enum'
+                        ? (spec.options?.length ?? 1) - 1
+                        : Infinity),
+                  Math.round(value),
+                ),
+              )
+            : value;
+        })(),
       ]),
     );
     const key = JSON.stringify([
       node.type,
+      backend.cacheKey,
       node.enabled,
       node.enabled ? params : {},
       Object.entries(step.inputs).map(([port, id]) => [
@@ -127,6 +153,7 @@ export function executeGraph<T>(
         revisions.get(id),
       ]),
       node.type === 'source' ? sourceKey : null,
+      nodeDefinitionFor(node)?.usesTime ? time : null,
     ]);
     revisions.set(node.id, cache?.revision(node.id, key) ?? 0);
     const inputFailed = Object.values(step.inputs).some((id) => failed.has(id));
@@ -139,10 +166,10 @@ export function executeGraph<T>(
           failed.add(node.id);
           results.set(node.id, fallback());
         } else {
-          const def = nodeDefinition(node.type);
-          if (!def) throw new Error(`节点 ${node.type} 未注册`);
+          const def = nodeDefinitionFor(node);
+          if (!def && node.enabled) throw new Error(`节点 ${node.type} 未注册`);
           const value = node.enabled
-            ? def.evaluate({ inputs, params, backend })
+            ? def!.evaluate({ inputs, params, backend, time })
             : fallback();
           results.set(node.id, value);
           if (!inputFailed) cache?.put(node.id, key, value);

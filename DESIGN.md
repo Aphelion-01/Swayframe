@@ -174,3 +174,11 @@ UI command registry 绑定现有业务 Command/Transaction；FeatureDefinition �
 ### 实例与贡献边界
 
 `motion.segmentContext` 专用于当前曲线区间，不能用全局选帧替代精确区间。`timeline.header` 注册 transport 组件，内部的时间/循环/吸附共享已有时钟与 UI 状态。`commandScope` 在工作区挂载时提供目标绑定，关闭/换目标后必须重新解析；不可执行的搜索结果保留位置和选择提示。属性 Section 使用带参数的共享 Command，不将每个动态字段注册成无参数全局操作。Effect 类别从实际 Registry 派生，空类别不显示。
+
+## V0.3 Effect Engine placement review
+
+Effect Instance 的高频参数编辑归 INSPECTOR（对象/属性、F2、选择上下文）；唯一主入口是现有“效果与遮罩 → 添加效果”。浏览器复用 Modal，提供内置/我的效果/AI草稿，不新建侧栏或全局工具按钮。Fill 的径向渐变归已有 Appearance Section；独立 Generator 创建归 SCENE 的“创建对象”；处理连接归 COMPOSITING_GRAPH。导入、草稿编译、像素预览与显式保存为 F4 上下文流程，位于同一浏览器。
+
+注册 `effect-browser`、`effect-forge`、`create-radial-generator` 并复用 Command 与 typed contribution。参数表单由统一 Schema 驱动。生成器链首不可被重排到滤镜后；分支图不显示可重排线性栈。程序化效果明确标识 CPU 限制、版本与缺失包诊断。创建、参数提交、Graph 应用全部走共享 Command/Transaction。
+
+UX 检查：状态可见（草稿阶段、错误、真实像素预览）；一致性（与节点同参数同渲染）；用户控制（应用、保存分开，Undo与丢弃）；防错（错误包、超限、缺失效果阻止导出）；发现性（生成器进入现有创建菜单）。窗口继续使用既有面板收缩与滚动，浏览器限制高度并保留关闭/焦点返回。

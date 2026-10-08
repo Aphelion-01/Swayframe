@@ -1,3 +1,4 @@
+import { configureEffectTrust } from '../core/effect-trust';
 import { ApplicationSettings } from './ai/AISettings';
 import './ai/ai.css';
 import { dropAssets } from './asset-import';
@@ -12,6 +13,7 @@ import { Workspace } from './workspace/layout';
 import type { EditorStore } from './editor-store';
 
 export function App({ store }: { store: EditorStore }) {
+  configureEffectTrust(localStorage);
   const view = useEditorSlice(store, [
     'project',
     'error',

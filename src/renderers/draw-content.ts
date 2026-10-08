@@ -1,3 +1,8 @@
+import {
+  radialPixels,
+  radialDefaults,
+  gradientPropertyKey,
+} from '../core/radial-gradient';
 import { layoutText, textValue } from '../core/text-geometry';
 import type { AnimValue, Color } from '../core/core-types';
 import type { Layer } from '../core/project-model';
@@ -37,7 +42,36 @@ export function drawContent(
     layerValue(layer, 'fill', time, [base.r, base.g, base.b, base.a]),
   );
   ctx.fillStyle = cssColor(fill);
-  if (layer.editor?.gradient !== 'none' && layer.editor?.gradient) {
+  if (
+    layer.editor?.gradient === 'radial' &&
+    layer.editor.properties.radial_center
+  ) {
+    const w = Math.ceil(layer.width),
+      h = Math.ceil(layer.height),
+      canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const local = canvas.getContext('2d')!,
+      pixels = local.createImageData(w, h);
+    pixels.data.set(
+      radialPixels(
+        w,
+        h,
+        Object.fromEntries(
+          Object.entries(radialDefaults()).map(([key, fallback]) => [
+            key,
+            layerValue(layer, gradientPropertyKey(key), time, fallback),
+          ]),
+        ),
+      ),
+    );
+    local.putImageData(pixels, 0, 0);
+    const pattern = ctx.createPattern(canvas, 'no-repeat');
+    if (pattern) {
+      pattern.setTransform(new DOMMatrix().translate(x, y));
+      ctx.fillStyle = pattern;
+    }
+  } else if (layer.editor?.gradient !== 'none' && layer.editor?.gradient) {
     const gradient =
       layer.editor.gradient === 'linear'
         ? ctx.createLinearGradient(x, y, -x, -y)

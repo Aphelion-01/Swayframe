@@ -1,3 +1,4 @@
+import type { EffectPackage } from './programmable-effect';
 import type { AnimValue, ID, Vec2 } from './core-types';
 import type { Property } from './project-model';
 
@@ -29,6 +30,7 @@ export interface GraphNode {
   readonly outputs: readonly GraphPort[];
   readonly params: Readonly<Record<string, Property<AnimValue>>>;
   readonly enabled: boolean;
+  readonly effectPackage?: EffectPackage;
   readonly metadata?: { readonly source?: 'human' | 'agent' | 'system' };
 }
 export interface PortRef {

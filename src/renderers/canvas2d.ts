@@ -113,6 +113,19 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
     this.#last = new WeakMap();
     this.#content = new WeakMap();
   }
+  assertNoEffectErrors(): void {
+    const errors = [...this.#graphDiagnostics.values()].flatMap(
+      (value) => JSON.parse(value) as { message: string }[],
+    );
+    if (errors.length)
+      throw Error(
+        '导出停止：效果渲染失败。' +
+          errors
+            .slice(0, 3)
+            .map((e) => e.message)
+            .join('；'),
+      );
+  }
   render(
     input: RenderSnapshot,
     target: HTMLCanvasElement,
@@ -198,12 +211,21 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
           if (modelContext) {
             if (outputScale !== 1) modelContext.scale(outputScale, outputScale);
             drawModelMesh(modelContext, mesh, item.world3D, input.camera);
-            const processed = renderCompositingGraph(
+            const execution = renderCompositingGraph(
               modelSurface,
               { ...layer, width, height },
               input.time,
               0,
-            ).output;
+              undefined,
+              '',
+              input.fps ?? 30,
+            );
+            if (layer.editor?.graph)
+              this.#graphDiagnostics.set(
+                layer.editor.graph.id,
+                JSON.stringify(execution.diagnostics),
+              );
+            const processed = execution.output;
             ctx.drawImage(processed, 0, 0, input.width, input.height);
           }
         }
@@ -340,6 +362,7 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
             padding,
             slot.cache,
             sourceKey,
+            input.fps ?? 30,
           );
           processed = execution.output;
           if (layer.editor?.graph) {

@@ -1,3 +1,5 @@
+import { UserEffectLibrary } from '../core/effect-library';
+import { registerEffectForgeTools } from '../agent/effect-forge-tools';
 import { IntelligenceService } from '../agent/intelligence';
 import { activeComposition, layerProperties } from '../core/project-model';
 import { agentLibraryFor, registerPresetTools } from '../agent/library';
@@ -39,6 +41,24 @@ export function createNativeAgent(
       ),
       engine,
     );
+  registerEffectForgeTools(
+    registry,
+    undefined,
+    (pixels, width, height) => {
+      if (!manager.getSnapshot().settings.privacy.sendRenderPreview)
+        return undefined;
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return undefined;
+      const image = ctx.createImageData(width, height);
+      image.data.set(pixels);
+      ctx.putImageData(image, 0, 0);
+      return canvas.toDataURL('image/png');
+    },
+    () => new UserEffectLibrary(localStorage).all(),
+  );
   const library = agentLibraryFor(manager.storage);
   registerPresetTools(registry, library);
   const input = () => {

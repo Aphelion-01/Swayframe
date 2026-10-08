@@ -142,7 +142,7 @@ it('图层面板标题、列表空白及下半空白反复右键均能创建，�
     const menu = screen.getByRole('menu', { name: '创建对象' });
     expect(menu.closest('aside')).toBeNull();
     const choices = within(menu).getAllByRole('menuitem');
-    expect(choices).toHaveLength(10);
+    expect(choices).toHaveLength(11);
     choices.forEach((item) => expect(item.querySelector('svg')).not.toBeNull());
     fireEvent.keyDown(menu, { key: 'Escape' });
     expect(screen.queryByRole('menu', { name: '创建对象' })).toBeNull();
