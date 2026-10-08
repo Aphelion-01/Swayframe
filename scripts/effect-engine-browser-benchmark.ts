@@ -25,6 +25,8 @@ import { effectsToGraph } from '../src/core/compositing-migration';
 import { createEffect } from '../src/core/effect-model';
 import { CommandSystem, transaction } from '../src/core/command-system';
 import { graphCommand } from '../src/core/compositing-commands';
+import { compileEffect } from '../src/core/programmable-effect';
+import { referencePixels } from '../tests/helpers/reference-pixel-runtime';
 const results = document.querySelector('pre')!,
   button = document.querySelector('button')!;
 button.addEventListener('click', async () => {
@@ -278,6 +280,28 @@ button.addEventListener('click', async () => {
     checks.radial1080Milliseconds = Number(
       (performance.now() - start).toFixed(2),
     );
+    const compiled = compileEffect(pkg),
+      context = { width: 1920, height: 1080, time: 0.75, frame: 18 },
+      performanceSamples: Record<string, number[]> = {},
+      performancePixels: Uint8ClampedArray[] = [];
+    for (const [name, renderPixels] of Object.entries({
+      reference: () => referencePixels(pkg, {}, context),
+      optimized: () => compiled.render({}, context),
+    })) {
+      const samples: number[] = [];
+      for (let i = 0; i < 3; i++) {
+        const start = performance.now(),
+          rendered = renderPixels();
+        samples.push(performance.now() - start);
+        if (i === 2) performancePixels.push(rendered);
+      }
+      performanceSamples[name] = samples;
+    }
+    checks.optimized1080PixelsEqual = equal(
+      performancePixels[0]!,
+      performancePixels[1]!,
+    );
+    checks.procedural1080Milliseconds = performanceSamples;
     checks.pass = Object.values(checks).every(
       (v) => typeof v !== 'boolean' || v,
     );

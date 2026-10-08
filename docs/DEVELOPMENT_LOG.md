@@ -141,3 +141,7 @@ Mac锁屏阻止继续原生文件对话框和鼠标操作；已请求解锁。�
 ## 2026-10-08 — V0.3 Unified Effect Engine
 
 按 Phase0→Phase7 顺序推进：真实架构审计；十项内置效果兼容注册；统一浏览器和独立预设；径向渐变共用算法；受控声明式 CPU Runtime；自包含版本库和草稿生命周期；Agent Forge工具；集成与实际Canvas验收。阶段测试数量依次为466、468、469、472、476、479、481，最终结果见 EFFECT_ENGINE_TEST_REPORT.md。真实浏览器逐像素验证 Fill/Generator/Graph、预览/PNG导出、重开及关键帧；优化1080p渐变运算从约583ms到6.4ms。该结果仅是本机单次基准，不能推广为复杂自定义效果实时帧率。
+
+## 2026-10-09 — Effect Runtime 性能优化
+
+保持 declarative-pixel-v1 和共享渲染路径，编译固定操作码、移除不可达指令、复用帧/行/列计算，列缓存最多8MiB。冻结旧标量解释器作为独立对照，覆盖全部25条指令、80个确定性混合程序、非有限中间值、窄宽图像与缓存超限回退。130文件/514测试、lint、typecheck和Web/桌面构建通过。真实浏览器1080p有机纹理中位约1792ms→95ms、逐像素一致；仍不承诺实时播放。无用户入口或Scene数据变更。详见 EFFECT_RUNTIME_PERFORMANCE_RESULT.md。
