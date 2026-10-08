@@ -1,7 +1,7 @@
 import { TimelineHeaderContributions } from './workspace/timeline-header-contributions';
 import { editorContributions } from './workspace/feature-contributions';
 import { SharedCurveTransport } from './workspace/CurveWorkspace';
-import { CompositionTimeRuler } from './workspace/CompositionTimeRuler';
+import { RenderPreviewBar } from './RenderPreviewBar';
 import { dispatchShortcut } from './workspace/shortcuts';
 import { useLayerMarquee } from './workspace/layer-marquee';
 import { CreateLayerMenu } from './workspace/CreateLayerMenu';
@@ -1122,6 +1122,146 @@ export function Timeline({ store }: { store: EditorStore }) {
     ],
   );
   const playhead = `${(view.time / c.duration) * 100}%`;
+  const rulerHeader = (
+    <div className="timeline-ruler">
+      <span className="timeline-tree-heading">
+        图层 / 属性
+        <span
+          role="separator"
+          aria-label="时间轴属性列宽"
+          aria-orientation="vertical"
+          tabIndex={0}
+          className="timeline-column-resizer"
+          onKeyDown={(event) => {
+            if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+              event.preventDefault();
+              setTreeWidth((w) =>
+                Math.max(
+                  220,
+                  Math.min(480, w + (event.key === 'ArrowLeft' ? -10 : 10)),
+                ),
+              );
+            }
+          }}
+          onPointerDown={(event) => {
+            if (event.button !== 0 || interaction.state.type !== 'idle') return;
+            event.preventDefault();
+            event.currentTarget.setPointerCapture(event.pointerId);
+            treeResize.current = {
+              x: event.clientX,
+              width: treeWidth,
+            };
+          }}
+          onPointerMove={(event) => {
+            if (treeResize.current)
+              setTreeWidth(
+                Math.max(
+                  220,
+                  Math.min(
+                    480,
+                    treeResize.current.width +
+                      event.clientX -
+                      treeResize.current.x,
+                  ),
+                ),
+              );
+          }}
+          onPointerUp={() => {
+            treeResize.current = undefined;
+          }}
+          onPointerCancel={() => {
+            if (treeResize.current) setTreeWidth(treeResize.current.width);
+            treeResize.current = undefined;
+          }}
+        />
+      </span>
+      <div
+        className="ruler-track"
+        role="slider"
+        tabIndex={0}
+        aria-label="播放头"
+        aria-valuemin={0}
+        aria-valuemax={c.duration}
+        aria-valuenow={view.time}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape' && rulerDrag.current) {
+            event.preventDefault();
+            event.stopPropagation();
+            store.setTime(rulerDrag.current.time);
+            rulerDrag.current = undefined;
+            return;
+          }
+          if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+            event.preventDefault();
+            store.setPlaying(false);
+            store.setTime(
+              view.time + (event.key === 'ArrowLeft' ? -1 : 1) / c.fps,
+            );
+          }
+        }}
+        onPointerDown={(event) => {
+          if (event.button !== 0 || interaction.state.type !== 'idle') return;
+          const r = event.currentTarget.getBoundingClientRect();
+          rulerDrag.current = {
+            time: store.getSnapshot().time,
+            left: r.left,
+            width: Math.max(1, r.width),
+          };
+          event.currentTarget.setPointerCapture(event.pointerId);
+          store.setPlaying(false);
+          store.setTime(
+            Math.round(
+              ((event.clientX - r.left) / r.width) * c.duration * c.fps,
+            ) / c.fps,
+          );
+        }}
+        onPointerMove={(event) => {
+          if (!rulerDrag.current) return;
+          const r = event.currentTarget.getBoundingClientRect();
+          store.setTime(
+            Math.round(
+              ((event.clientX - r.left) / r.width) * c.duration * c.fps,
+            ) / c.fps,
+          );
+        }}
+        onPointerUp={() => {
+          rulerDrag.current = undefined;
+        }}
+        onPointerCancel={() => {
+          if (rulerDrag.current) store.setTime(rulerDrag.current.time);
+          rulerDrag.current = undefined;
+        }}
+      >
+        {frameDrag?.snapTime !== undefined && (
+          <span
+            className="timeline-snap-guide"
+            aria-label="关键帧吸附参考线"
+            style={{
+              left: `${(frameDrag.snapTime / c.duration) * 100}%`,
+            }}
+          />
+        )}
+        <span className="ruler-playhead" style={{ left: playhead }}>
+          ▼
+        </span>
+        {timelineTicks(
+          c.duration,
+          c.fps,
+          Math.max(1, viewportWidth - treeWidth - 28) * view.timelineZoom,
+          timecode,
+        ).map((tick) => (
+          <span
+            key={tick.time}
+            className={`timeline-tick ${tick.major ? 'major' : 'minor'}`}
+            style={{ left: `${(tick.time / c.duration) * 100}%` }}
+          >
+            {tick.label}
+          </span>
+        ))}
+      </div>
+      <span>插值</span>
+    </div>
+  );
   return (
     <section
       className="timeline-panel"
@@ -1221,7 +1361,10 @@ export function Timeline({ store }: { store: EditorStore }) {
         <span className="timeline-meta">{c.fps} fps</span>
       </div>
       {(graphOpen || motionOpen || compositingOpen) && (
-        <CompositionTimeRuler store={store} />
+        <div className="mode-time-ruler">{rulerHeader}</div>
+      )}
+      {(graphOpen || motionOpen || compositingOpen) && (
+        <RenderPreviewBar store={store} />
       )}
       <SharedCurveTransport.Provider value={true}>
         {(graphOpen || motionOpen) && (
@@ -1250,29 +1393,39 @@ export function Timeline({ store }: { store: EditorStore }) {
             </button>
           </div>
         )}
-        {motionOpen && (
-          <MotionCurvePanel
-            store={store}
-            key={motionInitialSegment}
-            initialSegmentId={motionInitialSegment}
-            loop={loop}
-            onLoopChange={setLoop}
-            onClose={() => {
-              setMotionOpen(false);
-              setGraphOpen(false);
-            }}
-          />
+        {(graphOpen || motionOpen) && (
+          <div className="curve-with-layer-tree">
+            <div className="curve-layer-tree" aria-label="曲线图层与属性">
+              {layerRows}
+            </div>
+            <div className="curve-editor-main">
+              {' '}
+              {motionOpen && (
+                <MotionCurvePanel
+                  store={store}
+                  key={motionInitialSegment}
+                  initialSegmentId={motionInitialSegment}
+                  loop={loop}
+                  onLoopChange={setLoop}
+                  onClose={() => {
+                    setMotionOpen(false);
+                    setGraphOpen(false);
+                  }}
+                />
+              )}
+              {graphOpen && (
+                <GraphEditor
+                  store={store}
+                  embedded
+                  loop={loop}
+                  onLoopChange={setLoop}
+                  onClose={() => setGraphOpen(false)}
+                />
+              )}
+            </div>
+          </div>
         )}
         {compositingOpen && <CompositingGraphPanel store={store} />}
-        {graphOpen && (
-          <GraphEditor
-            store={store}
-            embedded
-            loop={loop}
-            onLoopChange={setLoop}
-            onClose={() => setGraphOpen(false)}
-          />
-        )}
         {!graphOpen && !compositingOpen && !motionOpen && (
           <div
             className="timeline-scroll"
@@ -1400,159 +1553,8 @@ export function Timeline({ store }: { store: EditorStore }) {
                 width: `calc(${treeWidth + 28}px + (100% - ${treeWidth + 28}px) * ${view.timelineZoom})`,
               }}
             >
-              <div className="timeline-ruler">
-                <span className="timeline-tree-heading">
-                  图层 / 属性
-                  <span
-                    role="separator"
-                    aria-label="时间轴属性列宽"
-                    aria-orientation="vertical"
-                    tabIndex={0}
-                    className="timeline-column-resizer"
-                    onKeyDown={(event) => {
-                      if (
-                        event.key === 'ArrowLeft' ||
-                        event.key === 'ArrowRight'
-                      ) {
-                        event.preventDefault();
-                        setTreeWidth((w) =>
-                          Math.max(
-                            220,
-                            Math.min(
-                              480,
-                              w + (event.key === 'ArrowLeft' ? -10 : 10),
-                            ),
-                          ),
-                        );
-                      }
-                    }}
-                    onPointerDown={(event) => {
-                      if (
-                        event.button !== 0 ||
-                        interaction.state.type !== 'idle'
-                      )
-                        return;
-                      event.preventDefault();
-                      event.currentTarget.setPointerCapture(event.pointerId);
-                      treeResize.current = {
-                        x: event.clientX,
-                        width: treeWidth,
-                      };
-                    }}
-                    onPointerMove={(event) => {
-                      if (treeResize.current)
-                        setTreeWidth(
-                          Math.max(
-                            220,
-                            Math.min(
-                              480,
-                              treeResize.current.width +
-                                event.clientX -
-                                treeResize.current.x,
-                            ),
-                          ),
-                        );
-                    }}
-                    onPointerUp={() => {
-                      treeResize.current = undefined;
-                    }}
-                    onPointerCancel={() => {
-                      if (treeResize.current)
-                        setTreeWidth(treeResize.current.width);
-                      treeResize.current = undefined;
-                    }}
-                  />
-                </span>
-                <div
-                  className="ruler-track"
-                  role="slider"
-                  tabIndex={0}
-                  aria-label="播放头"
-                  aria-valuemin={0}
-                  aria-valuemax={c.duration}
-                  aria-valuenow={view.time}
-                  onKeyDown={(event) => {
-                    if (
-                      event.key === 'ArrowLeft' ||
-                      event.key === 'ArrowRight'
-                    ) {
-                      event.preventDefault();
-                      store.setPlaying(false);
-                      store.setTime(
-                        view.time +
-                          (event.key === 'ArrowLeft' ? -1 : 1) / c.fps,
-                      );
-                    }
-                  }}
-                  onPointerDown={(event) => {
-                    if (event.button !== 0 || interaction.state.type !== 'idle')
-                      return;
-                    const r = event.currentTarget.getBoundingClientRect();
-                    rulerDrag.current = {
-                      time: store.getSnapshot().time,
-                      left: r.left,
-                      width: Math.max(1, r.width),
-                    };
-                    event.currentTarget.setPointerCapture(event.pointerId);
-                    store.setPlaying(false);
-                    store.setTime(
-                      Math.round(
-                        ((event.clientX - r.left) / r.width) *
-                          c.duration *
-                          c.fps,
-                      ) / c.fps,
-                    );
-                  }}
-                  onPointerMove={(event) => {
-                    if (!rulerDrag.current) return;
-                    const r = event.currentTarget.getBoundingClientRect();
-                    store.setTime(
-                      Math.round(
-                        ((event.clientX - r.left) / r.width) *
-                          c.duration *
-                          c.fps,
-                      ) / c.fps,
-                    );
-                  }}
-                  onPointerUp={() => {
-                    rulerDrag.current = undefined;
-                  }}
-                  onPointerCancel={() => {
-                    if (rulerDrag.current)
-                      store.setTime(rulerDrag.current.time);
-                    rulerDrag.current = undefined;
-                  }}
-                >
-                  {frameDrag?.snapTime !== undefined && (
-                    <span
-                      className="timeline-snap-guide"
-                      aria-label="关键帧吸附参考线"
-                      style={{
-                        left: `${(frameDrag.snapTime / c.duration) * 100}%`,
-                      }}
-                    />
-                  )}
-                  <span className="ruler-playhead" style={{ left: playhead }}>
-                    ▼
-                  </span>
-                  {timelineTicks(
-                    c.duration,
-                    c.fps,
-                    Math.max(1, viewportWidth - treeWidth - 28) *
-                      view.timelineZoom,
-                    timecode,
-                  ).map((tick) => (
-                    <span
-                      key={tick.time}
-                      className={`timeline-tick ${tick.major ? 'major' : 'minor'}`}
-                      style={{ left: `${(tick.time / c.duration) * 100}%` }}
-                    >
-                      {tick.label}
-                    </span>
-                  ))}
-                </div>
-                <span>插值</span>
-              </div>
+              {rulerHeader}
+              <RenderPreviewBar store={store} />
               <div className="timeline-body">
                 {c.layers.length === 0 && (
                   <p className="timeline-empty">

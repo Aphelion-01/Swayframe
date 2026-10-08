@@ -13,7 +13,7 @@ export function createTextMeasurer(
       ),
       weight = textValue(layer, 'fontWeight', time, 400);
     ctx.save();
-    ctx.font = `${weight} ${size}px ${layer.type === 'text' ? layer.fontFamily : 'sans-serif'}`;
+    ctx.font = `${textValue(layer, 'fontItalic', time, 0) === 1 ? 'italic ' : ''}${weight} ${size}px ${layer.type === 'text' ? layer.fontFamily : 'sans-serif'}`;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     const m = ctx.measureText(char);

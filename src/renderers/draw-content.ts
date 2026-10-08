@@ -1,4 +1,4 @@
-import { layoutText } from '../core/text-geometry';
+import { layoutText, textValue } from '../core/text-geometry';
 import type { AnimValue, Color } from '../core/core-types';
 import type { Layer } from '../core/project-model';
 import { evaluateProperty } from '../core/animation-engine';
@@ -115,13 +115,37 @@ export function drawContent(
   } else if (layer.type === 'text') {
     const size = layerValue(layer, 'fontSize', time, layer.fontSize) as number,
       weight = layerValue(layer, 'fontWeight', time, 400) as number;
-    ctx.font = `${weight} ${size}px ${layer.fontFamily}`;
+    ctx.font = `${textValue(layer, 'fontItalic', time, 0) === 1 ? 'italic ' : ''}${weight} ${size}px ${layer.fontFamily}`;
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
     for (const glyph of layoutText(layer, time, (_layer, _time, char) => ({
       width: ctx.measureText(char).width,
     }))) {
-      ctx.fillText(glyph.char, glyph.x, glyph.y);
+      if (glyph.rotation === 0 && glyph.scale === 1 && glyph.opacity === 1) {
+        ctx.fillText(glyph.char, glyph.x, glyph.y);
+        if (textValue(layer, 'textUnderline', time, 0) === 1)
+          ctx.fillRect(
+            glyph.x,
+            glyph.y + size * 0.4,
+            glyph.metrics.width,
+            Math.max(1, size / 18),
+          );
+        continue;
+      }
+      ctx.save();
+      ctx.translate(glyph.x, glyph.y);
+      ctx.rotate((glyph.rotation * Math.PI) / 180);
+      ctx.scale(glyph.scale, glyph.scale);
+      ctx.globalAlpha *= glyph.opacity;
+      ctx.fillText(glyph.char, 0, 0);
+      if (textValue(layer, 'textUnderline', time, 0) === 1)
+        ctx.fillRect(
+          0,
+          size * 0.4,
+          glyph.metrics.width,
+          Math.max(1, size / 18),
+        );
+      ctx.restore();
     }
   } else if (layer.type === 'image') {
     if (image) ctx.drawImage(image, x, y, layer.width, layer.height);

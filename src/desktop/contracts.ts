@@ -61,7 +61,11 @@ export type DesktopAction =
   | ApplicationActionId
   | 'create-image'
   | 'import-model'
+  | 'spatial-translate'
+  | 'spatial-rotate'
   | 'camera-frustum'
+  | 'canvas-aids'
+  | 'text-animator'
   | 'motion-paths'
   | 'create-rectangle'
   | 'create-ellipse'
@@ -115,7 +119,11 @@ export type DesktopAction =
 export const actionSchema = z.enum([
   'create-image',
   'import-model',
+  'spatial-translate',
+  'spatial-rotate',
   'camera-frustum',
+  'canvas-aids',
+  'text-animator',
   'motion-paths',
   'create-rectangle',
   'create-ellipse',

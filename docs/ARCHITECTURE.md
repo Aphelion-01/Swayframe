@@ -295,3 +295,15 @@ navigateSpatialWheel区分连续触控板、Shift平移及Chromium ctrl+wheel捏
 `MotionPathOverlay` 在两个视口复用相同空间曲线和投影，显示路径、端点、控制柄及结束位置轮廓。路径独立于时间缓动，控制点与关键帧都走 keyframe.update；局部到屏幕的雅可比逆映射逐次重投影，保持透视拖动跟手。拖动仅预览 Property，窗口释放重采样并在单个 Transaction 提交；取消、卸载、时间或项目变化清除预览。父级姿态和其他属性采用当前帧，结束轮廓表示此姿态下的位置终点，不代表最后帧所有属性的综合姿态。
 
 观察方向、showCameraFrustum / showMotionPaths 与布局保持在 EditorView/局部 UI 中。模型入口属于 PROJECT/panel.project，文件菜单为跨工作流次入口；摄像机开关与参数属于 CANVAS/panel.inspector.3d；路径入口属于 MOTION/panel.inspector.transform，直接操控由 Overlay 管理。Feature 元数据不含回调，所有按钮执行 Command Registry；无新增全局工具栏按钮。验收见 `SPATIAL_CAMERA_MODEL_RESULT.md`。
+
+## 0.9.17 创作体验与媒体输出
+
+执行基线 `docs/baseline/EDITOR_POLISH_0917.txt`。CameraSpaceOverlay 使用摄像机同一世界姿态构造实体线框；ThreeDGizmo 保留连续投影的缩短轴，删除造成 Z 突变的人造对角方向。旋转与移动模式归属三维 Inspector Section，命令注册到 CANVAS 域；EditorView.spatialGizmoMode 同步两个视口，观察状态不进入 Scene。位置/旋转命中区为 28/26 px。
+
+Canvas 与 SpatialViewport 在 layout effect 中绘制实时 Property/Layer 预览；renderRevision 使静态文本/几何草稿也能刷新。拖动使用显示分辨率预览，提交后恢复完整画质。光学模糊对完整投影轮廓施加一次，透明 overscan 防止分片裁切产生矩形边缘；仍为图层深度与薄透镜弥散圆近似，不是逐像素光线追踪景深。未改内容的图层缓存可以跨摄像机参数更新复用。
+
+Text Section 负责内容、字体与样式，Text Animator Section 负责范围选择器和字符位置/缩放/旋转/透明度；新增参数为原有可动画 Property，保存加载补齐旧文本默认值，无需新 Scene 执行器。layoutText 输出字符变换，绘制和测量共用；边界考虑字符旋转与缩放，离屏处理预留动画 padding。ShapePathOverlay 使用相同路径 Property 和屏幕雅可比逆映射，在主预览/空间视图直接编辑几何；PathEditor 同时服务形状与遮罩精确输入，切线重合时显示可拉出的虚拟控制点。松手仅一次 valueCommand，取消/过期/卸载丢弃预览。
+
+Timeline 三种工作区复用同一 rulerHeader，曲线页复用同一 layerRows；节点内容面板不变。PreviewFrameCache 仅存实际已绘制位图，16 帧/64 MiB 上限，视觉工程或素材变化失效；UI 渲染条显示真实缓存位置与本帧耗时，不假装完成后台预渲染。
+
+output-settings 提供合成与导出共用的尺寸/帧率预设、适配矩形和预算校验。OutputFrameRenderer 用同一动画引擎与 Canvas2DRenderer 逐帧绘制，再适配输出分辨率；输出不含选择、网格、标尺或手柄。video-export 按需加载 Mediabunny，先检查设备编码能力，再通过 WebCodecs 离线生成 H.264/H.265 MP4/MOV 或 VP9 WebM；时间戳从零开始，读取完整目标帧率，不依赖实时播放速度。PNG 序列共用输出设置并保留透明背景。取消中止编码并释放资源，文件沿用既有受限 IPC 写入，未新增文件系统或网络权限。视频当前为 SDR 8-bit、无音轨，透明通道使用 PNG；编码支持因平台而异。

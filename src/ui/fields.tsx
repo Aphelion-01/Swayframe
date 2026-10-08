@@ -1,6 +1,6 @@
 import { usePointerRelease } from './workspace/pointer-release';
 import { useInteractionCancel } from './workspace/interaction';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useId } from 'react';
 import type { ChangeEvent, KeyboardEvent } from 'react';
 
 export function NumberField({
@@ -278,15 +278,31 @@ export function TextField({
   onCommit,
   multiline = false,
   autoFocus = false,
+  options,
+  onPreview,
+  onCancel,
 }: {
   label: string;
   value: string;
   onCommit: (value: string) => void;
   multiline?: boolean;
   autoFocus?: boolean;
+  options?: readonly string[];
+  onPreview?: (value: string) => void;
+  onCancel?: () => void;
 }) {
   const [draft, setDraft] = useState(value);
+  const listId = useId();
   const cancelled = useRef(false);
+  const dirty = useRef(false),
+    cancelRef = useRef(onCancel);
+  cancelRef.current = onCancel;
+  useEffect(
+    () => () => {
+      if (dirty.current) cancelRef.current?.();
+    },
+    [],
+  );
   const input = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
   useEffect(() => setDraft(value), [value]);
   useEffect(() => {
@@ -301,13 +317,18 @@ export function TextField({
     ref: (el: HTMLInputElement | HTMLTextAreaElement | null) => {
       input.current = el;
     },
-    onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-      setDraft(event.target.value),
+    onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      dirty.current = true;
+      setDraft(event.target.value);
+      onPreview?.(event.target.value);
+    },
     onBlur: () => {
+      dirty.current = false;
       if (cancelled.current) {
         cancelled.current = false;
         return;
       }
+      onCancel?.();
       if (draft !== value) onCommit(draft);
     },
     onKeyDown: (
@@ -324,6 +345,7 @@ export function TextField({
       if (event.key === 'Escape') {
         cancelled.current = true;
         setDraft(value);
+        onCancel?.();
         event.currentTarget.blur();
       }
     },
@@ -338,7 +360,14 @@ export function TextField({
           title="Enter 换行 · Cmd/Ctrl+Enter 提交 · Esc 取消"
         />
       ) : (
-        <input {...props} />
+        <input {...props} list={options ? listId : undefined} />
+      )}
+      {options && (
+        <datalist id={listId}>
+          {options.map((option) => (
+            <option key={option} value={option} />
+          ))}
+        </datalist>
       )}
     </label>
   );

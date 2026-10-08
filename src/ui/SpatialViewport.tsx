@@ -1,6 +1,7 @@
+import { ShapePathOverlay } from './ShapePathOverlay';
 import { CameraSpaceOverlay } from './CameraSpaceOverlay';
 import { MotionPathOverlay } from './MotionPathOverlay';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLayoutEffect, useEffect, useMemo, useRef, useState } from 'react';
 import type { EditorStore } from './editor-store';
 import { useEditorSlice } from './use-editor-slice';
 import { activeComposition } from '../core/project-model';
@@ -39,6 +40,7 @@ export function SpatialViewport({
     'selection',
     'propertyPreview',
     'propertyPreviews',
+    'renderRevision',
   ]);
   const image = useRef<HTMLCanvasElement>(null);
   const [renderer] = useState(() => new Canvas2DRenderer());
@@ -119,7 +121,7 @@ export function SpatialViewport({
   }, [snapshot, view, size, v.time, c.duration]);
   const latestFrame = useRef(spatialFrame);
   latestFrame.current = spatialFrame;
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (image.current) renderer.render(spatialFrame, image.current, 1, false);
   }, [renderer, spatialFrame]);
   useEffect(() => {
@@ -397,6 +399,13 @@ export function SpatialViewport({
           project={projectPoint}
           width={size.width}
           height={size.height}
+        />
+        <ShapePathOverlay
+          store={store}
+          snapshot={snapshot}
+          width={size.width}
+          height={size.height}
+          project={projectPoint}
         />
         <MotionPathOverlay
           store={store}

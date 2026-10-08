@@ -193,7 +193,10 @@ it('多关键帧拖动保留选中集合，取消不修改；Graph 替代轨道'
   expect(store.getSnapshot().project).toBe(before);
   fireEvent.click(screen.getByRole('tab', { name: '曲线编辑器' }));
   expect(screen.getByRole('img', { name: '动画值曲线' })).toBeInTheDocument();
-  expect(screen.queryByRole('group', { name: '矩形 位置 轨道' })).toBeNull();
+  expect(
+    screen.getByRole('group', { name: '矩形 位置 轨道' }),
+  ).toBeInTheDocument();
+  expect(document.querySelector('.curve-layer-tree')).not.toBeNull();
 });
 it('面板分隔线只修改独立布局，取消恢复且可持久化', () => {
   const { store } = setup(),

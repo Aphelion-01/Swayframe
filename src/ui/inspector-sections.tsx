@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { editorCommands } from './workspace/feature-contributions';
 import { PivotSelector } from './PivotSelector';
 import { AnimatedField } from './AnimatedField';
@@ -11,12 +12,14 @@ import { displayName } from './labels';
 
 import { evaluateProperty } from '../core/animation-engine';
 
+import { command } from '../core/command-system';
 import type { LayerPatch } from '../core/command-system';
 
 import type { SemanticMetadata } from '../core/project-model';
 import { NumberField, TextField } from './fields';
 import type { EditorStore } from './editor-store';
 
+import { activeComposition } from '../core/project-model';
 import type { Layer, Composition } from '../core/project-model';
 import type { EditorView } from './editor-store';
 import type { ComponentType } from 'react';
@@ -86,37 +89,44 @@ function SectionTransform({ store, layer, t }: InspectorSectionContext) {
       >
         运动路径 {store.getSnapshot().showMotionPaths ? '已显示' : '已隐藏'}
       </button>
-      <PivotSelector store={store} disabled={!!layer.editor?.is3D} />
-      <AnimatedField
-        key={`${t.position.id}-${!!layer.editor?.is3D}`}
-        store={store}
-        property={t.position}
-        label="位置"
-        defaultLinked={!layer.editor?.is3D}
-      />
-      <AnimatedField
-        store={store}
-        property={t.scale}
-        label="缩放"
-        linkMode="ratio"
-        factor={100}
-        unit="（%）"
-      />
-      <AnimatedField
-        store={store}
-        property={t.rotation}
-        label="旋转"
-        unit="（°）"
-      />
-      <AnimatedField
-        store={store}
-        property={t.opacity}
-        label="透明度"
-        factor={100}
-        unit="（%）"
-        min={0}
-        max={100}
-      />
+      {!layer.editor?.is3D && (
+        <>
+          {' '}
+          <PivotSelector store={store} disabled={!!layer.editor?.is3D} />
+          <AnimatedField
+            key={`${t.position.id}-${!!layer.editor?.is3D}`}
+            store={store}
+            property={t.position}
+            label="位置"
+            defaultLinked={!layer.editor?.is3D}
+          />
+          <AnimatedField
+            store={store}
+            property={t.scale}
+            label="缩放"
+            linkMode="ratio"
+            factor={100}
+            unit="（%）"
+          />
+          <AnimatedField
+            store={store}
+            property={t.rotation}
+            label="旋转"
+            unit="（°）"
+          />
+        </>
+      )}
+      {layer.type !== 'null' && (
+        <AnimatedField
+          store={store}
+          property={t.opacity}
+          label="透明度"
+          factor={100}
+          unit="（%）"
+          min={0}
+          max={100}
+        />
+      )}
     </Section>
   );
 }
@@ -220,7 +230,7 @@ registerInspectorSection({
   title: '外观',
   order: 300,
   component: SectionAppearance,
-  appliesTo: (l) => 'fill' in l,
+  appliesTo: (l) => 'fill' in l && l.type !== 'text',
 });
 
 function SectionText({
@@ -230,60 +240,165 @@ function SectionText({
   patch,
   error,
 }: InspectorSectionContext) {
+  const container = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const focus = () =>
+      container.current
+        ?.querySelector<HTMLTextAreaElement>('textarea')
+        ?.focus();
+    window.addEventListener('motion:edit-text', focus);
+    return () => window.removeEventListener('motion:edit-text', focus);
+  }, []);
   return (
     layer.type === 'text' && (
-      <Section title="文字">
-        <TextField
-          label="文字内容"
-          multiline
-          value={layer.text}
-          onCommit={(text) => patch({ text })}
-        />
-        <NumberField
-          revision={layer}
-          time={view.time}
-          onPreview={(fontSize) => {
-            const property = layer.editor?.properties.fontSize;
-            if (property)
-              store.setPropertyPreview({
-                id: property.id,
-                property: {
-                  ...property,
-                  baseValue: fontSize,
-                  keyframes: [],
-                },
-              });
-            else store.setLayerPreview({ ...layer, fontSize });
-          }}
-          onCancel={() => store.setPropertyPreview(undefined)}
-          label="字号"
-          value={
-            layer.editor?.properties.fontSize
-              ? (evaluateProperty(
-                  layer.editor.properties.fontSize,
-                  view.time,
-                ) as number)
-              : layer.fontSize
-          }
-          min={1}
-          max={1000}
-          onCommit={(fontSize) =>
-            layer.editor?.properties.fontSize
-              ? store.run('修改字号', [
-                  store.valueCommand(
-                    layer.editor.properties.fontSize.id,
-                    fontSize,
+      <Section key={layer.id} title="文字">
+        <div ref={container}>
+          <TextField
+            label="文字内容"
+            multiline
+            value={layer.text}
+            onPreview={(text) => store.setLayerPreview({ ...layer, text })}
+            onCancel={() => store.setLayerPreview()}
+            onCommit={(text) => {
+              store.setLayerPreview();
+              patch({ text });
+            }}
+          />
+          <NumberField
+            revision={layer}
+            time={view.time}
+            onPreview={(fontSize) => {
+              const property = layer.editor?.properties.fontSize;
+              if (property)
+                store.setPropertyPreview({
+                  id: property.id,
+                  property: {
+                    ...property,
+                    baseValue: fontSize,
+                    keyframes: [],
+                  },
+                });
+              else store.setLayerPreview({ ...layer, fontSize });
+            }}
+            onCancel={() => store.setPropertyPreview(undefined)}
+            label="字号"
+            value={
+              layer.editor?.properties.fontSize
+                ? (evaluateProperty(
+                    layer.editor.properties.fontSize,
+                    view.time,
+                  ) as number)
+                : layer.fontSize
+            }
+            min={1}
+            max={1000}
+            onCommit={(fontSize) =>
+              layer.editor?.properties.fontSize
+                ? store.run('修改字号', [
+                    store.valueCommand(
+                      layer.editor.properties.fontSize.id,
+                      fontSize,
+                    ),
+                  ])
+                : patch({ fontSize })
+            }
+            onError={error}
+          />
+          <TextField
+            label="字体"
+            value={layer.fontFamily}
+            options={[
+              'sans-serif',
+              'serif',
+              'monospace',
+              'Arial',
+              'Helvetica',
+              'PingFang SC',
+              'Microsoft YaHei',
+              'Noto Sans SC',
+              'Times New Roman',
+            ]}
+            onPreview={(fontFamily) =>
+              store.setLayerPreview({ ...layer, fontFamily })
+            }
+            onCancel={() => store.setLayerPreview()}
+            onCommit={(fontFamily) => patch({ fontFamily })}
+          />
+          {layer.editor && (
+            <>
+              <AnimatedField
+                store={store}
+                property={layer.editor.properties.fill!}
+                label="文字颜色"
+                color
+              />
+              {(['fontWeight', 'tracking', 'lineHeight'] as const).map(
+                (key, i) => (
+                  <AnimatedField
+                    key={key}
+                    store={store}
+                    property={layer.editor!.properties[key]!}
+                    label={['字重', '字距', '行距'][i]!}
+                    min={[100, -100, 0.1][i]}
+                    max={[900, 1000, 10][i]}
+                  />
+                ),
+              )}
+              {(['fontItalic', 'textUnderline'] as const).map(
+                (key, i) =>
+                  layer.editor!.properties[key] && (
+                    <label className="checkbox-field" key={key}>
+                      <input
+                        type="checkbox"
+                        checked={
+                          evaluateProperty(
+                            layer.editor!.properties[key]!,
+                            view.time,
+                          ) === 1
+                        }
+                        onChange={(e) =>
+                          store.run('修改文字样式', [
+                            store.valueCommand(
+                              layer.editor!.properties[key]!.id,
+                              e.target.checked ? 1 : 0,
+                            ),
+                          ])
+                        }
+                      />
+                      {['斜体', '下划线'][i]}
+                    </label>
                   ),
-                ])
-              : patch({ fontSize })
-          }
-          onError={error}
-        />
-        <TextField
-          label="字体"
-          value={layer.fontFamily}
-          onCommit={(fontFamily) => patch({ fontFamily })}
-        />
+              )}
+              <label className="field">
+                段落对齐
+                <select
+                  aria-label="文字对齐"
+                  value={layer.editor.textAlign}
+                  onChange={(e) =>
+                    store.run('修改段落对齐', [
+                      command({
+                        type: 'layer.replace',
+                        compositionId: activeComposition(view.project).id,
+                        layer: {
+                          ...layer,
+                          editor: {
+                            ...layer.editor!,
+                            textAlign: e.target.value as
+                              'left' | 'center' | 'right',
+                          },
+                        },
+                      }),
+                    ])
+                  }
+                >
+                  <option value="left">左对齐</option>
+                  <option value="center">居中</option>
+                  <option value="right">右对齐</option>
+                </select>
+              </label>
+            </>
+          )}
+        </div>
       </Section>
     )
   );
@@ -291,7 +406,7 @@ function SectionText({
 registerInspectorSection({
   id: 'text',
   title: '文字',
-  order: 400,
+  order: 220,
   component: SectionText,
   appliesTo: (l) => l.type === 'text',
 });
@@ -328,7 +443,7 @@ function SectionThreeD({ store, layer }: InspectorSectionContext) {
 registerInspectorSection({
   id: '3d',
   title: '三维与摄像机',
-  order: 600,
+  order: 110,
   component: SectionThreeD,
   appliesTo: (l) => l.type === 'camera' || !!l.editor?.is3D,
 });
@@ -441,4 +556,60 @@ registerInspectorSection({
   order: 1000,
   component: SectionSemantic,
   appliesTo: () => true,
+});
+
+function SectionTextAnimator({ store, layer, view }: InspectorSectionContext) {
+  const props = layer.editor?.properties;
+  if (!props?.textAnimatorEnabled) return null;
+  return (
+    <Section title="文本动画 · 范围选择器" open>
+      <label className="checkbox-field">
+        <input
+          type="checkbox"
+          aria-label="启用文本动画"
+          checked={evaluateProperty(props.textAnimatorEnabled, view.time) === 1}
+          onChange={(e) =>
+            store.run('切换文本动画', [
+              store.valueCommand(
+                props.textAnimatorEnabled!.id,
+                e.target.checked ? 1 : 0,
+              ),
+            ])
+          }
+        />
+        逐字动画
+      </label>
+      {(
+        [
+          ['textRangeStart', '范围起点', 0, 100],
+          ['textRangeEnd', '范围终点', 0, 100],
+          ['textRangeOffset', '范围偏移', -100, 100],
+          ['textAnimatorOpacity', '字符透明度', 0, 100],
+          ['textAnimatorX', '字符水平偏移'],
+          ['textAnimatorY', '字符垂直偏移'],
+          ['textAnimatorScale', '字符缩放', 0, 1000],
+          ['textAnimatorRotation', '字符旋转'],
+        ] as const
+      ).map(([key, label, min, max]) => (
+        <AnimatedField
+          key={key}
+          store={store}
+          property={props[key]!}
+          label={label}
+          min={min}
+          max={max}
+        />
+      ))}
+      <p className="inspector-note">
+        范围内字符应用动画参数；为范围偏移或范围终点添加关键帧，制作逐字入场与退场。
+      </p>
+    </Section>
+  );
+}
+registerInspectorSection({
+  id: 'text-animation',
+  title: '文本动画',
+  order: 230,
+  component: SectionTextAnimator,
+  appliesTo: (l) => l.type === 'text',
 });

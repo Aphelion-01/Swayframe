@@ -38,38 +38,70 @@ export function Inspector({ store }: { store: EditorStore }) {
         </div>
         <div className="inspector-body">
           <Section title="变换">
-            <PivotSelector
-              store={store}
-              disabled={c.layers.some(
-                (l) => view.selection.includes(l.id) && l.editor?.is3D,
-              )}
-            />
-            <AnimatedField
-              store={store}
-              property={layer.transform.position}
-              label="位置"
-            />
-            <AnimatedField
-              store={store}
-              property={layer.transform.scale}
-              label="缩放"
-              linkMode="ratio"
-              factor={100}
-              unit="（%）"
-            />
-            <AnimatedField
-              store={store}
-              property={layer.transform.rotation}
-              label="旋转"
-              unit="（°）"
-            />
-            <AnimatedField
-              store={store}
-              property={layer.transform.opacity}
-              label="透明度"
-              factor={100}
-              unit="（%）"
-            />
+            {c.layers
+              .filter((l) => view.selection.includes(l.id))
+              .every((l) => !l.editor?.is3D && l.type !== 'camera') ? (
+              <>
+                <PivotSelector store={store} />
+                <AnimatedField
+                  store={store}
+                  property={layer.transform.position}
+                  label="位置"
+                />
+                <AnimatedField
+                  store={store}
+                  property={layer.transform.scale}
+                  label="缩放"
+                  linkMode="ratio"
+                  factor={100}
+                  unit="（%）"
+                />
+                <AnimatedField
+                  store={store}
+                  property={layer.transform.rotation}
+                  label="旋转"
+                  unit="（°）"
+                />
+              </>
+            ) : c.layers
+                .filter((l) => view.selection.includes(l.id))
+                .every((l) => l.editor?.is3D && l.type !== 'camera') ? (
+              <>
+                <AnimatedField
+                  store={store}
+                  property={layer.editor!.properties.position3D!}
+                  label="三维位置"
+                  defaultLinked={false}
+                />
+                <AnimatedField
+                  store={store}
+                  property={layer.editor!.properties.rotation3D!}
+                  label="三维旋转"
+                  defaultLinked={false}
+                />
+                <AnimatedField
+                  store={store}
+                  property={layer.editor!.properties.scale3D!}
+                  label="三维缩放"
+                  linkMode="ratio"
+                />
+              </>
+            ) : (
+              <p className="inspector-note">
+                选区包含不同维度或摄像机；选择同类图层后编辑对应变换。
+              </p>
+            )}
+            {c.layers
+              .filter((l) => view.selection.includes(l.id))
+              .every((l) => !['camera', 'null'].includes(l.type)) && (
+              <AnimatedField
+                store={store}
+                property={layer.transform.opacity}
+                label="透明度"
+                factor={100}
+                unit="（%）"
+              />
+            )}
           </Section>
         </div>
       </aside>

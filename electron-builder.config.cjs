@@ -5,7 +5,13 @@ module.exports = {
   appId: product.applicationId,
   productName: product.name,
   directories: { output: 'release', buildResources: 'build' },
-  files: ['dist/**/*', 'desktop-dist/**/*.cjs', 'package.json'],
+  files: [
+    'dist/**/*',
+    'desktop-dist/**/*.cjs',
+    'package.json',
+    'build/licenses/**/*',
+    'build/THIRD_PARTY_NOTICES.md',
+  ],
   asar: true,
   fileAssociations: [
     {

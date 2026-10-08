@@ -97,11 +97,13 @@ export function AppearanceControls({
           />
         ))}
       </div>
-      <AnimatedField
-        store={store}
-        property={editor.properties.anchor!}
-        label="锚点"
-      />
+      {!editor.is3D && (
+        <AnimatedField
+          store={store}
+          property={editor.properties.anchor!}
+          label="锚点"
+        />
+      )}
       {layer.type === 'shape' && (
         <>
           <div className="section-label">形状样式</div>
@@ -210,47 +212,6 @@ export function AppearanceControls({
               </label>
             </>
           )}
-        </>
-      )}
-      {layer.type === 'text' && (
-        <>
-          <AnimatedField
-            store={store}
-            property={editor.properties.fontWeight!}
-            label="字重"
-            min={100}
-            max={900}
-          />
-          <AnimatedField
-            store={store}
-            property={editor.properties.tracking!}
-            label="字距"
-            min={-100}
-            max={1000}
-          />
-          <AnimatedField
-            store={store}
-            property={editor.properties.lineHeight!}
-            label="行距"
-            min={0.1}
-            max={10}
-          />
-          <label className="field">
-            对齐
-            <select
-              aria-label="文字对齐"
-              value={editor.textAlign}
-              onChange={(e) =>
-                settings({
-                  textAlign: e.target.value as LayerEditor['textAlign'],
-                })
-              }
-            >
-              <option value="left">左对齐</option>
-              <option value="center">居中</option>
-              <option value="right">右对齐</option>
-            </select>
-          </label>
         </>
       )}
       {pathOpen && (

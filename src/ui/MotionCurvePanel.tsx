@@ -560,7 +560,7 @@ export function MotionCurvePanel({
                       rx={(4 * 360) / svgSize.width / viewport.zoom}
                       ry={(4 * 280) / svgSize.height / viewport.zoom}
                       stroke="transparent"
-                      strokeWidth="10"
+                      strokeWidth="18"
                       vectorEffect="non-scaling-stroke"
                       fill={which === 1 ? 'var(--warning)' : 'var(--success)'}
                       style={{ touchAction: 'none', cursor: 'grab' }}

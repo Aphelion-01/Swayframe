@@ -1,3 +1,4 @@
+import { point4, transform4, type Point3 } from '../core/perspective';
 import { cameraForLayer, cameraFrustum } from '../core/camera-optics';
 import type { RenderSnapshot } from '../core/renderer-core';
 import type { EditorStore } from './editor-store';
@@ -40,6 +41,49 @@ export function CameraSpaceOverlay({
           const points = corners.every(Boolean)
             ? corners.map((q) => `${q!.x},${q!.y}`).join(' ')
             : undefined;
+          const bodyWorld = transform4(camera.position, camera.rotation);
+          const body = [
+            [-28, -20, -40],
+            [28, -20, -40],
+            [28, 20, -40],
+            [-28, 20, -40],
+            [-28, -20, 0],
+            [28, -20, 0],
+            [28, 20, 0],
+            [-28, 20, 0],
+            [-18, -13, 22],
+            [18, -13, 22],
+            [18, 13, 22],
+            [-18, 13, 22],
+            [-14, -20, -32],
+            [14, -20, -32],
+            [0, -36, -32],
+          ].map((v) => project(point4(bodyWorld, v as unknown as Point3)));
+          const edges = [
+            [0, 1],
+            [1, 2],
+            [2, 3],
+            [3, 0],
+            [4, 5],
+            [5, 6],
+            [6, 7],
+            [7, 4],
+            [0, 4],
+            [1, 5],
+            [2, 6],
+            [3, 7],
+            [4, 8],
+            [5, 9],
+            [6, 10],
+            [7, 11],
+            [8, 9],
+            [9, 10],
+            [10, 11],
+            [11, 8],
+            [12, 13],
+            [13, 14],
+            [14, 12],
+          ];
           return (
             <g
               key={l.source.id}
@@ -93,20 +137,25 @@ export function CameraSpaceOverlay({
                   if (e.key === 'Enter') store.select(l.source.id, e.shiftKey);
                 }}
               >
-                <rect
-                  x={p.x - 11}
-                  y={p.y - 8}
-                  width="22"
-                  height="16"
-                  rx="3"
-                  fill="var(--background-primary)"
-                  stroke="currentColor"
-                  strokeWidth={selected ? 2 : 1}
-                />
-                <path
-                  d={`M${p.x + 11},${p.y - 5} l7,-4 v18 l-7,-4 Z`}
-                  fill="currentColor"
-                />
+                <title>
+                  摄像机实体 · 点击选择 · 在属性面板调整位置、旋转与光学参数
+                </title>
+                {edges.map(
+                  ([a, b], i) =>
+                    body[a!] &&
+                    body[b!] && (
+                      <line
+                        key={i}
+                        x1={body[a!]!.x}
+                        y1={body[a!]!.y}
+                        x2={body[b!]!.x}
+                        y2={body[b!]!.y}
+                        stroke="currentColor"
+                        strokeWidth={selected ? 2 : 1.4}
+                      />
+                    ),
+                )}
+                <circle cx={p.x} cy={p.y} r="16" fill="transparent" />
                 <text
                   x={p.x - 10}
                   y={p.y - 15}

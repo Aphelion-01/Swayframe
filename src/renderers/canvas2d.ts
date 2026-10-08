@@ -38,6 +38,7 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
       handleScale: number;
       drawHandles: boolean;
       outputScale: number;
+      transparentBackground: boolean;
     }
   >();
   #content = new WeakMap<
@@ -118,6 +119,7 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
     handleScale = 1,
     drawHandles = true,
     outputScale = 1,
+    transparentBackground = false,
   ): void {
     if (!Number.isFinite(outputScale) || outputScale <= 0 || outputScale > 1)
       throw new Error('渲染缩放无效');
@@ -130,6 +132,7 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
       last.handleScale === handleScale &&
       last.drawHandles === drawHandles &&
       last.outputScale === outputScale &&
+      last.transparentBackground === transparentBackground &&
       target.width === width &&
       target.height === height
     )
@@ -143,7 +146,7 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
     ctx.fillStyle = input.backgroundColor
       ? cssColor(input.backgroundColor)
       : '#111827';
-    ctx.fillRect(0, 0, target.width, target.height);
+    if (!transparentBackground) ctx.fillRect(0, 0, target.width, target.height);
     if (outputScale !== 1) ctx.scale(outputScale, outputScale);
     const live = new Set(
       input.project?.compositions.flatMap((c) => c.layers.map((l) => l.id)) ??
@@ -166,15 +169,17 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
         }
       }
       ctx.globalAlpha = item.opacity;
+      let opticalBlur = 0;
       if (input.camera) {
         const blur =
           layer.editor?.is3D && item.world3D
             ? cameraBlur(input.camera, point4(item.world3D, [0, 0, 0]))
             : 0;
+        opticalBlur = blur;
         const exposure = 2 ** (input.camera.exposure ?? 0);
         ctx.filter =
           blur > 0 || exposure !== 1
-            ? `${blur > 0 ? `blur(${blur}px) ` : ''}brightness(${exposure})`
+            ? `${blur > 0 ? `blur(${blur * outputScale}px) ` : ''}brightness(${exposure})`
             : 'none';
       }
       ctx.globalCompositeOperation =
@@ -275,7 +280,7 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
         let processed =
           cached?.time === cacheTime &&
           cached.assets === this.#assetVersion &&
-          cached.project === input.project &&
+          (layer.type !== 'precomp' || cached.project === input.project) &&
           cached.padding === padding
             ? cached.canvas
             : undefined;
@@ -358,17 +363,44 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
               padding,
             });
         }
-        if (layer.editor?.is3D && item.world3D && input.camera)
-          drawPerspectivePlane(
-            ctx,
-            processed,
-            item.world3D,
-            input.camera,
-            layer.width,
-            layer.height,
-            padding,
-          );
-        else ctx.drawImage(processed, x - padding, y - padding);
+        if (layer.editor?.is3D && item.world3D && input.camera) {
+          if (opticalBlur > 0) {
+            // Transparent overscan lets the blur spread beyond the object and frame edge.
+            const margin = Math.ceil(opticalBlur * 4),
+              projected = surface(
+                Math.ceil((input.width + margin * 2) * outputScale),
+                Math.ceil((input.height + margin * 2) * outputScale),
+              ),
+              pc = projected.getContext('2d')!;
+            pc.scale(outputScale, outputScale);
+            pc.translate(margin, margin);
+            drawPerspectivePlane(
+              pc,
+              processed,
+              item.world3D,
+              input.camera,
+              layer.width,
+              layer.height,
+              padding,
+            );
+            ctx.drawImage(
+              projected,
+              -margin,
+              -margin,
+              projected.width / outputScale,
+              projected.height / outputScale,
+            );
+          } else
+            drawPerspectivePlane(
+              ctx,
+              processed,
+              item.world3D,
+              input.camera,
+              layer.width,
+              layer.height,
+              padding,
+            );
+        } else ctx.drawImage(processed, x - padding, y - padding);
       } else {
         this.#graphLayers.delete(layer.id);
         const graphId = layer.editor?.graph?.id;
@@ -434,6 +466,7 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
       handleScale,
       drawHandles,
       outputScale,
+      transparentBackground,
     });
   }
 }

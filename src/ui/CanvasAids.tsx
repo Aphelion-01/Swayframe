@@ -6,6 +6,10 @@ export interface CanvasAidSettings {
   grid: boolean;
   rulers: boolean;
   guides: boolean;
+  gridSize?: number;
+  subdivisions?: number;
+  safeZones?: boolean;
+  thirds?: boolean;
 }
 type Guide = { id: string; axis: 'x' | 'y'; value: number };
 export function CanvasAids({
@@ -113,18 +117,94 @@ export function CanvasAids({
       viewBox={`0 0 ${width} ${height}`}
       aria-label="画布作图辅助"
     >
-      {settings.grid && (
+      {settings.grid &&
+        (() => {
+          const base = Math.max(
+              8,
+              Math.min(
+                1000,
+                Number.isFinite(settings.gridSize) ? settings.gridSize! : 100,
+              ),
+            ),
+            major = base * Math.max(1, Math.ceil(rulerStep(scale) / base)),
+            minor =
+              major /
+              Math.max(
+                1,
+                Math.min(
+                  10,
+                  Number.isFinite(settings.subdivisions)
+                    ? settings.subdivisions!
+                    : 5,
+                ),
+              );
+          const lines = (step: number, opacity: number, weight: number) => (
+            <g
+              opacity={opacity}
+              stroke="var(--text-muted)"
+              strokeWidth={scale * weight}
+            >
+              {Array.from({ length: Math.ceil(width / step) }, (_, i) => (
+                <line
+                  key={'x' + i}
+                  x1={i * step}
+                  x2={i * step}
+                  y1={0}
+                  y2={height}
+                />
+              ))}
+              {Array.from({ length: Math.ceil(height / step) }, (_, i) => (
+                <line
+                  key={'y' + i}
+                  x1={0}
+                  x2={width}
+                  y1={i * step}
+                  y2={i * step}
+                />
+              ))}
+            </g>
+          );
+          return (
+            <g aria-label="合成像素网格">
+              {minor / scale >= 6 && lines(minor, 0.12, 0.6)}
+              {lines(major, 0.4, 1)}
+            </g>
+          );
+        })()}
+      {settings.safeZones && (
         <g
-          aria-label="合成像素网格"
-          stroke="var(--text-muted)"
-          opacity=".23"
-          strokeWidth={scale * 0.5}
+          aria-label="标题与动作安全框"
+          fill="none"
+          stroke="var(--text-secondary)"
+          strokeWidth={scale}
+          strokeDasharray={`${5 * scale} ${4 * scale}`}
         >
-          {xs.map((x) => (
-            <line key={x} x1={x} x2={x} y1="0" y2={height} />
+          {[0.05, 0.1].map((m) => (
+            <rect
+              key={m}
+              x={width * m}
+              y={height * m}
+              width={width * (1 - m * 2)}
+              height={height * (1 - m * 2)}
+            />
           ))}
-          {ys.map((y) => (
-            <line key={y} y1={y} y2={y} x1="0" x2={width} />
+          <path
+            d={`M${width / 2 - 10 * scale},${height / 2}h${20 * scale}M${width / 2},${height / 2 - 10 * scale}v${20 * scale}`}
+          />
+        </g>
+      )}
+      {settings.thirds && (
+        <g
+          aria-label="三分构图参考"
+          stroke="var(--text-secondary)"
+          opacity=".5"
+          strokeWidth={scale}
+        >
+          {[1 / 3, 2 / 3].map((t) => (
+            <g key={t}>
+              <line x1={width * t} x2={width * t} y1={0} y2={height} />
+              <line x1={0} x2={width} y1={height * t} y2={height * t} />
+            </g>
           ))}
         </g>
       )}

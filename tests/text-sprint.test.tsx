@@ -6,6 +6,7 @@ import {
   cleanup,
   fireEvent,
   act,
+  waitFor,
 } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { App } from '../src/ui/App';
@@ -25,7 +26,7 @@ afterEach(() => {
   cleanup();
   localStorage.clear();
 });
-function setup() {
+async function setup() {
   const p = createDefaultProject(),
     layer = createLayer('text', {
       position: { x: 400, y: 200 },
@@ -50,10 +51,11 @@ function setup() {
     toJSON: () => ({}),
   });
   fireEvent.doubleClick(canvas, { clientX: 400, clientY: 200 });
-  return { store, editor: screen.getByLabelText('画布文字编辑') };
+  await waitFor(() => expect(screen.getByLabelText('文字内容')).toHaveFocus());
+  return { store, editor: screen.getByLabelText('文字内容') };
 }
-it('双击直接聚焦多行文字；输入隔离快捷键，提交一次 Undo、保存加载完整保留换行', () => {
-  const { store, editor } = setup();
+it('双击直接聚焦多行文字；输入隔离快捷键，提交一次 Undo、保存加载完整保留换行', async () => {
+  const { store, editor } = await setup();
   expect(editor).toHaveFocus();
   expect(editor.tagName).toBe('TEXTAREA');
   const before = store.getSnapshot().project;
@@ -73,16 +75,17 @@ it('双击直接聚焦多行文字；输入隔离快捷键，提交一次 Undo�
   act(() => store.undo());
   expect(store.getSnapshot().project).toEqual(before);
 });
-it('中文选字阶段 Enter/Escape 不提交或退出；结束输入后 Escape 丢弃草稿无历史', () => {
-  const { store, editor } = setup();
+it('中文选字阶段 Enter/Escape 不提交或退出；结束输入后 Escape 丢弃草稿无历史', async () => {
+  const { store, editor } = await setup();
   const before = store.getSnapshot().project;
   fireEvent.change(editor, { target: { value: '输入中的草稿' } });
   fireEvent.keyDown(editor, { key: 'Enter', isComposing: true });
   fireEvent.keyDown(editor, { key: 'Escape', isComposing: true });
-  expect(screen.getByLabelText('画布文字编辑')).toBeInTheDocument();
+  expect(screen.getByLabelText('文字内容')).toBeInTheDocument();
   expect(store.getSnapshot().project).toBe(before);
   fireEvent.keyDown(editor, { key: 'Escape' });
-  expect(screen.queryByLabelText('画布文字编辑')).toBeNull();
+  expect(screen.getByLabelText('文字内容')).not.toHaveFocus();
+  expect(screen.getByLabelText('文字内容')).toHaveValue('请输入文本');
   expect(store.getSnapshot().project).toBe(before);
   expect(store.commands.undoStack).toHaveLength(0);
 });

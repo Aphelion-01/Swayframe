@@ -215,6 +215,7 @@ export function ThreeDRotationGizmo({
         const label = points[(axis * 19 + 7) % 96] ?? u0;
         return (
           <g key={axis} style={{ color: `var(--axis-${'xyz'[axis]})` }}>
+            <title>{'XYZ'[axis]} 轴旋转 · 拖动圆环 · Alt 精细 · 箭头微调</title>
             <path
               d={path}
               fill="none"
@@ -238,7 +239,7 @@ export function ThreeDRotationGizmo({
               d={path}
               fill="none"
               stroke="transparent"
-              strokeWidth={12 * unitsPerPixel}
+              strokeWidth={26 * unitsPerPixel}
               style={{ pointerEvents: 'stroke', cursor: 'grab' }}
               onPointerDown={(e) => {
                 if (e.button !== 0) return;

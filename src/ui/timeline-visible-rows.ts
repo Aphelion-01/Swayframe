@@ -16,7 +16,7 @@ function groupFor(entry: PropertyEntry): { id: string; label: string } {
     return { id: `mask-${mask[1]}`, label: `遮罩 ${Number(mask[1]) + 1}` };
   if (key.includes('.graph.nodes.')) return { id: 'nodes', label: '合成参数' };
   if (/3D$|camera/.test(key)) return { id: '3d', label: '三维 / 摄像机' };
-  if (/fontSize|fontWeight|tracking|lineHeight/.test(key))
+  if (/fontSize|fontWeight|fontItalic|tracking|lineHeight|text/.test(key))
     return { id: 'text', label: '文字' };
   return { id: 'appearance', label: '外观 / 图形' };
 }

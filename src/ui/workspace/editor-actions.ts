@@ -1,3 +1,4 @@
+import { evaluateProperty } from '../../core/animation-engine';
 import { features } from '../../shared/feature-catalog';
 import { scopedCommands } from './scoped-commands';
 import { toolDefinitions } from '../../shared/tool-registry';
@@ -174,6 +175,38 @@ export function buildEditorActions(
     ['enter-precomp', '进入预合成'],
   ].map(([id, label]) => selectedAction(id!, label!, label!));
   return [
+    {
+      id: 'canvas-aids',
+      label: '网格 / 参考线 / 标尺',
+      action: emit('canvas-aids'),
+    },
+    {
+      id: 'spatial-translate',
+      label: '三维移动手柄',
+      action: () => store.setSpatialGizmoMode('translate'),
+    },
+    {
+      id: 'spatial-rotate',
+      label: '三维旋转手柄',
+      action: () => store.setSpatialGizmoMode('rotate'),
+    },
+    {
+      id: 'text-animator',
+      label: '切换文本动画',
+      disabled: selected.length !== 1 || selected[0]?.type !== 'text',
+      action: () => {
+        const p = selected[0]?.editor?.properties.textAnimatorEnabled;
+        if (p)
+          store.run('切换文本动画', [
+            store.valueCommand(
+              p.id,
+              Number(evaluateProperty(p, store.getSnapshot().time)) === 1
+                ? 0
+                : 1,
+            ),
+          ]);
+      },
+    },
     { id: 'import-model', label: '导入三维模型', action: emit('import-model') },
     {
       id: 'camera-frustum',

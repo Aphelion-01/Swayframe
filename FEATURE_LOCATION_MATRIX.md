@@ -119,3 +119,7 @@
 | import-model 导入三维模型… | panel.project | menu.file | — | context/menu/section |
 | camera-frustum 拍摄范围 | panel.inspector.3d |  | — | context/menu/section |
 | motion-paths 运动路径 | panel.inspector.transform | menu.view | — | context/menu/section |
+| canvas-aids 网格 / 参考线 / 标尺 | menu.view |  | — | context/menu/section |
+| text-animator 文本动画 | panel.inspector.text |  | — | context/menu/section |
+| spatial-translate 三维移动手柄 | panel.inspector.3d |  | — | context/menu/section |
+| spatial-rotate 三维旋转手柄 | panel.inspector.3d |  | — | context/menu/section |

@@ -1,4 +1,5 @@
 import { layerEffects } from '../core/compositing-migration';
+import { textValue } from '../core/text-geometry';
 import type { Layer } from '../core/project-model';
 import { evaluateProperty } from '../core/animation-engine';
 import { pathSvg } from '../core/shape-geometry';
@@ -18,6 +19,25 @@ export function layerPadding(layer: Layer, time: number): number {
     ) /
       2 +
     2;
+  if (
+    layer.type === 'text' &&
+    textValue(layer, 'textAnimatorEnabled', time, 0) === 1
+  ) {
+    const scale = Math.abs(
+      textValue(layer, 'textAnimatorScale', time, 100) / 100,
+    );
+    pad = Math.max(
+      pad,
+      Math.hypot(
+        textValue(layer, 'textAnimatorX', time, 0),
+        textValue(layer, 'textAnimatorY', time, 40),
+      ) +
+        (Math.hypot(layer.width, layer.height) * Math.max(0, scale - 1)) / 2 +
+        (textValue(layer, 'textAnimatorRotation', time, 0)
+          ? Math.hypot(layer.width, layer.height) / 2
+          : 0),
+    );
+  }
   for (const mask of layer.editor?.masks ?? [])
     pad = Math.max(
       pad,

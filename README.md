@@ -1,6 +1,6 @@
-# Swayframe 0.9.16
+# Swayframe 0.9.17
 
-本轮更新：触控板水平绕转反向、摄像机位置/拍摄范围与光学参数、八种静态模型格式导入、二维/三维运动路径与贝塞尔直接编辑。详见 [0.9.16 验收记录](SPATIAL_CAMERA_MODEL_RESULT.md)。
+本轮更新：摄像机实时预览与离焦边缘、稳定 XYZ/旋转操控、文本属性与逐字动画、直接贝塞尔编辑、统一时间标尺与实际帧缓存条、合成预设和 MP4/MOV/WebM 导出。详见 [0.9.17 验收记录](EDITOR_POLISH_RESULT.md)。
 
 简体中文本地动效编辑器，支持人工完成 2D 与平面 3D 动画。当前节点模块基线为 `docs/baseline/COMPOSITING_GRAPH_CG0_CG12.txt`，桌面基线为 `docs/baseline/DESKTOP_D0_D10.txt`，前一轮编辑器基线为 `docs/baseline/MOTION_EDITOR_PHASE_A_I.txt`；历史 V0.1 基线保留用于追溯。
 

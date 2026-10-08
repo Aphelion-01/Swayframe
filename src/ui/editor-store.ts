@@ -50,6 +50,8 @@ import type { PositionPreview } from '../core/renderer-core';
 import { loadProject, saveProject } from '../core/project-io';
 
 export interface EditorView {
+  readonly spatialGizmoMode?: 'translate' | 'rotate';
+  readonly renderRevision?: number;
   readonly showCameraFrustum: boolean;
   readonly showMotionPaths: boolean;
   readonly project: Project;
@@ -232,7 +234,11 @@ export class EditorStore {
           ),
         }
       : undefined;
-    this.#set({ propertyPreview: undefined, propertyPreviews: undefined });
+    this.#set({
+      propertyPreview: undefined,
+      propertyPreviews: undefined,
+      renderRevision: (this.#view.renderRevision ?? 0) + 1,
+    });
   }
   getRenderProject(): Project {
     const base = this.#renderPreview ?? this.#view.project;
@@ -255,6 +261,9 @@ export class EditorStore {
   }
   clearGraphSelection(): void {
     this.#set({ graphSelection: undefined });
+  }
+  setSpatialGizmoMode(mode: 'translate' | 'rotate') {
+    this.#set({ spatialGizmoMode: mode });
   }
   toggleCameraFrustum() {
     this.#set({ showCameraFrustum: !this.#view.showCameraFrustum });

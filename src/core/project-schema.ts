@@ -206,7 +206,25 @@ export const editorSchema = z
           valid = typeof v === 'number' && v >= 1 && v <= 1000000;
         if (key === 'cameraExposure')
           valid = typeof v === 'number' && v >= -10 && v <= 10;
-        if (key === 'cameraDepthOfField') valid = v === 0 || v === 1;
+        if (
+          [
+            'cameraDepthOfField',
+            'fontItalic',
+            'textUnderline',
+            'textAnimatorEnabled',
+          ].includes(key)
+        )
+          valid = v === 0 || v === 1;
+        if (
+          ['textRangeStart', 'textRangeEnd', 'textAnimatorOpacity'].includes(
+            key,
+          )
+        )
+          valid = typeof v === 'number' && v >= 0 && v <= 100;
+        if (key === 'textRangeOffset')
+          valid = typeof v === 'number' && v >= -100 && v <= 100;
+        if (key === 'textAnimatorScale')
+          valid = typeof v === 'number' && v >= 0 && v <= 1000;
         if (!valid)
           ctx.addIssue({
             code: 'custom',

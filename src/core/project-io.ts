@@ -94,6 +94,15 @@ export function migrateProject(raw: unknown): Project {
       ...c,
       layers: c.layers.map((original, index) => {
         let layer: Layer = original;
+        if (layer.type === 'text' && layer.editor) {
+          const defaults = createLayerEditor(layer).properties;
+          const properties = { ...layer.editor.properties };
+          for (const key of Object.keys(defaults).filter(
+            (k) => k.startsWith('text') || k === 'fontItalic',
+          ))
+            properties[key] ??= defaults[key]!;
+          layer = { ...layer, editor: { ...layer.editor, properties } };
+        }
         if (layer.type === 'camera' && layer.editor) {
           const defaults = createLayerEditor(layer).properties;
           const properties = { ...layer.editor.properties };

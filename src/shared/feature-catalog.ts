@@ -561,4 +561,47 @@ add(
       '选中图层的二维/三维位置路径和结束位置；直接拖动端点及空间控制点',
   },
 );
+add(
+  'canvas-aids',
+  '网格 / 参考线 / 标尺',
+  'CANVAS',
+  ['Composition'],
+  ['Inspect'],
+  'menu.view',
+  {
+    frequency: 'F2',
+    contexts: ['Composition'],
+    keywords: ['grid', 'ruler', 'guides', '安全框', '作图'],
+    description:
+      '画布标题行的现有辅助菜单；像素主次网格、可拖拽参考线、安全区和标尺',
+  },
+);
+add(
+  'text-animator',
+  '文本动画',
+  'INSPECTOR',
+  ['Property'],
+  ['Animate'],
+  'panel.inspector.text',
+  {
+    frequency: 'F2',
+    contexts: ['LayerSelection'],
+    keywords: ['text', '逐字', '范围选择器'],
+    description:
+      '文字 Section 的逐字范围选择器与位置、缩放、旋转、透明度；通过共享 Command 修改',
+  },
+);
+
+for (const [id, title] of [
+  ['spatial-translate', '三维移动手柄'],
+  ['spatial-rotate', '三维旋转手柄'],
+] as const)
+  add(id, title, 'CANVAS', ['Layer'], ['Transform'], 'panel.inspector.3d', {
+    frequency: 'F2',
+    contexts: ['LayerSelection'],
+    when: ['is3DLayer'],
+    description:
+      '三维 Section 中切换直接操控模式；操作状态位于 EditorView，变换仍经 Command/Transaction',
+  });
+
 features.validatePermanentBudgets();

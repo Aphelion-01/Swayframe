@@ -1,3 +1,5 @@
+import { OutputFrameRenderer } from './output-frame';
+import type { OutputSettings } from '../core/output-settings';
 import type { Project } from '../core/project-model';
 import { createRenderSnapshot } from '../core/renderer-core';
 import { Canvas2DRenderer } from './canvas2d';
@@ -37,24 +39,34 @@ export async function exportPngSequence(
   end: number,
   onProgress: (done: number, total: number) => void,
   signal?: AbortSignal,
+  settings?: OutputSettings,
 ): Promise<Blob> {
   const c = project.compositions.find((c) => c.id === compositionId);
   if (!c || end > c.duration) throw new Error('导出范围超出合成');
-  const times = frameTimes(start, end, c.fps);
+  const times = frameTimes(start, end, settings?.fps ?? c.fps);
   if (times.length > 3000) throw new Error('请分段导出，每次最多 3000 帧');
   const renderer = new Canvas2DRenderer(),
     canvas = surface(c.width, c.height),
     entries: ZipEntry[] = [];
+  const output = settings
+    ? new OutputFrameRenderer(project, c, settings)
+    : undefined;
   let bytes = 0;
   try {
-    await renderer.syncAssets(project.assets);
+    if (output) await output.init();
+    else await renderer.syncAssets(project.assets);
     for (const [i, time] of times.entries()) {
       if (signal?.aborted) throw new Error('导出已取消');
-      renderer.render(
-        createRenderSnapshot(c, time, [], undefined, project),
-        canvas,
+      if (!output)
+        renderer.render(
+          createRenderSnapshot(c, time, [], undefined, project),
+          canvas,
+          1,
+          false,
+        );
+      const data = new Uint8Array(
+        await (await png(output?.draw(time) ?? canvas)).arrayBuffer(),
       );
-      const data = new Uint8Array(await (await png(canvas)).arrayBuffer());
       bytes += data.length;
       if (bytes > 512_000_000) throw new Error('序列超过 512 MB，请分段导出');
       entries.push({ name: `frames/${String(i).padStart(6, '0')}.png`, data });
@@ -70,9 +82,9 @@ export async function exportPngSequence(
         JSON.stringify(
           {
             compositionId,
-            width: c.width,
-            height: c.height,
-            fps: c.fps,
+            width: settings?.width ?? c.width,
+            height: settings?.height ?? c.height,
+            fps: settings?.fps ?? c.fps,
             start,
             end,
             frameCount: times.length,
@@ -88,15 +100,26 @@ export async function exportPngSequence(
     });
   } finally {
     renderer.dispose();
+    output?.dispose();
   }
 }
 export async function exportCurrentFrame(
   project: Project,
   compositionId: string,
   time: number,
+  settings?: OutputSettings,
 ): Promise<Blob> {
   const c = project.compositions.find((c) => c.id === compositionId);
   if (!c) throw new Error('合成不存在');
+  if (settings) {
+    const output = new OutputFrameRenderer(project, c, settings);
+    try {
+      await output.init();
+      return await png(output.draw(time));
+    } finally {
+      output.dispose();
+    }
+  }
   const renderer = new Canvas2DRenderer(),
     canvas = surface(c.width, c.height);
   try {

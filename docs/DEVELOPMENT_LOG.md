@@ -133,3 +133,7 @@ Mac锁屏阻止继续原生文件对话框和鼠标操作；已请求解锁。�
 ## 2026-10-07 · 0.9.12 Global Information Architecture
 
 执行INFORMATION_ARCHITECTURE基线，审查并通过官方installer安装ux-heuristics/design-system；ui-ux-design地址404，记录失败而继续。扫描87文件/442基线代码入口，建立根DESIGN/Matrix/Audit/Result及AGENTS放置规则。实际迁移七菜单、对象右键/显式创建、Inspector层级时间和Effects、搜索、属性/素材上下文、原生动作适配；移除重复播放与Timeline杂项菜单。复审修复窄窗口菜单裁切、节点Edit误操作图层风险和graphSelection订阅。109文件/411测试、lint/typecheck/Web及desktop build通过；独立浏览器完成10任务入口验证、四桌面尺寸与650px窄窗口。导出状态完成但浏览器下载事件超时，未验证本轮文件落盘；原生平台运行边界与启发式评估限制详见根结果文档。
+
+## 2026-10-08 · 0.9.17
+
+完成用户 12 项创作体验专项改动；执行与限制见 EDITOR_POLISH_RESULT.md。注册 canvas-aids / text-animator / spatial-translate / spatial-rotate，未新增全局工具栏按钮。保留共享 Command/Transaction、Proposal 边界，更新入口库存与位置矩阵。新增实时光学、文本范围动画、输出采样/取消、路径直接操控和帧缓存预算回归。

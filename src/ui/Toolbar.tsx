@@ -1,3 +1,4 @@
+import { resolutionPresets, frameRates } from '../core/output-settings';
 import { ModelImportInput } from './ModelImportInput';
 import { useEditorSlice } from './use-editor-slice';
 import { getProjectService } from '../desktop/project-service';
@@ -739,6 +740,57 @@ export function Toolbar({ store }: { store: EditorStore }) {
             <h2>{editingComposition ? '合成设置' : '新建合成'}</h2>
             <p>设置画面尺寸与时间。</p>
             <label className="field">
+              画面预设
+              <select
+                aria-label="合成分辨率预设"
+                value={
+                  resolutionPresets.find(
+                    (p) =>
+                      p.width === settings.width &&
+                      p.height === settings.height,
+                  )?.id ?? 'custom'
+                }
+                onChange={(e) => {
+                  const p = resolutionPresets.find(
+                    (p) => p.id === e.target.value,
+                  );
+                  if (p)
+                    setSettings({
+                      ...settings,
+                      width: p.width,
+                      height: p.height,
+                    });
+                }}
+              >
+                <option value="custom">自定义尺寸</option>
+                {resolutionPresets.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.label} · {p.width} × {p.height}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
+              帧率预设
+              <select
+                aria-label="合成帧率预设"
+                value={
+                  frameRates.includes(settings.fps) ? settings.fps : 'custom'
+                }
+                onChange={(e) => {
+                  if (e.target.value !== 'custom')
+                    setSettings({ ...settings, fps: Number(e.target.value) });
+                }}
+              >
+                <option value="custom">自定义帧率</option>
+                {frameRates.map((f) => (
+                  <option key={f} value={f}>
+                    {f} fps
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
               名称
               <input
                 aria-label="合成名称"
@@ -771,7 +823,7 @@ export function Toolbar({ store }: { store: EditorStore }) {
                     max={
                       key === 'fps' ? 240 : key === 'duration' ? 3600 : 16384
                     }
-                    step={key === 'duration' ? 0.1 : 1}
+                    step={key === 'duration' ? 0.1 : key === 'fps' ? 0.001 : 1}
                     value={settings[key]}
                     onChange={(event) =>
                       setSettings({

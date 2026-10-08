@@ -125,12 +125,26 @@ export function getLocalBounds(
     const glyphs = layoutText(l, time, measure);
     if (glyphs.length)
       b = unionBounds(
-        glyphs.map(({ x, y, metrics: m }) => ({
-          minX: x - (m.left ?? 0),
-          maxX: x + (m.right ?? m.width),
-          minY: y - (m.ascent ?? size / 2),
-          maxY: y + (m.descent ?? size / 2),
-        })),
+        glyphs.map(({ x, y, scale, rotation, metrics: m }) => {
+          const angle = (rotation * Math.PI) / 180,
+            cos = Math.cos(angle) * scale,
+            sin = Math.sin(angle) * scale;
+          const points = [
+            [-(m.left ?? 0), -(m.ascent ?? size / 2)],
+            [m.right ?? m.width, -(m.ascent ?? size / 2)],
+            [-(m.left ?? 0), m.descent ?? size / 2],
+            [m.right ?? m.width, m.descent ?? size / 2],
+          ].map(([px, py]) => ({
+            x: x + px! * cos - py! * sin,
+            y: y + px! * sin + py! * cos,
+          }));
+          return {
+            minX: Math.min(...points.map((p) => p.x)),
+            maxX: Math.max(...points.map((p) => p.x)),
+            minY: Math.min(...points.map((p) => p.y)),
+            maxY: Math.max(...points.map((p) => p.y)),
+          };
+        }),
       );
   }
   const sw =

@@ -144,46 +144,18 @@ export function ThreeDGizmo({
           dy = (end?.y ?? o.y) - o.y;
         let units = 100;
         const length = Math.hypot(dx, dy);
-        const overlapsPlanarAxis =
-          axis === 2 &&
-          [0, 1].some((i) => {
-            const v = [0, 0, 0];
-            v[i] = 100;
-            const q = point4(parent, v as unknown as Point3);
-            const other = project(
-              origin.map((n, j) => n + q[j]! - p0[j]!) as unknown as Point3,
-            );
-            if (!other) return false;
-            const ax = other.x - o.x,
-              ay = other.y - o.y,
-              denominator = length * Math.hypot(ax, ay);
-            return (
-              denominator > 1e-8 &&
-              Math.abs(dx * ay - dy * ax) / denominator < 0.15
-            );
-          });
-        if (length < 4 * unitsPerPixel || overlapsPlanarAxis) {
-          dx =
-            axis === 2
-              ? 45 * unitsPerPixel
-              : axis === 0
-                ? 65 * unitsPerPixel
-                : 0;
-          dy =
-            axis === 2
-              ? -45 * unitsPerPixel
-              : axis === 1
-                ? 65 * unitsPerPixel
-                : 0;
-          units = 100;
-        } else {
-          const ratio = (65 * unitsPerPixel) / length;
+        // Preserve the continuous projection, including a foreshortened axis.
+        // A point-on axis becomes a depth puck rather than flipping direction.
+        if (length > 1e-8) {
+          const ratio =
+            (65 * unitsPerPixel) / Math.max(length, 20 * unitsPerPixel);
           dx *= ratio;
           dy *= ratio;
           units *= ratio;
         }
         return (
           <g key={axis} style={{ color: `var(--axis-${'xyz'[axis]})` }}>
+            <title>{'XYZ'[axis]} 轴移动 · 拖动调整 · Alt 精细 · 箭头微调</title>
             <line
               x1={o.x}
               y1={o.y}
@@ -219,12 +191,12 @@ export function ThreeDGizmo({
                   ) as readonly number[]
                 )[axis]
               }
-              x1={o.x + dx * 0.2}
-              y1={o.y + dy * 0.2}
+              x1={o.x + dx * 0.12}
+              y1={o.y + dy * 0.12}
               x2={o.x + dx}
-              y2={o.y + dy}
+              y2={o.y + dy - (length < 1e-8 ? unitsPerPixel : 0)}
               stroke="transparent"
-              strokeWidth={18 * unitsPerPixel}
+              strokeWidth={28 * unitsPerPixel}
               style={{ pointerEvents: 'stroke', cursor: 'move' }}
               onKeyDown={(e) => {
                 if (e.key === 'Escape') cancel();

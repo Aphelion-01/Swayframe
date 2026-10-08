@@ -45,6 +45,7 @@ export function PathEditor({
   const view = useSyncExternalStore(store.subscribe, store.getSnapshot),
     c = activeComposition(view.project);
   const [selected, setSelected] = useState(0),
+    [selectedHandle, setSelectedHandle] = useState<0 | 1 | 2>(0),
     drag = useRef<
       | {
           index: number;
@@ -104,8 +105,9 @@ export function PathEditor({
           : { ...property, baseValue: g.data, keyframes: [] },
       });
     },
-    finish: () => {
+    finish: (e) => {
       const g = drag.current;
+      if (g) g.data = movePathPoint(g.data, g.index, point(e), g.handle);
       drag.current = undefined;
       if (
         g &&
@@ -192,9 +194,18 @@ export function PathEditor({
                     aria-label={`${title}点 ${index + 1} ${handle === 0 ? '位置' : handle === 1 ? '入切线' : '出切线'}`}
                     aria-valuenow={p[handle * 2]}
                     tabIndex={0}
-                    cx={p[handle * 2]}
+                    cx={
+                      handle &&
+                      p[handle * 2] === p[0] &&
+                      p[handle * 2 + 1] === p[1]
+                        ? p[0]! + ((handle === 1 ? -1 : 1) * width) / 20
+                        : p[handle * 2]
+                    }
                     cy={p[handle * 2 + 1]}
-                    r={handle === 0 ? 7 : 5}
+                    r={((handle === 0 ? 5 : 4) * width) / 600}
+                    stroke="transparent"
+                    strokeWidth={(16 * width) / 600}
+                    onDoubleClick={(e) => e.stopPropagation()}
                     fill={
                       handle === 0
                         ? selected === index
@@ -209,6 +220,7 @@ export function PathEditor({
                       store.setPlaying(false);
                       e.currentTarget.setPointerCapture(e.pointerId);
                       setSelected(index);
+                      setSelectedHandle(handle);
                       drag.current = {
                         index,
                         handle,
@@ -218,7 +230,36 @@ export function PathEditor({
                       };
                     }}
                     onKeyDown={(e) => {
+                      if (
+                        [
+                          'ArrowLeft',
+                          'ArrowRight',
+                          'ArrowUp',
+                          'ArrowDown',
+                        ].includes(e.key)
+                      ) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const step = e.shiftKey ? 10 : e.altKey ? 0.1 : 1;
+                        const x =
+                          p[handle * 2]! +
+                          (e.key === 'ArrowLeft'
+                            ? -step
+                            : e.key === 'ArrowRight'
+                              ? step
+                              : 0);
+                        const y =
+                          p[handle * 2 + 1]! +
+                          (e.key === 'ArrowUp'
+                            ? -step
+                            : e.key === 'ArrowDown'
+                              ? step
+                              : 0);
+                        commit(movePathPoint(value, index, { x, y }, handle));
+                      }
                       if (e.key === 'Delete' && value.length > 6) {
+                        e.preventDefault();
+                        e.stopPropagation();
                         commit(removePathPoint(value, index));
                         setSelected(0);
                       }
@@ -309,27 +350,41 @@ export function PathEditor({
               time={view.time}
               onPreview={(v) => {
                 const offset = Math.min(selected, value.length / 6 - 1) * 6;
-                const data = movePathPoint(value, offset / 6, {
-                  x: i === 0 ? v : value[offset]!,
-                  y: i === 1 ? v : value[offset + 1]!,
-                });
+                const data = movePathPoint(
+                  value,
+                  offset / 6,
+                  {
+                    x: i === 0 ? v : value[offset + selectedHandle * 2]!,
+                    y: i === 1 ? v : value[offset + selectedHandle * 2 + 1]!,
+                  },
+                  selectedHandle,
+                );
                 store.setPropertyPreview({
                   id: property.id,
                   property: { ...property, baseValue: data, keyframes: [] },
                 });
               }}
               onCancel={() => store.setPropertyPreview(undefined)}
-              label={`${title}选中点 ${label}`}
+              label={`${title}选中${selectedHandle === 0 ? '点' : selectedHandle === 1 ? '入切线' : '出切线'} ${label}`}
               value={
-                value[Math.min(selected, value.length / 6 - 1) * 6 + i] ?? 0
+                value[
+                  Math.min(selected, value.length / 6 - 1) * 6 +
+                    selectedHandle * 2 +
+                    i
+                ] ?? 0
               }
               onCommit={(v) => {
                 const offset = Math.min(selected, value.length / 6 - 1) * 6;
                 commit(
-                  movePathPoint(value, offset / 6, {
-                    x: i === 0 ? v : value[offset]!,
-                    y: i === 1 ? v : value[offset + 1]!,
-                  }),
+                  movePathPoint(
+                    value,
+                    offset / 6,
+                    {
+                      x: i === 0 ? v : value[offset + selectedHandle * 2]!,
+                      y: i === 1 ? v : value[offset + selectedHandle * 2 + 1]!,
+                    },
+                    selectedHandle,
+                  ),
                 );
               }}
               onError={(m) => store.setStatus(m, true)}
@@ -349,7 +404,8 @@ export function PathEditor({
           />
         </label>
         <p className="inspector-note">
-          双击空白处添加点；拖动蓝色点或黄色切线。路径动画在相同点数之间插值，改变点数会按保持方式切换。
+          双击空白处添加点；拖动蓝色点或黄色切线。角点的黄色圆点可拖出独立切线；选中后用箭头或下方
+          X/Y 精确调整。路径动画在相同点数之间插值，改变点数会按保持方式切换。
         </p>
       </section>
     </Modal>

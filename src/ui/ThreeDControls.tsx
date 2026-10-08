@@ -20,6 +20,26 @@ export function ThreeDControls({
   return (
     <>
       <div className="section-label">三维平面与摄像机</div>
+      {(editor.is3D || layer.type === 'camera') && (
+        <div className="segmented" role="group" aria-label="三维操控手柄模式">
+          <button
+            title="显示 XYZ 直线手柄，沿轴移动图层"
+            aria-pressed={
+              (view.spatialGizmoMode ?? 'translate') === 'translate'
+            }
+            onClick={() => editorCommands(store).execute('spatial-translate')}
+          >
+            移动手柄
+          </button>
+          <button
+            title="显示 XYZ 旋转圆环，拖动绕对应轴旋转"
+            aria-pressed={view.spatialGizmoMode === 'rotate'}
+            onClick={() => editorCommands(store).execute('spatial-rotate')}
+          >
+            旋转手柄
+          </button>
+        </div>
+      )}
       {layer.type !== 'camera' && layer.type !== 'model' && (
         <label className="checkbox-field">
           <input

@@ -2379,3 +2379,109 @@ textarea,
   pointer-events: none;
   overflow: hidden;
 }
+
+/* Shared temporal geometry across Timeline, Motion and Compositing. */
+.mode-time-ruler {
+  flex: 0 0 auto;
+  overflow: hidden;
+}
+.timeline-ruler {
+  margin: 0;
+  height: 38px;
+  box-sizing: border-box;
+}
+.curve-with-layer-tree {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.curve-layer-tree {
+  width: var(--timeline-tree-width, 260px);
+  flex: none;
+  overflow: auto;
+  border-right: 1px solid var(--border-subtle);
+}
+.curve-layer-tree .timeline-layer-heading,
+.curve-layer-tree .timeline-row {
+  grid-template-columns: minmax(0, 1fr);
+}
+.curve-layer-tree .layer-time-row,
+.curve-layer-tree .keyframe-track,
+.curve-layer-tree .track-options {
+  display: none;
+}
+.curve-editor-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.curve-editor-main > * {
+  flex: 1;
+  min-height: 0;
+}
+.render-preview-strip {
+  position: sticky;
+  top: 38px;
+  z-index: 2;
+  background: var(--background-secondary);
+  flex: 0 0 18px;
+  display: grid;
+  grid-template-columns: var(--timeline-tree-width, 260px) minmax(0, 1fr) 28px;
+  align-items: center;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+.render-preview-strip > span {
+  grid-column: 1;
+  grid-row: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 8px;
+}
+.render-preview-track {
+  grid-column: 2;
+  grid-row: 1;
+  position: relative;
+  height: 5px;
+  flex: 1;
+  background: var(--background-primary);
+  overflow: hidden;
+}
+.render-preview-track i {
+  position: absolute;
+  top: 0;
+  height: 5px;
+  background: var(--success, #7eae87);
+  min-width: 1px;
+}
+.render-preview-track b {
+  position: absolute;
+  top: 0;
+  height: 5px;
+  width: 1px;
+  background: var(--accent-primary);
+}
+.export-dialog fieldset {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+.export-dialog {
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.shape-path-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}

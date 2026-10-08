@@ -85,9 +85,10 @@ it('时间轴、曲线、节点始终保留刻度和单一播放控件；缓动�
   expect(screen.getByLabelText('播放头')).toHaveAttribute('aria-valuenow', '1');
   for (const tab of ['曲线编辑器', '合成节点']) {
     fireEvent.click(screen.getByRole('tab', { name: tab }));
-    expect(
-      screen.getByRole('slider', { name: '合成时间标尺' }),
-    ).toHaveAttribute('aria-valuenow', '1');
+    expect(screen.getByRole('slider', { name: '播放头' })).toHaveAttribute(
+      'aria-valuenow',
+      '1',
+    );
     expect(screen.getAllByRole('button', { name: '播放' })).toHaveLength(1);
     fireEvent.click(screen.getByRole('button', { name: '播放' }));
     expect(store.getSnapshot().playing).toBe(true);
@@ -111,12 +112,12 @@ it('常驻时间标尺窗口松手采用最后坐标；取消恢复起点且不�
   const { store } = fixture();
   render(<Timeline store={store} />);
   fireEvent.click(screen.getByRole('tab', { name: '合成节点' }));
-  const ruler = screen.getByLabelText('合成时间标尺');
+  const ruler = screen.getByLabelText('播放头');
   rect(ruler, 1016, 32);
   const before = store.getSnapshot().project;
-  fireEvent.pointerDown(ruler, { button: 0, clientX: 8 });
-  fireEvent.pointerMove(window, { clientX: 208 });
-  fireEvent.pointerUp(window, { clientX: 608 });
+  fireEvent.pointerDown(ruler, { button: 0, clientX: 0 });
+  fireEvent.pointerMove(window, { clientX: 203.2 });
+  fireEvent.pointerUp(window, { clientX: 609.6 });
   expect(store.getSnapshot().time).toBe(3);
   fireEvent.pointerDown(ruler, { button: 0, clientX: 808 });
   fireEvent.keyDown(ruler, { key: 'Escape' });
@@ -181,10 +182,7 @@ it('快速 3D 开关可撤销，2D/3D位置默认链接各自符合维度', () =
   );
   fireEvent.click(screen.getByLabelText('开启 子图层 三维图层'));
   expect(current().editor!.is3D).toBe(true);
-  expect(screen.getByLabelText('启用位置 X/Y 链接')).toHaveAttribute(
-    'aria-pressed',
-    'false',
-  );
+  expect(screen.queryByLabelText('启用位置 X/Y 链接')).toBeNull();
   expect(screen.getByLabelText('启用三维位置 X/Y 链接')).toHaveAttribute(
     'aria-pressed',
     'false',
@@ -342,7 +340,9 @@ it('主预览打开旁侧空间视图不改工程；辅助入口复用关闭行�
   expect(screen.getByLabelText('三维空间预览')).toBeVisible();
   expect(screen.getAllByLabelText('三维 XYZ 操控手柄')).toHaveLength(2);
   expect(screen.getByLabelText('三维图层渲染预览')).toBeInTheDocument();
-  const summary = screen.getByText('辅助', { selector: 'summary' });
+  const summary = screen.getByText('网格 / 参考线 / 标尺', {
+    selector: 'summary',
+  });
   fireEvent.click(summary);
   fireEvent.click(screen.getByLabelText('网格', { selector: 'input' }));
   fireEvent.click(screen.getByLabelText('标尺', { selector: 'input' }));

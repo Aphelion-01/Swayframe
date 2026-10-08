@@ -28,6 +28,8 @@ export function layoutText(layer: Layer, time: number, measure: TextMeasure) {
     tracking = textValue(layer, 'tracking', time, 0),
     lineHeight = textValue(layer, 'lineHeight', time, 1.2),
     lines = layer.text.split('\n');
+  let glyphIndex = 0;
+  const total = Array.from(layer.text.replaceAll('\n', '')).length || 1;
   return lines.flatMap((line, i) => {
     const chars = Array.from(line).map((char) => ({
       char,
@@ -44,7 +46,34 @@ export function layoutText(layer: Layer, time: number, measure: TextMeasure) {
           : -layer.width / 2;
     const y = (i - (lines.length - 1) / 2) * size * lineHeight;
     return chars.map(({ char, metrics }) => {
-      const glyph = { char, x, y, metrics };
+      const center = ((glyphIndex++ + 0.5) / total) * 100;
+      const offset = textValue(layer, 'textRangeOffset', time, 0);
+      const start = textValue(layer, 'textRangeStart', time, 0) + offset;
+      const end = textValue(layer, 'textRangeEnd', time, 100) + offset;
+      const amount =
+        textValue(layer, 'textAnimatorEnabled', time, 0) === 1
+          ? Math.max(
+              0,
+              Math.min(
+                1,
+                (center - start) / (100 / total) + 0.5,
+                (end - center) / (100 / total) + 0.5,
+              ),
+            )
+          : 0;
+      const glyph = {
+        char,
+        x: x + textValue(layer, 'textAnimatorX', time, 0) * amount,
+        y: y + textValue(layer, 'textAnimatorY', time, 40) * amount,
+        opacity:
+          1 +
+          (textValue(layer, 'textAnimatorOpacity', time, 0) / 100 - 1) * amount,
+        scale:
+          1 +
+          (textValue(layer, 'textAnimatorScale', time, 100) / 100 - 1) * amount,
+        rotation: textValue(layer, 'textAnimatorRotation', time, 0) * amount,
+        metrics,
+      };
       x += metrics.width + tracking;
       return glyph;
     });

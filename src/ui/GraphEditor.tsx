@@ -1304,6 +1304,9 @@ export function GraphEditor({
                         cy={h.y}
                         rx={4 * pixelX}
                         ry={4 * pixelY}
+                        stroke="transparent"
+                        strokeWidth="18"
+                        vectorEffect="non-scaling-stroke"
                         fill="var(--warning)"
                         style={{ cursor: 'move', touchAction: 'none' }}
                         onPointerDown={(e) => {

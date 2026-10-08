@@ -1,3 +1,6 @@
+import { ShapePathOverlay } from './ShapePathOverlay';
+import { publishRenderPreview } from './RenderPreviewBar';
+import { PreviewFrameCache } from './preview-frame-cache';
 import { MotionPathOverlay } from './MotionPathOverlay';
 import { SpatialViewport } from './SpatialViewport';
 import { ThreeDGizmo, type SpatialGizmoMode } from './ThreeDGizmo';
@@ -49,7 +52,6 @@ import { useInteractionCancel } from './workspace/interaction';
 import { ContextMenu, MenuDropdown } from './workspace/primitives';
 import { layerActions } from './workspace/layer-actions';
 import { PathEditor } from './PathEditor';
-import { TextField } from './fields';
 import { useTools } from './workspace/tools';
 import { createLayer } from '../core/project-model';
 import { command } from '../core/command-system';
@@ -182,6 +184,18 @@ export function Canvas({ store }: { store: EditorStore }) {
       return next;
     });
 
+  useEffect(() => {
+    const open = () => {
+      const element =
+        document.querySelector<HTMLDetailsElement>('.canvas-aids-menu');
+      if (element) {
+        element.open = true;
+        element.querySelector<HTMLElement>('summary')?.focus();
+      }
+    };
+    window.addEventListener('motion:canvas-aids', open);
+    return () => window.removeEventListener('motion:canvas-aids', open);
+  }, []);
   const { tool, space, setSpace } = useTools();
   const interaction = useRef(
     new CanvasInteractionState<CanvasInteractionData>(),
@@ -210,8 +224,6 @@ export function Canvas({ store }: { store: EditorStore }) {
   const zoomAnchor = useRef<
     { x: number; y: number; u: number; v: number } | undefined
   >(undefined);
-  const [spatialGizmoMode, setSpatialGizmoMode] =
-    useState<SpatialGizmoMode>('translate');
   const [anchorMode, setAnchorMode] = useState(false);
   const [snapping, setSnapping] = useState(() => {
     try {
@@ -281,7 +293,12 @@ export function Canvas({ store }: { store: EditorStore }) {
     'preview',
     'propertyPreview',
     'propertyPreviews',
+    'renderRevision',
+    'spatialGizmoMode',
   ]);
+  const spatialGizmoMode = view.spatialGizmoMode ?? 'translate';
+  const setSpatialGizmoMode = (mode: SpatialGizmoMode) =>
+    store.setSpatialGizmoMode(mode);
   const c = activeComposition(view.project);
   useEffect(() => {
     breadcrumbs.current = [];
@@ -324,6 +341,10 @@ export function Canvas({ store }: { store: EditorStore }) {
   const [fitWidth, setFitWidth] = useState(0);
   const fitWidthRef = useRef(0);
   const renderer = useRef(new Canvas2DRenderer());
+  const frameCache = useRef(new PreviewFrameCache());
+  const lastPaint = useRef<{ project: Project; key: string } | undefined>(
+    undefined,
+  );
   useEffect(() => {
     const adapter = renderer.current;
     return () => adapter.dispose();
@@ -636,15 +657,78 @@ export function Canvas({ store }: { store: EditorStore }) {
     observer.observe(container);
     return () => observer.disconnect();
   }, [c.width, c.height]);
-  useEffect(() => {
-    if (ref.current)
+  useLayoutEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    const transient = !!(
+      view.propertyPreview ||
+      view.propertyPreviews ||
+      view.preview ||
+      rawRenderProject !== view.project
+    );
+    frameCache.current.prepare(renderProject);
+    const key = JSON.stringify([
+      c.id,
+      view.time,
+      fitWidth,
+      view.zoom,
+      view.selection,
+      spatialSelection,
+    ]);
+    if (
+      !transient &&
+      lastPaint.current?.project === renderProject &&
+      lastPaint.current.key === key
+    )
+      return;
+    lastPaint.current = transient ? undefined : { project: renderProject, key };
+    const start = performance.now(),
+      cached = transient ? undefined : frameCache.current.get(key);
+    if (cached) {
+      canvas.width = cached.width;
+      canvas.height = cached.height;
+      canvas.getContext('2d')?.drawImage(cached, 0, 0);
+    } else {
       renderer.current.render(
         input,
-        ref.current,
-        c.width / (ref.current.getBoundingClientRect().width || c.width),
+        canvas,
+        c.width / (canvas.getBoundingClientRect().width || c.width),
         spatialSelection,
+        transient
+          ? Math.min(
+              1,
+              Math.max(
+                0.2,
+                (canvas.getBoundingClientRect().width || c.width) / c.width,
+              ),
+            )
+          : 1,
       );
-  }, [input, c.width, fitWidth, view.zoom, spatialSelection]);
+      if (!transient) frameCache.current.put(key, view.time, canvas);
+    }
+    publishRenderPreview({
+      store,
+      project: view.project,
+      times: frameCache.current.times(),
+      ms: performance.now() - start,
+      cached: !!cached,
+      preview: transient,
+    });
+  }, [
+    input,
+    c.width,
+    fitWidth,
+    view.zoom,
+    spatialSelection,
+    view.propertyPreview,
+    view.propertyPreviews,
+    view.preview,
+    view.selection,
+    view.time,
+    renderProject,
+    store,
+  ]);
+
   useEffect(() => {
     let active = true;
     renderer.current
@@ -652,12 +736,21 @@ export function Canvas({ store }: { store: EditorStore }) {
       .then(() => {
         if (active && ref.current) {
           const current = store.getSnapshot();
+          frameCache.current.clear();
+          publishRenderPreview({
+            store,
+            project: current.project,
+            times: [],
+            ms: 0,
+            cached: false,
+            preview: false,
+          });
           const snapshot = createRenderSnapshot(
-            activeComposition(current.project),
+            activeComposition(store.getRenderProject()),
             current.time,
             current.selection,
             undefined,
-            current.project,
+            store.getRenderProject(),
           );
           renderer.current.render(
             snapshot,
@@ -678,7 +771,7 @@ export function Canvas({ store }: { store: EditorStore }) {
     return () => {
       active = false;
     };
-  }, [view.project.assets, store]);
+  }, [renderProject.assets, store]);
   const point = (event: {
     currentTarget: HTMLElement;
     clientX: number;
@@ -717,6 +810,17 @@ export function Canvas({ store }: { store: EditorStore }) {
   const onPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
     if (event.button !== 0 || interaction.state.type !== 'idle') return;
     const p = point(event);
+    if (tool === 'text') {
+      const id = hitTest(input, p, store.textMeasure);
+      const target = c.layers.find((l) => l.id === id);
+      if (target?.type === 'text' && !target.locked) {
+        store.select(target.id);
+        requestAnimationFrame(() =>
+          window.dispatchEvent(new Event('motion:edit-text')),
+        );
+        return;
+      }
+    }
     if (tool !== 'select' && tool !== 'hand') {
       event.currentTarget.setPointerCapture(event.pointerId);
       if (
@@ -1220,8 +1324,13 @@ export function Canvas({ store }: { store: EditorStore }) {
             layer,
           }),
         ]).ok
-      )
+      ) {
         store.select(layer.id);
+        if (kind === 'text')
+          requestAnimationFrame(() =>
+            window.dispatchEvent(new Event('motion:edit-text')),
+          );
+      }
       return;
     }
     const g = gesture.current;
@@ -1337,25 +1446,77 @@ export function Canvas({ store }: { store: EditorStore }) {
             3D 空间
           </button>
           <MenuDropdown className="canvas-aids-menu">
-            <summary>辅助</summary>
+            <summary title="网格、参考线与像素标尺 · 仅辅助编辑，不输出">
+              网格 / 参考线 / 标尺
+            </summary>
             <div>
               {(
                 [
                   ['grid', '网格'],
                   ['rulers', '标尺'],
                   ['guides', '参考线'],
+                  ['safeZones', '标题 / 动作安全框'],
+                  ['thirds', '三分构图'],
                 ] as const
               ).map(([id, label]) => (
                 <label key={id}>
                   <input
                     type="checkbox"
-                    checked={aids[id]}
+                    checked={Boolean(aids[id])}
                     onChange={() => toggleAid(id)}
                   />
                   {label}
                 </label>
               ))}
-              <small>像素单位 · 从标尺拖出参考线</small>
+              <label>
+                主网格间距（px）
+                <select
+                  aria-label="网格间距"
+                  value={aids.gridSize ?? 100}
+                  onChange={(e) => {
+                    const next = { ...aids, gridSize: Number(e.target.value) };
+                    setAids(next);
+                    localStorage.setItem(
+                      'swayframe.canvas-aids',
+                      JSON.stringify(next),
+                    );
+                  }}
+                >
+                  {[8, 16, 32, 64, 100, 200].map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                细分
+                <select
+                  aria-label="网格细分"
+                  value={aids.subdivisions ?? 5}
+                  onChange={(e) => {
+                    const next = {
+                      ...aids,
+                      subdivisions: Number(e.target.value),
+                    };
+                    setAids(next);
+                    localStorage.setItem(
+                      'swayframe.canvas-aids',
+                      JSON.stringify(next),
+                    );
+                  }}
+                >
+                  {[1, 2, 4, 5, 8, 10].map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <small>
+                合成像素单位 · 主/次网格随缩放调整密度 ·
+                从标尺拖出参考线，双击删除 · 安全框不输出
+              </small>
             </div>
           </MenuDropdown>
         </div>
@@ -1481,8 +1642,11 @@ export function Canvas({ store }: { store: EditorStore }) {
                     }),
                   ]);
                   store.select(null);
-                } else if (layer.type === 'text' || layer.type === 'shape')
-                  setInternal(layer.id);
+                } else if (layer.type === 'text')
+                  requestAnimationFrame(() =>
+                    window.dispatchEvent(new Event('motion:edit-text')),
+                  );
+                else if (layer.type === 'shape') setInternal(layer.id);
               }}
               onPointerCancel={() => {
                 guidanceController.activate();
@@ -1514,6 +1678,16 @@ export function Canvas({ store }: { store: EditorStore }) {
               key={c.id}
               compositionId={c.id}
               settings={aids}
+            />
+            <ShapePathOverlay
+              store={store}
+              snapshot={input}
+              width={c.width}
+              height={c.height}
+              unitsPerPixel={uiScale}
+              editable={
+                (tool === 'select' || tool === 'pen') && !space && !internal
+              }
             />
             <MotionPathOverlay
               store={store}
@@ -1710,29 +1884,7 @@ export function Canvas({ store }: { store: EditorStore }) {
       {internal &&
         (() => {
           const layer = c.layers.find((l) => l.id === internal);
-          return layer?.type === 'text' ? (
-            <div className="canvas-text-edit">
-              <TextField
-                label="画布文字编辑"
-                multiline
-                autoFocus
-                value={layer.text}
-                onCommit={(text) =>
-                  store.run('编辑文字', [
-                    command({
-                      type: 'layer.patch',
-                      compositionId: c.id,
-                      layerId: layer.id,
-                      patch: { text },
-                    }),
-                  ])
-                }
-              />
-              <button onClick={() => setInternal(undefined)}>
-                完成文字编辑
-              </button>
-            </div>
-          ) : layer?.editor?.properties.path ? (
+          return layer?.editor?.properties.path ? (
             <PathEditor
               store={store}
               property={
