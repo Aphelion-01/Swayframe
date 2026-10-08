@@ -87,8 +87,8 @@ export type CommandSpec =
       > & {
         readonly incoming?: Vec2 | null;
         readonly outgoing?: Vec2 | null;
-        readonly spatialIncoming?: Vec2 | null;
-        readonly spatialOutgoing?: Vec2 | null;
+        readonly spatialIncoming?: Vec2 | readonly number[] | null;
+        readonly spatialOutgoing?: Vec2 | readonly number[] | null;
       };
     }
   | {

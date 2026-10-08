@@ -33,6 +33,7 @@ export type IconName =
   | 'clock'
   | 'diamond'
   | 'anchor'
+  | 'cube'
   | 'image'
   | 'comp'
   | 'camera'
@@ -76,6 +77,7 @@ const paths: Record<IconName, string> = {
   clock: 'M8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10 M8 5v3l2 1 M6 1h4',
   diamond: 'M8 2l6 6-6 6-6-6Z',
   anchor: 'M8 2v12 M2 8h12 M8 5a3 3 0 1 0 0 6 3 3 0 0 0 0-6',
+  cube: 'M8 1l6 3v8l-6 3-6-3V4Z M2 4l6 3 6-3 M8 7v8',
   image: 'M2 3h12v10H2Z M3 11l3-3 2 2 2-3 3 4 M5 5h.01',
   comp: 'M2 3h12v10H2Z M5 3v10 M11 3v10',
   camera: 'M2 5h8v7H2Z M10 7l4-2v7l-4-2',

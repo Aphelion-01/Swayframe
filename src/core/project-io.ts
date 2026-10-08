@@ -31,7 +31,8 @@ export function migrateProject(raw: unknown): Project {
     raw.schemaVersion !== '0.3.0' &&
     raw.schemaVersion !== '0.4.0' &&
     raw.schemaVersion !== '0.5.0' &&
-    raw.schemaVersion !== '0.6.0'
+    raw.schemaVersion !== '0.6.0' &&
+    raw.schemaVersion !== '0.7.0'
   )
     throw new ProjectFileError(
       'UNSUPPORTED_VERSION',
@@ -52,7 +53,7 @@ export function migrateProject(raw: unknown): Project {
       );
     candidate = {
       ...legacy.data,
-      schemaVersion: '0.6.0',
+      schemaVersion: '0.7.0',
       compositions: legacy.data.compositions.map((c) => ({
         ...c,
         layers: c.layers.map((l) => ({
@@ -66,10 +67,11 @@ export function migrateProject(raw: unknown): Project {
     raw.schemaVersion === '0.2.0' ||
     raw.schemaVersion === '0.3.0' ||
     raw.schemaVersion === '0.4.0' ||
-    raw.schemaVersion === '0.5.0'
+    raw.schemaVersion === '0.5.0' ||
+    raw.schemaVersion === '0.6.0'
   )
-    candidate = { ...raw, schemaVersion: '0.6.0' };
-  if (raw.schemaVersion !== '0.5.0' && raw.schemaVersion !== '0.6.0')
+    candidate = { ...raw, schemaVersion: '0.7.0' };
+  if (!['0.5.0', '0.6.0', '0.7.0'].includes(String(raw.schemaVersion)))
     candidate = upgradeLegacyEffects(candidate);
   const parsed = projectSchema.safeParse(candidate);
   if (!parsed.success) {
@@ -90,13 +92,29 @@ export function migrateProject(raw: unknown): Project {
     ...parsed.data,
     compositions: parsed.data.compositions.map((c) => ({
       ...c,
-      layers: c.layers.map((layer, index) =>
-        migrateLayerGraph(
-          raw.schemaVersion === '0.6.0' || layer.ui
+      layers: c.layers.map((original, index) => {
+        let layer: Layer = original;
+        if (layer.type === 'camera' && layer.editor) {
+          const defaults = createLayerEditor(layer).properties;
+          const properties = { ...layer.editor.properties };
+          for (const key of [
+            'cameraDepthOfField',
+            'cameraFocusDistance',
+            'cameraAperture',
+            'cameraExposure',
+          ])
+            properties[key] ??= defaults[key]!;
+          layer = {
+            ...layer,
+            editor: { ...layer.editor, is3D: true, properties },
+          };
+        }
+        return migrateLayerGraph(
+          ['0.6.0', '0.7.0'].includes(String(raw.schemaVersion)) || layer.ui
             ? layer
             : { ...layer, ui: { accentColorId: accentAt(index) } },
-        ),
-      ),
+        );
+      }),
     })),
   });
 }

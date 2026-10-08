@@ -1,3 +1,4 @@
+import { ModelImportInput } from './ModelImportInput';
 import { useEditorSlice } from './use-editor-slice';
 import { getProjectService } from '../desktop/project-service';
 import { dispatchShortcut, focusContext } from './workspace/shortcuts';
@@ -490,6 +491,7 @@ export function Toolbar({ store }: { store: EditorStore }) {
 
   return (
     <>
+      <ModelImportInput store={store} />
       {paletteOpen && (
         <CommandPalette
           commands={paletteCommands}

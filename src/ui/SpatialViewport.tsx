@@ -1,3 +1,5 @@
+import { CameraSpaceOverlay } from './CameraSpaceOverlay';
+import { MotionPathOverlay } from './MotionPathOverlay';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { EditorStore } from './editor-store';
 import { useEditorSlice } from './use-editor-slice';
@@ -109,7 +111,7 @@ export function SpatialViewport({
             active:
               v.time >= (l.source.editor?.inPoint ?? 0) &&
               v.time < (l.source.editor?.outPoint ?? c.duration) &&
-              quad.every(Boolean),
+              (l.source.type === 'model' || quad.every(Boolean)),
           };
         })
         .sort((a, b) => (b.quad?.[0]?.z ?? 0) - (a.quad?.[0]?.z ?? 0)),
@@ -334,7 +336,8 @@ export function SpatialViewport({
                 l.source.visible &&
                 v.time >= (l.source.editor?.inPoint ?? 0) &&
                 v.time < (l.source.editor?.outPoint ?? c.duration) &&
-                l.source.type !== 'null',
+                l.source.type !== 'null' &&
+                l.source.type !== 'camera',
             )
             .sort(
               (a, b) =>
@@ -388,6 +391,20 @@ export function SpatialViewport({
               );
             })}
         </svg>
+        <CameraSpaceOverlay
+          store={store}
+          snapshot={snapshot}
+          project={projectPoint}
+          width={size.width}
+          height={size.height}
+        />
+        <MotionPathOverlay
+          store={store}
+          snapshot={snapshot}
+          project={projectPoint}
+          width={size.width}
+          height={size.height}
+        />
         <ThreeDGizmo
           store={store}
           mode={gizmoMode}

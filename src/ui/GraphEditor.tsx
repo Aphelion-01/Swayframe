@@ -991,17 +991,23 @@ export function GraphEditor({
               <button disabled={!selectedKey} onClick={fitSelected}>
                 适应选中关键帧
               </button>
-              {left && right && entry.key === 'transform.position' && (
-                <details>
-                  <summary>空间路径</summary>
-                  <SpatialMotionEditor
-                    store={store}
-                    property={original}
-                    left={left}
-                    right={right}
-                  />
-                </details>
-              )}
+              {left &&
+                right &&
+                [
+                  'transform.position',
+                  'editor.properties.position3D',
+                  'editor.properties.cameraPosition',
+                ].includes(entry.key) && (
+                  <details>
+                    <summary>空间路径</summary>
+                    <SpatialMotionEditor
+                      store={store}
+                      property={original}
+                      left={left}
+                      right={right}
+                    />
+                  </details>
+                )}
             </>
           }
           footer={

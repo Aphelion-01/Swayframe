@@ -24,7 +24,7 @@ it('新图层循环分配六种身份；旧0.5迁移不改变Transform/实体id'
       ],
     };
   const loaded = loadProject(JSON.stringify(raw));
-  expect(loaded.schemaVersion).toBe('0.6.0');
+  expect(loaded.schemaVersion).toBe('0.7.0');
   expect(loaded.compositions[0]!.layers.map((l) => l.transform)).toEqual(
     layers.map((l) => l.transform),
   );

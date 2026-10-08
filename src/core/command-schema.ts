@@ -13,6 +13,10 @@ import {
 } from './project-schema';
 import { interpolationSchema, curvePointSchema } from './animation-engine';
 
+const spatialControl = z.union([
+  vec2Schema,
+  z.array(z.number().finite()).length(3),
+]);
 const value = animValueSchema;
 const index = z.number().int().nonnegative().optional();
 const frame = z
@@ -23,8 +27,8 @@ const frame = z
     interpolation: interpolationSchema,
     incoming: curvePointSchema.optional(),
     outgoing: curvePointSchema.optional(),
-    spatialIncoming: vec2Schema.optional(),
-    spatialOutgoing: vec2Schema.optional(),
+    spatialIncoming: spatialControl.optional(),
+    spatialOutgoing: spatialControl.optional(),
   })
   .strict();
 const identity = { id: idSchema };
@@ -151,8 +155,8 @@ export const commandSchema = z.discriminatedUnion('type', [
           interpolation: interpolationSchema.optional(),
           incoming: curvePointSchema.nullable().optional(),
           outgoing: curvePointSchema.nullable().optional(),
-          spatialIncoming: vec2Schema.nullable().optional(),
-          spatialOutgoing: vec2Schema.nullable().optional(),
+          spatialIncoming: spatialControl.nullable().optional(),
+          spatialOutgoing: spatialControl.nullable().optional(),
         })
         .strict(),
     })

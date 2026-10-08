@@ -1,3 +1,6 @@
+import { importModelFiles, isModelFile } from '../importers/model-import';
+import { editorCommands } from './workspace/feature-contributions';
+import { Icon } from './workspace/icons';
 import { CommandRegistry } from './workspace/command-registry';
 import { useCommandScope } from './workspace/scoped-commands';
 import { editorContributions } from './workspace/feature-contributions';
@@ -86,8 +89,16 @@ export function AssetsPanel({ store }: { store: EditorStore }) {
         e.preventDefault();
         e.stopPropagation();
         e.currentTarget.classList.remove('drop-target');
-        for (const file of Array.from(e.dataTransfer.files))
-          void importImageFile(store, file, false);
+        const files = Array.from(e.dataTransfer.files);
+        if (files.some((f) => isModelFile(f.name)))
+          void importModelFiles(store, files, false).catch((e) =>
+            store.setStatus(String(e), true),
+          );
+        else
+          for (const file of files)
+            void importImageFile(store, file, false).catch((e) =>
+              store.setStatus(String(e), true),
+            );
       }}
     >
       <summary>项目 / 素材 · {view.project.assets.length}</summary>
@@ -99,6 +110,9 @@ export function AssetsPanel({ store }: { store: EditorStore }) {
         }
       >
         导入到素材库
+      </button>
+      <button onClick={() => editorCommands(store).execute('import-model')}>
+        <Icon name="cube" /> 导入三维模型…
       </button>
       <input
         ref={ref}
@@ -121,7 +135,9 @@ export function AssetsPanel({ store }: { store: EditorStore }) {
         }}
       />
       {!view.project.assets.length && (
-        <p className="asset-empty">导入图片或拖入此处，可在多个图层中复用。</p>
+        <p className="asset-empty">
+          导入图片 / 三维模型或拖入此处，可在多个图层中复用。
+        </p>
       )}
       <div className="asset-list">
         {view.project.assets.map((asset) => (
@@ -151,6 +167,12 @@ export function AssetsPanel({ store }: { store: EditorStore }) {
                   重新链接
                 </button>
               </>
+            ) : asset.mesh ? (
+              <span
+                title={`${asset.mesh.format.toUpperCase()} · ${asset.mesh.vertices.length / 9} 个三角形`}
+              >
+                <Icon name="cube" />
+              </span>
             ) : (
               <img src={asset.dataUrl} alt="" />
             )}
@@ -205,7 +227,8 @@ export function AssetsPanel({ store }: { store: EditorStore }) {
         </select>
       </label>
       <small>
-        拖入图片，或把素材拖到画布 / 时间轴。点击素材名称可重复使用。
+        拖入图片 / 模型及依赖文件，或把素材拖到画布 /
+        时间轴。点击素材名称可重复使用。
       </small>
       {menu && (
         <ContextMenu

@@ -1,5 +1,5 @@
 import { cubicBezier } from './cubic-bezier';
-import { spatialPoint } from './spatial-path';
+import { spatialPoint, spatialPoint3 } from './spatial-path';
 import { z } from 'zod';
 import type { AnimValue, Seconds, Vec2 } from './core-types';
 import type { Interpolation, Property, Keyframe } from './project-model';
@@ -132,6 +132,11 @@ export function evaluateProperty(
     return mix(left.value, right.value);
   if (Array.isArray(left.value) && Array.isArray(right.value)) {
     if (left.value.length !== right.value.length) return left.value;
+    if (
+      left.value.length === 3 &&
+      (left.spatialOutgoing || right.spatialIncoming)
+    )
+      return spatialPoint3(left, right, progress);
     const target = right.value;
     return left.value.map((v, i) => mix(v, target[i]!));
   }

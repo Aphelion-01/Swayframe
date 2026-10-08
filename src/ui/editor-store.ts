@@ -50,6 +50,8 @@ import type { PositionPreview } from '../core/renderer-core';
 import { loadProject, saveProject } from '../core/project-io';
 
 export interface EditorView {
+  readonly showCameraFrustum: boolean;
+  readonly showMotionPaths: boolean;
   readonly project: Project;
   readonly transformSettings: TransformInteractionSettings;
   readonly time: Seconds;
@@ -109,6 +111,8 @@ export class EditorStore {
     this.commands = new CommandSystem(project);
     this.#view = {
       project: this.commands.getSnapshot(),
+      showCameraFrustum: false,
+      showMotionPaths: true,
       transformSettings: readTransformSettings(),
       time: 0,
       playing: false,
@@ -251,6 +255,12 @@ export class EditorStore {
   }
   clearGraphSelection(): void {
     this.#set({ graphSelection: undefined });
+  }
+  toggleCameraFrustum() {
+    this.#set({ showCameraFrustum: !this.#view.showCameraFrustum });
+  }
+  toggleMotionPaths() {
+    this.#set({ showMotionPaths: !this.#view.showMotionPaths });
   }
   select(id: ID | null, additive = false): void {
     this.#set({

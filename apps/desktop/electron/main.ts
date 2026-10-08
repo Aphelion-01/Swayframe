@@ -1,3 +1,4 @@
+import { rendererContentSecurityPolicy } from '../../../src/desktop/content-security';
 import {
   app,
   BrowserWindow,
@@ -148,12 +149,7 @@ app
     window.webContents.session.webRequest.onHeadersReceived(
       (details, callback) => {
         const development = !app.isPackaged && !!url;
-        const policy =
-          "default-src 'self'; script-src 'self'" +
-          (development ? " 'unsafe-inline'" : '') +
-          "; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: swayframe-asset:; connect-src 'self' swayframe-asset: blob:" +
-          (development ? ' ws://127.0.0.1:5175' : '') +
-          "; worker-src 'self' blob:; object-src 'none'; base-uri 'self'";
+        const policy = rendererContentSecurityPolicy(development);
         callback({
           responseHeaders: {
             ...details.responseHeaders,

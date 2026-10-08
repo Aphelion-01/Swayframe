@@ -63,10 +63,20 @@ export function parentCommands(
           patch: {
             value: convert(k.value),
             ...(key === 'position' && k.spatialIncoming
-              ? { spatialIncoming: apply2D(map, k.spatialIncoming) }
+              ? {
+                  spatialIncoming: apply2D(
+                    map,
+                    k.spatialIncoming as { x: number; y: number },
+                  ),
+                }
               : {}),
             ...(key === 'position' && k.spatialOutgoing
-              ? { spatialOutgoing: apply2D(map, k.spatialOutgoing) }
+              ? {
+                  spatialOutgoing: apply2D(
+                    map,
+                    k.spatialOutgoing as { x: number; y: number },
+                  ),
+                }
               : {}),
           },
         }),

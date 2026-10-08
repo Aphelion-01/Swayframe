@@ -238,9 +238,13 @@ export function LayerPanel({ store }: { store: EditorStore }) {
                       className="layer-3d-toggle"
                       aria-label={`${layer.editor?.is3D ? '关闭' : '开启'} ${displayName(layer.name)} 三维图层`}
                       aria-pressed={!!layer.editor?.is3D}
-                      disabled={layer.locked}
+                      disabled={layer.locked || layer.type === 'model'}
                       onClick={() => toggleLayer3D(store, [layer.id])}
-                      title="快速切换 2D / 3D"
+                      title={
+                        layer.type === 'model'
+                          ? '三维模型始终在三维空间中显示'
+                          : '快速切换 2D / 3D'
+                      }
                     >
                       3D
                     </button>
@@ -312,18 +316,20 @@ export function LayerPanel({ store }: { store: EditorStore }) {
                           name={
                             layer.type === 'text'
                               ? 'text'
-                              : layer.type === 'image'
-                                ? 'image'
-                                : layer.type === 'precomp'
-                                  ? 'comp'
-                                  : layer.type === 'null'
-                                    ? 'null'
-                                    : layer.type === 'camera'
-                                      ? 'camera'
-                                      : layer.type === 'shape' &&
-                                          layer.shapeKind === 'ellipse'
-                                        ? 'ellipse'
-                                        : 'rectangle'
+                              : layer.type === 'model'
+                                ? 'cube'
+                                : layer.type === 'image'
+                                  ? 'image'
+                                  : layer.type === 'precomp'
+                                    ? 'comp'
+                                    : layer.type === 'null'
+                                      ? 'null'
+                                      : layer.type === 'camera'
+                                        ? 'camera'
+                                        : layer.type === 'shape' &&
+                                            layer.shapeKind === 'ellipse'
+                                          ? 'ellipse'
+                                          : 'rectangle'
                           }
                         />
                       </span>

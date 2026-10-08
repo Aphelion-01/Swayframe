@@ -513,4 +513,52 @@ for (const [id, title] of [
     },
   );
 
+add(
+  'import-model',
+  '导入三维模型…',
+  'PROJECT',
+  ['Asset'],
+  ['Create'],
+  'panel.project',
+  {
+    contexts: ['Composition'],
+    icon: 'cube',
+    placement: { canonical: 'panel.project', secondary: ['menu.file'] },
+    keywords: ['GLB', 'glTF', 'FBX', 'OBJ', 'STL', 'PLY', 'DAE', '3DS', '模型'],
+  },
+);
+add(
+  'camera-frustum',
+  '拍摄范围',
+  'CANVAS',
+  ['Layer'],
+  ['Navigate'],
+  'panel.inspector.3d',
+  {
+    contexts: ['LayerSelection'],
+    when: ['isCameraSelected'],
+    keywords: ['camera', 'frustum', '景深', '光圈', '曝光'],
+    description:
+      '摄像机空间位置、焦平面拍摄范围与光学参数；参数由 ThreeDControls Section 管理',
+  },
+);
+add(
+  'motion-paths',
+  '运动路径',
+  'MOTION',
+  ['Property', 'Keyframe'],
+  ['Animate'],
+  'panel.inspector.transform',
+  {
+    frequency: 'F1',
+    contexts: ['LayerSelection'],
+    placement: {
+      canonical: 'panel.inspector.transform',
+      secondary: ['menu.view'],
+    },
+    keywords: ['Bezier', '贝塞尔', '路径', '最终位置'],
+    description:
+      '选中图层的二维/三维位置路径和结束位置；直接拖动端点及空间控制点',
+  },
+);
 features.validatePermanentBudgets();

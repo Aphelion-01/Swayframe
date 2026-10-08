@@ -1,6 +1,6 @@
 # Swayframe 架构
 
-当前执行基线：`docs/baseline/TRANSFORM_READABILITY.txt`。本轮仅扩展变换控制与图层/属性可读性，以下保留历史阶段约束与后续授权。
+当前执行基线：`docs/baseline/SPATIAL_CAMERA_MODEL.txt`，对应用户本轮摄像机、模型导入与空间路径要求。以下保留历史阶段约束与后续授权。
 
 第一阶段历史基线：`docs/baseline/Codex_第一阶段开发任务书_V0.1_重新输出.docx`。正文提取与 SHA-256 同目录保存。用户已授权按 T0 → T10 顺序连续实施全部任务。
 
@@ -283,3 +283,15 @@ navigateSpatialWheel区分连续触控板、Shift平移及Chromium ctrl+wheel捏
 未来 Motion Trail：新增领域实现与 command binding、Feature metadata，必要时注册 Inspector Section；已有 Shell、Header、菜单无需逐个加按钮。色差效果：实现 renderer/工程模型能力并 register effect，既有搜索与分类自然展示。Optical Flow：register node definition/evaluate，现有 Add Node 搜索读取。AI Auto Layout：Intelligence 仅输出 Proposal；注册 assistant action 与 command，再通过 Transaction 应用。没有远程加载、插件市场或新的 Scene 格式。
 
 `tests/feature-scalability.test.ts` 在隔离 Registry 中模拟 100 Effects + 50 Nodes + 20 Motion + 20 AI + 15 Spatial，不注册到生产单例；检查搜索、上下文、预算、执行与 Undo。`scripts/feature-inventory.mjs` 重建入口审计与位置矩阵，静态表达式按实例族保留，不等同于真人可用性测量。
+
+## 0.9.16 摄像机、静态网格与空间路径
+
+本轮执行基线 `docs/baseline/SPATIAL_CAMERA_MODEL.txt`。Project schema 升至 0.7.0：新增 ModelLayer 与有三角数量/有限坐标约束的内嵌 ModelGeometry；位置关键帧的空间控制点支持 Vec2 或三维数组。0.1～0.6 工程仍迁移，旧摄像机补齐光学参数及三维标记；严格检查参数范围、控制点维度、素材类型和保存大小。
+
+`importers/model-import` 使用 Three.js 官方加载器解析 GLB/glTF、FBX、OBJ、STL、PLY 网格、DAE、3DS；将静态网格世界变换烘焙、居中并归一化为 240 单位，保留材质 RGB。依赖只从当前用户选择的文件或内嵌数据读取，不请求远端资源。桌面 CSP 的 connect-src 允许内嵌 glTF 所需 data: 及本地 blob:，没有增加任何远端网络目标。原始模型、纹理和骨骼动画不进入 Scene。单次文件总大小 100 MB、单模型 20,000 三角形；所有文件解析及工程可保存性检查完成后，asset.add + layer.create 在单个 Transaction 提交。失败不保留部分素材；模型始终为三维图层。解析器只负责生成资产，不直接修改核心状态。
+
+`renderers/model-mesh` 把网格三角形通过同一 world3D / CameraSnapshot 投影，并按深度排序绘制；复用 Canvas2DRenderer，因此主预览、空间观察、导出均可显示。模型的投影图像可进入现有合成图。当前为基础软件网格预览，未实现 GPU 深度缓冲、交叉面的逐像素遮挡或真实物理材质。`camera-optics` 统一世界位置、旋转、取景范围与按图层深度近似的弥散圆；曝光按 2^EV 调整。光学参数为可动画 Property，通过共享 valueCommand 提交。父级摄像机先求世界变换再生成实际拍摄视角，空间标记与拍摄视角共用结果。
+
+`MotionPathOverlay` 在两个视口复用相同空间曲线和投影，显示路径、端点、控制柄及结束位置轮廓。路径独立于时间缓动，控制点与关键帧都走 keyframe.update；局部到屏幕的雅可比逆映射逐次重投影，保持透视拖动跟手。拖动仅预览 Property，窗口释放重采样并在单个 Transaction 提交；取消、卸载、时间或项目变化清除预览。父级姿态和其他属性采用当前帧，结束轮廓表示此姿态下的位置终点，不代表最后帧所有属性的综合姿态。
+
+观察方向、showCameraFrustum / showMotionPaths 与布局保持在 EditorView/局部 UI 中。模型入口属于 PROJECT/panel.project，文件菜单为跨工作流次入口；摄像机开关与参数属于 CANVAS/panel.inspector.3d；路径入口属于 MOTION/panel.inspector.transform，直接操控由 Overlay 管理。Feature 元数据不含回调，所有按钮执行 Command Registry；无新增全局工具栏按钮。验收见 `SPATIAL_CAMERA_MODEL_RESULT.md`。

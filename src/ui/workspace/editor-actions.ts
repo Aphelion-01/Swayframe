@@ -174,6 +174,18 @@ export function buildEditorActions(
     ['enter-precomp', '进入预合成'],
   ].map(([id, label]) => selectedAction(id!, label!, label!));
   return [
+    { id: 'import-model', label: '导入三维模型', action: emit('import-model') },
+    {
+      id: 'camera-frustum',
+      label: '显示 / 隐藏拍摄范围',
+      disabled: selected.length !== 1 || selected[0]?.type !== 'camera',
+      action: () => store.toggleCameraFrustum(),
+    },
+    {
+      id: 'motion-paths',
+      label: '显示 / 隐藏运动路径',
+      action: () => store.toggleMotionPaths(),
+    },
     ...features
       .all()
       .filter((f) => f.commandScope)

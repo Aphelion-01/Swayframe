@@ -22,8 +22,8 @@ export interface Keyframe<T> {
   readonly interpolation: Interpolation;
   readonly incoming?: Vec2;
   readonly outgoing?: Vec2;
-  readonly spatialIncoming?: Vec2;
-  readonly spatialOutgoing?: Vec2;
+  readonly spatialIncoming?: Vec2 | readonly number[];
+  readonly spatialOutgoing?: Vec2 | readonly number[];
 }
 export interface Property<T> {
   readonly id: ID;
@@ -77,11 +77,16 @@ export interface ImageLayer extends LayerBase {
   readonly type: 'image';
   readonly assetId: ID;
 }
+export interface ModelLayer extends LayerBase {
+  readonly type: 'model';
+  readonly assetId: ID;
+}
 export interface UtilityLayer extends LayerBase {
   readonly type: 'solid' | 'null' | 'precomp' | 'camera';
   readonly compositionId?: ID;
 }
-export type Layer = ShapeLayer | TextLayer | ImageLayer | UtilityLayer;
+export type Layer =
+  ShapeLayer | TextLayer | ImageLayer | ModelLayer | UtilityLayer;
 export type LayerKind =
   | 'rectangle'
   | 'ellipse'
@@ -90,11 +95,18 @@ export type LayerKind =
   | 'path'
   | 'text'
   | 'image'
+  | 'model'
   | 'solid'
   | 'null'
   | 'precomp'
   | 'camera';
+export interface ModelGeometry {
+  readonly vertices: readonly number[];
+  readonly colors: readonly number[];
+  readonly format: string;
+}
 export interface Asset {
+  readonly mesh?: ModelGeometry;
   readonly id: ID;
   readonly name: string;
   readonly mimeType: string;
@@ -121,7 +133,7 @@ export interface Composition {
   readonly backgroundColor?: Color;
 }
 export interface Project {
-  readonly schemaVersion: '0.6.0';
+  readonly schemaVersion: '0.7.0';
   readonly id: ID;
   readonly name: string;
   readonly compositions: readonly Composition[];
@@ -163,7 +175,7 @@ export function createDefaultProject(
   composition = createComposition(),
 ): Project {
   return {
-    schemaVersion: '0.6.0',
+    schemaVersion: '0.7.0',
     id: newId(),
     name: '未命名工程',
     compositions: [composition],
@@ -191,6 +203,7 @@ function createLegacyLayer(
         ellipse: '椭圆',
         text: '文字',
         image: '图片',
+        model: '三维模型',
         polygon: '多边形',
         star: '星形',
         path: '路径',
@@ -236,7 +249,11 @@ function createLegacyLayer(
         : {}),
     };
   if (!options.assetId) throw new Error('图片图层必须引用素材编号');
-  return { ...base, type: 'image', assetId: options.assetId };
+  return {
+    ...base,
+    type: kind === 'model' ? 'model' : 'image',
+    assetId: options.assetId,
+  };
 }
 let nextLayerAccent = 0;
 export function createLayer(
@@ -321,7 +338,7 @@ export function createLayerEditor(layer: Layer): LayerEditor {
     outPoint: 3600,
     startTime: 0,
     blendMode: 'normal',
-    is3D: false,
+    is3D: layer.type === 'model' || layer.type === 'camera',
     pathClosed: true,
     gradient: 'none',
     textAlign: 'left',
@@ -352,6 +369,10 @@ export function createLayerEditor(layer: Layer): LayerEditor {
       cameraPosition: createProperty([0, 0, -1000]),
       cameraRotation: createProperty([0, 0, 0]),
       cameraZoom: createProperty(1000),
+      cameraDepthOfField: createProperty(0),
+      cameraFocusDistance: createProperty(1000),
+      cameraAperture: createProperty(2.8),
+      cameraExposure: createProperty(0),
     },
   };
 }

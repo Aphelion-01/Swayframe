@@ -87,13 +87,17 @@ export function ThreeDRotationGizmo({
     let degrees = ((d.angle * 180) / Math.PI) * (e.altKey ? 0.1 : 1);
     if (e.shiftKey) degrees = Math.round(degrees / 15) * 15;
     d.next = d.base.map((n, i) => n + (i === d.axis ? degrees : 0));
-    const property = snapshot.layers.find(
-      (l) => l.source.editor?.properties.rotation3D?.id === d.id,
-    )?.source.editor?.properties.rotation3D;
-    if (property)
+    const property = snapshot.layers.find((l) =>
+      Object.values(l.source.editor?.properties ?? {}).some(
+        (p) => p.id === d.id,
+      ),
+    )?.source.editor?.properties;
+    const current =
+      property && Object.values(property).find((p) => p.id === d.id);
+    if (current)
       store.setPropertyPreview({
         id: d.id,
-        property: { ...property, baseValue: d.next, keyframes: [] },
+        property: { ...current, baseValue: d.next, keyframes: [] },
       });
   };
   usePointerRelease({
@@ -126,22 +130,30 @@ export function ThreeDRotationGizmo({
   const layer = snapshot.layers.find(
     (l) =>
       store.getSnapshot().selection.includes(l.source.id) &&
-      l.source.editor?.is3D &&
+      (l.source.editor?.is3D || l.source.type === 'camera') &&
       !l.source.locked,
   );
   if (!layer?.world3D) return null;
-  const property = layer.source.editor!.properties.rotation3D!,
+  const property =
+      layer.source.editor!.properties[
+        layer.source.type === 'camera' ? 'cameraRotation' : 'rotation3D'
+      ]!,
     time = store.getSnapshot().time;
   const values = evaluateProperty(property, time) as readonly number[];
   const anchor3 = evaluateProperty(
     layer.source.editor!.properties.anchor3D!,
     time,
   ) as readonly number[];
-  const origin = point4(layer.world3D, [
-    (layer.anchor?.x ?? 0) + anchor3[0]!,
-    (layer.anchor?.y ?? 0) + anchor3[1]!,
-    anchor3[2]!,
-  ]);
+  const origin = point4(
+    layer.world3D,
+    layer.source.type === 'camera'
+      ? [0, 0, 0]
+      : [
+          (layer.anchor?.x ?? 0) + anchor3[0]!,
+          (layer.anchor?.y ?? 0) + anchor3[1]!,
+          anchor3[2]!,
+        ],
+  );
   const center = project(origin);
   if (!center) return null;
   const parent =

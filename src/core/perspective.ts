@@ -6,6 +6,11 @@ export interface ProjectedPoint {
   readonly z: number;
 }
 export interface CameraSnapshot {
+  readonly layerId?: string;
+  readonly depthOfField?: boolean;
+  readonly focusDistance?: number;
+  readonly aperture?: number;
+  readonly exposure?: number;
   readonly position: Point3;
   readonly rotation: Point3;
   readonly zoom: number;

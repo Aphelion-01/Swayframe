@@ -1,3 +1,4 @@
+import { MotionPathOverlay } from './MotionPathOverlay';
 import { SpatialViewport } from './SpatialViewport';
 import { ThreeDGizmo, type SpatialGizmoMode } from './ThreeDGizmo';
 import { CanvasAids, type CanvasAidSettings } from './CanvasAids';
@@ -1513,6 +1514,14 @@ export function Canvas({ store }: { store: EditorStore }) {
               key={c.id}
               compositionId={c.id}
               settings={aids}
+            />
+            <MotionPathOverlay
+              store={store}
+              snapshot={input}
+              width={c.width}
+              height={c.height}
+              unitsPerPixel={uiScale}
+              editable={tool === 'select' && !space}
             />
             {spatialSelection &&
               tool === 'select' &&

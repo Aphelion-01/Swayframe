@@ -1,5 +1,5 @@
 import { motionCurveVelocity, segmentMotionCurve } from './motion-curve';
-import { spatialControls } from './spatial-path';
+import { spatialControls, spatialControls3 } from './spatial-path';
 import type { AnimValue, Vec2 } from './core-types';
 import type { Interpolation, Property, Keyframe } from './project-model';
 import { evaluateProperty } from './animation-engine';
@@ -88,7 +88,9 @@ export function spatialEndpointDistances(
   next: Keyframe<AnimValue>,
 ): { out: number; in: number } {
   if (frame.spatialOutgoing || next.spatialIncoming) {
-    const controls = spatialControls(frame, next);
+    const controls = Array.isArray(frame.value)
+      ? spatialControls3(frame, next)
+      : spatialControls(frame, next);
     return {
       out: 3 * valueDistance(frame.value, controls.out),
       in: 3 * valueDistance(controls.in, next.value),

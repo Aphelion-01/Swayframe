@@ -113,12 +113,13 @@ export function ThreeDGizmo({
   const chosen = snapshot.layers.find(
     (l) =>
       store.getSnapshot().selection.includes(l.source.id) &&
-      l.source.editor?.is3D &&
+      (l.source.editor?.is3D || l.source.type === 'camera') &&
       !l.source.locked,
   );
   if (!chosen?.world3D) return null;
-  const property = chosen.source.editor!.properties
-      .position3D! as Property<AnimValue>,
+  const property = chosen.source.editor!.properties[
+      chosen.source.type === 'camera' ? 'cameraPosition' : 'position3D'
+    ]! as Property<AnimValue>,
     origin = point4(chosen.world3D, [0, 0, 0]),
     o = project(origin);
   if (!o) return null;

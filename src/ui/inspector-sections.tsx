@@ -1,3 +1,4 @@
+import { editorCommands } from './workspace/feature-contributions';
 import { PivotSelector } from './PivotSelector';
 import { AnimatedField } from './AnimatedField';
 import { Section } from './workspace/primitives';
@@ -66,8 +67,25 @@ registerInspectorSection({
 });
 
 function SectionTransform({ store, layer, t }: InspectorSectionContext) {
+  if (layer.type === 'camera')
+    return (
+      <Section title="运动路径">
+        <button
+          aria-pressed={store.getSnapshot().showMotionPaths}
+          onClick={() => editorCommands(store).execute('motion-paths')}
+        >
+          运动路径 {store.getSnapshot().showMotionPaths ? '已显示' : '已隐藏'}
+        </button>
+      </Section>
+    );
   return (
     <Section title="变换">
+      <button
+        aria-pressed={store.getSnapshot().showMotionPaths}
+        onClick={() => editorCommands(store).execute('motion-paths')}
+      >
+        运动路径 {store.getSnapshot().showMotionPaths ? '已显示' : '已隐藏'}
+      </button>
       <PivotSelector store={store} disabled={!!layer.editor?.is3D} />
       <AnimatedField
         key={`${t.position.id}-${!!layer.editor?.is3D}`}
@@ -290,7 +308,11 @@ registerInspectorSection({
   title: '几何与样式',
   order: 500,
   component: SectionGeometry,
-  appliesTo: (l) => !!l.editor && l.type !== 'camera' && l.type !== 'null',
+  appliesTo: (l) =>
+    !!l.editor &&
+    l.type !== 'camera' &&
+    l.type !== 'null' &&
+    l.type !== 'model',
 });
 
 function SectionThreeD({ store, layer }: InspectorSectionContext) {
@@ -353,7 +375,11 @@ registerInspectorSection({
   title: '效果与遮罩',
   order: 900,
   component: SectionEffects,
-  appliesTo: (l) => !!l.editor && l.type !== 'camera' && l.type !== 'null',
+  appliesTo: (l) =>
+    !!l.editor &&
+    l.type !== 'camera' &&
+    l.type !== 'null' &&
+    l.type !== 'model',
 });
 
 function SectionSemantic({

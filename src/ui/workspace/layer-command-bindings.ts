@@ -86,7 +86,8 @@ export function layerCommandBindings(
     },
     {
       label: layer?.editor?.is3D ? '关闭三维图层' : '开启三维图层',
-      disabled: !layer?.editor,
+      disabled:
+        !layer?.editor || layer.type === 'model' || layer.type === 'camera',
       action: () => {
         toggleLayer3D(store, view.selection);
       },

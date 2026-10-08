@@ -85,6 +85,22 @@ export async function addAssetLayer(
     c = activeComposition(p),
     asset = p.assets.find((a) => a.id === assetId);
   if (!asset) throw new Error('素材不存在');
+  if (asset.mesh) {
+    const layer = createLayer('model', {
+      width: 240,
+      height: 240,
+      assetId: asset.id,
+      name: asset.name,
+      position: { x: c.width / 2, y: c.height / 2 },
+    });
+    if (
+      store.run('添加模型图层', [
+        command({ type: 'layer.create', compositionId: c.id, layer }),
+      ]).ok
+    )
+      store.select(layer.id);
+    return;
+  }
   const bitmap = await createImageBitmap(
     await (await fetch(asset.dataUrl)).blob(),
   );

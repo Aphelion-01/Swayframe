@@ -116,3 +116,6 @@
 | create-image 导入 图片 | panel.scene |  | — | context/menu/section |
 | motion.edit-segment 编辑缓动 | motion.segmentContext |  | — | context/menu/section |
 | motion.reset-segment 重置缓动 | motion.segmentContext |  | — | context/menu/section |
+| import-model 导入三维模型… | panel.project | menu.file | — | context/menu/section |
+| camera-frustum 拍摄范围 | panel.inspector.3d |  | — | context/menu/section |
+| motion-paths 运动路径 | panel.inspector.transform | menu.view | — | context/menu/section |

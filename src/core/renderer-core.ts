@@ -1,3 +1,4 @@
+import { cameraForLayer } from './camera-optics';
 import { getLocalBounds } from './layer-bounds';
 import type { TextMeasure } from './text-geometry';
 import { maskHit } from './mask-hit';
@@ -160,28 +161,20 @@ export function createRenderSnapshot(
       source.editor?.properties[key]
         ? (evaluateProperty(source.editor.properties[key]!, time) as Point3)
         : fallback;
-  const camera: CameraSnapshot = {
-    position: cameraLayer
-      ? value3(cameraLayer, 'cameraPosition', [0, 0, -1000])
-      : [0, 0, -1000],
-    rotation: cameraLayer
-      ? value3(cameraLayer, 'cameraRotation', [0, 0, 0])
-      : [0, 0, 0],
-    zoom: cameraLayer?.editor?.properties.cameraZoom
-      ? Math.max(
-          1,
-          evaluateProperty(
-            cameraLayer.editor.properties.cameraZoom,
-            time,
-          ) as number,
-        )
-      : 1000,
-    width: composition.width,
-    height: composition.height,
-  };
+  let camera: CameraSnapshot = cameraLayer
+    ? cameraForLayer(cameraLayer, time, composition.width, composition.height)
+    : {
+        position: [0, 0, -1000],
+        rotation: [0, 0, 0],
+        zoom: 1000,
+        width: composition.width,
+        height: composition.height,
+      };
   const rawById = new Map(raw.map((item) => [item.source.id, item]));
   const needs3D = new Set<string>();
-  for (const item of raw.filter((item) => item.source.editor?.is3D)) {
+  for (const item of raw.filter(
+    (item) => item.source.editor?.is3D || item.source.type === 'camera',
+  )) {
     let current: RenderLayer | undefined = item;
     while (current && !needs3D.has(current.source.id)) {
       needs3D.add(current.source.id);
@@ -190,7 +183,6 @@ export function createRenderSnapshot(
       current = parentId ? rawById.get(parentId) : undefined;
     }
   }
-  const projectionView = needs3D.size ? cameraView(camera) : undefined;
   const resolved = new Map<string, RenderLayer>();
   const resolve = (
     item: RenderLayer,
@@ -224,6 +216,15 @@ export function createRenderSnapshot(
         ],
       );
     }
+    if (item.source.type === 'camera') {
+      const camera = cameraForLayer(
+        item.source,
+        time,
+        composition.width,
+        composition.height,
+      );
+      world3D = transform4(camera.position, camera.rotation);
+    }
     let next = item;
     if (parent) {
       const p = resolvedParent!,
@@ -244,6 +245,24 @@ export function createRenderSnapshot(
     }
     if (world3D && resolvedParent?.world3D)
       world3D = multiply4(resolvedParent.world3D, world3D);
+    next = { ...next, world3D };
+    resolved.set(item.source.id, next);
+    return next;
+  };
+  const worldLayers = raw.map((item) => resolve(item));
+  const cameraFrame = worldLayers.find(
+    (item) => item.source.id === cameraLayer?.id,
+  );
+  if (cameraLayer && cameraFrame?.world3D)
+    camera = cameraForLayer(
+      cameraLayer,
+      time,
+      composition.width,
+      composition.height,
+      cameraFrame.world3D,
+    );
+  const projectionView = needs3D.size ? cameraView(camera) : undefined;
+  const projectedLayers = worldLayers.map((item) => {
     const quad = item.source.editor?.is3D
       ? (
           [
@@ -252,20 +271,20 @@ export function createRenderSnapshot(
             [item.source.width / 2, item.source.height / 2, 0],
             [-item.source.width / 2, item.source.height / 2, 0],
           ] as Point3[]
-        ).map((point) =>
-          projectPoint(point4(world3D!, point), camera, projectionView),
+        ).map((p) =>
+          projectPoint(point4(item.world3D!, p), camera, projectionView),
         )
       : undefined;
-    next = {
-      ...next,
-      world3D,
+    return {
+      ...item,
       quad: quad?.every(Boolean) ? (quad as ProjectedPoint[]) : undefined,
       active:
-        next.active && (!item.source.editor?.is3D || quad?.every(Boolean)),
+        item.active &&
+        (item.source.type === 'model' ||
+          !item.source.editor?.is3D ||
+          quad?.every(Boolean)),
     };
-    resolved.set(item.source.id, next);
-    return next;
-  };
+  });
   const snapshot: RenderSnapshot = {
     project,
     camera,
@@ -276,7 +295,7 @@ export function createRenderSnapshot(
     time,
     selection,
     layers: (() => {
-      const all = raw.map((item) => resolve(item)),
+      const all = projectedLayers,
         planes = all
           .filter((l) => l.source.editor?.is3D)
           .sort(

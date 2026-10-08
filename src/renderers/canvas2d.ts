@@ -1,3 +1,6 @@
+import { drawModelMesh } from './model-mesh';
+import { cameraBlur } from '../core/camera-optics';
+import { point4 } from '../core/perspective';
 import { GraphExecutionCache } from '../core/compositing-cache';
 import { isIdentityGraph } from '../core/compositing-compiler';
 import { compositingSourceKey } from './compositing-source-key';
@@ -72,29 +75,32 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
         this.#assetVersion++;
       }
     await Promise.all(
-      assets.map(async (asset) => {
-        if (this.#images.has(asset.id) || this.#failedLinked.has(asset)) return;
-        const pending = this.#pending.get(asset.id);
-        if (pending) await pending;
-        if (this.#desired.get(asset.id) !== asset.dataUrl) return;
-        if (this.#images.get(asset.id)?.url === asset.dataUrl) return;
-        const promise = (async () => {
-          const bitmap = await createImageBitmap(await assetImageBlob(asset));
-          if (this.#desired.get(asset.id) === asset.dataUrl) {
-            this.#images.set(asset.id, { url: asset.dataUrl, bitmap });
-            this.#assetVersion++;
-          } else bitmap.close();
-        })();
-        this.#pending.set(asset.id, promise);
-        try {
-          await promise;
-        } catch (error) {
-          if (!asset.source) throw error;
-          this.#failedLinked.add(asset);
-        } finally {
-          this.#pending.delete(asset.id);
-        }
-      }),
+      assets
+        .filter((a) => !a.mesh)
+        .map(async (asset) => {
+          if (this.#images.has(asset.id) || this.#failedLinked.has(asset))
+            return;
+          const pending = this.#pending.get(asset.id);
+          if (pending) await pending;
+          if (this.#desired.get(asset.id) !== asset.dataUrl) return;
+          if (this.#images.get(asset.id)?.url === asset.dataUrl) return;
+          const promise = (async () => {
+            const bitmap = await createImageBitmap(await assetImageBlob(asset));
+            if (this.#desired.get(asset.id) === asset.dataUrl) {
+              this.#images.set(asset.id, { url: asset.dataUrl, bitmap });
+              this.#assetVersion++;
+            } else bitmap.close();
+          })();
+          this.#pending.set(asset.id, promise);
+          try {
+            await promise;
+          } catch (error) {
+            if (!asset.source) throw error;
+            this.#failedLinked.add(asset);
+          } finally {
+            this.#pending.delete(asset.id);
+          }
+        }),
     );
   }
   dispose(): void {
@@ -160,12 +166,46 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
         }
       }
       ctx.globalAlpha = item.opacity;
+      if (input.camera) {
+        const blur =
+          layer.editor?.is3D && item.world3D
+            ? cameraBlur(input.camera, point4(item.world3D, [0, 0, 0]))
+            : 0;
+        const exposure = 2 ** (input.camera.exposure ?? 0);
+        ctx.filter =
+          blur > 0 || exposure !== 1
+            ? `${blur > 0 ? `blur(${blur}px) ` : ''}brightness(${exposure})`
+            : 'none';
+      }
       ctx.globalCompositeOperation =
         item.source.editor?.blendMode === 'add'
           ? 'lighter'
           : item.source.editor?.blendMode === 'normal' || !item.source.editor
             ? 'source-over'
             : item.source.editor.blendMode;
+      if (layer.type === 'model' && item.world3D && input.camera) {
+        const mesh = input.project?.assets.find(
+          (a) => a.id === layer.assetId,
+        )?.mesh;
+        if (mesh) {
+          const modelSurface = surface(width, height),
+            modelContext = modelSurface.getContext('2d');
+          if (modelContext) {
+            if (outputScale !== 1) modelContext.scale(outputScale, outputScale);
+            drawModelMesh(modelContext, mesh, item.world3D, input.camera);
+            const processed = renderCompositingGraph(
+              modelSurface,
+              { ...layer, width, height },
+              input.time,
+              0,
+            ).output;
+            ctx.drawImage(processed, 0, 0, input.width, input.height);
+          }
+        }
+        ctx.restore();
+        continue;
+      }
+
       const x = -layer.width / 2;
       const y = -layer.height / 2;
       let nested: HTMLCanvasElement | undefined;

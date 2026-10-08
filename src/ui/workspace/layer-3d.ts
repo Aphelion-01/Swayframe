@@ -8,7 +8,12 @@ export function toggleLayer3D(
 ) {
   const c = activeComposition(store.getSnapshot().project);
   const layers = c.layers.filter(
-    (l) => ids.includes(l.id) && l.editor && l.type !== 'camera' && !l.locked,
+    (l) =>
+      ids.includes(l.id) &&
+      l.editor &&
+      l.type !== 'camera' &&
+      l.type !== 'model' &&
+      !l.locked,
   );
   const next = enabled ?? !layers[0]?.editor?.is3D;
   return store.run(

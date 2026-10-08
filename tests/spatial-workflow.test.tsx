@@ -365,7 +365,7 @@ it('触控板双指绕转、Shift双指屏幕等距平移、捏合高响应缩�
     shiftKey: false,
   };
   const orbit = navigateSpatialWheel(defaultSpatialView, wheel, 800, 600);
-  expect(orbit.yaw).toBeCloseTo(defaultSpatialView.yaw + 0.12);
+  expect(orbit.yaw).toBeCloseTo(defaultSpatialView.yaw - 0.12);
   expect(orbit.distance).toBe(defaultSpatialView.distance);
   expect(orbit.target).toEqual([0, 0, 0]);
   const pan = navigateSpatialWheel(

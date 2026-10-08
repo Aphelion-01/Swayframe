@@ -40,8 +40,12 @@ export const propertySchema = <T extends z.ZodType>(value: T) =>
               interpolation: interpolationSchema,
               incoming: curvePointSchema.optional(),
               outgoing: curvePointSchema.optional(),
-              spatialIncoming: vec2Schema.optional(),
-              spatialOutgoing: vec2Schema.optional(),
+              spatialIncoming: z
+                .union([vec2Schema, z.array(z.number().finite()).length(3)])
+                .optional(),
+              spatialOutgoing: z
+                .union([vec2Schema, z.array(z.number().finite()).length(3)])
+                .optional(),
             })
             .strict(),
         )
@@ -196,6 +200,13 @@ export const editorSchema = z
               'sides',
             ].includes(key) ||
               v >= 0);
+        if (key === 'cameraAperture')
+          valid = typeof v === 'number' && v >= 0.1 && v <= 128;
+        if (key === 'cameraFocusDistance')
+          valid = typeof v === 'number' && v >= 1 && v <= 1000000;
+        if (key === 'cameraExposure')
+          valid = typeof v === 'number' && v >= -10 && v <= 10;
+        if (key === 'cameraDepthOfField') valid = v === 0 || v === 1;
         if (!valid)
           ctx.addIssue({
             code: 'custom',
@@ -240,7 +251,11 @@ export const layerSchema = z.discriminatedUnion('type', [
     })
     .strict(),
   z
-    .object({ ...layerBase, type: z.literal('image'), assetId: idSchema })
+    .object({
+      ...layerBase,
+      type: z.enum(['image', 'model']),
+      assetId: idSchema,
+    })
     .strict(),
   z
     .object({
@@ -254,7 +269,26 @@ export const assetSchema = z
   .object({
     id: idSchema,
     name: z.string().min(1).max(200),
-    mimeType: z.enum(['image/png', 'image/jpeg', 'image/webp', 'image/gif']),
+    mimeType: z.enum([
+      'image/png',
+      'image/jpeg',
+      'image/webp',
+      'image/gif',
+      'model/x-swayframe-mesh',
+    ]),
+    mesh: z
+      .object({
+        vertices: z.array(z.number().finite()).min(9).max(180000),
+        colors: z.array(z.number().min(0).max(1)).min(3).max(60000),
+        format: z.string().max(20),
+      })
+      .strict()
+      .refine(
+        (m) =>
+          m.vertices.length % 9 === 0 &&
+          m.colors.length === m.vertices.length / 3,
+      )
+      .optional(),
     dataUrl: z.string().max(14_000_000),
     source: z
       .object({
@@ -279,12 +313,15 @@ export const assetSchema = z
   .strict()
   .refine(
     (asset) =>
-      asset.source
-        ? /^swayframe-asset:\/\/local\/[a-f0-9]{64}$/.test(asset.dataUrl)
-        : asset.dataUrl.startsWith(`data:${asset.mimeType};base64,`) &&
-          /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/]+=*$/.test(
-            asset.dataUrl,
-          ),
+      asset.mimeType === 'model/x-swayframe-mesh'
+        ? !!asset.mesh && !asset.source && asset.dataUrl === ''
+        : !asset.mesh &&
+          (asset.source
+            ? /^swayframe-asset:\/\/local\/[a-f0-9]{64}$/.test(asset.dataUrl)
+            : asset.dataUrl.startsWith(`data:${asset.mimeType};base64,`) &&
+              /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/]+=*$/.test(
+                asset.dataUrl,
+              )),
     'Asset MIME 或引用无效',
   );
 export const compositionSchema = z
@@ -301,7 +338,7 @@ export const compositionSchema = z
   .strict();
 export const projectSchema = z
   .object({
-    schemaVersion: z.literal('0.6.0'),
+    schemaVersion: z.literal('0.7.0'),
     id: idSchema,
     name: z.string().min(1).max(200),
     compositions: z.array(compositionSchema).min(1).max(100),
@@ -352,11 +389,18 @@ export const projectSchema = z
       c.layers.forEach((layer, li) => {
         const path = ['compositions', ci, 'layers', li];
         addId(layer.id, [...path, 'id']);
+        if (layer.type === 'model' && !layer.editor?.is3D)
+          issue('三维模型必须启用三维空间', [...path, 'editor', 'is3D']);
         if (
-          layer.type === 'image' &&
-          !project.assets.some((a) => a.id === layer.assetId)
+          ['image', 'model'].includes(layer.type) &&
+          'assetId' in layer &&
+          !project.assets.some(
+            (a) =>
+              a.id === layer.assetId &&
+              (layer.type === 'model' ? !!a.mesh : !a.mesh),
+          )
         )
-          issue('引用的 Image asset 不存在', [...path, 'assetId']);
+          issue('引用的素材不存在或类型不匹配', [...path, 'assetId']);
         if (
           layer.type === 'precomp' &&
           !project.compositions.some((v) => v.id === layer.compositionId)
@@ -387,11 +431,19 @@ export const projectSchema = z
               issue('关键帧时间重复或超出合成时长', [...kp, 'time']);
             if (
               (frame.spatialIncoming || frame.spatialOutgoing) &&
-              (key !== 'transform.position' ||
+              (![
+                'transform.position',
+                'editor.properties.position3D',
+                'editor.properties.cameraPosition',
+              ].includes(key) ||
                 typeof frame.value !== 'object' ||
-                Array.isArray(frame.value))
+                [frame.spatialIncoming, frame.spatialOutgoing].some(
+                  (control) =>
+                    control &&
+                    Array.isArray(control) !== Array.isArray(frame.value),
+                ))
             )
-              issue('空间控制点只支持二维位置属性', kp);
+              issue('空间控制点必须与位置属性维度一致', kp);
             times.add(frame.time);
           });
         }

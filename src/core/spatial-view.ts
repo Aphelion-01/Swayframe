@@ -164,7 +164,7 @@ export function navigateSpatialWheel(
       ) as unknown as Point3,
     };
   }
-  return orbitSpatialView(view, dx * 0.006, dy * 0.006);
+  return orbitSpatialView(view, -dx * 0.006, dy * 0.006);
 }
 export function unwrapAngle(next: number, previous: number) {
   return Math.atan2(Math.sin(next - previous), Math.cos(next - previous));

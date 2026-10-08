@@ -728,11 +728,13 @@ export function Timeline({ store }: { store: EditorStore }) {
                     name={
                       layer.type === 'text'
                         ? 'text'
-                        : layer.type === 'image'
-                          ? 'image'
-                          : layer.type === 'shape'
-                            ? 'rectangle'
-                            : 'comp'
+                        : layer.type === 'model'
+                          ? 'cube'
+                          : layer.type === 'image'
+                            ? 'image'
+                            : layer.type === 'shape'
+                              ? 'rectangle'
+                              : 'comp'
                     }
                   />
                   <span className="timeline-layer-text">
