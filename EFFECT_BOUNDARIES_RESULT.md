@@ -33,3 +33,11 @@
 macOS Apple Silicon DMG 与 Windows x64 NSIS 安装包已构建。两个平台 app.asar SHA256 相同，内含 package.json 版本均为0.9.18，main.cjs与本次desktop-dist构建完全一致。macOS包实际启动至0.9.18欢迎页，独立测试目录新建工程、创建矩形、打开统一效果浏览器成功；未使用用户工程或用户偏好文件。Windows安装器MZ签名与内嵌归档检查通过，未做Windows实机运行。证据 `artifacts.json`、`native.png` 和打包日志。
 
 DMG 经 hdiutil verify 检查通过；安装包 SHA256 见 `outputs/effect-boundaries/SHA256.txt`。发布版本使用独立0.9.18文件名，旧版安装器不被覆盖。
+
+### macOS 发布镜像压缩
+
+网络上传较大的默认镜像未得到完成确认，最终发布采用同一镜像经 hdiutil ULMO 无损压缩的版本，约106MB。压缩镜像通过 hdiutil verify，临时只读挂载后的 app.asar 与已启动验收构建 SHA256 完全一致：`abbb0e81f6e4b18bd5922d2acac9790036fb6ff1b773f803e32d67e18334960e`。应用代码与功能不变，原默认镜像保留为本地 standard 备份；发布校验和已更新为最终镜像。
+
+## GitHub 发布完成
+
+已公开发布预发布版本：https://github.com/Aphelion-01/Swayframe/releases/tag/v0.9.18 。读回确认 isDraft=false、isPrerelease=true，包含 macOS Apple Silicon DMG（105,913,911 bytes）、Windows x64 NSIS（117,726,154 bytes）和 SHA256 清单。三个附件的 GitHub 服务端 digest 与本地逐一一致。源码版本标签绑定42c519f；最终网络发布与压缩镜像证据另行提交，不修改应用代码。详见 github-published.json、github-asset-checks.json 与最终 SHA256.txt。
