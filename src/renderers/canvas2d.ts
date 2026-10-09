@@ -39,6 +39,7 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
       drawHandles: boolean;
       outputScale: number;
       transparentBackground: boolean;
+      effectScale: number;
     }
   >();
   #content = new WeakMap<
@@ -133,9 +134,12 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
     drawHandles = true,
     outputScale = 1,
     transparentBackground = false,
+    effectScale = 1,
   ): void {
     if (!Number.isFinite(outputScale) || outputScale <= 0 || outputScale > 1)
       throw new Error('渲染缩放无效');
+    if (!Number.isFinite(effectScale) || effectScale <= 0 || effectScale > 1)
+      throw new Error('效果采样无效');
     const width = Math.max(1, Math.round(input.width * outputScale));
     const height = Math.max(1, Math.round(input.height * outputScale));
     const last = this.#last.get(target);
@@ -146,6 +150,7 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
       last.drawHandles === drawHandles &&
       last.outputScale === outputScale &&
       last.transparentBackground === transparentBackground &&
+      last.effectScale === effectScale &&
       target.width === width &&
       target.height === height
     )
@@ -219,6 +224,7 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
               undefined,
               '',
               input.fps ?? 30,
+              effectScale,
             );
             if (layer.editor?.graph)
               this.#graphDiagnostics.set(
@@ -251,6 +257,11 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
               input.project,
             ),
             nested,
+            1,
+            true,
+            1,
+            false,
+            effectScale,
           );
         }
       }
@@ -363,6 +374,7 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
             slot.cache,
             sourceKey,
             input.fps ?? 30,
+            effectScale,
           );
           processed = execution.output;
           if (layer.editor?.graph) {
@@ -490,6 +502,7 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
       drawHandles,
       outputScale,
       transparentBackground,
+      effectScale,
     });
   }
 }

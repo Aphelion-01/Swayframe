@@ -1,5 +1,6 @@
 import { ShapePathOverlay } from './ShapePathOverlay';
 import { publishRenderPreview } from './RenderPreviewBar';
+import { previewEffectScale } from '../renderers/preview-quality';
 import { PreviewFrameCache } from './preview-frame-cache';
 import { MotionPathOverlay } from './MotionPathOverlay';
 import { SpatialViewport } from './SpatialViewport';
@@ -287,6 +288,7 @@ export function Canvas({ store }: { store: EditorStore }) {
     'project',
     'selection',
     'time',
+    'playing',
     'zoom',
     'transformSettings',
     'autoKeyframes',
@@ -296,6 +298,12 @@ export function Canvas({ store }: { store: EditorStore }) {
     'renderRevision',
     'spatialGizmoMode',
   ]);
+  const [settledTime, setSettledTime] = useState(view.time);
+  useEffect(() => {
+    if (view.playing) return;
+    const timer = window.setTimeout(() => setSettledTime(view.time), 120);
+    return () => window.clearTimeout(timer);
+  }, [view.time, view.playing]);
   const spatialGizmoMode = view.spatialGizmoMode ?? 'translate';
   const setSpatialGizmoMode = (mode: SpatialGizmoMode) =>
     store.setSpatialGizmoMode(mode);
@@ -666,6 +674,10 @@ export function Canvas({ store }: { store: EditorStore }) {
       view.preview ||
       rawRenderProject !== view.project
     );
+    const effectScale = previewEffectScale(
+      input,
+      transient || view.playing || settledTime !== view.time,
+    );
     frameCache.current.prepare(renderProject);
     const key = JSON.stringify([
       c.id,
@@ -674,6 +686,7 @@ export function Canvas({ store }: { store: EditorStore }) {
       view.zoom,
       view.selection,
       spatialSelection,
+      effectScale,
     ]);
     if (
       !transient &&
@@ -703,8 +716,11 @@ export function Canvas({ store }: { store: EditorStore }) {
               ),
             )
           : 1,
+        false,
+        effectScale,
       );
-      if (!transient) frameCache.current.put(key, view.time, canvas);
+      if (!transient && effectScale === 1)
+        frameCache.current.put(key, view.time, canvas);
     }
     publishRenderPreview({
       store,
@@ -712,7 +728,8 @@ export function Canvas({ store }: { store: EditorStore }) {
       times: frameCache.current.times(),
       ms: performance.now() - start,
       cached: !!cached,
-      preview: transient,
+      preview: transient || effectScale < 1,
+      effectScale,
     });
   }, [
     input,
@@ -725,6 +742,8 @@ export function Canvas({ store }: { store: EditorStore }) {
     view.preview,
     view.selection,
     view.time,
+    view.playing,
+    settledTime,
     renderProject,
     store,
   ]);

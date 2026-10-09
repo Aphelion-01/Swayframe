@@ -308,3 +308,23 @@ it('bounds time, response size and rejects text-only vision, unsafe URLs and mal
     }),
   ).rejects.toBeInstanceOf(AIError);
 });
+it('accepts pasted full API endpoints without duplicating chat/completions or models', async () => {
+  const fetcher = vi.fn<typeof fetch>(
+    async () => new Response(JSON.stringify(raw)),
+  );
+  for (const suffix of [
+    '/chat/completions',
+    '/chat/completions/',
+    '/models',
+    '',
+  ]) {
+    await new OpenAICompatibleProvider(
+      { ...config, baseUrl: config.baseUrl + suffix },
+      credentials,
+      fetcher,
+    ).chat({ model: 'model', messages: [{ role: 'user', content: 'test' }] });
+    expect(fetcher.mock.lastCall?.[0]).toBe(
+      'https://example.com/v1/chat/completions',
+    );
+  }
+});

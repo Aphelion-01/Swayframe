@@ -22,3 +22,5 @@ GUI 与 Agent 共用 Command System；复杂操作走 Transaction；Intelligence
 ## V0.3 Unified Effect Engine
 
 详见 EFFECT_ENGINE_ARCHITECTURE.md、PROGRAMMABLE_EFFECT_SPEC.md、EFFECT_FORGE_AGENT_SPEC.md。VisualCapabilityRegistry 是统一能力协议；Graph 是处理实例唯一数据源，Property 是唯一动画系统。径向渐变复用同一像素算法；自定义包由受控声明式 CPU Runtime 执行并内嵌精确内容哈希。Preview 与 Export 经过同一 CanvasGraphBackend；导出拒绝未解析/未信任/超限效果。Forge Workspace 与效果库独立于 Scene，接受后只生成共享 Command/Transaction。
+
+0.9.18 补齐交互采样预览、真实外部模型生成验收和桌面安装包。停止后恢复完整像素，导出始终完整采样；缓存区分采样倍率，CPU 资源预算不放宽。外部模型包仍经校验、像素反馈与 AgentTransaction。实施与证据见 `EFFECT_BOUNDARIES_RESULT.md`。

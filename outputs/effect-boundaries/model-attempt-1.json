@@ -1,0 +1,208 @@
+{
+  "source": {
+    "category": "generator",
+    "dependencies": [],
+    "description": "Simple animated blue-violet procedural wave band: a single sinusoidal band sweeping vertically over time.",
+    "format": "swayframe.effect.v1",
+    "id": "liveWaveTexture",
+    "inputs": [],
+    "name": "Live Wave Texture",
+    "outputs": [
+      {
+        "id": "out",
+        "name": "Image",
+        "type": "Image"
+      }
+    ],
+    "parameters": [
+      {
+        "animatable": true,
+        "defaultValue": 6,
+        "id": "density",
+        "max": 24,
+        "min": 1,
+        "name": "Density",
+        "step": 0.5,
+        "type": "float",
+        "unit": ""
+      },
+      {
+        "animatable": true,
+        "defaultValue": 1.5,
+        "id": "speed",
+        "max": 10,
+        "min": 0,
+        "name": "Speed",
+        "step": 0.1,
+        "type": "float",
+        "unit": ""
+      },
+      {
+        "animatable": true,
+        "defaultValue": [
+          0.12,
+          0.2,
+          0.95,
+          1
+        ],
+        "id": "colorA",
+        "name": "Color A",
+        "type": "color"
+      },
+      {
+        "animatable": true,
+        "defaultValue": [
+          0.72,
+          0.25,
+          1,
+          1
+        ],
+        "id": "colorB",
+        "name": "Color B",
+        "type": "color"
+      }
+    ],
+    "program": {
+      "instructions": [
+        {
+          "component": 0,
+          "op": "parameter",
+          "parameter": "density"
+        },
+        {
+          "op": "constant",
+          "value": 6.2831853
+        },
+        {
+          "args": [
+            0,
+            1
+          ],
+          "op": "multiply"
+        },
+        {
+          "op": "v"
+        },
+        {
+          "args": [
+            2,
+            3
+          ],
+          "op": "multiply"
+        },
+        {
+          "component": 0,
+          "op": "parameter",
+          "parameter": "speed"
+        },
+        {
+          "op": "time"
+        },
+        {
+          "args": [
+            5,
+            6
+          ],
+          "op": "multiply"
+        },
+        {
+          "args": [
+            4,
+            7
+          ],
+          "op": "subtract"
+        },
+        {
+          "args": [
+            8
+          ],
+          "op": "sin"
+        },
+        {
+          "op": "constant",
+          "value": 0.5
+        },
+        {
+          "args": [
+            9,
+            10
+          ],
+          "op": "multiply"
+        },
+        {
+          "args": [
+            11,
+            10
+          ],
+          "op": "add"
+        },
+        {
+          "component": 0,
+          "op": "parameter",
+          "parameter": "colorA"
+        },
+        {
+          "component": 0,
+          "op": "parameter",
+          "parameter": "colorB"
+        },
+        {
+          "args": [
+            12,
+            13,
+            14
+          ],
+          "op": "mix"
+        },
+        {
+          "component": 1,
+          "op": "parameter",
+          "parameter": "colorA"
+        },
+        {
+          "component": 1,
+          "op": "parameter",
+          "parameter": "colorB"
+        },
+        {
+          "args": [
+            12,
+            16,
+            17
+          ],
+          "op": "mix"
+        },
+        {
+          "component": 2,
+          "op": "parameter",
+          "parameter": "colorA"
+        },
+        {
+          "component": 2,
+          "op": "parameter",
+          "parameter": "colorB"
+        },
+        {
+          "args": [
+            12,
+            19,
+            20
+          ],
+          "op": "mix"
+        },
+        {
+          "op": "constant",
+          "value": 1
+        }
+      ],
+      "rgba": [
+        15,
+        18,
+        21,
+        22
+      ]
+    },
+    "runtime": "declarative-pixel-v1",
+    "version": "1.0.0"
+  }
+}

@@ -119,13 +119,15 @@ export function compilePixelProgram(p: EffectPackage) {
             value = ctx.frame;
             break;
           case 6:
-            value = ctx.width;
+            value = ctx.logicalWidth ?? ctx.width;
             break;
           case 7:
-            value = ctx.height;
+            value = ctx.logicalHeight ?? ctx.height;
             break;
           case 8:
-            value = ctx.width / ctx.height;
+            value =
+              (ctx.logicalWidth ?? ctx.width) /
+              (ctx.logicalHeight ?? ctx.height);
             break;
           case 9:
             value = input![pixel + component[i]!]! / 255;

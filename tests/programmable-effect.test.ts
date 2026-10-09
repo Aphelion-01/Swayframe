@@ -123,3 +123,30 @@ it('keeps procedural time in graph cache keys and falls back on missing package'
     0,
   );
 });
+it('returns actionable instruction diagnostics for model repair instead of accepting unsafe references', () => {
+  const s = organicTextureSource();
+  expect(() =>
+    sealEffect({
+      ...s,
+      program: {
+        instructions: [
+          { op: 'constant', value: 1 },
+          { op: 'multiply', args: [0] },
+        ],
+        rgba: [0, 0, 0, 0],
+      },
+    }),
+  ).toThrow('multiply) 需要2个args');
+  expect(() =>
+    sealEffect({
+      ...s,
+      program: {
+        instructions: [
+          { op: 'constant', value: 1 },
+          { op: 'sin', args: [1] },
+        ],
+        rgba: [0, 0, 0, 0],
+      },
+    }),
+  ).toThrow('禁止自身或向后引用');
+});

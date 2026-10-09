@@ -19,11 +19,16 @@ export class CanvasGraphBackend implements NodeBackend<HTMLCanvasElement> {
     readonly layer: Layer,
     readonly padding: number,
     readonly fps = 30,
+    readonly effectScale = 1,
   ) {}
   get cacheKey() {
-    return [this.layer.width, this.layer.height, this.padding, this.fps].join(
-      ':',
-    );
+    return [
+      this.layer.width,
+      this.layer.height,
+      this.padding,
+      this.fps,
+      this.effectScale,
+    ].join(':');
   }
   capability(id: string, params: Readonly<Record<string, AnimValue>>) {
     if (id !== 'radialGradient') throw Error('未知视觉能力');
@@ -42,6 +47,12 @@ export class CanvasGraphBackend implements NodeBackend<HTMLCanvasElement> {
     context: EffectContext,
     input?: HTMLCanvasElement,
   ) {
+    if (
+      !Number.isFinite(this.effectScale) ||
+      this.effectScale <= 0 ||
+      this.effectScale > 1
+    )
+      throw Error('效果采样无效');
     if (!isEffectTrusted(effect.contentHash))
       throw Error('自定义效果尚未信任，请在效果属性中确认启用');
     const width = Math.ceil(this.layer.width),
@@ -53,15 +64,55 @@ export class CanvasGraphBackend implements NodeBackend<HTMLCanvasElement> {
         frame: Math.round(context.time * this.fps),
       };
     assertEffectContext(effect, runtimeContext);
+    if (this.effectScale === 1) {
+      const out = this.transparent(),
+        ctx = out.getContext('2d')!;
+      const source = input
+        ?.getContext('2d')!
+        .getImageData(this.padding, this.padding, width, height).data;
+      const pixels = ctx.createImageData(width, height);
+      pixels.data.set(
+        compileEffect(effect).render(params, runtimeContext, source),
+      );
+      ctx.putImageData(pixels, this.padding, this.padding);
+      return out;
+    }
+    const sampleWidth = Math.max(1, Math.round(width * this.effectScale)),
+      sampleHeight = Math.max(1, Math.round(height * this.effectScale)),
+      sampled = surface(sampleWidth, sampleHeight),
+      sampleContext = sampled.getContext('2d')!;
+    if (input)
+      sampleContext.drawImage(
+        input,
+        this.padding,
+        this.padding,
+        width,
+        height,
+        0,
+        0,
+        sampleWidth,
+        sampleHeight,
+      );
+    const source = input
+      ? sampleContext.getImageData(0, 0, sampleWidth, sampleHeight).data
+      : undefined;
+    const data = compileEffect(effect).render(
+      params,
+      {
+        ...runtimeContext,
+        width: sampleWidth,
+        height: sampleHeight,
+        logicalWidth: width,
+        logicalHeight: height,
+      },
+      source,
+    );
+    const pixels = sampleContext.createImageData(sampleWidth, sampleHeight);
+    pixels.data.set(data);
+    sampleContext.putImageData(pixels, 0, 0);
     const out = this.transparent(),
       ctx = out.getContext('2d')!;
-    const source = input
-      ?.getContext('2d')!
-      .getImageData(this.padding, this.padding, width, height).data;
-    const data = compileEffect(effect).render(params, runtimeContext, source);
-    const pixels = ctx.createImageData(width, height);
-    pixels.data.set(data);
-    ctx.putImageData(pixels, this.padding, this.padding);
+    ctx.drawImage(sampled, this.padding, this.padding, width, height);
     return out;
   }
   source() {
@@ -194,13 +245,14 @@ export function renderCompositingGraph(
   cache?: GraphExecutionCache<HTMLCanvasElement>,
   sourceKey = '',
   fps = 30,
+  effectScale = 1,
 ) {
   const graph = layer.editor?.graph;
   return graph
     ? executeGraph(
         compileGraph(graph),
         time,
-        new CanvasGraphBackend(content, layer, padding, fps),
+        new CanvasGraphBackend(content, layer, padding, fps, effectScale),
         cache,
         sourceKey,
       )

@@ -92,7 +92,7 @@ export function registerEffectForgeTools(
   );
   registry.register(
     'effect_createDraft',
-    '生成新的受控声明式像素效果草稿；只能使用公开指令，不能含JS/WGSL或系统调用；需要validate compile preview evaluate后才可申请应用。',
+    '生成新的受控声明式像素效果草稿；只能使用公开指令，不能含JS/WGSL或系统调用；需要validate compile preview evaluate后才可申请应用。args是从0计数的先前指令索引，不是直接数值。constant用value；parameter用parameter和component。u/v/time/frame/width/height/aspect/input/constant/parameter无args；sin/cos/abs/sqrt/floor一个args；add/subtract/multiply/divide/min/max两个args；mix/clamp/smoothstep/noise三个args。mix(a,b,t)=a+(b-a)*t；clamp(x,min,max)；smoothstep(edge0,edge1,x)。RGBA输出和color默认值使用0..1，color需四个分量。noise需整数seed参数。示例instructions=[{op:"u"},{op:"constant",value:6},{op:"multiply",args:[0,1]},{op:"sin",args:[2]}]。',
     z.object({ source }).strict(),
     'READ',
     {

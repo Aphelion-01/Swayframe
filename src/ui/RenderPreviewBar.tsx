@@ -10,6 +10,7 @@ export interface RenderPreviewStatus {
   ms: number;
   cached: boolean;
   preview: boolean;
+  effectScale?: number;
 }
 const latest = new WeakMap<EditorStore, RenderPreviewStatus>();
 export function publishRenderPreview(status: RenderPreviewStatus) {
@@ -36,7 +37,7 @@ export function RenderPreviewBar({ store }: { store: EditorStore }) {
     <div
       className="render-preview-strip"
       aria-label="实时渲染预览条"
-      title="绿色：已缓存画面；空白：尚未缓存。修改工程后失效，按内存预算淘汰。"
+      title="绿色：已缓存画面；空白：尚未缓存。修改工程后失效，按内存预算淘汰。交互时自定义效果降低采样，停止后恢复完整画质；导出始终使用完整画质。"
     >
       <div className="render-preview-track">
         {status?.times.map((time, i) => (
@@ -52,7 +53,7 @@ export function RenderPreviewBar({ store }: { store: EditorStore }) {
       </div>
       <span>
         {status
-          ? `${status.preview ? '参数实时预览' : status.cached ? '缓存回放' : '已渲染'} · ${status.ms.toFixed(1)} ms · ${status.times.length} 帧缓存`
+          ? `${status.effectScale && status.effectScale < 1 ? `交互预览 · 1/${Math.round(1 / status.effectScale)} 采样` : status.preview ? '参数实时预览' : status.cached ? '缓存回放' : '已渲染'} · ${status.ms.toFixed(1)} ms · ${status.times.length} 帧缓存`
           : '等待渲染'}
       </span>
     </div>

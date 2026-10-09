@@ -311,3 +311,9 @@ output-settings 提供合成与导出共用的尺寸/帧率预设、适配矩形
 ## V0.3 Unified Effect Engine
 
 统一能力注册表为内置滤镜、径向渐变和声明式效果定义端口与参数。Graph 继续作为实例唯一来源；Inspector 和 Timeline 复用标准 Property。自定义效果包内嵌于节点，使用精确版本和 SHA256，受限指令运行时不执行任意脚本。缓存区分参数、时间、尺寸、fps 和输入。效果草稿/库/信任通过平台适配器保存，不进入 Scene。应用走 Command/AgentTransaction，保存到正式库需要用户明确操作；导出遇到效果错误立即停止。细节见根目录 EFFECT_ENGINE_ARCHITECTURE.md 与 PROGRAMMABLE_EFFECT_SPEC.md。
+
+## 0.9.18 交互渲染与外部生成边界
+
+preview-quality 是纯 UI 渲染策略：播放、参数预览和时间拖动按声明式效果总运算量选择 1、1/2、1/4 到 1/16 采样，目标约四百万指令像素积。停止时间变化 120ms 后恢复完整采样。CanvasGraphBackend 在原尺寸预算验证后生成缩小像素、放大合成；width/height/aspect 保留逻辑尺寸，u/v 使用采样位置。Graph 与 Canvas 缓存均包含采样倍率，低采样帧不标记为完整缓存。嵌套合成继续保留原透明度/背景语义。导出从不调用交互策略，默认完整采样；未放宽执行预算、信任或错误阻止导出的约束。这是有损的交互预览，不承诺任意程序实时运行，也不是 GPU 实现。
+
+OpenAICompatibleProvider 接受 API 根地址或完整 chat/completions、models 地址，避免重复路径。桌面服务的外部请求上限为 120 秒，取消仍立即中止；现有凭据始终通过安全存储读取。effect_createDraft 的 DSL 说明明确 arity、索引、颜色与 mix 语义；校验错误返回具体指令和可修复原因，不替模型执行脚本或自动改源码。scripts/effect-forge-live.ts 为显式运行的真实服务验收，只发送合成请求，在临时 CommandSystem 中验证 AgentTransaction，不保存用户工程或正式效果库。

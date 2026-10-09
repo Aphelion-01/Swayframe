@@ -121,6 +121,9 @@ export interface EffectContext {
   frame: number;
   width: number;
   height: number;
+  /** Preview-only logical dimensions; sampling dimensions remain width/height. */
+  logicalWidth?: number;
+  logicalHeight?: number;
 }
 export const runtimeLimits = {
   maxPixels: 4194304,
@@ -181,8 +184,14 @@ export function validateEffect(raw: unknown): EffectPackage {
   )
     throw Error('效果端口不兼容');
   p.program.instructions.forEach((n, i) => {
-    if ((n.args?.length ?? 0) !== arity[n.op] || n.args?.some((a) => a >= i))
-      throw Error(`指令${i}引用或参数数量无效`);
+    if ((n.args?.length ?? 0) !== arity[n.op])
+      throw Error(
+        `指令${i} (${n.op}) 需要${arity[n.op]}个args引用，实际${n.args?.length ?? 0}个；value只适用于constant，参数使用parameter字段`,
+      );
+    if (n.args?.some((a) => a >= i))
+      throw Error(
+        `指令${i} (${n.op}) args=[${n.args.join(',')}]只能引用0到${i - 1}的先前指令，禁止自身或向后引用`,
+      );
     if (n.op === 'constant' && n.value === undefined) throw Error('常量缺失');
     if (n.op === 'parameter') {
       const spec = p.parameters.find((s) => s.id === n.parameter);
@@ -243,6 +252,11 @@ export function assertEffectContext(
   if (
     !Number.isFinite(ctx.time) ||
     !Number.isFinite(ctx.frame) ||
+    [ctx.logicalWidth, ctx.logicalHeight].some(
+      (n) =>
+        n !== undefined &&
+        (!Number.isInteger(n) || n < 1 || n > runtimeLimits.maxPixels),
+    ) ||
     !Number.isInteger(ctx.width) ||
     !Number.isInteger(ctx.height) ||
     ctx.width < 1 ||

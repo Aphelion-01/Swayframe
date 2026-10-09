@@ -128,7 +128,9 @@ export class OpenAICompatibleProvider implements AIProvider {
           timeout ? '服务请求超时' : '已停止',
         );
       const result = await this.fetcher(
-        this.config.baseUrl.replace(/\/$/, '') + endpoint,
+        this.config.baseUrl
+          .replace(/\/+$/, '')
+          .replace(/\/(?:chat\/completions|models)$/, '') + endpoint,
         {
           method: body === undefined ? 'GET' : 'POST',
           redirect: 'error',
