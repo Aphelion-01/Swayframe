@@ -1,12 +1,6 @@
 // @vitest-environment jsdom
 import { expect, it, beforeAll, afterEach, vi } from 'vitest';
-import {
-  act,
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-} from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { App } from '../src/ui/App';
 import { EditorStore } from '../src/ui/editor-store';
 import {
@@ -46,7 +40,6 @@ it('效果栈双向读取同一节点参数，删除同步；分支不能伪装�
     });
   store.select(l.id);
   render(<App store={store} />);
-  fireEvent.click(screen.getByText('效果与遮罩'));
   expect(screen.getByLabelText('效果2半径')).toBeDefined();
   act(() => {
     store.run('删模糊', [

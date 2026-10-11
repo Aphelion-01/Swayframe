@@ -115,7 +115,7 @@ it('Stop aborts in-flight tool work, discards uncommitted draft and prevents fol
 });
 it('invalid plans, tool failures, verification exhaustion and concurrent edits leave real project unchanged', async () => {
   const malformed = setup();
-  malformed.model.chat.mockResolvedValueOnce({
+  malformed.model.chat.mockResolvedValue({
     text: '',
     model: 'mock',
     toolCalls: [
@@ -137,7 +137,10 @@ it('invalid plans, tool failures, verification exhaustion and concurrent edits l
   }));
   const refinement = setup({ verify });
   await refinement.agent.run('test');
-  expect(verify).toHaveBeenCalledTimes(3);
+  expect(verify).toHaveBeenCalledOnce();
+  expect(refinement.agent.getSnapshot().error).toContain(
+    '没有改变任何实际参数',
+  );
   expect(refinement.commit).not.toHaveBeenCalled();
   let current = createDefaultProject();
   const conflict = setup({
@@ -150,4 +153,142 @@ it('invalid plans, tool failures, verification exhaustion and concurrent edits l
   await conflict.agent.run('test');
   expect(conflict.commit).not.toHaveBeenCalled();
   expect(conflict.agent.getSnapshot().error).toContain('工程已被修改');
+});
+
+it('keeps two plan repair attempts available after three inspection rounds', async () => {
+  const invalid = {
+    ...plan,
+    steps: [{ ...plan.steps[0]!, arguments: { missing: true } }],
+  };
+  const s = setup({
+    permission: (name) => (name === 'inspectComposition' ? 'READ' : 'WRITE'),
+    readTools: () => [
+      { name: 'inspectComposition', description: 'inspect', parameters: {} },
+    ],
+    inspect: async () => ({ inspected: true }),
+    validate: (p) => {
+      if (p.steps[0]?.arguments.missing)
+        throw Error('当前合成中不存在目标图层');
+    },
+  });
+  const read = {
+    text: '',
+    model: 'mock',
+    toolCalls: [{ id: 'read', name: 'inspectComposition', arguments: {} }],
+  };
+  s.model.chat
+    .mockReset()
+    .mockResolvedValueOnce(read)
+    .mockResolvedValueOnce(read)
+    .mockResolvedValueOnce(read)
+    .mockResolvedValueOnce({
+      text: '',
+      model: 'mock',
+      toolCalls: [{ id: 'invalid', name: 'submitPlan', arguments: invalid }],
+    })
+    .mockResolvedValueOnce({
+      text: '',
+      model: 'mock',
+      toolCalls: [{ id: 'valid', name: 'submitPlan', arguments: plan }],
+    });
+  await s.agent.run('创建并移动');
+  expect(s.agent.getSnapshot().error).toBeNull();
+  expect(s.commit).toHaveBeenCalledOnce();
+  expect(s.model.chat).toHaveBeenCalledTimes(5);
+  expect(s.model.chat.mock.calls[4]![1].tools?.map((t) => t.name)).toEqual([
+    'submitPlan',
+  ]);
+  expect(s.model.chat.mock.calls[4]![1].messages.at(-1)?.content).toContain(
+    '当前合成中不存在目标图层',
+  );
+});
+
+it('rejects excess reads without executing them and still asks for a complete plan', async () => {
+  const inspect = vi.fn(async () => ({ inspected: true }));
+  const s = setup({
+    permission: (name) => (name === 'inspectComposition' ? 'READ' : 'WRITE'),
+    readTools: () => [
+      { name: 'inspectComposition', description: 'inspect', parameters: {} },
+    ],
+    inspect,
+  });
+  s.model.chat
+    .mockReset()
+    .mockResolvedValueOnce({
+      text: '',
+      model: 'mock',
+      toolCalls: Array.from({ length: 13 }, (_, i) => ({
+        id: String(i),
+        name: 'inspectComposition',
+        arguments: {},
+      })),
+    })
+    .mockResolvedValueOnce({
+      text: '',
+      model: 'mock',
+      toolCalls: [{ id: 'plan', name: 'submitPlan', arguments: plan }],
+    });
+  await s.agent.run('创建');
+  expect(inspect).toHaveBeenCalledTimes(12);
+  expect(s.agent.getSnapshot().status).toBe('completed');
+  expect(
+    s.agent
+      .getSnapshot()
+      .toolCalls.some(
+        (t) => t.status === 'failed' && t.tool === 'inspectComposition',
+      ),
+  ).toBe(true);
+  expect(s.model.chat.mock.calls[1]![1].tools?.map((t) => t.name)).toEqual([
+    'submitPlan',
+  ]);
+});
+
+it('does not confuse changed capability metadata with an identical invalid plan', async () => {
+  const tagged = (capabilityId: string): AgentPlan => ({
+    ...plan,
+    creation: {
+      intent: '移动',
+      tasks: [
+        {
+          id: 'task',
+          description: '移动',
+          capabilityId,
+          strategy: 'modify-existing',
+          executionDomain: 'scene',
+          stepIds: plan.steps.map((s) => s.id),
+          dependencies: [],
+        },
+      ],
+      warnings: [],
+    },
+  });
+  const s = setup({
+    validate: (p) => {
+      if (p.creation)
+        throw Error(
+          '计划引用了未注册能力：' + p.creation.tasks[0]!.capabilityId,
+        );
+    },
+  });
+  s.model.chat
+    .mockReset()
+    .mockResolvedValueOnce({
+      text: '',
+      model: 'mock',
+      toolCalls: [{ id: 'a', name: 'submitPlan', arguments: tagged('wrongA') }],
+    })
+    .mockResolvedValueOnce({
+      text: '',
+      model: 'mock',
+      toolCalls: [{ id: 'b', name: 'submitPlan', arguments: tagged('wrongB') }],
+    })
+    .mockResolvedValueOnce({
+      text: '',
+      model: 'mock',
+      toolCalls: [{ id: 'c', name: 'submitPlan', arguments: plan }],
+    });
+  await s.agent.run('移动');
+  expect(s.agent.getSnapshot().status).toBe('completed');
+  expect(s.model.chat).toHaveBeenCalledTimes(3);
+  expect(s.commit).toHaveBeenCalledOnce();
 });

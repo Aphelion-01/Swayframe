@@ -11,6 +11,7 @@ import { activeComposition } from '../core/project-model';
 import { nativeAgentFor } from './native-agent-controller';
 import { useEditorSlice } from './use-editor-slice';
 import type { EditorStore } from './editor-store';
+import { CreationReview } from './CreationPrompt';
 const statusLabels: Record<AgentStatus, string> = {
   idle: '就绪',
   thinking: '正在读取需求',
@@ -236,7 +237,7 @@ export function AgentPanel({
               </li>
             ))}
           </ol>
-          {session.pendingConfirmation && (
+          {session.pendingConfirmation && !session.currentPlan.creation && (
             <button
               className="primary"
               onClick={() => {
@@ -261,6 +262,9 @@ export function AgentPanel({
             </button>
           )}
         </section>
+      )}
+      {session.currentPlan?.creation && (
+        <CreationReview agent={agent} onAccepted={() => setPrompt('')} />
       )}
       {session.response && <p className="agent-response">{session.response}</p>}
       {session.error && <p role="alert">{session.error}</p>}
@@ -294,7 +298,12 @@ export function AgentPanel({
         </section>
       )}
       {session.toolCalls.length > 0 && (
-        <details className="agent-activity">
+        <details
+          className="agent-activity"
+          open={
+            session.toolCalls.some((t) => t.status === 'failed') || undefined
+          }
+        >
           <summary>操作记录 · {session.toolCalls.length}</summary>
           {session.toolCalls.slice(-40).map((activity, index) => (
             <div key={index}>
@@ -304,7 +313,32 @@ export function AgentPanel({
                   ? '×'
                   : '…'}{' '}
               {activity.label}
+              {activity.status === 'failed' && activity.result != null && (
+                <details open>
+                  <summary>错误字段与调用参数</summary>
+                  <pre>{JSON.stringify(activity.result, null, 2)}</pre>
+                </details>
+              )}
             </div>
+          ))}
+        </details>
+      )}
+      {!!session.visualReviews?.length && (
+        <details className="agent-preview">
+          <summary>视觉检查与局部修正 · {session.visualReviews.length}</summary>
+          {session.visualReviews.map((r) => (
+            <figure key={r.iteration}>
+              {r.image && (
+                <img
+                  src={r.image}
+                  alt={'实际渲染 · 第 ' + r.iteration + ' 轮'}
+                />
+              )}
+              <figcaption>
+                {r.iteration === 0 ? '初次检查' : '修正 ' + r.iteration} ·{' '}
+                {r.message}
+              </figcaption>
+            </figure>
           ))}
         </details>
       )}

@@ -1,6 +1,12 @@
+import { Input, ALL_FORMATS, BlobSource, CanvasSink } from 'mediabunny';
 import { drawModelMesh } from './model-mesh';
 import { cameraBlur } from '../core/camera-optics';
-import { point4 } from '../core/perspective';
+import {
+  point4,
+  projectPoint,
+  cameraView,
+  type Point3,
+} from '../core/perspective';
 import { GraphExecutionCache } from '../core/compositing-cache';
 import { isIdentityGraph } from '../core/compositing-compiler';
 import { compositingSourceKey } from './compositing-source-key';
@@ -39,6 +45,7 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
       drawHandles: boolean;
       outputScale: number;
       transparentBackground: boolean;
+      effectScale: number;
     }
   >();
   #content = new WeakMap<
@@ -62,10 +69,66 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
   #assetVersion = 0;
   #graphDiagnostics = new Map<string, string>();
   #failedLinked = new WeakSet<Asset>();
+  #mediaAssets: readonly Asset[] = [];
+  #videoInputs = new Map<ID, { input: Input; sink: CanvasSink; url: string }>();
+  #videoFrames = new Map<ID, CanvasImageSource>();
+  #videoTimes = new Map<ID, { time: number; url: string }>();
+  #mediaQueue: Promise<void> = Promise.resolve();
+  #mediaRequest = 0;
+  prepareMedia(snapshot: RenderSnapshot): Promise<void> {
+    const request = ++this.#mediaRequest;
+    const work = async () => {
+      if (request !== this.#mediaRequest) return;
+      for (const layer of snapshot.layers) {
+        if (layer.source.type !== 'video' || layer.active === false) continue;
+        const source = layer.source;
+        const asset = this.#mediaAssets.find((a) => a.id === source.assetId);
+        if (!asset) continue;
+        const localTime = Math.max(0, layer.localTime ?? snapshot.time);
+        const ready = this.#videoTimes.get(source.id);
+        if (ready?.time === localTime && ready.url === asset.dataUrl) continue;
+        let reader = this.#videoInputs.get(asset.id);
+        if (!reader || reader.url !== asset.dataUrl) {
+          reader?.input.dispose();
+          const input = new Input({
+            source: new BlobSource(await assetImageBlob(asset)),
+            formats: ALL_FORMATS,
+          });
+          const track = await input.getPrimaryVideoTrack();
+          if (!track || !(await track.canDecode())) {
+            input.dispose();
+            throw Error('视频轨道无法解码');
+          }
+          reader = { input, sink: new CanvasSink(track), url: asset.dataUrl };
+          this.#videoInputs.set(asset.id, reader);
+        }
+        const frame = await reader.sink.getCanvas(localTime);
+        if (frame) {
+          const canvas = surface(frame.canvas.width, frame.canvas.height);
+          canvas.getContext('2d')?.drawImage(frame.canvas, 0, 0);
+          this.#videoFrames.set(layer.source.id, canvas);
+          this.#videoTimes.set(source.id, {
+            time: localTime,
+            url: asset.dataUrl,
+          });
+          this.#assetVersion++;
+        }
+      }
+    };
+    const pending = this.#mediaQueue.then(work);
+    this.#mediaQueue = pending.catch(() => {});
+    return pending;
+  }
   #images = new Map<ID, { url: string; bitmap: ImageBitmap }>();
   #pending = new Map<ID, Promise<void>>();
   #desired = new Map<ID, string>();
   async syncAssets(assets: readonly Asset[]): Promise<void> {
+    this.#mediaAssets = assets;
+    for (const [id, reader] of this.#videoInputs)
+      if (!assets.some((a) => a.id === id && a.dataUrl === reader.url)) {
+        reader.input.dispose();
+        this.#videoInputs.delete(id);
+      }
     this.#desired = new Map(assets.map((asset) => [asset.id, asset.dataUrl]));
     for (const [id, image] of this.#images)
       if (
@@ -77,7 +140,7 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
       }
     await Promise.all(
       assets
-        .filter((a) => !a.mesh)
+        .filter((a) => !a.mesh && !a.media)
         .map(async (asset) => {
           if (this.#images.has(asset.id) || this.#failedLinked.has(asset))
             return;
@@ -105,6 +168,11 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
     );
   }
   dispose(): void {
+    for (const reader of this.#videoInputs.values()) reader.input.dispose();
+    this.#videoInputs.clear();
+    this.#videoFrames.clear();
+    this.#videoTimes.clear();
+    this.#mediaRequest++;
     this.#desired.clear();
     this.#graphDiagnostics.clear();
     this.#graphLayers.clear();
@@ -113,6 +181,19 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
     this.#last = new WeakMap();
     this.#content = new WeakMap();
   }
+  assertNoEffectErrors(): void {
+    const errors = [...this.#graphDiagnostics.values()].flatMap(
+      (value) => JSON.parse(value) as { message: string }[],
+    );
+    if (errors.length)
+      throw Error(
+        '导出停止：效果渲染失败。' +
+          errors
+            .slice(0, 3)
+            .map((e) => e.message)
+            .join('；'),
+      );
+  }
   render(
     input: RenderSnapshot,
     target: HTMLCanvasElement,
@@ -120,9 +201,12 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
     drawHandles = true,
     outputScale = 1,
     transparentBackground = false,
+    effectScale = 1,
   ): void {
     if (!Number.isFinite(outputScale) || outputScale <= 0 || outputScale > 1)
       throw new Error('渲染缩放无效');
+    if (!Number.isFinite(effectScale) || effectScale <= 0 || effectScale > 1)
+      throw new Error('效果采样无效');
     const width = Math.max(1, Math.round(input.width * outputScale));
     const height = Math.max(1, Math.round(input.height * outputScale));
     const last = this.#last.get(target);
@@ -133,6 +217,7 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
       last.drawHandles === drawHandles &&
       last.outputScale === outputScale &&
       last.transparentBackground === transparentBackground &&
+      last.effectScale === effectScale &&
       target.width === width &&
       target.height === height
     )
@@ -156,8 +241,111 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
       if (!live.has(id)) this.#graphLayers.delete(id);
     for (const item of input.layers) {
       const layer = item.source;
-      if (!layer.visible || item.active === false || layer.type === 'camera')
+      if (
+        !layer.visible ||
+        item.active === false ||
+        layer.type === 'camera' ||
+        layer.type === 'audio'
+      )
         continue;
+      if (layer.editor?.motionBlur && input.project) {
+        const composition = input.project.compositions.find((c) =>
+          c.layers.some((l) => l.id === layer.id),
+        );
+        if (composition) {
+          const samples = 5,
+            shutter = 0.5 / (input.fps ?? 30);
+          const frame = surface(width, height),
+            accumulated = surface(width, height),
+            accumulatedContext = accumulated.getContext('2d')!;
+          accumulatedContext.globalAlpha = 1 / samples;
+          accumulatedContext.globalCompositeOperation = 'lighter';
+          ctx.save();
+          ctx.globalAlpha = 1;
+          ctx.globalCompositeOperation =
+            layer.editor.blendMode === 'add'
+              ? 'lighter'
+              : layer.editor.blendMode === 'normal'
+                ? 'source-over'
+                : layer.editor.blendMode;
+          for (let i = 0; i < samples; i++) {
+            const time = Math.max(
+              0,
+              Math.min(
+                composition.duration,
+                input.time + ((i + 0.5) / samples - 0.5) * shutter,
+              ),
+            );
+            const snap = createRenderSnapshot(
+              composition,
+              time,
+              [],
+              undefined,
+              input.project,
+            );
+            this.render(
+              {
+                ...snap,
+                ...(input.viewportCamera
+                  ? {
+                      camera: input.camera,
+                      width: input.width,
+                      height: input.height,
+                      viewportCamera: true,
+                    }
+                  : {}),
+                layers: snap.layers
+                  .filter((l) => l.source.id === layer.id)
+                  .map((l) => {
+                    if (!input.viewportCamera || !input.camera || !l.world3D)
+                      return l;
+                    const camera = input.camera;
+                    const quad = (
+                      [
+                        [-l.source.width / 2, -l.source.height / 2, 0],
+                        [l.source.width / 2, -l.source.height / 2, 0],
+                        [l.source.width / 2, l.source.height / 2, 0],
+                        [-l.source.width / 2, l.source.height / 2, 0],
+                      ] as Point3[]
+                    ).map((p) =>
+                      projectPoint(
+                        point4(l.world3D!, p),
+                        camera,
+                        cameraView(camera),
+                      ),
+                    );
+                    return {
+                      ...l,
+                      quad: quad.every(Boolean)
+                        ? (quad as NonNullable<typeof l.quad>)
+                        : undefined,
+                      active:
+                        l.active &&
+                        (l.source.type === 'model' || quad.every(Boolean)),
+                    };
+                  })
+                  .map((l) => ({
+                    ...l,
+                    source: {
+                      ...l.source,
+                      editor: { ...l.source.editor!, motionBlur: false },
+                    },
+                  })),
+              },
+              frame,
+              1,
+              false,
+              outputScale,
+              true,
+              effectScale,
+            );
+            accumulatedContext.drawImage(frame, 0, 0);
+          }
+          ctx.drawImage(accumulated, 0, 0, input.width, input.height);
+          ctx.restore();
+          continue;
+        }
+      }
       ctx.save();
       if (!item.source.editor?.is3D) {
         if (item.matrix) ctx.transform(...item.matrix);
@@ -197,13 +385,32 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
             modelContext = modelSurface.getContext('2d');
           if (modelContext) {
             if (outputScale !== 1) modelContext.scale(outputScale, outputScale);
-            drawModelMesh(modelContext, mesh, item.world3D, input.camera);
-            const processed = renderCompositingGraph(
+            drawModelMesh(
+              modelContext,
+              mesh,
+              item.world3D,
+              input.camera,
+              layer.editor?.modelWireframe,
+              layer.editor?.modelTint,
+              layer.editor?.modelUnlit,
+              layer.editor?.modelBackfaceCulling,
+            );
+            const execution = renderCompositingGraph(
               modelSurface,
               { ...layer, width, height },
               input.time,
               0,
-            ).output;
+              undefined,
+              '',
+              input.fps ?? 30,
+              effectScale,
+            );
+            if (layer.editor?.graph)
+              this.#graphDiagnostics.set(
+                layer.editor.graph.id,
+                JSON.stringify(execution.diagnostics),
+              );
+            const processed = execution.output;
             ctx.drawImage(processed, 0, 0, input.width, input.height);
           }
         }
@@ -229,6 +436,11 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
               input.project,
             ),
             nested,
+            1,
+            true,
+            1,
+            false,
+            effectScale,
           );
         }
       }
@@ -239,9 +451,11 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
             context,
             layer,
             input.time,
-            layer.type === 'image'
-              ? this.#images.get(layer.assetId)?.bitmap
-              : undefined,
+            layer.type === 'video'
+              ? this.#videoFrames.get(layer.id)
+              : layer.type === 'image'
+                ? this.#images.get(layer.assetId)?.bitmap
+                : undefined,
           );
       };
       const directGraph =
@@ -340,6 +554,8 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
             padding,
             slot.cache,
             sourceKey,
+            input.fps ?? 30,
+            effectScale,
           );
           processed = execution.output;
           if (layer.editor?.graph) {
@@ -467,6 +683,7 @@ export class Canvas2DRenderer implements RendererAdapter<HTMLCanvasElement> {
       drawHandles,
       outputScale,
       transparentBackground,
+      effectScale,
     });
   }
 }

@@ -64,6 +64,7 @@ export interface EditorView {
   readonly frames: readonly FrameRef[];
   readonly selectedProperties: readonly ID[];
   readonly timelineZoom: number;
+  readonly timelineReveal?: { readonly layerId: ID; readonly revision: number };
   readonly propertyFilter:
     | 'all'
     | 'animated'
@@ -240,6 +241,9 @@ export class EditorStore {
       renderRevision: (this.#view.renderRevision ?? 0) + 1,
     });
   }
+  invalidateRender(): void {
+    this.#set({ renderRevision: (this.#view.renderRevision ?? 0) + 1 });
+  }
   getRenderProject(): Project {
     const base = this.#renderPreview ?? this.#view.project;
     const copies = this.#drag?.duplicates;
@@ -284,6 +288,17 @@ export class EditorStore {
         : [],
       frames: [],
     });
+  }
+  selectLayerFromPanel(id: ID, additive = false): void {
+    this.select(id, additive);
+    if (!this.#view.selection.includes(id)) return;
+    this.#set({
+      timelineReveal: {
+        layerId: id,
+        revision: (this.#view.timelineReveal?.revision ?? 0) + 1,
+      },
+    });
+    window.dispatchEvent(new Event('motion:timeline'));
   }
   selectFrames(frames: readonly FrameRef[]): void {
     const owners = frames.map(

@@ -105,6 +105,10 @@ it.each(agentCaseNames.map((name, index) => ({ name, index })))(
       return;
     }
     await agent.run(agentCaseNames[index]!);
+    if (agent.getSnapshot().pendingConfirmation) {
+      await agent.preview(agent.getSnapshot().currentPlan!.id);
+      await agent.apply(agent.getSnapshot().currentPlan!.id);
+    }
     if (index === 7) {
       expect(agent.getSnapshot().status).toBe('failed');
       expect(agent.getSnapshot().error).toContain('配置');
@@ -167,6 +171,10 @@ it.each(agentCaseNames.map((name, index) => ({ name, index })))(
         })),
       );
       await agent.run('blur too');
+      if (agent.getSnapshot().pendingConfirmation) {
+        await agent.preview(agent.getSnapshot().currentPlan!.id);
+        await agent.apply(agent.getSnapshot().currentPlan!.id);
+      }
       const saved = saveProject(store.commands.getSnapshot());
       const reopened = loadProject(saved);
       expect(reopened).toEqual(store.commands.getSnapshot());
@@ -272,6 +280,10 @@ it('newly created layer can receive keyframes in the same typed plan and visual 
         }
       : { ok: true, message: 'pass' };
   await agent.run('new entrance');
+  if (agent.getSnapshot().pendingConfirmation) {
+    await agent.preview(agent.getSnapshot().currentPlan!.id);
+    await agent.apply(agent.getSnapshot().currentPlan!.id);
+  }
   expect(agent.getSnapshot().status).toBe('completed');
   expect(iteration).toBe(2);
   expect(store.commands.undoStack).toHaveLength(1);
@@ -281,7 +293,7 @@ it('newly created layer can receive keyframes in the same typed plan and visual 
   expect(layer.transform.position.keyframes).toHaveLength(2);
   expect(layer.transform.opacity.baseValue).toBe(0.8);
 });
-it('visual verification clamps the current frame when a plan opens a shorter composition', async () => {
+it('composition-scoped creation rejects opening a different composition before mutation', async () => {
   vi.stubGlobal('CanvasRenderingContext2D', class {});
   const context = {
     clearRect: vi.fn(),
@@ -367,13 +379,16 @@ it('visual verification clamps the current frame when a plan opens a shorter com
       expect(skillsFor(manager.storage).getSnapshot().ready).toBe(true),
     );
     await agent.run('short');
-    expect(agent.getSnapshot().status, agent.getSnapshot().error ?? '').toBe(
-      'completed',
-    );
-    expect(store.commands.getSnapshot().activeCompositionId).toBe(
+    if (agent.getSnapshot().pendingConfirmation) {
+      await agent.preview(agent.getSnapshot().currentPlan!.id);
+      await agent.apply(agent.getSnapshot().currentPlan!.id);
+    }
+    expect(agent.getSnapshot().status).toBe('failed');
+    expect(agent.getSnapshot().error).toContain('不允许');
+    expect(store.commands.getSnapshot().activeCompositionId).not.toBe(
       compositionId,
     );
-    expect(store.commands.undoStack).toHaveLength(1);
+    expect(store.commands.undoStack).toHaveLength(0);
   } finally {
     vi.unstubAllGlobals();
   }

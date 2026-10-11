@@ -107,17 +107,24 @@ export class OpenAICompatibleProvider implements AIProvider {
     endpoint: string,
     body: unknown | undefined,
     signal: AbortSignal | undefined,
-    parse: (r: Response, signal: AbortSignal) => Promise<T>,
+    parse: (r: Response, signal: AbortSignal, touch: () => void) => Promise<T>,
   ): Promise<T> {
     if (signal?.aborted) throw new AIError('cancelled', '已停止');
     const controller = new AbortController();
     let timeout = false;
     const cancel = () => controller.abort();
     signal?.addEventListener('abort', cancel, { once: true });
-    const timer = setTimeout(() => {
+    const expire = () => {
       timeout = true;
       controller.abort();
-    }, this.options.timeoutMs ?? 45000);
+    };
+    const idleMs = this.options.timeoutMs ?? 45000;
+    let timer = setTimeout(expire, idleMs);
+    const touch = () => {
+      clearTimeout(timer);
+      timer = setTimeout(expire, idleMs);
+    };
+    const deadline = setTimeout(expire, Math.max(idleMs, 180000));
     try {
       const credentials = credentialsSchema.parse(await this.credentials());
       if (!credentials.apiKey.trim())
@@ -128,7 +135,9 @@ export class OpenAICompatibleProvider implements AIProvider {
           timeout ? '服务请求超时' : '已停止',
         );
       const result = await this.fetcher(
-        this.config.baseUrl.replace(/\/$/, '') + endpoint,
+        this.config.baseUrl
+          .replace(/\/+$/, '')
+          .replace(/\/(?:chat\/completions|models)$/, '') + endpoint,
         {
           method: body === undefined ? 'GET' : 'POST',
           redirect: 'error',
@@ -162,7 +171,8 @@ export class OpenAICompatibleProvider implements AIProvider {
                 : '请求或模型不可用，请检查服务设置',
         );
       }
-      return await parse(result, controller.signal);
+      touch();
+      return await parse(result, controller.signal, touch);
     } catch (error) {
       if (controller.signal.aborted)
         throw new AIError(
@@ -173,6 +183,7 @@ export class OpenAICompatibleProvider implements AIProvider {
       throw new AIError('network', '无法连接模型服务，请检查地址与网络');
     } finally {
       clearTimeout(timer);
+      clearTimeout(deadline);
       signal?.removeEventListener('abort', cancel);
     }
   }
@@ -316,141 +327,147 @@ export class OpenAICompatibleProvider implements AIProvider {
         ? { stream: true, stream_options: { include_usage: true } }
         : {}),
     };
-    return this.request('/chat/completions', body, signal, async (r, s) => {
-      if (
-        !request.stream ||
-        !r.headers.get('content-type')?.includes('text/event-stream')
-      ) {
-        let raw: unknown;
-        try {
-          raw = JSON.parse(await this.boundedText(r, s));
-        } catch (e) {
-          if (e instanceof AIError) throw e;
-          throw new AIError('invalid_response', '服务响应格式无效');
-        }
-        const result = response(raw, request.model);
-        if (result.text) onText?.(result.text);
-        return result;
-      }
-      const reader = r.body?.getReader();
-      if (!reader) throw new AIError('invalid_response', '服务返回空响应');
-      const decoder = new TextDecoder();
-      let buffer = '',
-        size = 0,
-        text = '',
-        done = false,
-        finish: string | null = null;
-      let usage: unknown;
-      const calls = new Map<
-        number,
-        {
-          id: string;
-          type: 'function';
-          function: { name: string; arguments: string };
-        }
-      >();
-      const line = (value: string) => {
-        if (!value.startsWith('data:')) return;
-        const data = value.slice(5).trim();
-        if (data === '[DONE]') {
-          done = true;
-          return;
-        }
-        if (!data) return;
-        let raw: unknown;
-        try {
-          raw = JSON.parse(data);
-        } catch {
-          throw new AIError('invalid_response', '流式响应格式无效');
-        }
-        const parsed = z
-          .object({
-            choices: z.array(
-              z.object({
-                delta: z.object({
-                  content: z.string().nullable().optional(),
-                  tool_calls: z
-                    .array(
-                      z.object({
-                        index: z.number().int().min(0).max(99),
-                        id: z.string().optional(),
-                        function: z
-                          .object({
-                            name: z.string().optional(),
-                            arguments: z.string().optional(),
-                          })
-                          .optional(),
-                      }),
-                    )
-                    .optional(),
-                }),
-                finish_reason: z.string().nullable().optional(),
-              }),
-            ),
-            usage: z.unknown().optional(),
-          })
-          .safeParse(raw);
-        if (!parsed.success)
-          throw new AIError('invalid_response', '流式响应格式无效');
-        if (parsed.data.usage) usage = parsed.data.usage;
-        for (const choice of parsed.data.choices) {
-          if (choice.delta.content) {
-            text += choice.delta.content;
-            onText?.(choice.delta.content);
+    return this.request(
+      '/chat/completions',
+      body,
+      signal,
+      async (r, s, touch) => {
+        if (
+          !request.stream ||
+          !r.headers.get('content-type')?.includes('text/event-stream')
+        ) {
+          let raw: unknown;
+          try {
+            raw = JSON.parse(await this.boundedText(r, s));
+          } catch (e) {
+            if (e instanceof AIError) throw e;
+            throw new AIError('invalid_response', '服务响应格式无效');
           }
-          if (choice.finish_reason) finish = choice.finish_reason;
-          for (const t of choice.delta.tool_calls ?? []) {
-            const item = calls.get(t.index) ?? {
-              id: '',
-              type: 'function' as const,
-              function: { name: '', arguments: '' },
-            };
-            if (t.id) item.id = t.id;
-            if (t.function?.name) item.function.name += t.function.name;
-            if (t.function?.arguments)
-              item.function.arguments += t.function.arguments;
-            calls.set(t.index, item);
-          }
+          const result = response(raw, request.model);
+          if (result.text) onText?.(result.text);
+          return result;
         }
-      };
-      try {
-        while (!done) {
-          s.throwIfAborted();
-          const next = await reader.read();
-          if (next.done) break;
-          size += next.value.byteLength;
-          if (size > (this.options.maxResponseBytes ?? 2000000))
-            throw new AIError('invalid_response', '服务响应超过大小限制');
-          buffer += decoder.decode(next.value, { stream: true });
-          let index: number;
-          while ((index = buffer.indexOf('\n')) >= 0) {
-            line(buffer.slice(0, index).replace(/\r$/, ''));
-            buffer = buffer.slice(index + 1);
-          }
-        }
-        if (buffer.trim()) line(buffer.trim());
-        if (!done || !finish)
-          throw new AIError(
-            'invalid_response',
-            '流式响应被中断，未执行任何工具',
-          );
-        return response(
+        const reader = r.body?.getReader();
+        if (!reader) throw new AIError('invalid_response', '服务返回空响应');
+        const decoder = new TextDecoder();
+        let buffer = '',
+          size = 0,
+          text = '',
+          done = false,
+          finish: string | null = null;
+        let usage: unknown;
+        const calls = new Map<
+          number,
           {
-            model: request.model,
-            choices: [
-              {
-                message: { content: text, tool_calls: [...calls.values()] },
-                finish_reason: finish,
-              },
-            ],
-            ...(usage ? { usage } : {}),
-          },
-          request.model,
-        );
-      } finally {
-        await reader.cancel().catch(() => {});
-        reader.releaseLock();
-      }
-    });
+            id: string;
+            type: 'function';
+            function: { name: string; arguments: string };
+          }
+        >();
+        const line = (value: string) => {
+          if (!value.startsWith('data:')) return;
+          const data = value.slice(5).trim();
+          if (data === '[DONE]') {
+            done = true;
+            return;
+          }
+          if (!data) return;
+          let raw: unknown;
+          try {
+            raw = JSON.parse(data);
+          } catch {
+            throw new AIError('invalid_response', '流式响应格式无效');
+          }
+          const parsed = z
+            .object({
+              choices: z.array(
+                z.object({
+                  delta: z.object({
+                    content: z.string().nullable().optional(),
+                    tool_calls: z
+                      .array(
+                        z.object({
+                          index: z.number().int().min(0).max(99),
+                          id: z.string().optional(),
+                          function: z
+                            .object({
+                              name: z.string().optional(),
+                              arguments: z.string().optional(),
+                            })
+                            .optional(),
+                        }),
+                      )
+                      .optional(),
+                  }),
+                  finish_reason: z.string().nullable().optional(),
+                }),
+              ),
+              usage: z.unknown().optional(),
+            })
+            .safeParse(raw);
+          if (!parsed.success)
+            throw new AIError('invalid_response', '流式响应格式无效');
+          if (parsed.data.usage) usage = parsed.data.usage;
+          for (const choice of parsed.data.choices) {
+            if (choice.delta.content) {
+              text += choice.delta.content;
+              onText?.(choice.delta.content);
+            }
+            if (choice.finish_reason) finish = choice.finish_reason;
+            for (const t of choice.delta.tool_calls ?? []) {
+              const item = calls.get(t.index) ?? {
+                id: '',
+                type: 'function' as const,
+                function: { name: '', arguments: '' },
+              };
+              if (t.id) item.id = t.id;
+              if (t.function?.name) item.function.name += t.function.name;
+              if (t.function?.arguments)
+                item.function.arguments += t.function.arguments;
+              calls.set(t.index, item);
+            }
+          }
+        };
+        try {
+          while (!done) {
+            s.throwIfAborted();
+            const next = await reader.read();
+            if (next.done) break;
+            touch();
+            size += next.value.byteLength;
+            if (size > (this.options.maxResponseBytes ?? 2000000))
+              throw new AIError('invalid_response', '服务响应超过大小限制');
+            buffer += decoder.decode(next.value, { stream: true });
+            let index: number;
+            while ((index = buffer.indexOf('\n')) >= 0) {
+              line(buffer.slice(0, index).replace(/\r$/, ''));
+              buffer = buffer.slice(index + 1);
+            }
+          }
+          if (buffer.trim()) line(buffer.trim());
+          if (!done || !finish)
+            throw new AIError(
+              'invalid_response',
+              '流式响应被中断，未执行任何工具',
+            );
+          return response(
+            {
+              model: request.model,
+              choices: [
+                {
+                  message: { content: text, tool_calls: [...calls.values()] },
+                  finish_reason: finish,
+                },
+              ],
+              ...(usage ? { usage } : {}),
+            },
+            request.model,
+          );
+        } finally {
+          await reader.cancel().catch(() => {});
+          reader.releaseLock();
+        }
+      },
+    );
   }
 }

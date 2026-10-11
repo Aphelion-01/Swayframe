@@ -1,3 +1,9 @@
+import { mediaTypes } from '../shared/media-formats';
+import {
+  radialGradientDefinition,
+  gradientPropertyKey,
+} from './radial-gradient';
+import { parameterError } from './visual-capabilities';
 import { layerAccentIds } from './layer-accent';
 import { createGraphSchema } from './compositing-graph-schema';
 import { effectDefinitions } from './effect-model';
@@ -76,6 +82,17 @@ export const editorSchema = z
     startTime: z.number().finite(),
     blendMode: z.enum(blendModes),
     is3D: z.boolean(),
+    motionBlur: z.boolean().optional(),
+    modelWireframe: z.boolean().optional(),
+    modelUnlit: z.boolean().optional(),
+    modelBackfaceCulling: z.boolean().optional(),
+    modelTint: z
+      .tuple([
+        z.number().min(0).max(1),
+        z.number().min(0).max(1),
+        z.number().min(0).max(1),
+      ])
+      .optional(),
     pathClosed: z.boolean(),
     gradient: z.enum(['none', 'linear', 'radial']),
     textAlign: z.enum(['left', 'center', 'right']),
@@ -169,7 +186,11 @@ export const editorSchema = z
       const values = [p.baseValue, ...p.keyframes.map((k) => k.value)];
       for (const v of values) {
         let valid = true;
-        if (['anchor'].includes(key))
+        const radialSpec = radialGradientDefinition.parameters.find(
+          (p) => gradientPropertyKey(p.id) === key,
+        );
+        if (radialSpec) valid = !parameterError(radialSpec, v);
+        else if (['anchor'].includes(key))
           valid = !!v && typeof v === 'object' && !Array.isArray(v) && 'x' in v;
         else if (['fill', 'stroke', 'gradientEnd'].includes(key))
           valid =
@@ -271,7 +292,7 @@ export const layerSchema = z.discriminatedUnion('type', [
   z
     .object({
       ...layerBase,
-      type: z.enum(['image', 'model']),
+      type: z.enum(['image', 'model', 'audio', 'video']),
       assetId: idSchema,
     })
     .strict(),
@@ -287,13 +308,22 @@ export const assetSchema = z
   .object({
     id: idSchema,
     name: z.string().min(1).max(200),
-    mimeType: z.enum([
-      'image/png',
-      'image/jpeg',
-      'image/webp',
-      'image/gif',
-      'model/x-swayframe-mesh',
-    ]),
+    mimeType: z
+      .string()
+      .refine(
+        (m) =>
+          Object.values(mediaTypes).includes(m) ||
+          m === 'model/x-swayframe-mesh',
+      ),
+    media: z
+      .object({
+        kind: z.enum(['audio', 'video']),
+        duration: z.number().positive().finite(),
+        width: z.number().positive().max(16384),
+        height: z.number().positive().max(16384),
+      })
+      .strict()
+      .optional(),
     mesh: z
       .object({
         vertices: z.array(z.number().finite()).min(9).max(180000),
@@ -320,7 +350,10 @@ export const assetSchema = z
           .object({
             width: z.number().nonnegative().max(100000),
             height: z.number().nonnegative().max(100000),
-            size: z.number().nonnegative().max(10_000_000),
+            size: z
+              .number()
+              .nonnegative()
+              .max(256 * 1024 * 1024),
             modifiedAt: z.number().nonnegative(),
           })
           .strict(),
@@ -337,7 +370,7 @@ export const assetSchema = z
           (asset.source
             ? /^swayframe-asset:\/\/local\/[a-f0-9]{64}$/.test(asset.dataUrl)
             : asset.dataUrl.startsWith(`data:${asset.mimeType};base64,`) &&
-              /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/]+=*$/.test(
+              /^data:(?:image|audio|video)\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/]+=*$/.test(
                 asset.dataUrl,
               )),
     'Asset MIME 或引用无效',
@@ -410,12 +443,16 @@ export const projectSchema = z
         if (layer.type === 'model' && !layer.editor?.is3D)
           issue('三维模型必须启用三维空间', [...path, 'editor', 'is3D']);
         if (
-          ['image', 'model'].includes(layer.type) &&
+          ['image', 'model', 'audio', 'video'].includes(layer.type) &&
           'assetId' in layer &&
           !project.assets.some(
             (a) =>
               a.id === layer.assetId &&
-              (layer.type === 'model' ? !!a.mesh : !a.mesh),
+              (layer.type === 'model'
+                ? !!a.mesh
+                : layer.type === 'audio' || layer.type === 'video'
+                  ? a.media?.kind === layer.type
+                  : !a.mesh && !a.media),
           )
         )
           issue('引用的素材不存在或类型不匹配', [...path, 'assetId']);

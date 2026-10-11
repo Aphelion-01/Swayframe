@@ -308,3 +308,60 @@ it('bounds time, response size and rejects text-only vision, unsafe URLs and mal
     }),
   ).rejects.toBeInstanceOf(AIError);
 });
+it('accepts pasted full API endpoints without duplicating chat/completions or models', async () => {
+  const fetcher = vi.fn<typeof fetch>(
+    async () => new Response(JSON.stringify(raw)),
+  );
+  for (const suffix of [
+    '/chat/completions',
+    '/chat/completions/',
+    '/models',
+    '',
+  ]) {
+    await new OpenAICompatibleProvider(
+      { ...config, baseUrl: config.baseUrl + suffix },
+      credentials,
+      fetcher,
+    ).chat({ model: 'model', messages: [{ role: 'user', content: 'test' }] });
+    expect(fetcher.mock.lastCall?.[0]).toBe(
+      'https://example.com/v1/chat/completions',
+    );
+  }
+});
+it('keeps an active tool stream alive while enforcing an idle timeout', async () => {
+  vi.useFakeTimers();
+  try {
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        for (const [time, text] of [
+          [20, 'data: {"choices":[{"delta":{"content":"thinking"}}]}\n\n'],
+          [
+            50,
+            'data: {"choices":[{"delta":{"content":"done"},"finish_reason":"stop"}]}\n\n',
+          ],
+          [80, 'data: [DONE]\n\n'],
+        ] as const)
+          setTimeout(() => controller.enqueue(encoder.encode(text)), time);
+      },
+    });
+    const provider = new OpenAICompatibleProvider(
+      config,
+      credentials,
+      async () =>
+        new Response(stream, {
+          headers: { 'Content-Type': 'text/event-stream' },
+        }),
+      { timeoutMs: 40 },
+    );
+    const work = provider.chat({
+      model: 'model',
+      messages: [{ role: 'user', content: 'test' }],
+      stream: true,
+    });
+    await vi.advanceTimersByTimeAsync(85);
+    expect((await work).text).toBe('thinkingdone');
+  } finally {
+    vi.useRealTimers();
+  }
+});

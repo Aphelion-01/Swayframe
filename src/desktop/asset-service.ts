@@ -1,3 +1,4 @@
+import { mediaMetadata } from '../importers/media-metadata';
 import type { EditorStore } from '../ui/editor-store';
 import type { ImportedAsset } from './contracts';
 import { desktopService } from './service';
@@ -6,7 +7,30 @@ import { activeComposition, createLayer } from '../core/project-model';
 import type { Asset } from '../core/project-model';
 import { newId } from '../core/core-types';
 async function linkedAsset(input: ImportedAsset, id = newId()): Promise<Asset> {
-  const bitmap = await createImageBitmap(await (await fetch(input.url)).blob());
+  const blob = await (await fetch(input.url)).blob();
+  if (
+    input.mimeType.startsWith('audio/') ||
+    input.mimeType.startsWith('video/')
+  ) {
+    const media = await mediaMetadata(blob, input.mimeType);
+    return {
+      id,
+      name: input.name,
+      mimeType: input.mimeType,
+      dataUrl: input.url,
+      media,
+      source: {
+        kind: 'linked',
+        path: input.path,
+        metadata: {
+          ...input.metadata,
+          width: media.width,
+          height: media.height,
+        },
+      },
+    };
+  }
+  const bitmap = await createImageBitmap(blob);
   try {
     return {
       id,
@@ -46,7 +70,7 @@ export async function importNativeAssets(
       const w = asset.source?.metadata.width ?? 600,
         h = asset.source?.metadata.height ?? 600,
         ratio = Math.min(1, 600 / w, 600 / h);
-      const layer = createLayer('image', {
+      const layer = createLayer(asset.media?.kind ?? 'image', {
         assetId: asset.id,
         width: w * ratio,
         height: h * ratio,
@@ -55,9 +79,26 @@ export async function importNativeAssets(
       const timed = atTime
         ? {
             ...layer,
-            editor: { ...layer.editor!, inPoint: store.getSnapshot().time },
+            editor: {
+              ...layer.editor!,
+              inPoint: store.getSnapshot().time,
+              startTime: store.getSnapshot().time,
+              outPoint: Math.min(
+                c.duration,
+                store.getSnapshot().time +
+                  (asset.media?.duration ?? c.duration),
+              ),
+            },
           }
-        : layer;
+        : asset.media
+          ? {
+              ...layer,
+              editor: {
+                ...layer.editor!,
+                outPoint: Math.min(c.duration, asset.media.duration),
+              },
+            }
+          : layer;
       const commands = [
         ...(!existing ? [command({ type: 'asset.add', asset })] : []),
         ...(addLayer

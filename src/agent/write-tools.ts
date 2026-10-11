@@ -1,9 +1,15 @@
 import { z } from 'zod';
-import { command } from '../core/command-system';
+import {
+  radialGradientDefinition,
+  gradientPropertyKey,
+} from '../core/radial-gradient';
+import { parameterError } from '../core/visual-capabilities';
+import { command, CommandSystem, transaction } from '../core/command-system';
 import type { Command } from '../core/command-system';
 import {
   activeComposition,
   createLayer,
+  createProperty,
   findProperty,
   layerProperties,
   effectKinds,
@@ -182,7 +188,11 @@ const creation = z
   .object({
     layerId: idSchema.optional(),
     name: optionalName,
-    position: vec2Schema.optional(),
+    position: vec2Schema
+      .describe(
+        'Layer transform position in composition pixels, at the layer anchor/center, not its top-left corner. Default is composition center.',
+      )
+      .optional(),
     width: z.number().positive().max(16384).optional(),
     height: z.number().positive().max(16384).optional(),
   })
@@ -190,7 +200,7 @@ const creation = z
 export function registerCoreWriteTools(registry: AgentToolRegistry) {
   registry.register(
     'createLayer',
-    'Create a real editable layer; images require an imported asset ID.',
+    'Create a real editable layer; a full-frame background uses kind=solid or rectangle, width/height matching the composition and position at composition center. kind=null is an invisible helper, not a rendered background. Images require an imported asset ID.',
     creation.extend({
       kind: z.enum([
         'rectangle',
@@ -223,14 +233,56 @@ export function registerCoreWriteTools(registry: AgentToolRegistry) {
     );
   registry.register(
     'createText',
-    'Create editable text content at position; defaults to canvas center.',
-    creation.extend({ content: z.string().max(10000) }),
+    'Create editable text. content is required; position is {x,y} composition pixels. Optional fontSize, fontFamily, color {r,g,b,a} in 0..1, alignment left/center/right. Defaults to canvas center. Never use text/font_size aliases.',
+    creation.extend({
+      content: z.string().max(10000),
+      fontSize: z.number().min(1).max(2000).optional(),
+      fontFamily: z.string().min(1).max(200).optional(),
+      color: colorSchema.optional(),
+      alignment: z.enum(['left', 'center', 'right']).optional(),
+    }),
     'WRITE',
-    { compile: (ctx, args) => created(ctx, 'text', args) },
+    {
+      compile: (ctx, args) => {
+        const result = created(ctx, 'text', args);
+        const first = result[0]!;
+        if (first.type !== 'layer.create' || first.layer.type !== 'text')
+          throw Error('文字创建映射失败');
+        const layer = first.layer;
+        return [
+          command({
+            ...first,
+            layer: {
+              ...layer,
+              fontSize: args.fontSize ?? layer.fontSize,
+              fontFamily: args.fontFamily ?? layer.fontFamily,
+              fill: args.color ?? layer.fill,
+              editor: {
+                ...layer.editor!,
+                textAlign: args.alignment ?? layer.editor!.textAlign,
+                properties: {
+                  ...layer.editor!.properties,
+                  fontSize: {
+                    ...layer.editor!.properties.fontSize!,
+                    baseValue: args.fontSize ?? layer.fontSize,
+                  },
+                  fill: {
+                    ...layer.editor!.properties.fill!,
+                    baseValue: args.color
+                      ? [args.color.r, args.color.g, args.color.b, args.color.a]
+                      : layer.editor!.properties.fill!.baseValue,
+                  },
+                },
+              },
+            },
+          }),
+        ];
+      },
+    },
   );
   registry.register(
     'createPath',
-    'Create a path with actual persisted cubic control points (6 numbers per point).',
+    'Create a closed editable path. points is a flat array of [x,y,inX,inY,outX,outY] per vertex. All six coordinates are ABSOLUTE layer-local pixels, origin at the layer center, NOT handle offsets or composition coordinates. For straight edges repeat the vertex three times: [x,y,x,y,x,y]; zero handles curve toward the origin. Typically vertices span -width/2..width/2 and -height/2..height/2. position places the local origin in the composition.',
     creation.extend({
       points: z
         .array(z.number().finite())
@@ -527,20 +579,92 @@ export function registerCoreWriteTools(registry: AgentToolRegistry) {
   );
   registry.register(
     'setFill',
-    'Set animated fill color using current Property(t).',
-    z.object({ ...layerRef, color: colorSchema, ...at }).strict(),
+    'Set native animated shape/solid/text fill. Optional gradient none/linear/radial changes the existing fill mode, preserving shape alpha and geometry. linear uses color and endColor. radial uses radialParameters with exact registered radialGradient parameter IDs (normalized center, radius, flat stops). Native fill does NOT require createNode or graph wiring; existing downstream blur processes it.',
+    z
+      .object({
+        ...layerRef,
+        color: colorSchema,
+        gradient: z.enum(['none', 'linear', 'radial']).optional(),
+        endColor: colorSchema.optional(),
+        radialParameters: z.record(z.string(), animValueSchema).optional(),
+        ...at,
+      })
+      .strict(),
     'WRITE',
     {
       compile: (ctx, args) => {
         const { layer } = editableLayer(ctx, args.layerId);
-        if (layer.type === 'image') throw new Error('图片图层不支持填充');
-        return propertyEdit(
-          ctx,
-          args.layerId,
-          'fill',
-          [args.color.r, args.color.g, args.color.b, args.color.a],
-          args.time,
+        if (!['shape', 'solid', 'text'].includes(layer.type))
+          throw new Error('当前图层类型不支持填充');
+        const commands: Command[] = [];
+        if (
+          args.radialParameters &&
+          args.gradient !== 'radial' &&
+          layer.editor?.gradient !== 'radial'
+        )
+          throw Error('radialParameters 需要径向渐变填充');
+        let nextContext = ctx;
+        if (args.gradient) {
+          if (!layer.editor) throw Error('图层编辑属性缺失');
+          const properties = { ...layer.editor.properties };
+          if (args.gradient === 'radial')
+            for (const p of radialGradientDefinition.parameters)
+              properties[gradientPropertyKey(p.id)] ??= createProperty(
+                structuredClone(p.defaultValue),
+              );
+          const updated = {
+            ...layer,
+            editor: { ...layer.editor, gradient: args.gradient, properties },
+          };
+          commands.push(...replace(ctx, updated));
+          const draft = new CommandSystem(ctx.project);
+          const result = draft.executeTransaction(
+            transaction('校验填充模式', 'agent', commands),
+          );
+          if (!result.ok) throw Error(result.error);
+          nextContext = { ...ctx, project: draft.getSnapshot() };
+        }
+        commands.push(
+          ...propertyEdit(
+            nextContext,
+            args.layerId,
+            'fill',
+            [args.color.r, args.color.g, args.color.b, args.color.a],
+            args.time,
+          ),
         );
+        if (args.endColor) {
+          const c = args.endColor;
+          commands.push(
+            ...propertyEdit(
+              nextContext,
+              args.layerId,
+              'gradientEnd',
+              [c.r, c.g, c.b, c.a],
+              args.time,
+            ),
+          );
+        }
+        for (const [key, value] of Object.entries(
+          args.radialParameters ?? {},
+        )) {
+          const definition = radialGradientDefinition.parameters.find(
+            (p) => p.id === key,
+          );
+          if (!definition) throw Error('未知径向渐变参数：' + key);
+          const error = parameterError(definition, value);
+          if (error) throw Error(key + ': ' + error);
+          commands.push(
+            ...propertyEdit(
+              nextContext,
+              args.layerId,
+              gradientPropertyKey(key),
+              value,
+              args.time,
+            ),
+          );
+        }
+        return commands;
       },
     },
   );

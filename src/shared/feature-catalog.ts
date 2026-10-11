@@ -99,7 +99,7 @@ const overrides: Record<string, Partial<FeatureDefinition>> = {
     when: ['hasLayerSelection'],
     placement: {
       canonical: 'panel.inspector.structure',
-      secondary: ['menu.layer', 'context.layer'],
+      secondary: ['menu.layer', 'context.layer', 'panel.scene'],
     },
     keywords: ['parent', '父子级', '父级'],
   },
@@ -482,7 +482,7 @@ for (const [id, title] of [
 
 add(
   'create-image',
-  '导入 图片',
+  '导入 图片 / 音视频',
   'SCENE',
   ['Layer', 'Asset'],
   ['Create'],
@@ -523,7 +523,11 @@ add(
   {
     contexts: ['Composition'],
     icon: 'cube',
-    placement: { canonical: 'panel.project', secondary: ['menu.file'] },
+    placement: {
+      canonical: 'panel.project',
+      secondary: ['menu.file', 'panel.scene'],
+    },
+    parentId: 'create-object',
     keywords: ['GLB', 'glTF', 'FBX', 'OBJ', 'STL', 'PLY', 'DAE', '3DS', '模型'],
   },
 );
@@ -604,4 +608,109 @@ for (const [id, title] of [
       '三维 Section 中切换直接操控模式；操作状态位于 EditorView，变换仍经 Command/Transaction',
   });
 
+add(
+  'effect-browser',
+  '添加效果',
+  'INSPECTOR',
+  ['Effect'],
+  ['Process'],
+  'panel.inspector.effects',
+  {
+    frequency: 'F2',
+    contexts: ['LayerSelection'],
+    when: ['hasLayerSelection'],
+    description:
+      '统一效果浏览器：搜索、分类、内置与用户效果；实例仍由共享节点图保存',
+  },
+);
+add(
+  'create-radial-generator',
+  '创建 径向渐变',
+  'SCENE',
+  ['Layer'],
+  ['Create'],
+  'panel.scene',
+  {
+    contexts: ['Composition'],
+    icon: 'solid',
+    keywords: ['radial', 'generator', '渐变'],
+    description: '创建使用统一径向渐变能力的独立生成器图层',
+  },
+);
+add(
+  'effect-forge',
+  '程序化效果草稿',
+  'INSPECTOR',
+  ['Effect'],
+  ['Process'],
+  'panel.inspector.effects',
+  {
+    contexts: ['LayerSelection'],
+    when: ['hasLayerSelection'],
+    frequency: 'F4',
+    description:
+      '效果浏览器内的导入、受控编译、真实像素预览、确认应用与显式保存；不新增常驻入口',
+  },
+);
+add(
+  'node.ai',
+  '用 AI 修改节点',
+  'ASSISTANT',
+  ['GraphNode'],
+  ['Automate'],
+  'panel.inspector.effects',
+  {
+    frequency: 'F3',
+    contexts: ['GraphSelection'],
+    placement: {
+      canonical: 'panel.inspector.effects',
+      secondary: ['context.node'],
+    },
+    description:
+      '节点参数默认范围；复用同一 Agent、草稿预览与共享事务，不扩大权限',
+  },
+);
+add(
+  'branch.ai',
+  '用 AI 修改上游分支',
+  'ASSISTANT',
+  ['GraphNode'],
+  ['Automate'],
+  'context.node',
+  {
+    frequency: 'F3',
+    contexts: ['GraphSelection'],
+    description: '显式选择上游处理分支，展示可修改节点及不变范围',
+  },
+);
+add(
+  'graph.ai',
+  '从需求生成合成',
+  'ASSISTANT',
+  ['Composition'],
+  ['Automate'],
+  'context.node',
+  {
+    frequency: 'F4',
+    contexts: ['Composition'],
+    description:
+      '已有合成节点工作区的上下文入口；任务分发 Scene/Animation/Graph，不增加常驻工具栏',
+  },
+);
 features.validatePermanentBudgets();
+
+add(
+  'toggle-motion-blur',
+  '切换动态图层模糊',
+  'SCENE',
+  ['Layer'],
+  ['Animate'],
+  'panel.scene',
+  {
+    contexts: ['LayerSelection'],
+    when: ['hasLayerSelection'],
+    frequency: 'F2',
+    icon: 'motion-blur',
+    description: '图层行的曝光运动采样开关；同时作用于预览与输出',
+  },
+);

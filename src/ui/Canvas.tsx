@@ -1,5 +1,6 @@
 import { ShapePathOverlay } from './ShapePathOverlay';
 import { publishRenderPreview } from './RenderPreviewBar';
+import { previewEffectScale } from '../renderers/preview-quality';
 import { PreviewFrameCache } from './preview-frame-cache';
 import { MotionPathOverlay } from './MotionPathOverlay';
 import { SpatialViewport } from './SpatialViewport';
@@ -287,6 +288,7 @@ export function Canvas({ store }: { store: EditorStore }) {
     'project',
     'selection',
     'time',
+    'playing',
     'zoom',
     'transformSettings',
     'autoKeyframes',
@@ -296,6 +298,12 @@ export function Canvas({ store }: { store: EditorStore }) {
     'renderRevision',
     'spatialGizmoMode',
   ]);
+  const [settledTime, setSettledTime] = useState(view.time);
+  useEffect(() => {
+    if (view.playing) return;
+    const timer = window.setTimeout(() => setSettledTime(view.time), 120);
+    return () => window.clearTimeout(timer);
+  }, [view.time, view.playing]);
   const spatialGizmoMode = view.spatialGizmoMode ?? 'translate';
   const setSpatialGizmoMode = (mode: SpatialGizmoMode) =>
     store.setSpatialGizmoMode(mode);
@@ -666,7 +674,11 @@ export function Canvas({ store }: { store: EditorStore }) {
       view.preview ||
       rawRenderProject !== view.project
     );
-    frameCache.current.prepare(renderProject);
+    const effectScale = previewEffectScale(
+      input,
+      transient || view.playing || settledTime !== view.time,
+    );
+    frameCache.current.prepare(view.project);
     const key = JSON.stringify([
       c.id,
       view.time,
@@ -674,6 +686,8 @@ export function Canvas({ store }: { store: EditorStore }) {
       view.zoom,
       view.selection,
       spatialSelection,
+      effectScale,
+      view.renderRevision,
     ]);
     if (
       !transient &&
@@ -703,8 +717,11 @@ export function Canvas({ store }: { store: EditorStore }) {
               ),
             )
           : 1,
+        false,
+        effectScale,
       );
-      if (!transient) frameCache.current.put(key, view.time, canvas);
+      if (!transient && effectScale === 1)
+        frameCache.current.put(key, view.time, canvas);
     }
     publishRenderPreview({
       store,
@@ -712,7 +729,8 @@ export function Canvas({ store }: { store: EditorStore }) {
       times: frameCache.current.times(),
       ms: performance.now() - start,
       cached: !!cached,
-      preview: transient,
+      preview: transient || effectScale < 1,
+      effectScale,
     });
   }, [
     input,
@@ -725,10 +743,39 @@ export function Canvas({ store }: { store: EditorStore }) {
     view.preview,
     view.selection,
     view.time,
+    view.playing,
+    settledTime,
     renderProject,
     store,
   ]);
 
+  useEffect(() => {
+    if (!c.layers.some((l) => l.type === 'video')) return;
+    let active = true;
+    const snapshot = createRenderSnapshot(
+      c,
+      view.time,
+      view.selection,
+      undefined,
+      renderProject,
+    );
+    void renderer.current
+      .syncAssets(renderProject.assets)
+      .then(() => renderer.current.prepareMedia(snapshot))
+      .then(() => {
+        if (active) store.invalidateRender();
+      })
+      .catch((e) => {
+        if (active)
+          store.setStatus(
+            e instanceof Error ? e.message : '视频解码失败',
+            true,
+          );
+      });
+    return () => {
+      active = false;
+    };
+  }, [store, c, renderProject, view.time]);
   useEffect(() => {
     let active = true;
     renderer.current

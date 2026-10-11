@@ -24,6 +24,7 @@ export class AgentTransaction implements AgentTransactionPort {
     private readonly context: Omit<AgentToolContext, 'project'>,
     private readonly destructiveConfirmed = false,
     private readonly allowedTools?: readonly string[],
+    private readonly validateMutation?: (base: Project, next: Project) => void,
   ) {
     this.sandbox = new CommandSystem(base);
     this.transform = context.transform ?? defaultTransformSettings;
@@ -64,11 +65,22 @@ export class AgentTransaction implements AgentTransactionPort {
     );
     if (this.pending.length + commands.length > 500)
       throw new Error('Agent 操作超过500条命令，请缩小任务范围');
+    let verification: unknown;
     if (commands.length) {
       const result = this.sandbox.executeTransaction(
         transaction('Agent预验证：' + name, 'agent', commands),
       );
       if (!result.ok) throw new Error(result.error);
+      try {
+        verification = this.registry.verifyResults(
+          commands,
+          this.sandbox.getSnapshot(),
+        );
+        this.validateMutation?.(this.base, this.sandbox.getSnapshot());
+      } catch (error) {
+        this.discard();
+        throw error;
+      }
       this.pending.push(...commands);
     }
     if (workspace) {
@@ -76,7 +88,7 @@ export class AgentTransaction implements AgentTransactionPort {
       this.workspaceChanged = true;
     }
     signal.throwIfAborted();
-    return { ok: true, commandCount: commands.length };
+    return { ok: true, commandCount: commands.length, verification };
   }
   commit(label: string): AgentChangeSet {
     if (this.closed) throw new Error('Agent 事务已结束');
@@ -84,6 +96,7 @@ export class AgentTransaction implements AgentTransactionPort {
       throw new Error('工程已修改，Agent 结果未提交');
     const next = this.sandbox.getSnapshot(),
       changes = this.diff(next);
+    this.validateMutation?.(this.base, next);
     let transactionId: string | undefined;
     if (this.pending.length) {
       const result = this.host.executeTransaction(

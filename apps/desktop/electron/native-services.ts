@@ -1,3 +1,4 @@
+import { mediaTypes } from '../../../src/shared/media-formats';
 import { NativeAIService } from './ai-service';
 import { Worker } from 'node:worker_threads';
 import { app, dialog } from 'electron';
@@ -132,11 +133,11 @@ export class NativeServices {
         let paths = request.paths;
         if (!paths) {
           const result = await dialog.showOpenDialog(this.window, {
-            title: '导入图片',
+            title: '导入媒介',
             filters: [
               {
-                name: '图片',
-                extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif'],
+                name: '图片、音频与视频',
+                extensions: Object.keys(mediaTypes),
               },
             ],
             properties: ['openFile', 'multiSelections'],
@@ -153,9 +154,7 @@ export class NativeServices {
       case 'assets.relink': {
         const result = await dialog.showOpenDialog(this.window, {
           title: '重新链接素材',
-          filters: [
-            { name: '图片', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif'] },
-          ],
+          filters: [{ name: '图片', extensions: Object.keys(mediaTypes) }],
           properties: ['openFile'],
         });
         if (result.canceled || !result.filePaths[0]) return null;

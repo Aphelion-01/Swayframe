@@ -25,6 +25,7 @@ import type { EditorView } from './editor-store';
 import type { ComponentType } from 'react';
 export interface InspectorSectionContext {
   store: EditorStore;
+  effectBrowserRequest?: number;
   layer: Layer;
   c: Composition;
   view: EditorView;
@@ -39,6 +40,7 @@ export interface InspectorSectionDefinition {
   id: string;
   title: string;
   order: number;
+  tab?: 'effects';
   component: ComponentType<InspectorSectionContext>;
   appliesTo: (layer: Layer) => boolean;
 }
@@ -480,14 +482,19 @@ registerInspectorSection({
 
 function SectionEffects({ store, layer, c }: InspectorSectionContext) {
   return (
-    <Section title="效果与遮罩" open>
-      <CompositingControls store={store} layer={layer} compositionId={c.id} />
+    <Section title="合成与遮罩" open>
+      <CompositingControls
+        store={store}
+        layer={layer}
+        compositionId={c.id}
+        mode="composition"
+      />
     </Section>
   );
 }
 registerInspectorSection({
   id: 'effects',
-  title: '效果与遮罩',
+  title: '合成与遮罩',
   order: 900,
   component: SectionEffects,
   appliesTo: (l) =>
@@ -495,6 +502,42 @@ registerInspectorSection({
     l.type !== 'camera' &&
     l.type !== 'null' &&
     l.type !== 'model',
+});
+
+registerInspectorSection({
+  id: 'color-effects',
+  title: '效果',
+  tab: 'effects',
+  order: 910,
+  component: ({ store, layer, c, effectBrowserRequest }) => (
+    <CompositingControls
+      store={store}
+      layer={layer}
+      compositionId={c.id}
+      mode="catalog"
+      browserRequest={effectBrowserRequest}
+    />
+  ),
+  appliesTo: (l) =>
+    !!l.editor && !['camera', 'null', 'model', 'audio'].includes(l.type),
+});
+
+registerInspectorSection({
+  id: 'effect-instances',
+  title: '效果',
+  order: 890,
+  component: ({ store, layer, c }) => (
+    <Section title="效果" open>
+      <CompositingControls
+        store={store}
+        layer={layer}
+        compositionId={c.id}
+        mode="effects"
+      />
+    </Section>
+  ),
+  appliesTo: (l) =>
+    !!l.editor && !['camera', 'null', 'model', 'audio'].includes(l.type),
 });
 
 function SectionSemantic({

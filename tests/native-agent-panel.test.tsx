@@ -71,6 +71,14 @@ it('warns about text-only models when references are present, preserves input an
   ).toBe('参照图片创建标题');
   fireEvent.click(screen.getByLabelText('移除参考 参考.png'));
   fireEvent.click(screen.getByText('发送'));
+  await waitFor(() =>
+    expect(s.agent.getSnapshot().pendingConfirmation).toBe(true),
+  );
+  fireEvent.click(screen.getByText('预览修改方案'));
+  await waitFor(() =>
+    expect(s.agent.getSnapshot().creationProposal).toBeDefined(),
+  );
+  fireEvent.click(screen.getByText('接受修改'));
   await waitFor(() => expect(s.agent.getSnapshot().status).toBe('completed'));
   expect(
     (screen.getByLabelText('Agent 需求') as HTMLTextAreaElement).value,
@@ -187,6 +195,14 @@ it('real panel prompt runs native controller tools and commands, updates scene r
     target: { value: '创建一个标题 HELLO SWAYFRAME，放在中心' },
   });
   fireEvent.keyDown(screen.getByLabelText('Agent 需求'), { key: 'Enter' });
+  await waitFor(() =>
+    expect(s.agent.getSnapshot().pendingConfirmation).toBe(true),
+  );
+  fireEvent.click(screen.getByText('预览修改方案'));
+  await waitFor(() =>
+    expect(s.agent.getSnapshot().creationProposal).toBeDefined(),
+  );
+  fireEvent.click(screen.getByText('接受修改'));
   await waitFor(() => expect(s.agent.getSnapshot().status).toBe('completed'));
   const project = s.store.commands.getSnapshot(),
     c = project.compositions[0]!,

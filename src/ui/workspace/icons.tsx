@@ -1,5 +1,9 @@
 import type { SVGProps } from 'react';
 export type IconName =
+  | 'audio'
+  | 'video'
+  | 'motion-blur'
+  | 'parent'
   | 'fit'
   | 'polygon'
   | 'star'
@@ -43,6 +47,11 @@ export type IconName =
   | 'save'
   | 'export';
 const paths: Record<IconName, string> = {
+  audio: 'M2 6v4 M5 3v10 M8 1v14 M11 4v8 M14 6v4',
+  video: 'M2 3h12v10H2Z M2 6h12 M2 10h12 M5 3v10 M11 3v10',
+  'motion-blur': 'M8 3a5 5 0 1 1 0 10 M8 3v10 M1 5h3 M1 8h3 M1 11h3',
+  parent:
+    'M8 2v4 M3 10V6h10v4 M1.5 10h3v3h-3Z M6.5 10h3v3h-3Z M11.5 10h3v3h-3Z',
   fit: 'M6 2H2v4 M10 2h4v4 M2 10v4h4 M14 10v4h-4 M5 5h6v6H5Z',
   polygon: 'M8 2l6 4v6l-6 3-6-3V6Z',
   star: 'M8 1l2 4 4.5.6-3.3 3.2.8 4.5L8 11.2l-4 2.1.8-4.5L1.5 5.6 6 5Z',

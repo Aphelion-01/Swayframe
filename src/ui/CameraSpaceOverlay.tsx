@@ -163,9 +163,6 @@ export function CameraSpaceOverlay({
                   fontSize="11"
                 >
                   {l.source.name}
-                  {snapshot.camera?.layerId === l.source.id
-                    ? ' · 拍摄中'
-                    : ' · 未生效'}
                 </text>
               </g>
             </g>

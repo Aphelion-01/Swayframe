@@ -1,5 +1,10 @@
 import type { AgentReference, ReferenceMode } from './references';
 import { z } from 'zod';
+import {
+  creationDetailsSchema,
+  type ExecutionScope,
+} from './creation-contracts';
+import type { CreationChangeProposal } from './creation-scope';
 import { newId } from '../core/core-types';
 import type { Project } from '../core/project-model';
 import type {
@@ -21,6 +26,7 @@ export const agentPlanSchema = z
     goal: z.string().min(1).max(1000),
     steps: z.array(planStepSchema).min(1).max(100),
     risk: z.enum(['low', 'medium', 'high']),
+    creation: creationDetailsSchema.optional(),
   })
   .strict();
 export type AgentPlan = z.infer<typeof agentPlanSchema>;
@@ -65,8 +71,16 @@ export interface AgentSession {
   error: string | null;
   response: string;
   verification?: string;
+  visualReviews?: readonly {
+    iteration: number;
+    message: string;
+    image?: string;
+  }[];
   beforeSnapshot?: string;
   afterSnapshot?: string;
+  executionScope?: ExecutionScope;
+  creationProposal?: CreationChangeProposal;
+  previewSnapshot?: string;
 }
 export const emptySession = (
   mode: 'ASSIST' | 'AGENT' = 'AGENT',
@@ -99,13 +113,17 @@ export interface AgentRuntimePort {
   context(prompt: string): unknown;
   tools(): readonly ToolDefinition[];
   setSkill?(id: string): void;
+  setExecutionScope?(scope?: ExecutionScope): void;
+  creationContext?(): unknown;
+  reviewDraft?(base: Project, draft: Project): CreationChangeProposal;
   setReferences?(
     references: readonly AgentReference[],
     mode: ReferenceMode,
   ): void;
   readTools?(): readonly ToolDefinition[];
   permission(tool: string, args: unknown): ToolPermission;
-  validate(plan: AgentPlan): void;
+  validate(plan: AgentPlan, project?: Project): void;
+  preparePlan?(plan: AgentPlan): AgentPlan;
   inspect?(tool: string, args: unknown, signal: AbortSignal): Promise<unknown>;
   begin(
     project: Project,

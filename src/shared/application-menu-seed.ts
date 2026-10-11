@@ -9,7 +9,7 @@ export const applicationMenus = [
       ['save-as', '工程另存为', 'CommandOrControl+Shift+S'],
       ['new-composition', '新建合成'],
       ['composition-settings', '合成设置'],
-      ['import', '导入图片到素材库'],
+      ['import', '导入媒介到素材库'],
       ['export', '导出'],
       ['settings', '设置 · AI'],
     ],

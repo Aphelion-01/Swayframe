@@ -124,7 +124,7 @@ describe('A-01～A-09 用户流程集成验收', () => {
       ),
       (ch) => ch.charCodeAt(0),
     );
-    fireEvent.change(screen.getByLabelText('导入图片文件'), {
+    fireEvent.change(screen.getByLabelText('导入图片、音频或视频文件'), {
       target: {
         files: [new File([bytes], 'pixel.png', { type: 'image/png' })],
       },

@@ -1,3 +1,4 @@
+import { mediaAccept } from '../shared/media-formats';
 import { resolutionPresets, frameRates } from '../core/output-settings';
 import { ModelImportInput } from './ModelImportInput';
 import { useEditorSlice } from './use-editor-slice';
@@ -574,8 +575,8 @@ export function Toolbar({ store }: { store: EditorStore }) {
         ref={imageRef}
         type="file"
         hidden
-        aria-label="导入图片文件"
-        accept="image/png,image/jpeg,image/webp,image/gif"
+        aria-label="导入图片、音频或视频文件"
+        accept={mediaAccept}
         onChange={(event) => {
           const file = event.target.files?.[0];
           event.target.value = '';
@@ -619,7 +620,7 @@ export function Toolbar({ store }: { store: EditorStore }) {
                   底部编辑时间与关键帧；关键帧右键设置缓动，标签切换曲线和节点。
                 </dd>
                 <dt>效果 / 合成节点</dt>
-                <dd>属性中的“效果与遮罩”添加效果，可直接打开合成节点。</dd>
+                <dd>在“效果”页点击效果名称应用，在“属性”页编辑效果参数。</dd>
                 <dt>助手 / 设置</dt>
                 <dd>助手处理 AI 任务；文件 → 设置 · AI 配置服务。</dd>
                 <dt>搜索 / 导出</dt>

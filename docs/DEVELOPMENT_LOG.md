@@ -137,3 +137,41 @@ Mac锁屏阻止继续原生文件对话框和鼠标操作；已请求解锁。�
 ## 2026-10-08 · 0.9.17
 
 完成用户 12 项创作体验专项改动；执行与限制见 EDITOR_POLISH_RESULT.md。注册 canvas-aids / text-animator / spatial-translate / spatial-rotate，未新增全局工具栏按钮。保留共享 Command/Transaction、Proposal 边界，更新入口库存与位置矩阵。新增实时光学、文本范围动画、输出采样/取消、路径直接操控和帧缓存预算回归。
+
+## 2026-10-08 — V0.3 Unified Effect Engine
+
+按 Phase0→Phase7 顺序推进：真实架构审计；十项内置效果兼容注册；统一浏览器和独立预设；径向渐变共用算法；受控声明式 CPU Runtime；自包含版本库和草稿生命周期；Agent Forge工具；集成与实际Canvas验收。阶段测试数量依次为466、468、469、472、476、479、481，最终结果见 EFFECT_ENGINE_TEST_REPORT.md。真实浏览器逐像素验证 Fill/Generator/Graph、预览/PNG导出、重开及关键帧；优化1080p渐变运算从约583ms到6.4ms。该结果仅是本机单次基准，不能推广为复杂自定义效果实时帧率。
+
+## 2026-10-09 — Effect Runtime 性能优化
+
+保持 declarative-pixel-v1 和共享渲染路径，编译固定操作码、移除不可达指令、复用帧/行/列计算，列缓存最多8MiB。冻结旧标量解释器作为独立对照，覆盖全部25条指令、80个确定性混合程序、非有限中间值、窄宽图像与缓存超限回退。130文件/514测试、lint、typecheck和Web/桌面构建通过。真实浏览器1080p有机纹理中位约1792ms→95ms、逐像素一致；仍不承诺实时播放。无用户入口或Scene数据变更。详见 EFFECT_RUNTIME_PERFORMANCE_RESULT.md。
+
+## 2026-10-11 / 0.9.21
+
+修复 Agent 计划语义/范围预检、纯文字无计划的有界恢复、当前草稿视觉修正和流式空闲超时。摄像机线性/贝塞尔及空间路径速度改用解析导数；新增大坐标回归。实现父级拖线绑定、距离渐隐地面网格、持久缓存准备条、媒体导入/预览/音轨导出、模型显示控制及图层动态模糊。详细验收边界见 outputs/reliability-021/REVIEW.md；真实模型检查见 outputs/agent-creation/live-stream-regression/live-report.json。界面自动操作接口仍出现超时，未完成本轮界面端到端截图验收。
+
+## 2026-10-11 / 0.9.22
+
+按用户要求将“效果与调色”迁移为 Inspector 顶部页签，保持原 Command、参数表单和注册 Section，混合模式/遮罩保留属性页。已有添加效果菜单命令自动定位到效果页，节点属性仍可切换。Scene 选择新增 UI-only 时间轴定位请求，自动切回 Timeline、展开目标图层及被折叠的属性组、清除搜索与属性筛选，保持当前时间和工程历史。新增入口分离、键盘页签、效果浏览器旧入口、自动展开和纵向定位回归；详细质量记录与截图见 outputs/inspector-navigation-022。
+
+
+## 2026-10-11 / 0.9.23 — V0.4.1 Reliability
+
+修复 WebCodecs 无 FLAC 解码能力时被提前拒绝的问题；导入与音轨混音增加 Web Audio 回退。扩展 PCM AIFF/AIFF-C 解析与预览代理，补充 OGA、M4B/M4R、M4V/QT、MTS、3GP/3G2 入口（实际编码仍须解码验证）。createText 使用统一契约接收字体大小/字体/颜色/对齐；字段错误、上下文、无效参数重试与 postflight 校验均有明确记录。整体参考重建先读取真实参考像素并输出 ReferenceAnalysis，视觉验证同时包含参考帧和实际帧；局部修正保留范围门禁，空操作停止。FLAC/AIFF 和真实文字 Adapter 在独立 Electron 回归通过。真实 Provider Cubic 端到端因自动审批拒绝发送参考图而待授权，不能标为通过。
+
+## 2026-10-11 / 0.9.24 — Real Provider Recovery
+
+用户明确授权参考图、测试渲染及工具上下文外发后，真实 DeepSeek/deepseek-flash 测试发现字段缺失、不完整 JSON 和视觉修正引用未知能力。补充专业分析精确诊断、无效 JSON 有界恢复与视觉修正提交前能力预检/单次修复。第一次实际画面不满足 Cubic 参考，不计为视觉验收通过；网络日志与每次真实渲染独立保留。仍使用 shared Command/Transaction，Intelligence 不写 Scene，无新增 UI 入口。
+
+网络复测还发现：三轮查询后第四轮无效计划触发 round===3 的提前退出，使独立的2次纠错预算实际失效。现有界上限调整为8个请求轮次；第4轮起仅暴露 submitPlan、不再允许读取工具。重复相同无效计划及两次纠错仍立即停止。新增三轮查询之后计划纠正成功的回归。
+
+查询总次数仍为12。真实模型一次批量追加查询导致超过总预算时，以failed Tool Result拒绝超额调用，并使用已有结果强制下一轮submitPlan，避免丢弃先前有效查询；未知/越权工具仍阻止。
+
+真实Provider后续将 capabilityId 从组合串更改为另一个能力名时，操作步骤未变，旧去重误判同一无效计划。现在指纹包括任务的能力/执行域/策略及步骤、依赖的索引映射，忽略表面ID变化；新增两次不同元数据失败后第三次合法计划成功的回归。
+
+## 2026-10-11 / 0.9.25 — Effects catalog and layer properties
+
+“效果与调色”改为“效果”，EffectBrowser复用内嵌模式直接列出全部内置效果并保留搜索/分类、用户预设和草稿入口。新增注册effect-instances Section把已应用效果及启用/排序/动画参数移回属性页，目录不显示添加中间按钮，仍通过原Graph Command应用。未选图层可浏览但禁止应用；切页重置局部滚动，修复搜索入口被旧属性滚动位置藏住。测试覆盖目录、参数分工、共享Undo与原遮罩/时间轴定位。
+
+## 0.9.26 Agent 视觉执行契约修复
+实际旧计划使用零绝对手柄及未接线渐变节点，导致曲边和纯色结果。明确 createPath 本地坐标；现有 setFill 支持原生径向/线性填充并复用注册参数校验与共享 Command。补充结果检查和参考分解循环依赖检查。实际 Electron 离线文字、FLAC、AIFF、透视路径渐变通过；真实 B/C 重跑因 DeepSeek 目的地授权被自动审批拒绝，等待明确答复。旧作品与用户 AI 设置未修改。

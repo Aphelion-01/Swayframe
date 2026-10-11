@@ -7,7 +7,7 @@ it('bitmap cache retains real rendered frames only, evicts by recency and invali
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
     drawImage: vi.fn(),
   } as unknown as CanvasRenderingContext2D);
-  const cache = new PreviewFrameCache(),
+  const cache = new PreviewFrameCache(16 * 100 * 100 * 4),
     project = createDefaultProject(),
     source = document.createElement('canvas');
   source.width = 100;
@@ -36,4 +36,17 @@ it('memory budget rejects an oversized frame and missing canvas context never re
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
   cache.put('missing', 0, source);
   expect(cache.times()).toEqual([]);
+});
+
+it('keeps more than sixteen small rendered frames until the byte budget is reached', () => {
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+    drawImage: vi.fn(),
+  } as unknown as CanvasRenderingContext2D);
+  const cache = new PreviewFrameCache(),
+    source = document.createElement('canvas');
+  source.width = 100;
+  source.height = 100;
+  for (let i = 0; i < 180; i++) cache.put(String(i), i / 30, source);
+  expect(cache.times()).toHaveLength(180);
+  expect(cache.get('0')).toBeDefined();
 });

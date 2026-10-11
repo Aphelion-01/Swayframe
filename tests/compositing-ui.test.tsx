@@ -24,7 +24,6 @@ it('GUI 遮罩、羽化动画与效果排序均进入共享命令历史', () => 
   render(<App store={store} />);
   fireEvent.click(screen.getByText('文件', { selector: 'summary span' }));
   createObject('创建 矩形');
-  fireEvent.click(screen.getByText('效果与遮罩'));
   fireEvent.click(screen.getByRole('button', { name: '添加椭圆遮罩' }));
   fireEvent.click(screen.getByRole('button', { name: '开启遮罩1羽化动画' }));
   act(() => store.setTime(1));
@@ -36,11 +35,10 @@ it('GUI 遮罩、羽化动画与效果排序均进入共享命令历史', () => 
     activeComposition(store.getSnapshot().project).layers[0]!.editor!.masks[0]!
       .feather.keyframes,
   ).toHaveLength(2);
-  fireEvent.click(screen.getByRole('button', { name: '添加效果' }));
-  fireEvent.change(screen.getByLabelText('添加效果类型'), {
-    target: { value: 'gaussianBlur' },
-  });
-  fireEvent.click(screen.getByRole('button', { name: '添加效果' }));
+  fireEvent.click(screen.getByRole('tab', { name: '效果' }));
+  fireEvent.click(screen.getByRole('button', { name: /^曝光 / }));
+  fireEvent.click(screen.getByRole('button', { name: /^高斯模糊 / }));
+  fireEvent.click(screen.getByRole('tab', { name: '属性' }));
   const before = store.commands.getSnapshot();
   fireEvent.click(screen.getByRole('button', { name: '上移效果2' }));
   expect(

@@ -1,3 +1,17 @@
+import { creationGraphContext } from '../agent/creation-context';
+import { UserEffectLibrary } from '../core/effect-library';
+import {
+  registerCreationTools,
+  resolveCreationDetails,
+} from '../agent/creation-planner';
+import {
+  resolveExecutionScope,
+  validateCreationScope,
+  creationDiff,
+} from '../agent/creation-scope';
+import type { ExecutionScope } from '../agent/creation-contracts';
+import { compileGraph } from '../core/compositing-compiler';
+import { registerEffectForgeTools } from '../agent/effect-forge-tools';
 import { IntelligenceService } from '../agent/intelligence';
 import { activeComposition, layerProperties } from '../core/project-model';
 import { agentLibraryFor, registerPresetTools } from '../agent/library';
@@ -39,6 +53,24 @@ export function createNativeAgent(
       ),
       engine,
     );
+  registerEffectForgeTools(
+    registry,
+    undefined,
+    (pixels, width, height) => {
+      if (!manager.getSnapshot().settings.privacy.sendRenderPreview)
+        return undefined;
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return undefined;
+      const image = ctx.createImageData(width, height);
+      image.data.set(pixels);
+      ctx.putImageData(image, 0, 0);
+      return canvas.toDataURL('image/png');
+    },
+    () => new UserEffectLibrary(localStorage).all(),
+  );
   const library = agentLibraryFor(manager.storage);
   registerPresetTools(registry, library);
   const input = () => {
@@ -99,8 +131,42 @@ export function createNativeAgent(
   let references: readonly AgentReference[] = [];
   let referenceMode: ReferenceMode = 'overall';
   let activeReferenceMode: ReferenceMode | undefined;
-  const allowed = () =>
-    referenceToolScope(registry, chosen?.allowedTools, activeReferenceMode);
+  let executionScope: ExecutionScope | undefined;
+  const allowed = () => {
+    const reference = referenceToolScope(
+      registry,
+      chosen?.allowedTools,
+      activeReferenceMode,
+    );
+    const available = registry
+      .catalog()
+      .filter((t) => !reference || reference.includes(t.name));
+    return available
+      .filter(
+        (t) =>
+          t.permission === 'READ' ||
+          (!executionScope || executionScope.kind === 'FULL_COMPOSITION'
+            ? ![
+                'createComposition',
+                'deleteComposition',
+                'openComposition',
+              ].includes(t.name)
+            : executionScope.kind === 'PARAMETER_ONLY'
+              ? ['setNodeParameter', 'effect_setParameter'].includes(t.name)
+              : [
+                  'setNodeParameter',
+                  'effect_setParameter',
+                  'enableNode',
+                  'renameGraphNode',
+                  'setNodePosition',
+                  'createNode',
+                  'deleteNode',
+                  'connectNodes',
+                  'disconnectEdge',
+                ].includes(t.name)),
+      )
+      .map((t) => t.name);
+  };
   const professional = new IntelligenceService(manager);
   for (const name of [
     'analyzeLayout',
@@ -162,6 +228,20 @@ export function createNativeAgent(
     );
   }
   let goal = '';
+  const creation = registerCreationTools(
+    registry,
+    () => new UserEffectLibrary(localStorage).all(),
+    () =>
+      manager
+        .getSnapshot()
+        .settings.providers.filter((p) => p.enabled)
+        .map((p) => ({
+          id: p.id,
+          name: p.name,
+          type: p.type,
+          model: p.defaultModel,
+        })),
+  );
   const runtime: AgentRuntimePort = {
     ...(snapshotRenderer
       ? {
@@ -225,10 +305,18 @@ export function createNativeAgent(
               images.push(
                 (await snapshotRenderer.render(project, time, signal)).image,
               );
+            const referenceFrames = manager.getSnapshot().settings.privacy
+              .sendReferences
+              ? references.flatMap((r) => r.frames)
+              : [];
             const proposal = await intelligence.suggest(
-              images,
+              [...referenceFrames, ...images],
               {
                 goal,
+                referenceFrameCount: referenceFrames.length,
+                referenceMode: activeReferenceMode,
+                imageOrder:
+                  'reference frames first, actual rendered frames after',
                 frameTimes: [currentTime, ...times.slice(0, 2)],
                 context: engine.build(
                   { ...captured, project, time: currentTime },
@@ -238,6 +326,7 @@ export function createNativeAgent(
                 tools: registry.definitions(allowed()),
               },
               signal,
+              (plan) => runtime.validate(plan, project),
             );
             return {
               ...proposal,
@@ -248,6 +337,46 @@ export function createNativeAgent(
         }
       : {}),
     project: store.commands.getSnapshot,
+    setExecutionScope: (scope) => {
+      executionScope = resolveExecutionScope(
+        store.commands.getSnapshot(),
+        scope ?? {
+          kind: 'FULL_COMPOSITION',
+          compositionId: store.commands.getSnapshot().activeCompositionId,
+        },
+      );
+    },
+    creationContext: () => ({
+      scope: executionScope,
+      strategy: ['modify-existing', 'reuse', 'compose', 'generate', 'forge'],
+      capabilities: creation
+        .capabilities()
+        .filter((c) => c.category !== 'command' && c.category !== 'inspection'),
+      ...creationGraphContext(captured.project, executionScope),
+      unavailable: ['full Node Groups', 'image/video generation nodes'],
+    }),
+    preparePlan: (plan) => ({
+      ...plan,
+      creation: resolveCreationDetails(plan, registry, creation.capabilities()),
+    }),
+    reviewDraft: (base, next) => {
+      const scope = executionScope ?? {
+        kind: 'FULL_COMPOSITION' as const,
+        compositionId: base.activeCompositionId,
+      };
+      validateCreationScope(base, next, scope);
+      for (const l of activeComposition(next).layers)
+        if (l.editor?.graph) {
+          const old = activeComposition(base).layers.find((v) => v.id === l.id)
+            ?.editor?.graph;
+          if (old !== l.editor.graph) {
+            const result = compileGraph(l.editor.graph);
+            if (!result.valid)
+              throw Error(result.diagnostics.map((d) => d.message).join('；'));
+          }
+        }
+      return creationDiff(base, next, scope);
+    },
     setReferences: (value, mode) => {
       references = value;
       referenceMode = mode;
@@ -308,7 +437,20 @@ export function createNativeAgent(
         .readDefinitions()
         .filter((t) => !allowed() || allowed()!.includes(t.name)),
     permission: (name, args) => registry.permission(name, args, allowed()),
-    validate: (plan) => registry.validatePlan(plan, allowed()),
+    validate: (plan, project) => {
+      registry.validatePlan(
+        plan,
+        allowed(),
+        {
+          ...captured,
+          project: project ?? captured.project,
+        },
+        (base, next) => {
+          if (executionScope) validateCreationScope(base, next, executionScope);
+        },
+      );
+      resolveCreationDetails(plan, registry, creation.capabilities());
+    },
     inspect: (name, args, signal) =>
       registry.read(
         name,
@@ -357,6 +499,9 @@ export function createNativeAgent(
         captured,
         authorization?.destructiveConfirmed ?? false,
         allowed(),
+        (base, next) => {
+          if (executionScope) validateCreationScope(base, next, executionScope);
+        },
       );
     },
   };

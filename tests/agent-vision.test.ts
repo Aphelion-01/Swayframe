@@ -94,3 +94,68 @@ it('offscreen entrance is a warning, not a fake successful vision result', () =>
   );
   expect(diagnostics.warnings[0]).toContain('之外');
 });
+
+it('repairs a visual refinement rejected by real capability preflight once before any execution', async () => {
+  const platform = createAIPlatform(undefined, true);
+  const manager = new AIProviderManager(platform.storage, platform.transport);
+  await manager.initialize();
+  const id = crypto.randomUUID();
+  await manager.saveProvider({
+    id,
+    name: 'Vision Mock',
+    type: 'mock',
+    baseUrl: 'https://example.invalid',
+    enabled: true,
+    defaultModel: 'vision',
+    models: [
+      { id: 'vision', name: 'vision', capabilities: ['vision', 'text'] },
+    ],
+  });
+  const refinement = {
+    id: 'p',
+    goal: '局部修改',
+    risk: 'low',
+    steps: [{ id: 's', label: '修改', tool: 'setFill', arguments: {} }],
+  };
+  const handler = vi
+    .fn()
+    .mockResolvedValueOnce({
+      text: '',
+      model: 'vision',
+      toolCalls: [
+        {
+          id: 'a',
+          name: 'submitVisualAssessment',
+          arguments: { ok: false, message: '需调整', refinement },
+        },
+      ],
+    })
+    .mockResolvedValueOnce({
+      text: '',
+      model: 'vision',
+      toolCalls: [
+        {
+          id: 'b',
+          name: 'submitVisualAssessment',
+          arguments: { ok: true, message: '无需进一步修改', refinement: null },
+        },
+      ],
+    });
+  manager.register(new MockAIProvider(id, 'Mock', handler));
+  const validate = vi.fn(() => {
+    throw Error('计划引用了未注册能力：layer.fill');
+  });
+  const result = await new VisualIntelligenceService(manager).suggest(
+    ['data:image/png;base64,AAAA', 'data:image/png;base64,BBBB'],
+    {},
+    new AbortController().signal,
+    validate,
+  );
+  expect(result.ok).toBe(true);
+  expect(validate).toHaveBeenCalledTimes(1);
+  expect(handler).toHaveBeenCalledTimes(2);
+  expect(handler.mock.calls[1]![0].messages.at(-1).content).toContain(
+    'layer.fill',
+  );
+  expect(handler.mock.calls[1]![0].messages[1].images).toHaveLength(2);
+});

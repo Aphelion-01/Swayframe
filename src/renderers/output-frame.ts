@@ -24,7 +24,10 @@ export class OutputFrameRenderer {
     await document.fonts?.ready;
     await this.renderer.syncAssets(this.project.assets);
   }
-  draw(time: number) {
+  async draw(time: number) {
+    await this.renderer.prepareMedia(
+      createRenderSnapshot(this.c, time, [], undefined, this.project),
+    );
     const s = this.settings;
     this.renderer.render(
       createRenderSnapshot(this.c, time, [], undefined, this.project),
@@ -34,6 +37,7 @@ export class OutputFrameRenderer {
       1,
       s.transparent,
     );
+    this.renderer.assertNoEffectErrors();
     const ctx = this.canvas.getContext('2d')!,
       rect = outputRect(this.c.width, this.c.height, s);
     ctx.clearRect(0, 0, s.width, s.height);

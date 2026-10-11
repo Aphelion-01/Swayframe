@@ -1,3 +1,5 @@
+import { mediaMetadata } from '../importers/media-metadata';
+import { mediaMime } from '../shared/media-formats';
 import { desktopService } from '../desktop/service';
 import { importNativeAssets } from '../desktop/asset-service';
 import { activeComposition, createLayer } from '../core/project-model';
@@ -14,12 +16,63 @@ export async function importImageFile(
     await importNativeAssets(store, addLayer, [file]);
     return;
   }
+  const mime = mediaMime(file.name) ?? file.type;
+  if (mime.startsWith('audio/') || mime.startsWith('video/')) {
+    if (file.size > 10_000_000)
+      throw Error('Web 版内嵌素材限制为 10 MB，请在桌面版导入大文件');
+    const media = await mediaMetadata(file, mime),
+      dataUrl = (await readFile(file, 'dataUrl')).replace(
+        /^data:[^;]*;/,
+        `data:${mime};`,
+      );
+    const asset = {
+      id: newId(),
+      name: file.name,
+      mimeType: mime,
+      dataUrl,
+      media,
+    };
+    const v = store.getSnapshot(),
+      c = activeComposition(v.project);
+    const layer = createLayer(media.kind, {
+      name: file.name,
+      assetId: asset.id,
+      width: media.width,
+      height: media.height,
+      position: { x: c.width / 2, y: c.height / 2 },
+    });
+    const timed = {
+      ...layer,
+      editor: {
+        ...layer.editor!,
+        outPoint: Math.min(c.duration, media.duration),
+      },
+    };
+    const ops = [
+      command({ type: 'asset.add', asset }),
+      ...(addLayer
+        ? [command({ type: 'layer.create', compositionId: c.id, layer: timed })]
+        : []),
+    ];
+    if (store.run('导入音视频', ops).ok && addLayer) store.select(layer.id);
+    return;
+  }
   if (file.size > 10_000_000) throw new Error('图片超过 10 MB');
   if (
-    !['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(file.type)
+    ![
+      'image/png',
+      'image/jpeg',
+      'image/webp',
+      'image/gif',
+      'image/bmp',
+      'image/avif',
+    ].includes(mime)
   )
-    throw new Error('请选择 PNG、JPEG、WebP 或 GIF 图片');
-  const dataUrl = await readFile(file, 'dataUrl'),
+    throw new Error('请选择 PNG、JPEG、WebP、GIF、BMP 或 AVIF 图片');
+  const dataUrl = (await readFile(file, 'dataUrl')).replace(
+      /^data:[^;]*;/,
+      `data:${mime};`,
+    ),
     p = store.getSnapshot().project,
     c = activeComposition(p),
     existing = p.assets.find((a) => a.dataUrl === dataUrl),
@@ -29,7 +82,7 @@ export async function importImageFile(
       asset = existing ?? {
         id: newId(),
         name: file.name,
-        mimeType: file.type,
+        mimeType: mime,
         dataUrl,
       },
       layer = createLayer('image', {
@@ -96,6 +149,32 @@ export async function addAssetLayer(
     if (
       store.run('添加模型图层', [
         command({ type: 'layer.create', compositionId: c.id, layer }),
+      ]).ok
+    )
+      store.select(layer.id);
+    return;
+  }
+  if (asset.media) {
+    const layer = createLayer(asset.media.kind, {
+      assetId: asset.id,
+      name: asset.name,
+      width: asset.media.width,
+      height: asset.media.height,
+      position: { x: c.width / 2, y: c.height / 2 },
+    });
+    if (
+      store.run('添加媒介图层', [
+        command({
+          type: 'layer.create',
+          compositionId: c.id,
+          layer: {
+            ...layer,
+            editor: {
+              ...layer.editor!,
+              outPoint: Math.min(c.duration, asset.media.duration),
+            },
+          },
+        }),
       ]).ok
     )
       store.select(layer.id);

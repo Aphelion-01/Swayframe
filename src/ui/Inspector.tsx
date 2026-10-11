@@ -1,11 +1,12 @@
+import { EffectBrowser } from './EffectBrowser';
 import { inspectorSections } from './inspector-sections';
 import { PivotSelector } from './PivotSelector';
 import { CompositingNodeInspector } from './CompositingNodeInspector';
 import { AnimatedField } from './AnimatedField';
-import { Section } from './workspace/primitives';
+import { Section, Tabs } from './workspace/primitives';
 import { colorValue } from '../renderers/draw-content';
 import { layerKindLabels } from './labels';
-import { useSyncExternalStore } from 'react';
+import { useSyncExternalStore, useState, useEffect, useRef } from 'react';
 import { evaluateProperty } from '../core/animation-engine';
 import { command } from '../core/command-system';
 import type { LayerPatch } from '../core/command-system';
@@ -14,15 +15,57 @@ import type { SemanticMetadata } from '../core/project-model';
 import type { EditorStore } from './editor-store';
 
 export function Inspector({ store }: { store: EditorStore }) {
+  const [tab, setTab] = useState('属性');
+  const body = useRef<HTMLDivElement>(null);
   const view = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  useEffect(() => {
+    if (body.current) body.current.scrollTop = 0;
+  }, [tab, view.selection[0]]);
+  const [effectBrowserRequest, setEffectBrowserRequest] = useState(0);
+  const [effectBrowserLayer, setEffectBrowserLayer] = useState<string>();
+  useEffect(() => setEffectBrowserRequest(0), [view.selection[0]]);
+  useEffect(() => {
+    const open = () => {
+      setTab('效果');
+      setEffectBrowserLayer(store.getSnapshot().selection[0]);
+      setEffectBrowserRequest((n) => n + 1);
+    };
+    const showEffects = () => setTab('效果');
+    window.addEventListener('motion:effect-browser', open);
+    window.addEventListener('motion:add-blur', showEffects);
+    return () => {
+      window.removeEventListener('motion:effect-browser', open);
+      window.removeEventListener('motion:add-blur', showEffects);
+    };
+  }, [store]);
+  const heading = (
+    <Tabs items={['属性', '效果']} value={tab} onChange={setTab} />
+  );
   const c = activeComposition(view.project);
   const layer = c.layers.find((item) => item.id === view.selection[0]);
+  if (
+    tab === '效果' &&
+    (!layer ||
+      view.selection.length !== 1 ||
+      !inspectorSections(layer).some((s) => s.tab === 'effects'))
+  )
+    return (
+      <aside className="inspector-panel" aria-label="属性面板">
+        <div className="panel-heading">{heading}</div>
+        <div ref={body} className="inspector-body">
+          <EffectBrowser
+            inline
+            disabled
+            onClose={() => {}}
+            onSelect={() => {}}
+          />
+        </div>
+      </aside>
+    );
   if (!layer)
     return (
       <aside className="inspector-panel" aria-label="属性面板">
-        <div className="panel-heading">
-          <h2>属性</h2>
-        </div>
+        <div className="panel-heading">{heading}</div>
         <div className="empty-note">
           <p>选择一个图层</p>
           <small>在画布或图层列表中选择</small>
@@ -33,76 +76,80 @@ export function Inspector({ store }: { store: EditorStore }) {
     return (
       <aside className="inspector-panel" aria-label="属性面板">
         <div className="panel-heading">
-          <h2>属性</h2>
+          {heading}
           <span>{view.selection.length} 个图层</span>
         </div>
-        <div className="inspector-body">
-          <Section title="变换">
-            {c.layers
-              .filter((l) => view.selection.includes(l.id))
-              .every((l) => !l.editor?.is3D && l.type !== 'camera') ? (
-              <>
-                <PivotSelector store={store} />
+        <div ref={body} className="inspector-body">
+          {tab === '效果' ? (
+            <p className="empty-note">选择一个图层后编辑其效果</p>
+          ) : (
+            <Section title="变换">
+              {c.layers
+                .filter((l) => view.selection.includes(l.id))
+                .every((l) => !l.editor?.is3D && l.type !== 'camera') ? (
+                <>
+                  <PivotSelector store={store} />
+                  <AnimatedField
+                    store={store}
+                    property={layer.transform.position}
+                    label="位置"
+                  />
+                  <AnimatedField
+                    store={store}
+                    property={layer.transform.scale}
+                    label="缩放"
+                    linkMode="ratio"
+                    factor={100}
+                    unit="（%）"
+                  />
+                  <AnimatedField
+                    store={store}
+                    property={layer.transform.rotation}
+                    label="旋转"
+                    unit="（°）"
+                  />
+                </>
+              ) : c.layers
+                  .filter((l) => view.selection.includes(l.id))
+                  .every((l) => l.editor?.is3D && l.type !== 'camera') ? (
+                <>
+                  <AnimatedField
+                    store={store}
+                    property={layer.editor!.properties.position3D!}
+                    label="三维位置"
+                    defaultLinked={false}
+                  />
+                  <AnimatedField
+                    store={store}
+                    property={layer.editor!.properties.rotation3D!}
+                    label="三维旋转"
+                    defaultLinked={false}
+                  />
+                  <AnimatedField
+                    store={store}
+                    property={layer.editor!.properties.scale3D!}
+                    label="三维缩放"
+                    linkMode="ratio"
+                  />
+                </>
+              ) : (
+                <p className="inspector-note">
+                  选区包含不同维度或摄像机；选择同类图层后编辑对应变换。
+                </p>
+              )}
+              {c.layers
+                .filter((l) => view.selection.includes(l.id))
+                .every((l) => !['camera', 'null'].includes(l.type)) && (
                 <AnimatedField
                   store={store}
-                  property={layer.transform.position}
-                  label="位置"
-                />
-                <AnimatedField
-                  store={store}
-                  property={layer.transform.scale}
-                  label="缩放"
-                  linkMode="ratio"
+                  property={layer.transform.opacity}
+                  label="透明度"
                   factor={100}
                   unit="（%）"
                 />
-                <AnimatedField
-                  store={store}
-                  property={layer.transform.rotation}
-                  label="旋转"
-                  unit="（°）"
-                />
-              </>
-            ) : c.layers
-                .filter((l) => view.selection.includes(l.id))
-                .every((l) => l.editor?.is3D && l.type !== 'camera') ? (
-              <>
-                <AnimatedField
-                  store={store}
-                  property={layer.editor!.properties.position3D!}
-                  label="三维位置"
-                  defaultLinked={false}
-                />
-                <AnimatedField
-                  store={store}
-                  property={layer.editor!.properties.rotation3D!}
-                  label="三维旋转"
-                  defaultLinked={false}
-                />
-                <AnimatedField
-                  store={store}
-                  property={layer.editor!.properties.scale3D!}
-                  label="三维缩放"
-                  linkMode="ratio"
-                />
-              </>
-            ) : (
-              <p className="inspector-note">
-                选区包含不同维度或摄像机；选择同类图层后编辑对应变换。
-              </p>
-            )}
-            {c.layers
-              .filter((l) => view.selection.includes(l.id))
-              .every((l) => !['camera', 'null'].includes(l.type)) && (
-              <AnimatedField
-                store={store}
-                property={layer.transform.opacity}
-                label="透明度"
-                factor={100}
-                unit="（%）"
-              />
-            )}
-          </Section>
+              )}
+            </Section>
+          )}
         </div>
       </aside>
     );
@@ -112,13 +159,14 @@ export function Inspector({ store }: { store: EditorStore }) {
           (n) => n.id === view.graphSelection?.nodeIds[0],
         )
       : undefined;
-  if (node && layer.editor?.graph)
+  if (node && layer.editor?.graph && tab === '属性')
     return (
       <CompositingNodeInspector
         store={store}
         layer={layer}
         graph={layer.editor.graph}
         node={node}
+        heading={heading}
       />
     );
   const patch = (value: LayerPatch) =>
@@ -154,7 +202,7 @@ export function Inspector({ store }: { store: EditorStore }) {
   return (
     <aside className="inspector-panel" aria-label="属性面板">
       <div className="panel-heading">
-        <h2>属性</h2>
+        {heading}
         <span className="type-badge">
           {
             layerKindLabels[
@@ -163,25 +211,37 @@ export function Inspector({ store }: { store: EditorStore }) {
           }
         </span>
       </div>
-      <div className="inspector-body" key={layer.id}>
-        {inspectorSections(layer).map(({ id, component: Component }) => (
-          <div key={id} data-inspector-section={id}>
-            <Component
-              {...{
-                store,
-                layer,
-                c,
-                view,
-                patch,
-                error,
-                t,
-                semantic,
-                fill,
-                hex,
-              }}
-            />
-          </div>
-        ))}
+      <div ref={body} className="inspector-body" key={layer.id}>
+        {tab === '效果' &&
+          !inspectorSections(layer).some((s) => s.tab === 'effects') && (
+            <p className="empty-note">该图层没有可编辑的效果</p>
+          )}
+        {inspectorSections(layer).map(
+          ({ id, tab: sectionTab, component: Component }) => (
+            <div
+              key={id}
+              data-inspector-section={id}
+              hidden={(sectionTab === 'effects') !== (tab === '效果')}
+            >
+              <Component
+                {...{
+                  store,
+                  effectBrowserRequest:
+                    effectBrowserLayer === layer.id ? effectBrowserRequest : 0,
+                  layer,
+                  c,
+                  view,
+                  patch,
+                  error,
+                  t,
+                  semantic,
+                  fill,
+                  hex,
+                }}
+              />
+            </div>
+          ),
+        )}
       </div>
     </aside>
   );

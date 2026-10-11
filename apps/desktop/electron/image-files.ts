@@ -1,3 +1,4 @@
+import { mediaTypes } from '../../../src/shared/media-formats';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 export const imageTypes: Record<string, string> = {
@@ -6,6 +7,9 @@ export const imageTypes: Record<string, string> = {
   '.jpeg': 'image/jpeg',
   '.webp': 'image/webp',
   '.gif': 'image/gif',
+  ...Object.fromEntries(
+    Object.entries(mediaTypes).map(([ext, mime]) => ['.' + ext, mime]),
+  ),
 };
 export function imageSignature(bytes: Uint8Array, mime: string): boolean {
   const starts = (...values: number[]) =>
@@ -18,6 +22,15 @@ export function imageSignature(bytes: Uint8Array, mime: string): boolean {
       (bytes[4] === 55 || bytes[4] === 57) &&
       bytes[5] === 97
     );
+  if (mime === 'image/bmp') return starts(66, 77);
+  if (mime === 'image/avif')
+    return (
+      bytes.length > 16 &&
+      new TextDecoder().decode(bytes.slice(4, 8)) === 'ftyp' &&
+      new TextDecoder().decode(bytes.slice(8, 32)).includes('avif')
+    );
+  if (mime.startsWith('audio/') || mime.startsWith('video/'))
+    return bytes.length > 8; // Track parsing and codec validation are performed before asset.add.
   return (
     mime === 'image/webp' &&
     starts(82, 73, 70, 70) &&
@@ -27,14 +40,15 @@ export function imageSignature(bytes: Uint8Array, mime: string): boolean {
 export async function readImage(file: string) {
   const mime = imageTypes[path.extname(file).toLowerCase()];
   if (!mime) throw new Error('请选择 PNG、JPEG、WebP 或 GIF 图片');
+  const limit = mime.startsWith('image/') ? 10_000_000 : 256_000_000;
   const handle = await fs.open(file, 'r');
   try {
     const stat = await handle.stat();
-    if (!stat.isFile() || stat.size > 10_000_000)
-      throw new Error('图片无效或超过 10 MB');
+    if (!stat.isFile() || stat.size > limit)
+      throw new Error('媒介无效或超过大小限制（图片 10 MB，音视频 256 MB）');
     // Read the same open descriptor after validation; renamed paths cannot redirect this request.
     const bytes = await handle.readFile();
-    if (bytes.length > 10_000_000 || !imageSignature(bytes, mime))
+    if (bytes.length > limit || !imageSignature(bytes, mime))
       throw new Error('图片内容与文件格式不一致');
     return { bytes, mime, stat };
   } finally {
