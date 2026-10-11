@@ -1,3 +1,4 @@
+import { AgentExecutionError } from './execution-error';
 import { layoutCompositingGraph } from '../core/compositing-layout';
 import { builtinMotionPresets } from '../core/motion-presets';
 import { visualCapabilities } from '../core/visual-capabilities';
@@ -168,20 +169,47 @@ export function resolveCreationDetails(
   );
   const taskIds = new Set(details.tasks.map((t) => t.id)),
     stepIds = new Set(plan.steps.map((s) => s.id));
-  if (taskIds.size !== details.tasks.length) throw Error('创作任务 ID 重复');
+  if (taskIds.size !== details.tasks.length)
+    throw new AgentExecutionError({
+      code: 'SCHEMA_INVALID',
+      phase: 'preflight',
+      field: 'creation.tasks.id',
+      recoverable: true,
+      message: '创作任务 ID 重复',
+    });
   const assigned = details.tasks.flatMap((t) => t.stepIds);
   if (
     new Set(assigned).size !== assigned.length ||
     assigned.length !== stepIds.size ||
     assigned.some((id) => !stepIds.has(id))
   )
-    throw Error('创作任务必须恰好覆盖每个计划步骤');
+    throw new AgentExecutionError({
+      code: 'SCHEMA_INVALID',
+      phase: 'preflight',
+      field: 'creation.tasks.stepIds',
+      recoverable: true,
+      message: '创作任务必须恰好覆盖每个计划步骤',
+    });
   const done = new Set<string>();
   for (const t of details.tasks) {
     if (t.dependencies.some((id) => !taskIds.has(id) || !done.has(id)))
-      throw Error('任务依赖循环或执行顺序错误');
+      throw new AgentExecutionError({
+        code: 'SCHEMA_INVALID',
+        phase: 'preflight',
+        field: 'creation.tasks.dependencies',
+        recoverable: true,
+        message: '任务依赖循环或执行顺序错误',
+      });
     if (!capabilities.some((c) => c.id === t.capabilityId))
-      throw Error('计划引用了未注册能力：' + t.capabilityId);
+      throw new AgentExecutionError({
+        code: 'CAPABILITY_MISSING',
+        phase: 'preflight',
+        field: 'creation.tasks.capabilityId',
+        received: t.capabilityId,
+        expected: 'An exact registered capability ID',
+        recoverable: true,
+        message: '计划引用了未注册能力：' + t.capabilityId,
+      });
     if (
       t.stepIds.some(
         (id) =>
@@ -190,7 +218,13 @@ export function resolveCreationDetails(
             .some((d) => d.name === plan.steps.find((s) => s.id === id)!.tool),
       )
     )
-      throw Error('任务引用了未注册工具');
+      throw new AgentExecutionError({
+        code: 'SCHEMA_INVALID',
+        phase: 'preflight',
+        field: 'creation.tasks.stepIds',
+        recoverable: true,
+        message: '任务引用了未注册工具',
+      });
     const indices = t.stepIds.map((id) =>
       plan.steps.findIndex((s) => s.id === id),
     );
@@ -203,7 +237,13 @@ export function resolveCreationDetails(
           ),
         ) >= Math.min(...indices)
       )
-        throw Error('任务依赖与实际步骤顺序不一致');
+        throw new AgentExecutionError({
+          code: 'SCHEMA_INVALID',
+          phase: 'preflight',
+          field: 'creation.tasks.dependencies',
+          recoverable: true,
+          message: '任务依赖与实际步骤顺序不一致',
+        });
     }
     const tools = t.stepIds.map(
       (id) => plan.steps.find((s) => s.id === id)!.tool,
@@ -216,14 +256,32 @@ export function resolveCreationDetails(
         ),
       )
     )
-      throw Error('修改已有内容的任务不能创建或删除对象');
+      throw new AgentExecutionError({
+        code: 'SCHEMA_INVALID',
+        phase: 'preflight',
+        field: 'creation.tasks.strategy',
+        recoverable: true,
+        message: '修改已有内容的任务不能创建或删除对象',
+      });
     if (
       t.strategy === 'reuse' &&
       tools.some((tool) => /^effect_createDraft/.test(tool))
     )
-      throw Error('复用任务不能创建新的程序化草稿');
+      throw new AgentExecutionError({
+        code: 'SCHEMA_INVALID',
+        phase: 'preflight',
+        field: 'creation.tasks.strategy',
+        recoverable: true,
+        message: '复用任务不能创建新的程序化草稿',
+      });
     if (t.strategy === 'forge' && t.executionDomain !== 'effect-forge')
-      throw Error('Forge 必须使用已存在的 Effect Forge 域');
+      throw new AgentExecutionError({
+        code: 'SCHEMA_INVALID',
+        phase: 'preflight',
+        field: 'creation.tasks.executionDomain',
+        recoverable: true,
+        message: 'Forge 必须使用已存在的 Effect Forge 域',
+      });
     done.add(t.id);
   }
   return details;

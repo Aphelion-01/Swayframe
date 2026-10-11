@@ -1,3 +1,4 @@
+import type { AgentExecutionDetails } from './execution-error';
 import type { AgentReference, ReferenceMode } from './references';
 import { z } from 'zod';
 import {
@@ -69,6 +70,13 @@ export interface AgentSession {
   pendingConfirmation: boolean;
   changes: AgentChangeSet | null;
   error: string | null;
+  executionError?: AgentExecutionDetails;
+  recoveries?: readonly {
+    stepId: string;
+    attempt: number;
+    outcome: 'requested' | 'rejected' | 'resumed';
+    error: AgentExecutionDetails;
+  }[];
   response: string;
   verification?: string;
   visualReviews?: readonly {
@@ -111,6 +119,7 @@ export interface AgentTransactionPort {
 export interface AgentRuntimePort {
   project(): Project;
   context(prompt: string): unknown;
+  recoveryContext?(draft: Project): unknown;
   tools(): readonly ToolDefinition[];
   setSkill?(id: string): void;
   setExecutionScope?(scope?: ExecutionScope): void;

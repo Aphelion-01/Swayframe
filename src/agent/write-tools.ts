@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { capabilityParametersSchema } from './capability-schema';
+import { AgentExecutionError } from './execution-error';
 import {
   radialGradientDefinition,
   gradientPropertyKey,
@@ -61,7 +63,16 @@ export function editableLayer(context: AgentToolContext, id: string) {
   const c = activeComposition(context.project);
   const layer = c.layers.find((l) => l.id === id);
   if (!layer)
-    throw new AgentToolError('tool_failed', '当前合成中不存在目标图层');
+    throw new AgentExecutionError({
+      code: 'CONTEXT_INVALID',
+      phase: 'compile',
+      field: 'layerId',
+      targetId: id,
+      received: id,
+      expected: 'existing layer in active composition',
+      recoverable: true,
+      message: '当前合成中不存在目标图层',
+    });
   if (layer.locked)
     throw new AgentToolError('permission_denied', '目标图层已锁定');
   return { c, layer };
@@ -586,7 +597,9 @@ export function registerCoreWriteTools(registry: AgentToolRegistry) {
         color: colorSchema,
         gradient: z.enum(['none', 'linear', 'radial']).optional(),
         endColor: colorSchema.optional(),
-        radialParameters: z.record(z.string(), animValueSchema).optional(),
+        radialParameters: capabilityParametersSchema(
+          radialGradientDefinition,
+        ).optional(),
         ...at,
       })
       .strict(),
@@ -595,14 +608,33 @@ export function registerCoreWriteTools(registry: AgentToolRegistry) {
       compile: (ctx, args) => {
         const { layer } = editableLayer(ctx, args.layerId);
         if (!['shape', 'solid', 'text'].includes(layer.type))
-          throw new Error('当前图层类型不支持填充');
+          throw new AgentExecutionError({
+            code: 'SEMANTIC_INVALID',
+            phase: 'compile',
+            toolName: 'setFill',
+            field: 'layerId',
+            targetId: args.layerId,
+            expected: ['shape', 'solid', 'text'],
+            received: layer.type,
+            recoverable: true,
+            message: '当前图层类型不支持填充',
+          });
         const commands: Command[] = [];
         if (
           args.radialParameters &&
           args.gradient !== 'radial' &&
           layer.editor?.gradient !== 'radial'
         )
-          throw Error('radialParameters 需要径向渐变填充');
+          throw new AgentExecutionError({
+            code: 'SEMANTIC_INVALID',
+            phase: 'compile',
+            toolName: 'setFill',
+            field: 'gradient',
+            expected: 'radial',
+            received: args.gradient ?? layer.editor?.gradient,
+            recoverable: true,
+            message: 'radialParameters 需要径向渐变填充',
+          });
         let nextContext = ctx;
         if (args.gradient) {
           if (!layer.editor) throw Error('图层编辑属性缺失');
@@ -648,6 +680,7 @@ export function registerCoreWriteTools(registry: AgentToolRegistry) {
         for (const [key, value] of Object.entries(
           args.radialParameters ?? {},
         )) {
+          if (value === undefined) continue;
           const definition = radialGradientDefinition.parameters.find(
             (p) => p.id === key,
           );

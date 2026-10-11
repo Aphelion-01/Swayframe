@@ -1,3 +1,4 @@
+import { AgentExecutionError } from './execution-error';
 import { CommandSystem, transaction } from '../core/command-system';
 import type { Command } from '../core/command-system';
 import { activeComposition } from '../core/project-model';
@@ -67,14 +68,23 @@ export class AgentTransaction implements AgentTransactionPort {
       throw new Error('Agent 操作超过500条命令，请缩小任务范围');
     let verification: unknown;
     if (commands.length) {
+      const before = this.sandbox.getSnapshot();
       const result = this.sandbox.executeTransaction(
         transaction('Agent预验证：' + name, 'agent', commands),
       );
-      if (!result.ok) throw new Error(result.error);
+      if (!result.ok)
+        throw new AgentExecutionError({
+          code: 'COMMAND_FAILED',
+          phase: 'execute',
+          toolName: name,
+          recoverable: false,
+          message: result.error,
+        });
       try {
         verification = this.registry.verifyResults(
           commands,
           this.sandbox.getSnapshot(),
+          before,
         );
         this.validateMutation?.(this.base, this.sandbox.getSnapshot());
       } catch (error) {
@@ -93,7 +103,12 @@ export class AgentTransaction implements AgentTransactionPort {
   commit(label: string): AgentChangeSet {
     if (this.closed) throw new Error('Agent 事务已结束');
     if (this.host.getSnapshot() !== this.base)
-      throw new Error('工程已修改，Agent 结果未提交');
+      throw new AgentExecutionError({
+        code: 'CONTEXT_INVALID',
+        phase: 'commit',
+        recoverable: false,
+        message: '工程已修改，Agent 结果未提交',
+      });
     const next = this.sandbox.getSnapshot(),
       changes = this.diff(next);
     this.validateMutation?.(this.base, next);

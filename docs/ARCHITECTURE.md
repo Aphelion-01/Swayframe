@@ -357,3 +357,7 @@ Inspector的注册color-effects Section在效果页以EffectBrowser内嵌模式�
 ### Agent 原生形状填充（0.9.26）
 
 现有 `setFill` 可设置原生渐变模式及径向注册参数；复用 `radialGradientDefinition`、`parameterError` 和 `Property`，返回共享 Command，不新增平行渲染器或算法。`createPath` 手柄使用中心原点的绝对层内坐标。独立生成节点保持原有 detached 与 Output 规则，不能隐式替代路径填充。结果校验包含位置、尺寸、模式、Graph 和关键帧；参考依赖必须无环。
+
+## 0.9.27 Agent Execution Core Recovery
+
+动态 Fill 契约从正式 ParameterDefinition 派生，声明/校验/编译复用原能力。AgentExecutionError 保留 code/phase/field/target/recoverable；反馈先限制数据再序列化，禁止截断 JSON。validatePlan 使用独立共享 CommandSystem 预演确定操作，READ/Forge外部产物明确 DEFERRED，依赖和范围仍检查，实际执行再对最新 Draft验证。执行恢复总预算2，局部原 step/tool 参数纠正，不重放已成功创建，不放宽scope/基线；取消/非恢复性失败直接丢弃。verifyResults 按命令顺序通过正式 CommandSystem归约最终状态，正式事务一次提交/一次Undo。运行与恢复状态不进入Scene。验收边界和真实请求/画布证据见 AGENT_EXECUTION_REPAIR_RESULT.md。

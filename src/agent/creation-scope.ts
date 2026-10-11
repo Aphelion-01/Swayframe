@@ -1,3 +1,4 @@
+import { AgentExecutionError } from './execution-error';
 import type { Project } from '../core/project-model';
 import type { CompositingGraph, GraphNode } from '../core/compositing-graph';
 import {
@@ -57,7 +58,12 @@ export function validateCreationScope(
   scope: ExecutionScope,
 ) {
   const fail = () => {
-    throw Error('方案超出已授权修改范围；请从目标入口重新选择范围，工程未提交');
+    throw new AgentExecutionError({
+      code: 'CONTEXT_INVALID',
+      phase: 'preflight',
+      recoverable: false,
+      message: '方案超出已授权修改范围；请从目标入口重新选择范围，工程未提交',
+    });
   };
   const stripCompositions = (p: Project) => ({ ...p, compositions: [] });
   if (!same(stripCompositions(base), stripCompositions(next))) fail();

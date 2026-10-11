@@ -431,6 +431,11 @@ export function createNativeAgent(
         referenceMode: references.length ? referenceMode : undefined,
       };
     },
+    recoveryContext: (project) =>
+      engine.build(
+        { ...captured, project },
+        manager.getSnapshot().settings.agent.contextCharacters,
+      ),
     tools: () => registry.definitions(allowed()),
     readTools: () =>
       registry

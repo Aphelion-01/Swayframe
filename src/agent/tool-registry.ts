@@ -1,3 +1,4 @@
+import { AgentExecutionError, executionError } from './execution-error';
 import type { TransformInteractionSettings } from '../core/transform-context';
 import type { TextMeasure } from '../core/text-geometry';
 import { z } from 'zod';
@@ -6,7 +7,11 @@ import {
   transaction,
   type Command,
 } from '../core/command-system';
-import { findProperty, type Project } from '../core/project-model';
+import {
+  findProperty,
+  layerProperties,
+  type Project,
+} from '../core/project-model';
 import type { ToolDefinition } from '../ai/contracts';
 import type { AgentPlan, ToolPermission } from './session';
 export interface AgentToolContext {
@@ -157,7 +162,11 @@ export class AgentToolRegistry {
           field: issue.path.join('.') || '$',
           expected,
           received: received ?? null,
-          reason: issue.message,
+          reason:
+            issue.code === 'unrecognized_keys' &&
+            issue.path[0] === 'radialParameters'
+              ? '未知径向渐变参数：' + issue.keys.join(', ')
+              : issue.message,
           recoverable: true,
         };
       });
@@ -180,55 +189,183 @@ export class AgentToolRegistry {
     context?: AgentToolContext,
     validateMutation?: (base: Project, next: Project) => void,
   ) {
+    try {
+      return this.validateStages(plan, allowed, context, validateMutation);
+    } catch (error) {
+      const problem = executionError(error, { phase: 'preflight' });
+      throw new AgentExecutionError({
+        ...problem,
+        message: problem.message,
+        phase: 'preflight',
+        cause: { validationStatus: 'REJECTED', originalCause: problem.cause },
+      });
+    }
+  }
+  private validateStages(
+    plan: AgentPlan,
+    allowed?: readonly string[],
+    context?: AgentToolContext,
+    validateMutation?: (base: Project, next: Project) => void,
+  ) {
     if (new Set(plan.steps.map((s) => s.id)).size !== plan.steps.length)
       throw new AgentToolError('invalid_arguments', '计划步骤标识重复');
     for (const step of plan.steps)
       this.parsed(step.tool, step.arguments, allowed);
-    // Native writes are compiled and checked on a detached scene, never on the editor.
-    // Forge/read stages require their real staged runtime; do not fabricate their outputs here.
-    if (context) {
-      const draft = new CommandSystem(context.project);
-      let transform = context.transform;
-      for (const step of plan.steps) {
-        const parsed = this.parsed(step.tool, step.arguments, allowed);
+    const steps: {
+      stepId: string;
+      status: 'VERIFIED' | 'DEFERRED';
+      reason?: string;
+    }[] = [];
+    // Validate dependency topology independently of optional creation capability resolution.
+    if (plan.creation) {
+      const assigned = new Set<string>();
+      const done = new Set<string>();
+      for (const task of plan.creation.tasks) {
         if (
-          parsed.tool.permission === 'READ' ||
-          step.tool.startsWith('effect_')
+          done.has(task.id) ||
+          task.dependencies.some((id) => !done.has(id)) ||
+          task.stepIds.some(
+            (id) =>
+              assigned.has(id) || !plan.steps.some((step) => step.id === id),
+          )
         )
-          break;
-        const ctx = { ...context, project: draft.getSnapshot(), transform };
-        const commands = this.compile(
-          step.tool,
-          step.arguments,
-          ctx,
-          true,
-          allowed,
-        );
-        if (commands.length) {
-          const result = draft.executeTransaction(
-            transaction('校验 ' + step.label, 'agent', commands),
-          );
-          if (!result.ok)
-            throw new AgentToolError(
-              'invalid_arguments',
-              step.label + ': ' + result.error,
-            );
+          throw new AgentExecutionError({
+            code: 'SCHEMA_INVALID',
+            phase: 'preflight',
+            field: 'creation.tasks',
+            recoverable: true,
+            message: '创作任务依赖或步骤分配无效',
+          });
+        for (const dep of task.dependencies) {
+          const previous = plan.creation.tasks.find((t) => t.id === dep)!;
+          if (
+            Math.max(
+              ...previous.stepIds.map((id) =>
+                plan.steps.findIndex((s) => s.id === id),
+              ),
+            ) >=
+            Math.min(
+              ...task.stepIds.map((id) =>
+                plan.steps.findIndex((s) => s.id === id),
+              ),
+            )
+          )
+            throw new AgentExecutionError({
+              code: 'SCHEMA_INVALID',
+              phase: 'preflight',
+              field: 'creation.tasks.dependencies',
+              recoverable: true,
+              message: '任务依赖与执行顺序不符',
+            });
         }
-        validateMutation?.(context.project, draft.getSnapshot());
-        const patch = this.workspacePatch(
-          step.tool,
-          step.arguments,
-          ctx,
-          allowed,
-        );
-        if (patch)
-          transform = {
-            ...transform,
-            ...patch,
-          } as TransformInteractionSettings;
+        task.stepIds.forEach((id) => assigned.add(id));
+        done.add(task.id);
       }
+      if (assigned.size !== plan.steps.length)
+        throw new AgentExecutionError({
+          code: 'SCHEMA_INVALID',
+          phase: 'preflight',
+          field: 'creation.tasks.stepIds',
+          recoverable: true,
+          message: '任务必须覆盖所有步骤',
+        });
     }
+    if (!context)
+      return {
+        steps: plan.steps.map((s) => ({
+          stepId: s.id,
+          status: 'DEFERRED' as const,
+          reason: 'Requires live draft context',
+        })),
+      };
+    const draft = new CommandSystem(context.project);
+    let transform = context.transform;
+    const deferred = new Set<string>();
+    const uncertainLayers = new Set<string>();
+    let uncertainComposition = false;
+    for (const step of plan.steps) {
+      const parsed = this.parsed(step.tool, step.arguments, allowed);
+      const ctx = { ...context, project: draft.getSnapshot(), transform };
+      const task = plan.creation?.tasks.find((t) =>
+        t.stepIds.includes(step.id),
+      );
+      const dependsOnDeferred =
+        task?.dependencies.some((id) =>
+          plan
+            .creation!.tasks.find((t) => t.id === id)
+            ?.stepIds.some((id) => deferred.has(id)),
+        ) || task?.stepIds.some((id) => deferred.has(id));
+      const layerId = step.arguments.layerId;
+      // Read tools may have real asynchronous side effects (Forge drafts or paid analysis).
+      // Never run them in a preflight; structural checks above still apply to every step.
+      if (parsed.tool.permission === 'READ') {
+        steps.push({
+          stepId: step.id,
+          status: 'DEFERRED',
+          reason: 'Read resolves against the live draft at execution',
+        });
+        if (
+          step.tool.startsWith('effect_') &&
+          !['effect_list', 'effect_search', 'effect_inspect'].includes(
+            step.tool,
+          )
+        )
+          deferred.add(step.id);
+        continue;
+      }
+      if (
+        step.tool.startsWith('effect_') ||
+        dependsOnDeferred ||
+        uncertainComposition ||
+        (typeof layerId === 'string' && uncertainLayers.has(layerId))
+      ) {
+        deferred.add(step.id);
+        if (typeof layerId === 'string') uncertainLayers.add(layerId);
+        else uncertainComposition = true;
+        steps.push({
+          stepId: step.id,
+          status: 'DEFERRED',
+          reason:
+            'Requires an actual earlier Forge/deferred result; no fabricated entities',
+        });
+        continue;
+      }
+      const commands = this.compile(
+        step.tool,
+        step.arguments,
+        ctx,
+        true,
+        allowed,
+      );
+      if (commands.length) {
+        const before = draft.getSnapshot();
+        const result = draft.executeTransaction(
+          transaction('校验 ' + step.label, 'agent', commands),
+        );
+        if (!result.ok)
+          throw new AgentExecutionError({
+            code: 'COMMAND_FAILED',
+            phase: 'preflight',
+            toolName: step.tool,
+            recoverable: false,
+            message: step.label + ': ' + result.error,
+          });
+        this.verifyResults(commands, draft.getSnapshot(), before);
+      }
+      validateMutation?.(context.project, draft.getSnapshot());
+      const patch = this.workspacePatch(
+        step.tool,
+        step.arguments,
+        ctx,
+        allowed,
+      );
+      if (patch)
+        transform = { ...transform, ...patch } as TransformInteractionSettings;
+      steps.push({ stepId: step.id, status: 'VERIFIED' });
+    }
+    return { steps };
   }
+
   async read(
     name: string,
     args: unknown,
@@ -246,147 +383,189 @@ export class AgentToolRegistry {
       return result;
     } catch (error) {
       if (signal.aborted) throw error;
-      if (error instanceof AgentToolError) throw error;
-      throw new AgentToolError(
-        'tool_failed',
-        error instanceof Error ? error.message : '读取工具失败',
-      );
+      if (
+        error instanceof AgentToolError ||
+        error instanceof AgentExecutionError
+      )
+        throw error;
+      throw executionError(error, {
+        code: 'CONTEXT_INVALID',
+        phase: 'read',
+        toolName: name,
+        recoverable: false,
+      });
     }
   }
-  verifyResults(commands: readonly Command[], project: Project) {
-    const lastLayers = new Map<
+  verifyResults(
+    commands: readonly Command[],
+    project: Project,
+    base?: Project,
+  ) {
+    const failure = (message: string): never => {
+      throw new AgentExecutionError({
+        code: 'VERIFICATION_FAILED',
+        phase: 'verify',
+        recoverable: false,
+        message: '结果校验失败：' + message,
+      });
+    };
+    const layers = new Map<
       string,
-      Extract<Command, { type: 'layer.create' | 'layer.replace' }>
+      Extract<Command, { type: 'layer.create' | 'layer.replace' }> | undefined
     >();
-    for (const op of commands)
-      if (op.type === 'layer.create' || op.type === 'layer.replace')
-        lastLayers.set(op.layer.id, op);
-    const verified: string[] = [];
-    for (const [id, op] of lastLayers) {
-      const actual = project.compositions
-        .find((c) => c.id === op.compositionId)
-        ?.layers.find((l) => l.id === id);
-      if (!actual || actual.type !== op.layer.type)
-        throw new AgentToolError(
-          'tool_failed',
-          '结果校验失败：图层不存在或类型不符 ' + id,
-        );
-      if (
-        actual.type === 'text' &&
-        op.layer.type === 'text' &&
-        (actual.text !== op.layer.text ||
-          actual.fontFamily !== op.layer.fontFamily ||
-          actual.fontSize !== op.layer.fontSize)
-      )
-        throw new AgentToolError(
-          'tool_failed',
-          '结果校验失败：文字内容或字体不符 ' + id,
-        );
-      if (
-        actual.width !== op.layer.width ||
-        actual.height !== op.layer.height ||
-        JSON.stringify(actual.transform.position) !==
-          JSON.stringify(op.layer.transform.position) ||
-        actual.editor?.textAlign !== op.layer.editor?.textAlign ||
-        actual.editor?.gradient !== op.layer.editor?.gradient
-      )
-        throw new AgentToolError(
-          'tool_failed',
-          '结果校验失败：图层几何、位置或外观模式不符 ' + id,
-        );
-      verified.push(id);
-    }
+    const removedProperties = new Set<string>();
     const bases = new Map<string, unknown>();
-    for (const op of commands)
-      if (op.type === 'property.setBase') bases.set(op.propertyId, op.value);
-    for (const [id, value] of bases)
-      if (
-        JSON.stringify(findProperty(project, id).property.baseValue) !==
-        JSON.stringify(value)
-      )
-        throw new AgentToolError(
-          'tool_failed',
-          '结果校验失败：属性值不符 ' + id,
-        );
-    const updates = new Map<
-      string,
-      { propertyId: string; patch: Record<string, unknown> }
-    >();
-    for (const op of commands)
-      if (op.type === 'keyframe.update') {
-        const previous = updates.get(op.keyframeId);
-        updates.set(op.keyframeId, {
-          propertyId: op.propertyId,
-          patch: { ...previous?.patch, ...op.patch },
-        });
-      }
-    for (const [id, op] of updates) {
-      if (
-        commands.some(
-          (c) => c.type === 'keyframe.delete' && c.keyframeId === id,
-        )
-      )
-        continue;
-      const actual = findProperty(
-        project,
-        op.propertyId,
-      ).property.keyframes.find((k) => k.id === id);
-      if (
-        !actual ||
-        Object.entries(op.patch).some(
-          ([key, value]) =>
-            JSON.stringify(
-              (actual as unknown as Record<string, unknown>)[key] ?? null,
-            ) !== JSON.stringify(value ?? null),
-        )
-      )
-        throw new AgentToolError(
-          'tool_failed',
-          '结果校验失败：关键帧修改不符 ' + id,
-        );
-    }
     const graphs = new Map<
       string,
       Extract<Command, { type: 'graph.replace' }>
     >();
-    const frames = new Map<string, { propertyId: string; expected: unknown }>();
+    const frames = new Map<
+      string,
+      {
+        propertyId: string;
+        expected?: Record<string, unknown>;
+        patch?: Record<string, unknown>;
+        removed?: boolean;
+      }
+    >();
     for (const op of commands) {
+      if (op.type === 'layer.create' || op.type === 'layer.replace')
+        layers.set(op.layer.id, structuredClone(op));
+      if (op.type === 'layer.delete') {
+        const previous = layers.get(op.layerId);
+        if (previous)
+          for (const { property } of layerProperties(previous.layer))
+            removedProperties.add(property.id);
+        layers.set(op.layerId, undefined);
+        graphs.delete(op.layerId);
+      }
+      if (op.type === 'layer.patch') {
+        const previous = layers.get(op.layerId);
+        if (previous)
+          layers.set(op.layerId, {
+            ...previous,
+            layer: { ...previous.layer, ...op.patch } as typeof previous.layer,
+          });
+      }
+      if (op.type === 'property.setBase') bases.set(op.propertyId, op.value);
       if (op.type === 'graph.replace') graphs.set(op.layerId, op);
       if (op.type === 'keyframe.add')
         frames.set(op.keyframe.id, {
           propertyId: op.propertyId,
-          expected: op.keyframe,
+          expected: structuredClone(op.keyframe) as unknown as Record<
+            string,
+            unknown
+          >,
         });
-      if (op.type === 'keyframe.delete')
+      if (op.type === 'keyframe.update') {
+        const previous = frames.get(op.keyframeId);
         frames.set(op.keyframeId, {
           propertyId: op.propertyId,
-          expected: undefined,
+          ...(previous?.expected
+            ? { expected: { ...previous.expected, ...op.patch } }
+            : { patch: { ...previous?.patch, ...op.patch } }),
         });
+      }
+      if (op.type === 'keyframe.delete')
+        frames.set(op.keyframeId, { propertyId: op.propertyId, removed: true });
     }
-    for (const [id, op] of graphs) {
-      const actual =
-        project.compositions
-          .find((c) => c.id === op.compositionId)
-          ?.layers.find((l) => l.id === id)?.editor?.graph ?? null;
-      if (JSON.stringify(actual) !== JSON.stringify(op.graph))
-        throw new AgentToolError(
-          'tool_failed',
-          '结果校验失败：节点、连接或参数不符 ' + id,
-        );
-    }
-    for (const [id, frame] of frames) {
-      const actual = findProperty(
-        project,
-        frame.propertyId,
-      ).property.keyframes.find((k) => k.id === id);
-      if (JSON.stringify(actual) !== JSON.stringify(frame.expected))
-        throw new AgentToolError(
-          'tool_failed',
-          '结果校验失败：关键帧不符 ' + id,
-        );
+    if (base) {
+      const replay = new CommandSystem(base);
+      const result = replay.executeTransaction(
+        transaction('Agent最终态验证', 'agent', commands),
+      );
+      if (!result.ok) failure(result.error);
+      if (JSON.stringify(replay.getSnapshot()) !== JSON.stringify(project))
+        failure('Scene 与按命令顺序归约的最终状态不符');
+    } else {
+      // Compatibility for diagnostic callers without a base: verify ordered touched entities.
+      for (const [id, op] of layers) {
+        const actual = project.compositions
+          .flatMap((c) => c.layers)
+          .find((l) => l.id === id);
+        if (!op) {
+          if (actual) failure('图层删除未生效 ' + id);
+          continue;
+        }
+        if (!actual || actual.type !== op.layer.type)
+          failure('图层不存在或类型不符 ' + id);
+        if (
+          actual!.type === 'text' &&
+          op.layer.type === 'text' &&
+          (actual!.text !== op.layer.text ||
+            actual!.fontFamily !== op.layer.fontFamily ||
+            actual!.fontSize !== op.layer.fontSize)
+        )
+          failure('文字内容或字体不符 ' + id);
+        if (
+          actual!.width !== op.layer.width ||
+          actual!.height !== op.layer.height ||
+          actual!.editor?.textAlign !== op.layer.editor?.textAlign ||
+          actual!.editor?.gradient !== op.layer.editor?.gradient
+        )
+          failure('图层几何、位置或外观模式不符 ' + id);
+        for (const [key, property] of Object.entries(op.layer.transform)) {
+          if (
+            bases.has(property.id) ||
+            [...frames.values()].some((f) => f.propertyId === property.id)
+          )
+            continue;
+          if (
+            JSON.stringify(
+              actual!.transform[key as keyof typeof op.layer.transform],
+            ) !== JSON.stringify(property)
+          )
+            failure('图层位置或变换不符 ' + id);
+        }
+      }
+      for (const [id, value] of bases) {
+        // A removed layer/property is no longer an expected surviving entity.
+        let actual;
+        try {
+          actual = findProperty(project, id).property;
+        } catch {
+          if (removedProperties.has(id)) continue;
+          failure('属性不存在 ' + id);
+        }
+        if (JSON.stringify(actual!.baseValue) !== JSON.stringify(value))
+          failure('属性值不符 ' + id);
+      }
+      for (const [id, op] of graphs) {
+        const actual =
+          project.compositions.flatMap((c) => c.layers).find((l) => l.id === id)
+            ?.editor?.graph ?? null;
+        if (JSON.stringify(actual) !== JSON.stringify(op.graph))
+          failure('节点、连接或参数不符 ' + id);
+      }
+      for (const [id, op] of frames) {
+        let actual;
+        try {
+          actual = findProperty(project, op.propertyId).property.keyframes.find(
+            (k) => k.id === id,
+          );
+        } catch {
+          if (removedProperties.has(op.propertyId)) continue;
+          failure('关键帧属性不存在 ' + id);
+        }
+        if (
+          op.removed
+            ? !!actual
+            : op.expected
+              ? JSON.stringify(actual) !== JSON.stringify(op.expected)
+              : !actual ||
+                Object.entries(op.patch ?? {}).some(
+                  ([key, value]) =>
+                    JSON.stringify(
+                      (actual as unknown as Record<string, unknown>)[key] ??
+                        null,
+                    ) !== JSON.stringify(value ?? null),
+                )
+        )
+          failure('关键帧不符 ' + id);
+      }
     }
     return {
-      verifiedLayerIds: verified,
+      verifiedLayerIds: [...layers.keys()],
       verifiedPropertyIds: [...bases.keys()],
       verifiedGraphLayerIds: [...graphs.keys()],
       verifiedKeyframeIds: [...frames.keys()],
@@ -416,11 +595,17 @@ export class AgentToolRegistry {
     try {
       return parsed.tool.compile(context, parsed.args);
     } catch (error) {
-      if (error instanceof AgentToolError) throw error;
-      throw new AgentToolError(
-        'tool_failed',
-        name + ': ' + (error instanceof Error ? error.message : '命令编译失败'),
-      );
+      if (
+        error instanceof AgentToolError ||
+        error instanceof AgentExecutionError
+      )
+        throw error;
+      throw executionError(error, {
+        code: 'SEMANTIC_INVALID',
+        phase: 'compile',
+        toolName: name,
+        recoverable: false,
+      });
     }
   }
 }

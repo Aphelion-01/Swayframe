@@ -1,3 +1,4 @@
+import { AgentExecutionError } from './execution-error';
 import { z } from 'zod';
 import { AgentToolRegistry } from './tool-registry';
 import { editableLayer } from './write-tools';
@@ -85,7 +86,17 @@ export function registerEffectForgeTools(
         const d =
           visualCapabilities.get(args.id, args.version) ??
           (pkg ? effectDefinition(pkg) : undefined);
-        if (!d) throw Error('能力不存在');
+        if (!d)
+          throw new AgentExecutionError({
+            code: 'CAPABILITY_MISSING',
+            phase: 'read',
+            toolName: 'effect_inspect',
+            field: 'id',
+            expected: 'An exact registered capability ID and version',
+            received: { id: args.id, version: args.version },
+            recoverable: false,
+            message: '能力不存在',
+          });
         return d;
       },
     },

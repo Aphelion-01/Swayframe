@@ -33,3 +33,7 @@ V0.4（0.9.19）复用 AgentPlan / Orchestrator / AgentTransaction / Graph / Ren
 creationGraphContext 按16,000字符限制提供节点摘要，优先当前授权图层/节点；不嵌入效果包源码、大数组或关键帧列表，保留精确包引用与截断标识，详情仍由现有 READ 工具取得。正式 Project 和 Scope 校验不使用摘要。能力查询支持空格分隔的多个关键词，参数发现明确 gradientStops 的五元组编码。工具定义说明实际坐标和 Graph 自动插入行为，不修改核心算法。
 
 规划最多四轮、十二次只读检查，最后一轮要求提交完整计划。残缺 JSON 或计划结构校验失败各最多请求一次重新生成，并共用原有轮数预算；拒绝内容不执行、不自动改写、不放宽权限，网络失败不自动重试。真实测试使用应用实际 planning/general/default 路由，避免误选列表首个启用供应商。
+
+## 0.9.27 Agent Execution Core Recovery
+
+动态 Fill 契约从正式 ParameterDefinition 派生，声明/校验/编译复用原能力。AgentExecutionError 保留 code/phase/field/target/recoverable；反馈先限制数据再序列化，禁止截断 JSON。validatePlan 使用独立共享 CommandSystem 预演确定操作，READ/Forge外部产物明确 DEFERRED，依赖和范围仍检查，实际执行再对最新 Draft验证。执行恢复总预算2，局部原 step/tool 参数纠正，不重放已成功创建，不放宽scope/基线；取消/非恢复性失败直接丢弃。verifyResults 按命令顺序通过正式 CommandSystem归约最终状态，正式事务一次提交/一次Undo。运行与恢复状态不进入Scene。验收边界和真实请求/画布证据见 AGENT_EXECUTION_REPAIR_RESULT.md。
