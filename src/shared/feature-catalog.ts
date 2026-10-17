@@ -273,6 +273,20 @@ const add = (
     order: order++,
     ...extra,
   });
+add(
+  'draw-speed',
+  '手绘速度 / Draw Speed',
+  'MOTION',
+  ['Keyframe'],
+  ['Animate'],
+  'motion.toolbar',
+  {
+    frequency: 'F3',
+    contexts: ['PropertySelection'],
+    commandScope: 'motion',
+    keywords: ['speed', 'draw', '手绘', '速度', '停顿'],
+  },
+);
 const creations = [
   ['rectangle', '矩形', 'rectangle'],
   ['ellipse', '椭圆', 'ellipse'],

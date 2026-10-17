@@ -221,3 +221,9 @@ Asset/Composition，Create，F4，Composition，PROJECT，canonical menu.file：
 | 引擎与旧建议 | Application / 配置、Inspect / F2/F3 / AssistantMode | ASSISTANT / assistant.actions | 既有助手设置菜单；V1 默认。离线模拟建议保留在二级折叠入口并标明来源。 |
 
 Feature Placement Review：单一助手入口、全局控件增量 0；六项会话命令注册 Feature 元数据及 typed contributionItems；参数不建立新的 Registry。模型与 Skill 任务中禁用；停止保持可用。图标均有可访问名称、悬停说明、焦点与按压反馈；支持 reduced-motion。思考深度调整规划检查要求，不声称切换未声明的服务端内部推理协议。正式修改沿用原 AgentTransaction / Command System。
+
+## 1.0.6 手绘速度
+
+| 功能 | Canonical home | 次入口 | 快捷键 | 归属与提交 |
+|---|---|---|---|---|
+| draw-speed 手绘区间速度 | motion.toolbar（现有 Graph Editor） | — | — | F3 / Keyframe / PropertySelection；无全局按钮；一次笔迹复用 keyframe.update Transaction |

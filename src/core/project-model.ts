@@ -1,3 +1,4 @@
+import type { CustomSpeedInterpolation } from './speed-curve';
 import { accentAt } from './layer-accent';
 import type { LayerAccentId } from './layer-accent';
 import { createGraph } from './compositing-registry';
@@ -6,6 +7,7 @@ import { newId } from './core-types';
 import type { AnimValue, Color, ID, Seconds, Vec2 } from './core-types';
 
 export type Interpolation =
+  | CustomSpeedInterpolation
   | { readonly type: 'linear' }
   | { readonly type: 'hold' }
   | { readonly type: 'bezier'; readonly out: Vec2; readonly in: Vec2 }

@@ -27,6 +27,7 @@ export const transformLabels: Record<TransformKey, string> = {
   opacity: '透明度',
 };
 export const interpolationLabels: Record<Interpolation['type'], string> = {
+  'custom-speed': '手绘速度',
   linear: '线性',
   hold: '保持',
   bezier: '贝塞尔曲线',

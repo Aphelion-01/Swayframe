@@ -1,3 +1,5 @@
+import { supportsDrawSpeed } from '../core/motion-curve-commands';
+import { speedPresets } from '../core/speed-curve';
 import { TimelineHeaderContributions } from './workspace/timeline-header-contributions';
 import { editorContributions } from './workspace/feature-contributions';
 import { SharedCurveTransport } from './workspace/CurveWorkspace';
@@ -1102,22 +1104,24 @@ export function Timeline({ store }: { store: EditorStore }) {
                             onChange={(event) => {
                               const type = event.target.value;
                               const interpolation: Interpolation =
-                                type === 'spring'
-                                  ? {
-                                      type,
-                                      stiffness: 170,
-                                      damping: 18,
-                                      mass: 1,
-                                    }
-                                  : type === 'bezier'
+                                type === 'custom-speed'
+                                  ? speedPresets.uniform!
+                                  : type === 'spring'
                                     ? {
                                         type,
-                                        out: { x: 0.42, y: 0 },
-                                        in: { x: 0.58, y: 1 },
+                                        stiffness: 170,
+                                        damping: 18,
+                                        mass: 1,
                                       }
-                                    : type === 'hold'
-                                      ? { type: 'hold' }
-                                      : { type: 'linear' };
+                                    : type === 'bezier'
+                                      ? {
+                                          type,
+                                          out: { x: 0.42, y: 0 },
+                                          in: { x: 0.58, y: 1 },
+                                        }
+                                      : type === 'hold'
+                                        ? { type: 'hold' }
+                                        : { type: 'linear' };
                               store.run('修改插值', [
                                 command({
                                   type: 'keyframe.update',
@@ -1132,6 +1136,12 @@ export function Timeline({ store }: { store: EditorStore }) {
                             <option value="hold">保持</option>
                             <option value="bezier">贝塞尔曲线</option>
                             <option value="spring">弹簧</option>
+                            <option
+                              value="custom-speed"
+                              disabled={!supportsDrawSpeed(key)}
+                            >
+                              手绘速度（在曲线编辑器绘制）
+                            </option>
                           </select>
                         </details>
                       </div>

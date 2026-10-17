@@ -1,3 +1,4 @@
+import { speedInterpolationSchema } from './speed-curve';
 import { accentAt } from './layer-accent';
 import { migrateLayerGraph } from './compositing-migration';
 import { createProperty, createLayerEditor } from './project-model';
@@ -134,7 +135,49 @@ function checkFileSize(json: string): void {
   )
     throw new ProjectFileError('FILE_TOO_LARGE', '工程文件超过 20 MB');
 }
-export function loadProject(json: string): Project {
+export interface SpeedCurveDiagnostic {
+  readonly path: string;
+  readonly message: string;
+  readonly original: unknown;
+}
+/** Import-only recovery: retain invalid input in diagnostics, never mutate the source file. */
+function recoverSpeedCurves(
+  value: unknown,
+  diagnostics: SpeedCurveDiagnostic[],
+  path = 'root',
+): unknown {
+  if (!value || typeof value !== 'object') return value;
+  if (Array.isArray(value))
+    return value.map((v, i) =>
+      recoverSpeedCurves(v, diagnostics, `${path}.${i}`),
+    );
+  const record = value as Record<string, unknown>;
+  return Object.fromEntries(
+    Object.entries(record).map(([key, v]) => {
+      if (
+        key === 'interpolation' &&
+        v &&
+        typeof v === 'object' &&
+        'type' in v &&
+        v.type === 'custom-speed' &&
+        !speedInterpolationSchema.safeParse(v).success
+      ) {
+        diagnostics.push({
+          path: `${path}.${key}`,
+          message: '无效手绘速度曲线已降级为线性；原始数据保留在诊断中',
+          original: v,
+        });
+        return [key, { type: 'linear' }];
+      }
+      return [key, recoverSpeedCurves(v, diagnostics, `${path}.${key}`)];
+    }),
+  );
+}
+export function loadProject(
+  json: string,
+  onDiagnostics: (items: readonly SpeedCurveDiagnostic[]) => void = (items) =>
+    console.warn('SF speed curve recovery', items),
+): Project {
   checkFileSize(json);
   let raw: unknown;
   try {
@@ -142,7 +185,10 @@ export function loadProject(json: string): Project {
   } catch {
     throw new ProjectFileError('JSON_PARSE', '无法读取工程：JSON 语法错误');
   }
-  return migrateProject(raw);
+  const diagnostics: SpeedCurveDiagnostic[] = [];
+  const project = migrateProject(recoverSpeedCurves(raw, diagnostics));
+  if (diagnostics.length) onDiagnostics(diagnostics);
+  return project;
 }
 export const saveProject = (project: Project): string => {
   const json = JSON.stringify(migrateProject(project), null, 2);

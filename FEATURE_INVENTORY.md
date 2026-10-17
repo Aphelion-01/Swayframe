@@ -755,3 +755,9 @@ MCP Bridge V0：复用 settings Feature/Command（APPLICATION / F5 / menu.file�
 | agent-chat-effort | 设置规划与检查深度 | ASSISTANT | Application,Composition | Automate,Inspect | F3 | AssistantMode | assistant.actions |
 
 对象：当前会话、显式图层引用与应用模型配置。任务：提出编辑需求、观察真实处理进度、接受/撤销结果。复用现有助手区域、原生 Skill、ProviderManager 与 Runtime；布局、消息、深度设置不写 Scene。选中图层以 ID 绑定、名称高亮，不通过名称猜测；任务细节默认折叠。恢复仅在现有预算内进行，禁止更换工具、目标、资源引用与属性路径；Scene 仍经原 Transaction。无新全局按钮、无新 Planner/Registry，V1 默认不变。
+
+## 1.0.6 手绘速度
+
+| ID | 功能 | Domain | Object | Task | Frequency | Context | Canonical home | Secondary | Command | Shortcut |
+|---|---|---|---|---|---|---|---|---|---|---|
+| draw-speed | 手绘速度 / Draw Speed | MOTION | Keyframe | Animate | F3 | PropertySelection | motion.toolbar | — | keyframe.update / scoped draw-speed | — |

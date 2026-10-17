@@ -1,3 +1,4 @@
+import { DrawSpeedCurve } from './DrawSpeedCurve';
 import { contextKeys } from './workspace/context-keys';
 import { features } from '../shared/feature-catalog';
 import { useCommandScope } from './workspace/scoped-commands';
@@ -14,6 +15,7 @@ import { dispatchShortcut } from './workspace/shortcuts';
 import { useInteractionCancel } from './workspace/interaction';
 import {
   applyMotionCurveCommands,
+  supportsDrawSpeed,
   previewMotionCurve,
 } from '../core/motion-curve-commands';
 import { SpatialMotionEditor } from './SpatialMotionEditor';
@@ -71,6 +73,7 @@ export function GraphEditor({
         ),
       ) ?? c.layers.find((l) => l.id === view.selection[0]);
   const entries = layer ? visibleProperties(layer) : [];
+  const [drawSpeed, setDrawSpeed] = useState(false);
   const [chosen, setChosen] = useState(''),
     [mode, setMode] = useState<'value' | 'speed'>('value'),
     [component, setComponent] = useState(0),
@@ -481,6 +484,17 @@ export function GraphEditor({
   };
   curveBindings.current = [
     {
+      id: 'draw-speed',
+      label: '手绘速度 / Draw Speed',
+      contexts: ['curvegraph'],
+      disabled:
+        !left || !right || !!layer?.locked || !supportsDrawSpeed(entry.key),
+      action: () => {
+        store.setPropertyPreviews(undefined);
+        setDrawSpeed((v) => !v);
+      },
+    },
+    {
       id: 'motion.edit-segment',
       label: '编辑缓动',
       contexts: ['curvegraph'],
@@ -802,8 +816,9 @@ export function GraphEditor({
                 {(['value', 'speed'] as const).map((m) => (
                   <button
                     key={m}
-                    aria-pressed={mode === m}
+                    aria-pressed={mode === m && !drawSpeed}
                     onClick={() => {
+                      setDrawSpeed(false);
                       setMode(m);
                       fitCurve();
                     }}
@@ -812,6 +827,18 @@ export function GraphEditor({
                   </button>
                 ))}
               </div>
+              <button
+                aria-pressed={drawSpeed}
+                disabled={
+                  !left ||
+                  !right ||
+                  !!layer?.locked ||
+                  !supportsDrawSpeed(entry.key)
+                }
+                onClick={() => curveCommands().execute('draw-speed')}
+              >
+                手绘速度
+              </button>
               <div className="curve-ease" role="group" aria-label="插值">
                 {presetItems.map(([key, label]) => (
                   <button
@@ -837,23 +864,44 @@ export function GraphEditor({
           inspector={
             <>
               <strong>
-                {keyContext
-                  ? '关键帧'
-                  : focus === 'in'
-                    ? '入切线'
-                    : focus === 'out'
-                      ? '出切线'
-                      : focus === 'segment'
-                        ? '动画区间'
-                        : '图表设置'}
+                {drawSpeed
+                  ? '手绘速度'
+                  : keyContext
+                    ? '关键帧'
+                    : focus === 'in'
+                      ? '入切线'
+                      : focus === 'out'
+                        ? '出切线'
+                        : focus === 'segment'
+                          ? '动画区间'
+                          : '图表设置'}
               </strong>
               <small>
                 {propertyLabel(entry.key, layer)} ·{' '}
-                {mode === 'speed' ? unit.label : '属性值'}
+                {drawSpeed
+                  ? '相对速度权重'
+                  : mode === 'speed'
+                    ? unit.label
+                    : '属性值'}
               </small>
+              {drawSpeed && (
+                <p>
+                  绘制当前相邻关键帧之间的相对速度。底部为零，虚线显示积分后的进度。端点时间、属性值和空间路径保持不变；一次绘制可撤销。
+                </p>
+              )}
+              {!drawSpeed && left?.interpolation.type === 'custom-speed' && (
+                <p>
+                  此区间使用手绘速度。选择“手绘速度”可继续编辑；线性或缓动会替换它。
+                </p>
+              )}
               <fieldset
+                hidden={drawSpeed}
                 className="curve-inspector-editable"
-                disabled={layer?.locked}
+                disabled={
+                  layer?.locked ||
+                  drawSpeed ||
+                  left?.interpolation.type === 'custom-speed'
+                }
               >
                 {keyContext && (
                   <>
@@ -993,11 +1041,17 @@ export function GraphEditor({
                   </select>
                 </label>
               )}
-              {!focus && !keyContext && (
+              {!drawSpeed && !focus && !keyContext && (
                 <p>选择菱形关键帧、曲线区间或圆形手柄，编辑精确参数。</p>
               )}
-              <button onClick={fitCurve}>适应全部关键帧</button>
-              <button disabled={!selectedKey} onClick={fitSelected}>
+              <button hidden={drawSpeed} onClick={fitCurve}>
+                适应全部关键帧
+              </button>
+              <button
+                hidden={drawSpeed}
+                disabled={!selectedKey}
+                onClick={fitSelected}
+              >
                 适应选中关键帧
               </button>
               {left &&
@@ -1071,340 +1125,361 @@ export function GraphEditor({
           }
         >
           <div className="curve-canvas">
-            <svg
-              ref={measureSvg}
-              viewBox={`${viewport.x} ${viewport.y} ${680 / viewport.zoom} ${280 / viewport.zoom}`}
-              preserveAspectRatio="none"
-              tabIndex={0}
-              style={{
-                touchAction: 'none',
-                cursor: grabbing ? 'grab' : 'default',
-              }}
-              onPointerDown={(e) => {
-                if (e.button === 0 && !space.current) {
-                  panUsed.current = false;
-                  if (e.target === e.currentTarget) {
-                    setFocus(undefined);
-                    store.selectFrames([]);
+            {drawSpeed && left && right && supportsDrawSpeed(entry.key) ? (
+              <DrawSpeedCurve
+                key={`${view.project.id}/${original.id}/${left.id}/${right.id}/${view.selection.join()}/${view.selectedProperties.join()}`}
+                store={store}
+                project={view.project}
+                property={original}
+                left={left}
+                right={right}
+                time={view.time}
+                locked={!!layer?.locked}
+              />
+            ) : (
+              <svg
+                ref={measureSvg}
+                viewBox={`${viewport.x} ${viewport.y} ${680 / viewport.zoom} ${280 / viewport.zoom}`}
+                preserveAspectRatio="none"
+                tabIndex={0}
+                style={{
+                  touchAction: 'none',
+                  cursor: grabbing ? 'grab' : 'default',
+                }}
+                onPointerDown={(e) => {
+                  if (e.button === 0 && !space.current) {
+                    panUsed.current = false;
+                    if (e.target === e.currentTarget) {
+                      setFocus(undefined);
+                      store.selectFrames([]);
+                    }
                   }
-                }
-                if (e.button !== 1 && !(e.button === 0 && space.current))
-                  return;
-                e.preventDefault();
-                e.currentTarget.focus();
-                e.currentTarget.setPointerCapture(e.pointerId);
-                const rect = e.currentTarget.getBoundingClientRect();
-                pan.current = {
-                  x: e.clientX,
-                  y: e.clientY,
-                  width: rect.width,
-                  height: rect.height,
-                  view: viewport,
-                };
-              }}
-              onPointerMove={(e) => {
-                const p = pan.current;
-                if (p) {
-                  panUsed.current =
-                    Math.hypot(e.clientX - p.x, e.clientY - p.y) > 3;
-                  setViewport({
-                    ...p.view,
-                    x:
-                      p.view.x -
-                      ((e.clientX - p.x) * 680) /
-                        Math.max(1, p.width) /
-                        p.view.zoom,
-                    y:
-                      p.view.y -
-                      ((e.clientY - p.y) * 280) /
-                        Math.max(1, p.height) /
-                        p.view.zoom,
-                  });
-                }
-              }}
-              onPointerUp={() => {
-                pan.current = undefined;
-              }}
-              onPointerCancel={() => {
-                if (pan.current) setViewport(pan.current.view);
-                pan.current = undefined;
-              }}
-              onLostPointerCapture={() => {
-                if (pan.current) setViewport(pan.current.view);
-                pan.current = undefined;
-              }}
-              className="graph-svg"
-              role="img"
-              aria-label={mode === 'speed' ? '动画速度曲线' : '动画值曲线'}
-            >
-              {Array.from({ length: 21 }, (_, i) => (
-                <line
-                  key={`time-${i}`}
-                  pointerEvents="none"
-                  x1={50 + i * 29}
-                  x2={50 + i * 29}
-                  y1={30}
-                  y2={235}
-                  stroke="var(--border-subtle)"
-                  opacity={i % 5 ? 0.35 : 0.8}
-                  vectorEffect="non-scaling-stroke"
-                />
-              ))}
-              {[1, 2, 3].map((i) => (
-                <text
-                  key={`time-label-${i}`}
-                  transform={`translate(${50 + i * 145} 268) scale(${pixelX} ${pixelY})`}
-                  fill="var(--text-muted)"
-                  fontSize="10"
-                  pointerEvents="none"
-                >
-                  {(start + ((end - start) * i) / 4).toFixed(2)} s
-                </text>
-              ))}
-              {[0, 1, 2, 3, 4].map((i) => (
-                <g key={i}>
+                  if (e.button !== 1 && !(e.button === 0 && space.current))
+                    return;
+                  e.preventDefault();
+                  e.currentTarget.focus();
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  pan.current = {
+                    x: e.clientX,
+                    y: e.clientY,
+                    width: rect.width,
+                    height: rect.height,
+                    view: viewport,
+                  };
+                }}
+                onPointerMove={(e) => {
+                  const p = pan.current;
+                  if (p) {
+                    panUsed.current =
+                      Math.hypot(e.clientX - p.x, e.clientY - p.y) > 3;
+                    setViewport({
+                      ...p.view,
+                      x:
+                        p.view.x -
+                        ((e.clientX - p.x) * 680) /
+                          Math.max(1, p.width) /
+                          p.view.zoom,
+                      y:
+                        p.view.y -
+                        ((e.clientY - p.y) * 280) /
+                          Math.max(1, p.height) /
+                          p.view.zoom,
+                    });
+                  }
+                }}
+                onPointerUp={() => {
+                  pan.current = undefined;
+                }}
+                onPointerCancel={() => {
+                  if (pan.current) setViewport(pan.current.view);
+                  pan.current = undefined;
+                }}
+                onLostPointerCapture={() => {
+                  if (pan.current) setViewport(pan.current.view);
+                  pan.current = undefined;
+                }}
+                className="graph-svg"
+                role="img"
+                aria-label={mode === 'speed' ? '动画速度曲线' : '动画值曲线'}
+              >
+                {Array.from({ length: 21 }, (_, i) => (
                   <line
-                    vectorEffect="non-scaling-stroke"
+                    key={`time-${i}`}
                     pointerEvents="none"
-                    x1="50"
-                    x2="630"
-                    y1={30 + (i * 205) / 4}
-                    y2={30 + (i * 205) / 4}
+                    x1={50 + i * 29}
+                    x2={50 + i * 29}
+                    y1={30}
+                    y2={235}
                     stroke="var(--border-subtle)"
+                    opacity={i % 5 ? 0.35 : 0.8}
+                    vectorEffect="non-scaling-stroke"
                   />
+                ))}
+                {[1, 2, 3].map((i) => (
                   <text
-                    x="0"
-                    y="0"
-                    transform={`translate(4 ${30 + (i * 205) / 4 + 4 * pixelY}) scale(${pixelX} ${pixelY})`}
+                    key={`time-label-${i}`}
+                    transform={`translate(${50 + i * 145} 268) scale(${pixelX} ${pixelY})`}
                     fill="var(--text-muted)"
                     fontSize="10"
+                    pointerEvents="none"
                   >
-                    {(max - (i * (max - min)) / 4).toFixed(tickPrecision)}
+                    {(start + ((end - start) * i) / 4).toFixed(2)} s
                   </text>
-                </g>
-              ))}
-              <path
-                d={frames.length > 1 ? path : ''}
-                onClick={(e) => selectSegmentAt(e.clientX)}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  selectSegmentAt(e.clientX);
-                  setMenu({ x: e.clientX, y: e.clientY, type: 'segment' });
-                }}
-                stroke="var(--accent-primary)"
-                strokeWidth="2"
-                vectorEffect="non-scaling-stroke"
-                fill="none"
-              />
-              {frames.map((k, i) => {
-                const y = Y(
-                  mode === 'speed'
-                    ? sampleCurve(p, k.time, k.time, 'speed', 0, 1)[0]!.value *
-                        factor
-                    : valueComponent(k.value, component),
-                );
-                const selected = view.frames.some(
-                  (r) => r.keyframeId === k.id && r.propertyId === p.id,
-                );
-                return (
-                  <g
-                    key={k.id}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`关键帧 K${i + 1}`}
-                    aria-pressed={selected}
-                    transform={`translate(${X(k.time)} ${y}) scale(${pixelX} ${pixelY})`}
-                    onClick={(e) => {
-                      if (space.current || panUsed.current) return;
-                      setSegmentId(k.id);
-                      setFocus('key');
-                      store.setTime(k.time);
-                      const ref = { propertyId: p.id, keyframeId: k.id };
-                      if (e.shiftKey || e.ctrlKey || e.metaKey)
-                        store.selectFrame(ref, true);
-                      else store.selectFrames([ref]);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        setFocus('key');
-                        store.selectFrames([
-                          { propertyId: p.id, keyframeId: k.id },
-                        ]);
-                      }
-                    }}
-                    onContextMenu={(e) => {
-                      e.preventDefault();
-                      store.selectFrame({ propertyId: p.id, keyframeId: k.id });
-                      setSegmentId(k.id);
-                      setFocus('key');
-                      setMenu({ x: e.clientX, y: e.clientY, type: 'key' });
-                    }}
-                  >
-                    <rect
-                      x={-10}
-                      y={-10}
-                      width={20}
-                      height={20}
-                      fill="transparent"
+                ))}
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <g key={i}>
+                    <line
+                      vectorEffect="non-scaling-stroke"
+                      pointerEvents="none"
+                      x1="50"
+                      x2="630"
+                      y1={30 + (i * 205) / 4}
+                      y2={30 + (i * 205) / 4}
+                      stroke="var(--border-subtle)"
                     />
-                    <path
-                      d="M0 -5L5 0 0 5 -5 0Z"
-                      fill={
-                        selected
-                          ? 'var(--accent-primary)'
-                          : 'var(--background-secondary)'
-                      }
-                      stroke={
-                        selected
-                          ? 'var(--accent-primary)'
-                          : 'var(--text-primary)'
-                      }
-                    />
+                    <text
+                      x="0"
+                      y="0"
+                      transform={`translate(4 ${30 + (i * 205) / 4 + 4 * pixelY}) scale(${pixelX} ${pixelY})`}
+                      fill="var(--text-muted)"
+                      fontSize="10"
+                    >
+                      {(max - (i * (max - min)) / 4).toFixed(tickPrecision)}
+                    </text>
                   </g>
-                );
-              })}
-              {left &&
-                right &&
-                (['out', 'in'] as const).map((which) => {
-                  const actual = handlePoint(which),
-                    h = {
-                      x: Math.max(
-                        viewport.x + 10 * pixelX,
-                        Math.min(
-                          viewport.x + 680 / viewport.zoom - 10 * pixelX,
-                          actual.x,
-                        ),
-                      ),
-                      y: Math.max(
-                        viewport.y + 10 * pixelY,
-                        Math.min(
-                          viewport.y + 280 / viewport.zoom - 10 * pixelY,
-                          actual.y,
-                        ),
-                      ),
-                    },
-                    key = which === 'out' ? left : right;
+                ))}
+                <path
+                  d={frames.length > 1 ? path : ''}
+                  onClick={(e) => selectSegmentAt(e.clientX)}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    selectSegmentAt(e.clientX);
+                    setMenu({ x: e.clientX, y: e.clientY, type: 'segment' });
+                  }}
+                  stroke="var(--accent-primary)"
+                  strokeWidth="2"
+                  vectorEffect="non-scaling-stroke"
+                  fill="none"
+                />
+                {frames.map((k, i) => {
+                  const y = Y(
+                    mode === 'speed'
+                      ? sampleCurve(p, k.time, k.time, 'speed', 0, 1)[0]!
+                          .value * factor
+                      : valueComponent(k.value, component),
+                  );
+                  const selected = view.frames.some(
+                    (r) => r.keyframeId === k.id && r.propertyId === p.id,
+                  );
                   return (
-                    <g key={which}>
-                      <line
-                        vectorEffect="non-scaling-stroke"
-                        pointerEvents="none"
-                        x1={X(key.time)}
-                        y1={Y(
-                          mode === 'speed'
-                            ? (which === 'out'
-                                ? speed!.outSpeed
-                                : speed!.inSpeed) * factor
-                            : valueComponent(key.value, component),
-                        )}
-                        x2={h.x}
-                        y2={h.y}
-                        stroke="var(--warning)"
-                      />
-                      <ellipse
-                        role="slider"
-                        aria-label={
-                          which === 'out' ? '出切线手柄' : '入切线手柄'
+                    <g
+                      key={k.id}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`关键帧 K${i + 1}`}
+                      aria-pressed={selected}
+                      transform={`translate(${X(k.time)} ${y}) scale(${pixelX} ${pixelY})`}
+                      onClick={(e) => {
+                        if (space.current || panUsed.current) return;
+                        setSegmentId(k.id);
+                        setFocus('key');
+                        store.setTime(k.time);
+                        const ref = { propertyId: p.id, keyframeId: k.id };
+                        if (e.shiftKey || e.ctrlKey || e.metaKey)
+                          store.selectFrame(ref, true);
+                        else store.selectFrames([ref]);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          setFocus('key');
+                          store.selectFrames([
+                            { propertyId: p.id, keyframeId: k.id },
+                          ]);
                         }
-                        aria-valuenow={controls[which].x}
-                        data-offscreen={h.x !== actual.x || h.y !== actual.y}
-                        tabIndex={0}
-                        cx={h.x}
-                        cy={h.y}
-                        rx={4 * pixelX}
-                        ry={4 * pixelY}
-                        stroke="transparent"
-                        strokeWidth="18"
-                        vectorEffect="non-scaling-stroke"
-                        fill="var(--warning)"
-                        style={{ cursor: 'move', touchAction: 'none' }}
-                        onPointerDown={(e) => {
-                          if (e.button !== 0 || space.current || layer?.locked)
-                            return;
-                          e.stopPropagation();
-                          setFocus(which);
-                          store.setPlaying(false);
-                          e.currentTarget.focus();
-                          e.currentTarget.setPointerCapture(e.pointerId);
-                          domainRef.current = { key: curveKey, min, max };
-                          gesture.current = {
-                            which,
-                            controls,
-                            project: view.project,
-                            key: curveKey,
-                            domain: { start, end, min, max },
-                          };
-                        }}
-                        onKeyDown={(e) => {
-                          if (layer?.locked) return;
-                          if (
-                            [
-                              'ArrowLeft',
-                              'ArrowRight',
-                              'ArrowUp',
-                              'ArrowDown',
-                            ].includes(e.key)
-                          ) {
-                            e.preventDefault();
-                            const pt = controls[which];
-                            apply({
-                              ...controls,
-                              [which]: {
-                                x: Math.max(
-                                  0,
-                                  Math.min(
-                                    1,
-                                    pt.x +
-                                      (e.key === 'ArrowRight'
-                                        ? 0.01
-                                        : e.key === 'ArrowLeft'
-                                          ? -0.01
-                                          : 0),
-                                  ),
-                                ),
-                                y:
-                                  pt.y +
-                                  (e.key === 'ArrowUp'
-                                    ? 0.02
-                                    : e.key === 'ArrowDown'
-                                      ? -0.02
-                                      : 0),
-                              },
-                            });
-                          }
-                        }}
+                      }}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        store.selectFrame({
+                          propertyId: p.id,
+                          keyframeId: k.id,
+                        });
+                        setSegmentId(k.id);
+                        setFocus('key');
+                        setMenu({ x: e.clientX, y: e.clientY, type: 'key' });
+                      }}
+                    >
+                      <rect
+                        x={-10}
+                        y={-10}
+                        width={20}
+                        height={20}
+                        fill="transparent"
+                      />
+                      <path
+                        d="M0 -5L5 0 0 5 -5 0Z"
+                        fill={
+                          selected
+                            ? 'var(--accent-primary)'
+                            : 'var(--background-secondary)'
+                        }
+                        stroke={
+                          selected
+                            ? 'var(--accent-primary)'
+                            : 'var(--text-primary)'
+                        }
                       />
                     </g>
                   );
                 })}
-              <line
-                vectorEffect="non-scaling-stroke"
-                pointerEvents="none"
-                x1={X(view.time)}
-                x2={X(view.time)}
-                y1="20"
-                y2="240"
-                stroke="var(--danger)"
-              />
-              <text
-                x="0"
-                y="0"
-                transform={`translate(50 268) scale(${pixelX} ${pixelY})`}
-                fill="var(--text-muted)"
-                fontSize="11"
-              >
-                {start.toFixed(2)} 秒
-              </text>
-              <text
-                x="0"
-                y="0"
-                transform={`translate(580 268) scale(${pixelX} ${pixelY})`}
-                fill="var(--text-muted)"
-                fontSize="11"
-              >
-                {end.toFixed(2)} 秒
-              </text>
-            </svg>
+                {left &&
+                  right &&
+                  left.interpolation.type !== 'custom-speed' &&
+                  (['out', 'in'] as const).map((which) => {
+                    const actual = handlePoint(which),
+                      h = {
+                        x: Math.max(
+                          viewport.x + 10 * pixelX,
+                          Math.min(
+                            viewport.x + 680 / viewport.zoom - 10 * pixelX,
+                            actual.x,
+                          ),
+                        ),
+                        y: Math.max(
+                          viewport.y + 10 * pixelY,
+                          Math.min(
+                            viewport.y + 280 / viewport.zoom - 10 * pixelY,
+                            actual.y,
+                          ),
+                        ),
+                      },
+                      key = which === 'out' ? left : right;
+                    return (
+                      <g key={which}>
+                        <line
+                          vectorEffect="non-scaling-stroke"
+                          pointerEvents="none"
+                          x1={X(key.time)}
+                          y1={Y(
+                            mode === 'speed'
+                              ? (which === 'out'
+                                  ? speed!.outSpeed
+                                  : speed!.inSpeed) * factor
+                              : valueComponent(key.value, component),
+                          )}
+                          x2={h.x}
+                          y2={h.y}
+                          stroke="var(--warning)"
+                        />
+                        <ellipse
+                          role="slider"
+                          aria-label={
+                            which === 'out' ? '出切线手柄' : '入切线手柄'
+                          }
+                          aria-valuenow={controls[which].x}
+                          data-offscreen={h.x !== actual.x || h.y !== actual.y}
+                          tabIndex={0}
+                          cx={h.x}
+                          cy={h.y}
+                          rx={4 * pixelX}
+                          ry={4 * pixelY}
+                          stroke="transparent"
+                          strokeWidth="18"
+                          vectorEffect="non-scaling-stroke"
+                          fill="var(--warning)"
+                          style={{ cursor: 'move', touchAction: 'none' }}
+                          onPointerDown={(e) => {
+                            if (
+                              e.button !== 0 ||
+                              space.current ||
+                              layer?.locked
+                            )
+                              return;
+                            e.stopPropagation();
+                            setFocus(which);
+                            store.setPlaying(false);
+                            e.currentTarget.focus();
+                            e.currentTarget.setPointerCapture(e.pointerId);
+                            domainRef.current = { key: curveKey, min, max };
+                            gesture.current = {
+                              which,
+                              controls,
+                              project: view.project,
+                              key: curveKey,
+                              domain: { start, end, min, max },
+                            };
+                          }}
+                          onKeyDown={(e) => {
+                            if (layer?.locked) return;
+                            if (
+                              [
+                                'ArrowLeft',
+                                'ArrowRight',
+                                'ArrowUp',
+                                'ArrowDown',
+                              ].includes(e.key)
+                            ) {
+                              e.preventDefault();
+                              const pt = controls[which];
+                              apply({
+                                ...controls,
+                                [which]: {
+                                  x: Math.max(
+                                    0,
+                                    Math.min(
+                                      1,
+                                      pt.x +
+                                        (e.key === 'ArrowRight'
+                                          ? 0.01
+                                          : e.key === 'ArrowLeft'
+                                            ? -0.01
+                                            : 0),
+                                    ),
+                                  ),
+                                  y:
+                                    pt.y +
+                                    (e.key === 'ArrowUp'
+                                      ? 0.02
+                                      : e.key === 'ArrowDown'
+                                        ? -0.02
+                                        : 0),
+                                },
+                              });
+                            }
+                          }}
+                        />
+                      </g>
+                    );
+                  })}
+                <line
+                  vectorEffect="non-scaling-stroke"
+                  pointerEvents="none"
+                  x1={X(view.time)}
+                  x2={X(view.time)}
+                  y1="20"
+                  y2="240"
+                  stroke="var(--danger)"
+                />
+                <text
+                  x="0"
+                  y="0"
+                  transform={`translate(50 268) scale(${pixelX} ${pixelY})`}
+                  fill="var(--text-muted)"
+                  fontSize="11"
+                >
+                  {start.toFixed(2)} 秒
+                </text>
+                <text
+                  x="0"
+                  y="0"
+                  transform={`translate(580 268) scale(${pixelX} ${pixelY})`}
+                  fill="var(--text-muted)"
+                  fontSize="11"
+                >
+                  {end.toFixed(2)} 秒
+                </text>
+              </svg>
+            )}
             {!frames.length && (
               <p className="curve-empty-hint">
                 该属性尚无关键帧。请先在时间轴开启动画。

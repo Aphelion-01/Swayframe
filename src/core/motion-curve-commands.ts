@@ -1,3 +1,4 @@
+import { speedInterpolationSchema } from './speed-curve';
 import { reverseMotionCurve } from './motion-curve-operations';
 import type { MotionPresetLibrary, MotionPreset } from './motion-presets';
 import { command, transaction } from './command-system';
@@ -189,4 +190,48 @@ export class MotionCurveAPI {
       outgoingNormalizedVelocity: motionCurveVelocity(curve, 0),
     };
   }
+}
+
+/** Draw Speed belongs to the outgoing interval, like every native interpolation. */
+export function applySpeedCurveCommands(
+  project: Project,
+  segmentId: string,
+  input: import('./speed-curve').CustomSpeedInterpolation,
+): readonly Command[] {
+  const curve = speedInterpolationSchema.parse(input);
+  const s = resolveMotionSegment(project, segmentId);
+  if (!supportsDrawSpeed(findProperty(project, s.propertyId).key))
+    throw new Error('此属性暂不支持手绘速度，请选择位置、缩放、旋转或透明度');
+  if (findProperty(project, s.propertyId).layer.locked)
+    throw new Error('图层已锁定');
+  if (!(s.to.time > s.from.time)) throw new Error('关键帧区间必须大于零');
+  if (
+    Array.isArray(s.from.value) &&
+    Array.isArray(s.to.value) &&
+    s.from.value.length !== s.to.value.length
+  )
+    throw new Error('不同拓扑的路径不支持连续速度控制');
+  return [
+    command({
+      type: 'keyframe.update',
+      propertyId: s.propertyId,
+      keyframeId: s.from.id,
+      patch: { interpolation: curve },
+    }),
+  ];
+}
+
+/** V0 limits editing to known continuous transform properties, never numeric switches. */
+export function supportsDrawSpeed(key: string): boolean {
+  return [
+    'transform.position',
+    'transform.scale',
+    'transform.rotation',
+    'transform.opacity',
+    'editor.properties.position3D',
+    'editor.properties.rotation3D',
+    'editor.properties.scale3D',
+    'editor.properties.cameraPosition',
+    'editor.properties.cameraTarget',
+  ].includes(key);
 }

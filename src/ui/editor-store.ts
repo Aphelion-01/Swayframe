@@ -725,7 +725,11 @@ export class EditorStore {
   }
   load(json: string): boolean {
     try {
-      const project = loadProject(json);
+      let recovered = 0;
+      const project = loadProject(json, (items) => {
+        recovered = items.length;
+        console.warn('SF speed curve recovery; original data', items);
+      });
       const result = this.commands.replaceProject(project);
       if (!result.ok) throw new Error(result.error);
       this.cancelDrag();
@@ -743,7 +747,12 @@ export class EditorStore {
       this.#frameClipboard = [];
       this.#layerClipboard = [];
       this.#set({ frames: [], selectedProperties: [] });
-      this.setStatus('工程已打开 · 历史已清空');
+      this.setStatus(
+        recovered
+          ? `工程已打开 · ${recovered} 条无效速度曲线降级为线性，原始数据见诊断日志；请另存副本`
+          : '工程已打开 · 历史已清空',
+        recovered > 0,
+      );
       return true;
     } catch (error) {
       this.setStatus(

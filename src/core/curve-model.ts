@@ -1,3 +1,4 @@
+import { speedWeight } from './speed-curve';
 import { cubicBezierVelocity } from './cubic-bezier';
 import { motionCurveVelocity, segmentMotionCurve } from './motion-curve';
 import { spatialControls, spatialControls3 } from './spatial-path';
@@ -53,7 +54,8 @@ export function propertySpeed(
   if (
     (left.spatialOutgoing || right.spatialIncoming) &&
     (left.interpolation.type === 'linear' ||
-      left.interpolation.type === 'bezier')
+      left.interpolation.type === 'bezier' ||
+      left.interpolation.type === 'custom-speed')
   ) {
     const controls = Array.isArray(left.value)
       ? spatialControls3(left, right)
@@ -66,12 +68,15 @@ export function propertySpeed(
         : left.interpolation;
     const u = interpolationProgress(interpolation, time - left.time, duration);
     const rate =
-      left.interpolation.type === 'linear'
-        ? 1 / duration
-        : cubicBezierVelocity(
-            { x1: ctrl.out.x, y1: ctrl.out.y, x2: ctrl.in.x, y2: ctrl.in.y },
-            (time - left.time) / duration,
-          ) / duration;
+      left.interpolation.type === 'custom-speed'
+        ? speedWeight(left.interpolation, (time - left.time) / duration) /
+          duration
+        : left.interpolation.type === 'linear'
+          ? 1 / duration
+          : cubicBezierVelocity(
+              { x1: ctrl.out.x, y1: ctrl.out.y, x2: ctrl.in.x, y2: ctrl.in.y },
+              (time - left.time) / duration,
+            ) / duration;
     const a = components(left.value),
       b = components(controls.out),
       d = components(controls.in),
@@ -87,6 +92,14 @@ export function propertySpeed(
       ) * Math.abs(rate)
     );
   }
+  if (left.interpolation.type === 'custom-speed')
+    return (
+      (valueDistance(left.value, right.value) / (right.time - left.time)) *
+      speedWeight(
+        left.interpolation,
+        (time - left.time) / (right.time - left.time),
+      )
+    );
   // Uniform motion is exact; differencing large world coordinates creates visible noise.
   if (
     left.interpolation.type === 'linear' &&

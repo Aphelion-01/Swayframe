@@ -1,3 +1,4 @@
+import { speedInterpolationSchema, speedProgress } from './speed-curve';
 import { cubicBezier } from './cubic-bezier';
 import { spatialPoint, spatialPoint3 } from './spatial-path';
 import { z } from 'zod';
@@ -8,6 +9,7 @@ export const curvePointSchema = z
   .object({ x: z.number().min(0).max(1), y: z.number().min(-10).max(10) })
   .strict();
 export const interpolationSchema = z.discriminatedUnion('type', [
+  speedInterpolationSchema,
   z.object({ type: z.literal('linear') }).strict(),
   z.object({ type: z.literal('hold') }).strict(),
   z
@@ -57,6 +59,11 @@ export function interpolationProgress(
   elapsed: number,
   duration: number,
 ): number {
+  if (interpolation.type === 'custom-speed')
+    return speedProgress(
+      interpolation,
+      duration > 0 ? elapsed / duration : elapsed > 0 ? 1 : 0,
+    );
   interpolationSchema.parse(interpolation);
   const u = elapsed / duration;
   if (u <= 0) return 0;

@@ -1,0 +1,60 @@
+
+ RUN  v5.0.3 /Users/aphelion-01/Documents/Codex/2026-10-03/Swayframe_Repairs/agent-v2-capability-unlock
+
+ ❯ tests/draw-speed.test.ts (10 tests | 3 failed) 41ms
+   × J: invalid data rejected before Scene/history and runtime fallback stays finite 2ms
+   × simplifies hundreds of samples, retains peaks and exact pause boundaries 3ms
+   × deleted endpoints reject stale interval atomically; normalized curve survives frame copy 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/draw-speed.test.ts > J: invalid data rejected before Scene/history and runtime fallback stays finite
+TypeError: Cannot read properties of undefined (reading 't')
+ ❯ src/core/speed-curve.ts:21:13
+     19| }).strict().superRefine((curve, ctx) => {
+     20|   const p = curve.points;
+     21|   if (p[0]!.t !== 0 || p.at(-1)!.t !== 1)
+       |             ^
+     22|     ctx.addIssue({ code: 'custom', message: '速度曲线必须包含 0 和 1 端点' });
+     23|   let area = 0;
+ ❯ Internals.check ../mcp-bridge-v0/node_modules/zod/v4/core/api.js:998:16
+ ❯ runChecks ../mcp-bridge-v0/node_modules/zod/v4/core/schemas.js:51:35
+ ❯ Internals.inst._zod.run ../mcp-bridge-v0/node_modules/zod/v4/core/schemas.js:118:20
+ ❯ Module.<anonymous> ../mcp-bridge-v0/node_modules/zod/v4/core/parse.js:43:32
+ ❯ ZodObject.safeParse ../mcp-bridge-v0/node_modules/zod/v4/classic/schemas.js:141:22
+ ❯ tests/draw-speed.test.ts:59:105
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  tests/draw-speed.test.ts > simplifies hundreds of samples, retains peaks and exact pause boundaries
+AssertionError: expected 0.5100788815756401 to be 0.5100788815756402 // Object.is equality
+
+- Expected
++ Received
+
+- 0.5100788815756402
++ 0.5100788815756401
+
+ ❯ tests/draw-speed.test.ts:74:211
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  tests/draw-speed.test.ts > deleted endpoints reject stale interval atomically; normalized curve survives frame copy
+TypeError: copyKeyframes is not a function
+ ❯ tests/draw-speed.test.ts:80:15
+     78|  const first=get().keyframes[0]!;
+     79|  // Native frame copying retains interpolation as serializable data.
+     80|  const copied=copyKeyframes(sys.getSnapshot(),[{propertyId:property.id…
+       |               ^
+     81|  expect(copied[0]!.frame.interpolation).toEqual(curve);
+     82|  expect(pasteKeyframes).toBeDefined();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  3 failed | 21 passed (24)
+   Start at  23:30:18
+   Duration  359ms (transform 57%, import 31%, tests 11%, worker 1%)
+
