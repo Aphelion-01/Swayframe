@@ -23,7 +23,14 @@ import { LayerTimeBar } from './LayerTimeBar';
 import { GraphEditor } from './GraphEditor';
 import { visibleProperties, propertyLabel } from './property-labels';
 import { interpolationLabels, displayName } from './labels';
-import { useEffect, useMemo, useRef, useState, Fragment } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  Fragment,
+} from 'react';
 import type { CSSProperties } from 'react';
 import { command } from '../core/command-system';
 import { newId } from '../core/core-types';
@@ -139,8 +146,40 @@ export function Timeline({ store }: { store: EditorStore }) {
     'playing',
     'timelineZoom',
     'propertyFilter',
+    'timelineReveal',
   ]);
   const c = activeComposition(view.project);
+  useEffect(() => {
+    const request = view.timelineReveal;
+    if (!request || !c.layers.some((l) => l.id === request.layerId)) return;
+    setExpanded((old) => ({ ...old, [request.layerId]: true }));
+    setTransforms((old) =>
+      Object.fromEntries([
+        ...Object.entries(old).map(([key, value]) => [
+          key,
+          key === request.layerId || key.startsWith(request.layerId + ':')
+            ? true
+            : value,
+        ]),
+        [request.layerId, true],
+      ]),
+    );
+    setSearch('');
+    store.setPropertyFilter('all');
+  }, [view.timelineReveal, c.id, store]);
+  useLayoutEffect(() => {
+    const request = view.timelineReveal,
+      container = scrollRef.current;
+    if (!request || !container) return;
+    const row = [
+      ...container.querySelectorAll<HTMLElement>('.timeline-layer-heading'),
+    ].find((el) => el.dataset.layerId === request.layerId);
+    if (!row) return;
+    const bounds = container.getBoundingClientRect(),
+      target = row.getBoundingClientRect();
+    if (target.top < bounds.top || target.bottom > bounds.bottom)
+      container.scrollTop += target.top - bounds.top;
+  }, [view.timelineReveal, expanded, graphOpen, compositingOpen, motionOpen]);
   useEffect(() => {
     const release = (event: KeyboardEvent) => {
       if (event.code === 'Space' && spacePan.current) {

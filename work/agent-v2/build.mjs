@@ -1,0 +1,2 @@
+import {build} from 'esbuild';import fs from 'node:fs/promises';
+await build({entryPoints:['work/agent-v2/renderer.ts'],outfile:'work/agent-v2/renderer.js',bundle:true,platform:'browser',target:'chrome120',plugins:[{name:'raw-text',setup(b){b.onResolve({filter:/\?raw$/},args=>({path:new URL(args.path.replace(/\?raw$/,''),'file://'+args.resolveDir+'/').pathname,namespace:'raw-text'}));b.onLoad({filter:/.*/,namespace:'raw-text'},async args=>({contents:'export default '+JSON.stringify(await fs.readFile(args.path,'utf8')),loader:'js'}));}}]});

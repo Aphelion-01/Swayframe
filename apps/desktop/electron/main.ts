@@ -1,3 +1,4 @@
+import { installMCPBridge } from './mcp-bridge';
 import { rendererContentSecurityPolicy } from '../../../src/desktop/content-security';
 import {
   app,
@@ -25,6 +26,7 @@ protocol.registerSchemesAsPrivileged([
       secure: true,
       supportFetchAPI: true,
       corsEnabled: true,
+      stream: true,
     },
   },
 ]);
@@ -98,6 +100,7 @@ app
     installMenu(window);
     services = new NativeServices(window);
     const native = services;
+    installMCPBridge(window, native);
     if (pending) {
       native.startupPath = native.grants.grantRead(pending);
       pending = null;
@@ -117,6 +120,7 @@ app
     });
     let closing = false;
     window.on('close', (event) => {
+      native.cancelLayerPackImports();
       if (!closing) {
         event.preventDefault();
         window?.webContents.send('swayframe:action', 'close-window');

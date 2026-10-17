@@ -1,0 +1,756 @@
+{
+  "version": "0.9.27",
+  "budget": {
+    "hardRequests": 8,
+    "observedInputTokenStop": 400000
+  },
+  "route": {
+    "name": "DeepSeek",
+    "model": "deepseek-flash",
+    "baseUrl": "https://api.deepseek.com"
+  },
+  "tasks": [
+    {
+      "id": "release-live-combo-1",
+      "kind": "combo",
+      "status": "completed",
+      "error": null,
+      "plan": {
+        "id": "shape927-title927-v3",
+        "goal": "创建 Shape927（400×300 矩形，位置 960,540，原生径向渐变填充：中心青色→边缘深蓝，center 0.5/0.5，radius 0.8）、Title927（可编辑文字 \"Swayframe 0.9.27\"，64px，纯白，居中于 960,540），并为 Shape927 位置写入线性关键帧：0s (960,540) → 1s (1100,540)。",
+        "steps": [
+          {
+            "id": "s1",
+            "label": "创建矩形 Shape927（400×300，位置 960,540）",
+            "tool": "createRectangle",
+            "arguments": {
+              "layerId": "3f1a9270-0001-4a10-9a01-000000000927",
+              "name": "Shape927",
+              "width": 400,
+              "height": 300,
+              "position": {
+                "x": 960,
+                "y": 540
+              }
+            }
+          },
+          {
+            "id": "s2",
+            "label": "为 Shape927 设置原生径向渐变填充（中心青色→边缘深蓝，center 0.5/0.5，radius 0.8）",
+            "tool": "setFill",
+            "arguments": {
+              "layerId": "3f1a9270-0001-4a10-9a01-000000000927",
+              "color": {
+                "r": 0,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "gradient": "radial",
+              "endColor": {
+                "r": 0,
+                "g": 0,
+                "b": 0.4,
+                "a": 1
+              },
+              "radialParameters": {
+                "center": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "radius": 0.8,
+                "stops": [
+                  0,
+                  0,
+                  1,
+                  1,
+                  1,
+                  1,
+                  0,
+                  0,
+                  0.4,
+                  1
+                ]
+              }
+            }
+          },
+          {
+            "id": "s3",
+            "label": "创建可编辑文字 Title927（Swayframe 0.9.27，64px，纯白，居中 960,540）",
+            "tool": "createText",
+            "arguments": {
+              "layerId": "3f1a9270-0002-4a10-9a01-000000000927",
+              "name": "Title927",
+              "content": "Swayframe 0.9.27",
+              "fontSize": 64,
+              "color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "position": {
+                "x": 960,
+                "y": 540
+              },
+              "alignment": "center"
+            }
+          },
+          {
+            "id": "s4",
+            "label": "写入 Shape927 位置关键帧 0s (960,540)，线性插值",
+            "tool": "addKeyframe",
+            "arguments": {
+              "layerId": "3f1a9270-0001-4a10-9a01-000000000927",
+              "property": "position",
+              "time": 0,
+              "value": {
+                "x": 960,
+                "y": 540
+              },
+              "interpolation": {
+                "type": "linear"
+              }
+            }
+          },
+          {
+            "id": "s5",
+            "label": "写入 Shape927 位置关键帧 1s (1100,540)，线性插值",
+            "tool": "addKeyframe",
+            "arguments": {
+              "layerId": "3f1a9270-0001-4a10-9a01-000000000927",
+              "property": "position",
+              "time": 1,
+              "value": {
+                "x": 1100,
+                "y": 540
+              },
+              "interpolation": {
+                "type": "linear"
+              }
+            }
+          },
+          {
+            "id": "s6",
+            "label": "编译 Shape927 合成图，确认渐变填充与位置动画链路",
+            "tool": "compileGraph",
+            "arguments": {
+              "layerId": "3f1a9270-0001-4a10-9a01-000000000927"
+            }
+          }
+        ],
+        "risk": "low",
+        "creation": {
+          "intent": "在本空合成中按给定参数创建径向渐变矩形 Shape927 与可编辑标题 Title927，并为矩形位置加入 0s→1s 的线性位移动画。",
+          "tasks": [
+            {
+              "id": "task-shape927",
+              "description": "创建 400×300 矩形 Shape927 并置于合成中心 (960,540)，使用原生径向渐变填充：中心青色 (0,1,1,1)、边缘深蓝 (0,0,0.4,1)，center {0.5,0.5}，radius 0.8。",
+              "executionDomain": "scene",
+              "strategy": "generate",
+              "capabilityId": "createRectangle",
+              "stepIds": [
+                "s1",
+                "s2"
+              ],
+              "dependencies": []
+            },
+            {
+              "id": "task-title927",
+              "description": "创建可编辑文字 Title927，内容 \"Swayframe 0.9.27\"，fontSize 64，纯白，居中对齐，位置 960,540；文本保持可编辑。",
+              "executionDomain": "scene",
+              "strategy": "generate",
+              "capabilityId": "createText",
+              "stepIds": [
+                "s3"
+              ],
+              "dependencies": []
+            },
+            {
+              "id": "task-motion",
+              "description": "为 Shape927 位置写入线性关键帧：0s 值 (960,540)，1s 值 (1100,540)，使用位置属性与线性插值。",
+              "executionDomain": "animation",
+              "strategy": "generate",
+              "capabilityId": "addKeyframe",
+              "stepIds": [
+                "s4",
+                "s5",
+                "s6"
+              ],
+              "dependencies": [
+                "task-shape927"
+              ]
+            }
+          ],
+          "warnings": [
+            "渐变通过 setFill(gradient=radial) 作用于现有矩形，保留其矩形轮廓与 alpha；未创建独立 radialGradient 生成器节点，避免替换几何形状。",
+            "文字使用系统可用字体族；若指定字体未安装将回退默认字体族，文本保持可编辑。",
+            "仅创建 2 个图层与 1 条位置动画，未添加其他特效或设计改动。",
+            "宿主负责保存测试工程；本计划不请求任何文件或保存工具。"
+          ]
+        }
+      },
+      "toolCalls": [
+        {
+          "id": "call_00_eD5l5NQv8AG60ldNTZ226611",
+          "tool": "inspectComposition",
+          "label": "inspectComposition",
+          "status": "completed",
+          "result": {
+            "id": "6e82ae31-8bf5-4d47-99eb-2b7199d5b3b3",
+            "name": "合成 01",
+            "width": 1920,
+            "height": 1080,
+            "duration": 5,
+            "fps": 30,
+            "layerCount": 0,
+            "layers": []
+          }
+        },
+        {
+          "id": "call_01_dRkWUbKR2k9QS8o9VExh0304",
+          "tool": "effect_inspect",
+          "label": "effect_inspect",
+          "status": "completed",
+          "result": {
+            "id": "radialGradient",
+            "version": "1.0.0",
+            "name": "径向渐变",
+            "description": "中心、半径、多色标和变换可动画的径向渐变",
+            "category": "fill",
+            "group": "Generate",
+            "inputs": [],
+            "outputs": [
+              {
+                "id": "out",
+                "name": "图像",
+                "type": "Image"
+              }
+            ],
+            "parameters": [
+              {
+                "id": "center",
+                "name": "中心",
+                "type": "vec2",
+                "defaultValue": {
+                  "x": 0.5,
+                  "y": 0.5
+                },
+                "animatable": true
+              },
+              {
+                "id": "radius",
+                "name": "半径",
+                "type": "float",
+                "defaultValue": 0.5,
+                "min": 0.001,
+                "max": 10,
+                "animatable": true
+              },
+              {
+                "id": "aspect",
+                "name": "宽高比",
+                "type": "float",
+                "defaultValue": 1,
+                "min": 0.01,
+                "max": 100,
+                "animatable": true
+              },
+              {
+                "id": "stops",
+                "name": "渐变色标",
+                "type": "gradientStops",
+                "defaultValue": [
+                  0,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  0.18,
+                  0.42,
+                  1,
+                  1
+                ],
+                "animatable": true
+              },
+              {
+                "id": "opacity",
+                "name": "渐变不透明度",
+                "type": "float",
+                "defaultValue": 1,
+                "min": 0,
+                "max": 1,
+                "animatable": true
+              },
+              {
+                "id": "offset",
+                "name": "偏移",
+                "type": "vec2",
+                "defaultValue": {
+                  "x": 0,
+                  "y": 0
+                },
+                "animatable": true
+              },
+              {
+                "id": "scale",
+                "name": "渐变缩放",
+                "type": "vec2",
+                "defaultValue": {
+                  "x": 1,
+                  "y": 1
+                },
+                "min": 0.001,
+                "max": 100,
+                "animatable": true
+              },
+              {
+                "id": "rotation",
+                "name": "渐变旋转",
+                "type": "float",
+                "defaultValue": 0,
+                "animatable": true
+              },
+              {
+                "id": "interpolation",
+                "name": "颜色插值",
+                "type": "enum",
+                "options": [
+                  "sRGB",
+                  "线性光"
+                ],
+                "defaultValue": 0,
+                "animatable": true
+              }
+            ],
+            "implementation": {
+              "kind": "native",
+              "entryPoint": "radialGradient"
+            },
+            "capabilities": {
+              "animatable": true,
+              "realtime": true,
+              "deterministic": true,
+              "usesTime": false
+            },
+            "keywords": [
+              "radial",
+              "gradient",
+              "白心蓝边",
+              "渐变"
+            ]
+          }
+        },
+        {
+          "id": "preflight-1",
+          "tool": "submitPlan",
+          "label": "计划预检",
+          "status": "failed",
+          "result": {
+            "code": "CAPABILITY_MISSING",
+            "phase": "preflight",
+            "field": "creation.tasks.capabilityId",
+            "recoverable": true,
+            "message": "计划引用了未注册能力：createRectangle+setFill(radialGradient)",
+            "expected": "An exact registered capability ID",
+            "received": "createRectangle+setFill(radialGradient)"
+          }
+        },
+        {
+          "id": "preflight-2",
+          "tool": "submitPlan",
+          "label": "计划预检",
+          "status": "failed",
+          "result": {
+            "code": "SCHEMA_INVALID",
+            "phase": "preflight",
+            "field": "creation.tasks.strategy",
+            "recoverable": true,
+            "message": "修改已有内容的任务不能创建或删除对象"
+          }
+        },
+        {
+          "id": "s1",
+          "tool": "createRectangle",
+          "label": "创建矩形 Shape927（400×300，位置 960,540）",
+          "status": "completed",
+          "result": {
+            "ok": true,
+            "commandCount": 1,
+            "verification": {
+              "verifiedLayerIds": [
+                "3f1a9270-0001-4a10-9a01-000000000927"
+              ],
+              "verifiedPropertyIds": [],
+              "verifiedGraphLayerIds": [],
+              "verifiedKeyframeIds": []
+            }
+          }
+        },
+        {
+          "id": "s2",
+          "tool": "setFill",
+          "label": "为 Shape927 设置原生径向渐变填充（中心青色→边缘深蓝，center 0.5/0.5，radius 0.8）",
+          "status": "completed",
+          "result": {
+            "ok": true,
+            "commandCount": 6,
+            "verification": {
+              "verifiedLayerIds": [
+                "3f1a9270-0001-4a10-9a01-000000000927"
+              ],
+              "verifiedPropertyIds": [
+                "524f7147-77f4-46fd-aee3-45e181131932",
+                "31e108e1-89d6-4be1-bde2-d50135912bfc",
+                "1e251f73-0817-421d-a4e4-c60313633871",
+                "517304fa-b20d-4985-9263-374c6bf99d08",
+                "9e224366-59b0-4dad-b3a6-6c1000393a42"
+              ],
+              "verifiedGraphLayerIds": [],
+              "verifiedKeyframeIds": []
+            }
+          }
+        },
+        {
+          "id": "s3",
+          "tool": "createText",
+          "label": "创建可编辑文字 Title927（Swayframe 0.9.27，64px，纯白，居中 960,540）",
+          "status": "completed",
+          "result": {
+            "ok": true,
+            "commandCount": 1,
+            "verification": {
+              "verifiedLayerIds": [
+                "3f1a9270-0002-4a10-9a01-000000000927"
+              ],
+              "verifiedPropertyIds": [],
+              "verifiedGraphLayerIds": [],
+              "verifiedKeyframeIds": []
+            }
+          }
+        },
+        {
+          "id": "s4",
+          "tool": "addKeyframe",
+          "label": "写入 Shape927 位置关键帧 0s (960,540)，线性插值",
+          "status": "completed",
+          "result": {
+            "ok": true,
+            "commandCount": 1,
+            "verification": {
+              "verifiedLayerIds": [],
+              "verifiedPropertyIds": [],
+              "verifiedGraphLayerIds": [],
+              "verifiedKeyframeIds": [
+                "d5cee24f-cd02-4c9b-ab84-53592dd13b03"
+              ]
+            }
+          }
+        },
+        {
+          "id": "s5",
+          "tool": "addKeyframe",
+          "label": "写入 Shape927 位置关键帧 1s (1100,540)，线性插值",
+          "status": "completed",
+          "result": {
+            "ok": true,
+            "commandCount": 1,
+            "verification": {
+              "verifiedLayerIds": [],
+              "verifiedPropertyIds": [],
+              "verifiedGraphLayerIds": [],
+              "verifiedKeyframeIds": [
+                "f98bc533-6bda-42a2-8bd0-ad1ffd4e467f"
+              ]
+            }
+          }
+        },
+        {
+          "id": "s6",
+          "tool": "compileGraph",
+          "label": "编译 Shape927 合成图，确认渐变填充与位置动画链路",
+          "status": "completed",
+          "result": {
+            "graphId": "10c48e7c-d69a-4b2d-a777-91ee83a3cc3e",
+            "outputNodeId": "3843cb58-0b3a-4b63-ba3a-db98fdb7ef16",
+            "nodes": [
+              {
+                "node": {
+                  "id": "d7a2e3fe-746a-4d56-9415-a0d3e4f87e7e",
+                  "type": "source",
+                  "name": "源图像",
+                  "position": {
+                    "x": 40,
+                    "y": 50
+                  },
+                  "inputs": [],
+                  "outputs": [
+                    {
+                      "id": "out",
+                      "name": "图像",
+                      "type": "Image"
+                    }
+                  ],
+                  "params": {},
+                  "enabled": true
+                },
+                "inputs": {},
+                "passes": [
+                  "source"
+                ]
+              },
+              {
+                "node": {
+                  "id": "3843cb58-0b3a-4b63-ba3a-db98fdb7ef16",
+                  "type": "output",
+                  "name": "输出",
+                  "position": {
+                    "x": 320,
+                    "y": 50
+                  },
+                  "inputs": [
+                    {
+                      "id": "in",
+                      "name": "图像",
+                      "type": "Image",
+                      "required": true
+                    }
+                  ],
+                  "outputs": [],
+                  "params": {},
+                  "enabled": true
+                },
+                "inputs": {
+                  "in": "d7a2e3fe-746a-4d56-9415-a0d3e4f87e7e"
+                },
+                "passes": [
+                  "output"
+                ]
+              }
+            ],
+            "diagnostics": [],
+            "valid": true
+          }
+        }
+      ],
+      "usage": [
+        {
+          "inputTokens": 46519,
+          "outputTokens": 137,
+          "totalTokens": 46656
+        },
+        {
+          "inputTokens": 47182,
+          "outputTokens": 1465,
+          "totalTokens": 48647
+        },
+        {
+          "inputTokens": 39899,
+          "outputTokens": 1425,
+          "totalTokens": 41324
+        },
+        {
+          "inputTokens": 41267,
+          "outputTokens": 1438,
+          "totalTokens": 42705
+        }
+      ],
+      "recoveryAttempts": [],
+      "toolCallValidity": false,
+      "executionSuccess": true,
+      "sceneStateSuccess": true,
+      "savedReloadEqual": true,
+      "renderProduced": true,
+      "renderSuccess": "Pending independent visual inspection",
+      "formalCommitCount": 1,
+      "undoRestoresBase": true,
+      "redoRestoresFinal": true,
+      "fullTaskSuccess": "Pending independent visual inspection"
+    }
+  ],
+  "controlledLiveRecovery": [
+    {
+      "kind": "controlled-execution-fault-with-live-repair",
+      "session": {
+        "sessionId": "14629e79-852c-4fc4-a9d6-84023e266d1e",
+        "skillId": "auto",
+        "references": [],
+        "referenceMode": "overall",
+        "activeProjectId": "ca30d0e2-fb29-41f2-b50b-d713c81264c6",
+        "conversation": [
+          {
+            "role": "user",
+            "content": "创建矩形和文本；矩形径向半径0.8"
+          },
+          {
+            "role": "assistant",
+            "content": "Completed: 创建矩形和文本；矩形径向半径0.8"
+          }
+        ],
+        "selectedContext": {},
+        "currentPlan": {
+          "id": "controlled",
+          "goal": "创建矩形和文本；矩形径向半径0.8",
+          "steps": [
+            {
+              "id": "rect",
+              "label": "矩形",
+              "tool": "createRectangle",
+              "arguments": {
+                "layerId": "b0330f58-96d0-4b10-8957-914d2eb40360"
+              }
+            },
+            {
+              "id": "text",
+              "label": "文本",
+              "tool": "createText",
+              "arguments": {
+                "layerId": "3843ce6e-4c7f-4cc2-9038-cc0669d65fec",
+                "content": "Live Recovery 0.9.27"
+              }
+            },
+            {
+              "id": "fill",
+              "label": "填充",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "b0330f58-96d0-4b10-8957-914d2eb40360",
+                "color": {
+                  "r": 0,
+                  "g": 1,
+                  "b": 1,
+                  "a": 1
+                },
+                "gradient": "radial",
+                "radialParameters": {
+                  "radius": 0.8
+                }
+              }
+            }
+          ],
+          "risk": "low"
+        },
+        "toolCalls": [
+          {
+            "id": "rect",
+            "tool": "createRectangle",
+            "label": "矩形",
+            "status": "completed",
+            "result": {
+              "ok": true,
+              "commandCount": 1,
+              "verification": {
+                "verifiedLayerIds": [
+                  "b0330f58-96d0-4b10-8957-914d2eb40360"
+                ],
+                "verifiedPropertyIds": [],
+                "verifiedGraphLayerIds": [],
+                "verifiedKeyframeIds": []
+              }
+            }
+          },
+          {
+            "id": "text",
+            "tool": "createText",
+            "label": "文本",
+            "status": "completed",
+            "result": {
+              "ok": true,
+              "commandCount": 1,
+              "verification": {
+                "verifiedLayerIds": [
+                  "3843ce6e-4c7f-4cc2-9038-cc0669d65fec"
+                ],
+                "verifiedPropertyIds": [],
+                "verifiedGraphLayerIds": [],
+                "verifiedKeyframeIds": []
+              }
+            }
+          },
+          {
+            "id": "fill",
+            "tool": "setFill",
+            "label": "填充",
+            "status": "failed",
+            "result": {
+              "code": "SEMANTIC_INVALID",
+              "phase": "compile",
+              "toolName": "setFill",
+              "field": "radialParameters.radius",
+              "recoverable": true,
+              "message": "Controlled fault: use requested radius=0.8; preserve original target and earlier creation",
+              "expected": "radius=0.8",
+              "received": 0.5
+            }
+          },
+          {
+            "id": "fill",
+            "tool": "setFill",
+            "label": "填充",
+            "status": "completed",
+            "result": {
+              "ok": true,
+              "commandCount": 3,
+              "verification": {
+                "verifiedLayerIds": [
+                  "b0330f58-96d0-4b10-8957-914d2eb40360"
+                ],
+                "verifiedPropertyIds": [
+                  "537df811-b4a1-4ef4-98b1-b605cf350736",
+                  "1f62731a-6f01-4b35-842f-cda6aa198aff"
+                ],
+                "verifiedGraphLayerIds": [],
+                "verifiedKeyframeIds": []
+              }
+            }
+          }
+        ],
+        "usage": [
+          null,
+          {
+            "inputTokens": 2027,
+            "outputTokens": 201,
+            "totalTokens": 2228
+          }
+        ],
+        "status": "completed",
+        "mode": "AGENT",
+        "pendingConfirmation": false,
+        "changes": {
+          "added": [
+            "矩形",
+            "文字"
+          ],
+          "modified": [],
+          "deleted": [],
+          "transactionId": "b62f80c7-8814-46cf-8dc6-5781bf3ff517"
+        },
+        "error": null,
+        "response": "已完成 · 可撤销全部修改",
+        "recoveries": [
+          {
+            "stepId": "fill",
+            "attempt": 1,
+            "outcome": "resumed",
+            "error": {
+              "code": "SEMANTIC_INVALID",
+              "phase": "compile",
+              "toolName": "setFill",
+              "field": "radialParameters.radius",
+              "recoverable": true,
+              "message": "Controlled fault: use requested radius=0.8; preserve original target and earlier creation",
+              "expected": "radius=0.8",
+              "received": 0.5
+            }
+          }
+        ]
+      },
+      "correctRadius": true,
+      "noDuplicateCreates": true,
+      "singleCommit": true,
+      "undoRestoresBase": true
+    }
+  ],
+  "failures": []
+}

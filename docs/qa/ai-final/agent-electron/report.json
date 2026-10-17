@@ -1,0 +1,87 @@
+{
+  "pass": true,
+  "records": [
+    {
+      "id": "offline-real-controller-command-render-accept-undo",
+      "pass": true
+    },
+    {
+      "id": "V2-running-real-GUI-create-Scene-cancels-late-response",
+      "pass": true
+    },
+    {
+      "id": "V2-running-real-project-load-cancels-late-response",
+      "pass": true
+    },
+    {
+      "id": "V2-explicit-cancel-rejects-late-response",
+      "pass": true
+    },
+    {
+      "id": "V2-failed-draft-does-not-publish-partial-object",
+      "pass": true
+    }
+  ],
+  "details": [
+    {
+      "kind": "gui",
+      "phase": "CANCELLED",
+      "formalUnchanged": true,
+      "undoEntries": 2
+    },
+    {
+      "kind": "project",
+      "phase": "CANCELLED",
+      "formalUnchanged": true,
+      "undoEntries": 0
+    },
+    {
+      "kind": "cancel",
+      "phase": "CANCELLED",
+      "formalUnchanged": true,
+      "undoEntries": 0
+    },
+    {
+      "failure": [
+        {
+          "code": "INVALID_ARGUMENTS",
+          "message": "操作参数不符合工具契约",
+          "phase": "execution",
+          "actionId": "bad",
+          "target": {
+            "kind": "result",
+            "actionId": "r"
+          },
+          "field": "value",
+          "expected": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "actual": 2,
+          "recoverable": true,
+          "strategy": "FAILED_ACTION_ONLY"
+        },
+        {
+          "code": "PROVIDER_RESPONSE",
+          "message": "模型服务请求未完成；未执行编辑操作",
+          "phase": "planning",
+          "actionId": "bad",
+          "target": {
+            "kind": "result",
+            "actionId": "r"
+          },
+          "field": null,
+          "expected": null,
+          "actual": null,
+          "recoverable": false,
+          "strategy": "NONE"
+        }
+      ]
+    }
+  ],
+  "scope": "OFFLINE controlled provider only; real App/Controller/Runtime/Registry/AgentTransaction/CommandSystem and actual Renderer. Not Live provider/model quality evidence.",
+  "providerFixtureRequests": 6,
+  "networkAttempts": 0,
+  "modelAttempts": 0
+}

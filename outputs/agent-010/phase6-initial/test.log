@@ -1,0 +1,40 @@
+
+> motion-system@0.9.30 test
+> vitest run
+
+
+ RUN  v5.0.3 /Users/aphelion-01/Documents/Codex/2026-10-03/Swayframe_Repairs/0.10
+
+ ❯ tests/agent-execution-evidence-010.test.ts (3 tests | 1 failed) 65ms
+   × blank checks allow intentional opacity zero and enforce plain visible foreground 9ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/agent-execution-evidence-010.test.ts > blank checks allow intentional opacity zero and enforce plain visible foreground
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ tests/agent-execution-evidence-010.test.ts:70:57
+     68|     s = new AbortController().signal;
+     69|   await tx.execute('createRectangle', {}, s, 'shape');
+     70|   expect(expectsVisibleForeground(tx.getSnapshot(), 0)).toBe(true);
+       |                                                         ^
+     71|   await tx.execute(
+     72|     'addKeyframe',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 156 passed (157)
+      Tests  1 failed | 658 passed (659)
+   Start at  00:06:02
+   Duration  14.16s (tests 66%, import 17%, environment 10%, transform 7%)
+
+    Isolate  157 workers spawned · ~154ms startup each (spawn + environment, per file)
+             at least ~2.54s faster with isolate: false — reuses workers across files instead of one per file
+

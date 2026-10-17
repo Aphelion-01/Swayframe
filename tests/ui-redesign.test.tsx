@@ -135,6 +135,8 @@ it('切换工作区保留助手草稿和待审建议，生成建议不修改Scen
   fireEvent.change(screen.getByRole('textbox', { name: 'Agent 需求' }), {
     target: { value: '保留的提示词' },
   });
+  fireEvent.click(screen.getByLabelText('助手设置'));
+  fireEvent.click(screen.getByText('快速建议（离线示例）'));
   fireEvent.click(screen.getByRole('button', { name: '布局建议' }));
   await screen.findByRole('button', { name: '应用建议' });
   fireEvent.click(screen.getByRole('tab', { name: '图层' }));

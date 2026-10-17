@@ -1,0 +1,29 @@
+
+ RUN  v5.0.3 /Users/aphelion-01/Documents/Codex/2026-10-03/Swayframe_Repairs/1.0.2
+
+ ❯ tests/agent-v2-recovery-v26.test.ts (26 tests | 1 failed) 323ms
+   × R7 actual formal project change while repair waits stops without overwriting user work 65ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/agent-v2-recovery-v26.test.ts > R7 actual formal project change while repair waits stops without overwriting user work
+AssertionError: expected 'AWAITING_ACCEPTANCE' to be 'FAILED' // Object.is equality
+
+Expected: "FAILED"
+Received: "AWAITING_ACCEPTANCE"
+
+ ❯ tests/agent-v2-recovery-v26.test.ts:338:23
+    336|   release();
+    337|   const state = await pending;
+    338|   expect(state.phase).toBe('FAILED');
+       |                       ^
+    339|   expect(state.errors.at(-1)!.code).toBe('STALE_BASE');
+    340|   expect(s.host.getSnapshot()).toBe(changed);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 25 passed (26)
+   Start at  18:07:05
+   Duration  603ms (tests 58%, transform 32%, import 9%)

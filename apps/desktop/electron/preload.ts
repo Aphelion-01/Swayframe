@@ -1,3 +1,4 @@
+import { safeProviderDiagnostic } from '../../../src/ai/provider-diagnostics';
 import type { AIErrorCode } from '../../../src/ai/contracts';
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import type {
@@ -11,17 +12,38 @@ async function call<T>(request: DesktopRequest): Promise<T> {
     value: T;
     error?: string;
     code?: AIErrorCode;
+    details?: unknown;
   };
   if (!reply.ok) {
     if (reply.code)
       throw new Error(
-        `[SF_AI:${reply.code}]${reply.error ?? 'AI 服务操作未完成'}`,
+        `[SF_AI:${reply.code}]${reply.error ?? 'AI 服务操作未完成'}${safeProviderDiagnostic(reply.details) ? '\n[SF_DETAIL:' + encodeURIComponent(JSON.stringify(safeProviderDiagnostic(reply.details))) + ']' : ''}`,
       );
     throw new Error(reply.error ?? '原生操作失败，请查看日志。');
   }
   return reply.value;
 }
 const desktop: DesktopAPI = {
+  imageLayers: {
+    supported: process.platform === 'darwin',
+    status: () => call({ method: 'imageLayers.status' }),
+    generate: (input, parent, requestId) =>
+      call({ method: 'imageLayers.generate', input, parent, requestId }),
+    cancel: (requestId) => call({ method: 'imageLayers.cancel', requestId }),
+  },
+  mcp: {
+    control: (request) => ipcRenderer.invoke('sf:mcp:control', request),
+    reply: (id, result) => ipcRenderer.send('sf:mcp:reply', id, result),
+    onEvent: (listener) => {
+      const handler = (
+        _: unknown,
+        event: import('../../../src/mcp/contract').HostEvent,
+      ) => listener(event);
+      ipcRenderer.on('sf:mcp:event', handler);
+      return () => ipcRenderer.removeListener('sf:mcp:event', handler);
+    },
+  },
+  fonts: { list: () => call({ method: 'fonts.list' }) },
   ai: {
     loadSettings: () => call({ method: 'ai.settings.load' }),
     saveSettings: (settings) => call({ method: 'ai.settings.save', settings }),
@@ -58,6 +80,10 @@ const desktop: DesktopAPI = {
     confirmUnsaved: (name) => call({ method: 'dialog.unsaved', name }),
   },
   assets: {
+    readLayerPack: (path, requestId) =>
+      call({ method: 'assets.layerpack', path, requestId }),
+    cancelLayerPack: (requestId) =>
+      call({ method: 'assets.layerpack.cancel', requestId }),
     importFiles: (paths) => call({ method: 'assets.import', paths }),
     readMetadata: (path) => call({ method: 'assets.metadata', path }),
     exists: (path) => call({ method: 'assets.exists', path }),

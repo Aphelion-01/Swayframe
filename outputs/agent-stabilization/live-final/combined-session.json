@@ -1,0 +1,915 @@
+{
+  "sessionId": "d517a23b-3b09-4cb8-a370-1c0de2c4f990",
+  "skillId": "auto",
+  "references": [],
+  "referenceMode": "overall",
+  "activeProjectId": "36723d52-b3fe-405c-8706-4d8c234ed776",
+  "conversation": [
+    {
+      "role": "user",
+      "content": "创建一个名为 Background 的矩形，宽800高600，位于合成中心(960,540)，设置径向渐变填充，中心青色RGB(0,0.7,0.8)，外围深蓝RGB(0,0.05,0.15)。再创建可编辑文字图层 Title，内容 Cubic，字体 serif，字号96，位置(960,450)。仅创建这两个图层。"
+    }
+  ],
+  "selectedContext": {
+    "nativeSkills": [
+      {
+        "id": "sf.core-execution",
+        "version": "1.0.0",
+        "hash": "60abdf38a1f146e5387dc51e48fcc813b99beafb6dee01e2caabef3e7b08b261",
+        "instructions": "# Swayframe Core Execution V1\n\nUse only capabilities discovered in the current SF runtime. Compile intentions through registered semantic actions or simple native tools. Use actual existing/selection/stepResult references; never invent UUIDs. Validate task dependencies before executing. Defer future outputs until the real producer completes. Every write uses the existing AgentTransaction and Command System. Recover only through the shared bounded controller; never replay completed creation steps or widen scope. Verify commands and draft state, then native rendered output; without vision mark visual comparison NOT VERIFIED. Commit once only after verification and user approval where required.\n",
+        "actions": [
+          "createRectangle",
+          "setFill",
+          "setPosition",
+          "addKeyframe"
+        ]
+      },
+      {
+        "id": "sf.shape-creation",
+        "version": "1.0.0",
+        "hash": "244bbabd8eafddb4e2a06683321ad779e66794e0dfab2f1e13f339b188ee3f22",
+        "instructions": "# Shape Creation V1\n\nCreate editable native geometry using actual composition bounds. Bind each result independently; preserve names, shape alpha and geometry. Never create graph generators as substitute shapes.\n",
+        "actions": [
+          "createShape",
+          "createRectangle",
+          "createEllipse",
+          "createPolygon",
+          "createStar",
+          "setPosition",
+          "placeAtCompositionCenter"
+        ]
+      },
+      {
+        "id": "sf.typography",
+        "version": "1.0.0",
+        "hash": "1809a210dfa636fafae7bd9c8f334acfcd886337ee1006922cc094e4f3d9a5e6",
+        "instructions": "# Typography V1\n\nCreate actual editable Text layers. Keep exact content including Chinese; use real family names and shared font-size ranges. Center placement uses composition pixels. Verify text geometry and native rendering, never assume a particular external font exists.\n",
+        "actions": [
+          "createText",
+          "setFont",
+          "setFontSize",
+          "setTextContent",
+          "setPosition",
+          "setFill",
+          "setTracking",
+          "setLeading"
+        ]
+      },
+      {
+        "id": "sf.gradient-fill",
+        "version": "1.0.0",
+        "hash": "3d8c8c4d337636f1f26cfd6187c8f29e878f4bbec541463be611eda0eb9d98f5",
+        "instructions": "# Gradient / Fill V1\n\nQuery native fill capability and use its exact parameters. Solid uses normalized colors; linear uses start/end colors; radial uses normalized center/radius and flat [position,r,g,b,a] groups. Preserve alpha geometry; validate target shape/solid/text. Do not use detached generators as fills.\n",
+        "actions": [
+          "setFill",
+          "setGradientFill",
+          "effect_search",
+          "inspectToolContract"
+        ]
+      }
+    ],
+    "availableTools": [
+      {
+        "capabilityId": "createLayer",
+        "permission": "WRITE",
+        "description": "Create a real editable l"
+      },
+      {
+        "capabilityId": "createRectangle",
+        "permission": "WRITE",
+        "description": "Create an editable recta"
+      },
+      {
+        "capabilityId": "createEllipse",
+        "permission": "WRITE",
+        "description": "Create an editable ellip"
+      },
+      {
+        "capabilityId": "createPolygon",
+        "permission": "WRITE",
+        "description": "Create an editable polyg"
+      },
+      {
+        "capabilityId": "createStar",
+        "permission": "WRITE",
+        "description": "Create an editable star "
+      },
+      {
+        "capabilityId": "createText",
+        "permission": "WRITE",
+        "description": "Create editable text. co"
+      },
+      {
+        "capabilityId": "createPath",
+        "permission": "WRITE",
+        "description": "Create a closed editable"
+      },
+      {
+        "capabilityId": "deleteLayer",
+        "permission": "DESTRUCTIVE",
+        "description": "Delete a layer and detac"
+      },
+      {
+        "capabilityId": "duplicateLayer",
+        "permission": "WRITE",
+        "description": "Duplicate a layer with f"
+      },
+      {
+        "capabilityId": "renameLayer",
+        "permission": "WRITE",
+        "description": "Rename editable layer."
+      },
+      {
+        "capabilityId": "reorderLayer",
+        "permission": "WRITE",
+        "description": "Move layer to a zero-bas"
+      },
+      {
+        "capabilityId": "setLayerVisibility",
+        "permission": "WRITE",
+        "description": "Set actual visibility."
+      },
+      {
+        "capabilityId": "setParent",
+        "permission": "WRITE",
+        "description": "Reuse shared parent tran"
+      },
+      {
+        "capabilityId": "createPrecomp",
+        "permission": "WRITE",
+        "description": "Precompose related selec"
+      },
+      {
+        "capabilityId": "setPosition",
+        "permission": "WRITE",
+        "description": "Set position at current/"
+      },
+      {
+        "capabilityId": "setAnchor",
+        "permission": "WRITE",
+        "description": "Set anchor at current/ex"
+      },
+      {
+        "capabilityId": "setOpacity",
+        "permission": "WRITE",
+        "description": "Set opacity at current/e"
+      },
+      {
+        "capabilityId": "setScale",
+        "permission": "WRITE",
+        "description": "Set absolute local scale"
+      },
+      {
+        "capabilityId": "setRotation",
+        "permission": "WRITE",
+        "description": "Set absolute rotation wi"
+      },
+      {
+        "capabilityId": "transformSelection",
+        "permission": "WRITE",
+        "description": "Relative group/individua"
+      },
+      {
+        "capabilityId": "setTransformPivot",
+        "permission": "WRITE",
+        "description": "Set workspace pivot for "
+      },
+      {
+        "capabilityId": "setTransformOrientation",
+        "permission": "WRITE",
+        "description": "Set workspace orientatio"
+      },
+      {
+        "capabilityId": "setFill",
+        "permission": "WRITE",
+        "description": "Set native animated shap"
+      },
+      {
+        "capabilityId": "setStroke",
+        "permission": "WRITE",
+        "description": "Set actual stroke color "
+      },
+      {
+        "capabilityId": "setTextContent",
+        "permission": "WRITE",
+        "description": "Replace editable text co"
+      },
+      {
+        "capabilityId": "setFont",
+        "permission": "WRITE",
+        "description": "Set font family name; ca"
+      },
+      {
+        "capabilityId": "setFontSize",
+        "permission": "WRITE",
+        "description": "Set text fontSize throug"
+      },
+      {
+        "capabilityId": "setTracking",
+        "permission": "WRITE",
+        "description": "Set text tracking throug"
+      },
+      {
+        "capabilityId": "setLeading",
+        "permission": "WRITE",
+        "description": "Set text lineHeight thro"
+      },
+      {
+        "capabilityId": "setTextColor",
+        "permission": "WRITE",
+        "description": "Set text fill color."
+      },
+      {
+        "capabilityId": "setTextAlignment",
+        "permission": "WRITE",
+        "description": "Set text alignment witho"
+      },
+      {
+        "capabilityId": "addEffect",
+        "permission": "WRITE",
+        "description": "Insert an existing effec"
+      },
+      {
+        "capabilityId": "removeEffect",
+        "permission": "DESTRUCTIVE",
+        "description": "Remove effect node; requ"
+      },
+      {
+        "capabilityId": "setEffectParameter",
+        "permission": "WRITE",
+        "description": "Set animated parameter o"
+      },
+      {
+        "capabilityId": "enableEffect",
+        "permission": "WRITE",
+        "description": "Toggle an actual effect "
+      },
+      {
+        "capabilityId": "reorderEffect",
+        "permission": "WRITE",
+        "description": "Reorder a linear effect "
+      },
+      {
+        "capabilityId": "addKeyframe",
+        "permission": "WRITE",
+        "description": "Add a real timeline keyf"
+      },
+      {
+        "capabilityId": "deleteKeyframe",
+        "permission": "WRITE",
+        "description": "Delete a timeline keyfra"
+      },
+      {
+        "capabilityId": "moveKeyframe",
+        "permission": "WRITE",
+        "description": "Move a timeline keyframe"
+      },
+      {
+        "capabilityId": "setKeyframeValue",
+        "permission": "WRITE",
+        "description": "Change actual keyframe v"
+      },
+      {
+        "capabilityId": "setInterpolation",
+        "permission": "WRITE",
+        "description": "Set interpolation and cl"
+      },
+      {
+        "capabilityId": "applyMotionCurve",
+        "permission": "WRITE",
+        "description": "Apply normalized motion "
+      },
+      {
+        "capabilityId": "copyEasing",
+        "permission": "WRITE",
+        "description": "Copy a normalized segmen"
+      },
+      {
+        "capabilityId": "reverseEasing",
+        "permission": "WRITE",
+        "description": "Reverse timing and progr"
+      },
+      {
+        "capabilityId": "createNode",
+        "permission": "WRITE",
+        "description": "Create a registered grap"
+      },
+      {
+        "capabilityId": "deleteNode",
+        "permission": "DESTRUCTIVE",
+        "description": "调用共享合成图服务：deleteNode"
+      },
+      {
+        "capabilityId": "connectNodes",
+        "permission": "WRITE",
+        "description": "Connect exact typed port"
+      },
+      {
+        "capabilityId": "disconnectEdge",
+        "permission": "WRITE",
+        "description": "调用共享合成图服务：disconnectEdge"
+      },
+      {
+        "capabilityId": "setNodeParameter",
+        "permission": "WRITE",
+        "description": "调用共享合成图服务：setNodeParamet"
+      },
+      {
+        "capabilityId": "setNodePosition",
+        "permission": "WRITE",
+        "description": "调用共享合成图服务：setNodePositio"
+      },
+      {
+        "capabilityId": "enableNode",
+        "permission": "WRITE",
+        "description": "调用共享合成图服务：enableNode"
+      },
+      {
+        "capabilityId": "createMask",
+        "permission": "WRITE",
+        "description": "创建现有可渲染图层遮罩；路径每个点为 x,y,i"
+      },
+      {
+        "capabilityId": "setMaskMode",
+        "permission": "WRITE",
+        "description": "设置遮罩叠加、减去或相交模式"
+      },
+      {
+        "capabilityId": "setMaskPath",
+        "permission": "WRITE",
+        "description": "通过共享属性命令修改遮罩 path"
+      },
+      {
+        "capabilityId": "setMaskFeather",
+        "permission": "WRITE",
+        "description": "通过共享属性命令修改遮罩 feather"
+      },
+      {
+        "capabilityId": "setMaskOpacity",
+        "permission": "WRITE",
+        "description": "通过共享属性命令修改遮罩 opacity"
+      },
+      {
+        "capabilityId": "setMaskExpansion",
+        "permission": "WRITE",
+        "description": "通过共享属性命令修改遮罩 expansion"
+      },
+      {
+        "capabilityId": "setCompositionSize",
+        "permission": "WRITE",
+        "description": "修改合成尺寸"
+      },
+      {
+        "capabilityId": "setDuration",
+        "permission": "WRITE",
+        "description": "修改合成 duration"
+      },
+      {
+        "capabilityId": "setFPS",
+        "permission": "WRITE",
+        "description": "修改合成 fps"
+      },
+      {
+        "capabilityId": "createLayerFromAsset",
+        "permission": "WRITE",
+        "description": "仅使用已导入图像素材创建图层"
+      },
+      {
+        "capabilityId": "replaceAssetReference",
+        "permission": "WRITE",
+        "description": "替换图像图层的已授权素材引用"
+      },
+      {
+        "capabilityId": "createShape",
+        "permission": "WRITE",
+        "description": "Create a native editable"
+      },
+      {
+        "capabilityId": "placeAtCompositionCenter",
+        "permission": "WRITE",
+        "description": "Place an existing native"
+      },
+      {
+        "capabilityId": "setGradientFill",
+        "permission": "WRITE",
+        "description": "Apply native linear/radi"
+      },
+      {
+        "capabilityId": "animateLayerProperty",
+        "permission": "WRITE",
+        "description": "Create native Property k"
+      },
+      {
+        "capabilityId": "effect_applyDraft",
+        "permission": "WRITE",
+        "description": "把已预览和检查的草稿提交到Agent Trans"
+      },
+      {
+        "capabilityId": "effect_addToLayer",
+        "permission": "WRITE",
+        "description": "添加已注册内置能力到共享Graph；不会创建新的"
+      },
+      {
+        "capabilityId": "effect_addToGraph",
+        "permission": "WRITE",
+        "description": "添加已注册内置能力到共享Graph；不会创建新的"
+      },
+      {
+        "capabilityId": "effect_setParameter",
+        "permission": "WRITE",
+        "description": "通过标准动画Property设置效果参数，已有动"
+      },
+      {
+        "capabilityId": "applyAgentPreset",
+        "permission": "WRITE",
+        "description": "应用保存的实际属性值、关键帧与曲线；保留目标Pr"
+      },
+      {
+        "capabilityId": "renameGraphNode",
+        "permission": "WRITE",
+        "description": "给已有节点设置可理解的语义名称"
+      },
+      {
+        "capabilityId": "reuseProgrammableEffect",
+        "permission": "WRITE",
+        "description": "复用已验证的精确程序包版本/哈希；不生成新算法，"
+      },
+      {
+        "capabilityId": "setGraphOutput",
+        "permission": "WRITE",
+        "description": "将已有 Image 输出接入当前图层的真实 Ou"
+      },
+      {
+        "capabilityId": "layoutGraph",
+        "permission": "WRITE",
+        "description": "将处理图按左到右拓扑自动排布，不改变连接、参数和"
+      }
+    ],
+    "contextMetrics": {
+      "fullSchemaCharacters": 192508,
+      "selectedSchemaCharacters": 31484,
+      "loadedToolNames": [
+        "createRectangle",
+        "createText",
+        "setFill",
+        "setPosition",
+        "addKeyframe",
+        "inspectToolContract",
+        "discoverCapabilities",
+        "inspectComposition",
+        "getCanvasInfo",
+        "getCurrentTime",
+        "inspectSelection",
+        "listLayers",
+        "inspectLayer",
+        "createShape",
+        "placeAtCompositionCenter",
+        "setFont",
+        "setFontSize",
+        "setTextContent",
+        "setTracking",
+        "setLeading",
+        "setGradientFill",
+        "effect_search"
+      ]
+    },
+    "providerProfiles": [
+      {
+        "providerId": "8d9a4e02-cafb-476f-a6ad-49a1dec82d69",
+        "model": "qwen3.8-27b",
+        "protocol": "openai-compatible",
+        "toolCalling": "unknown",
+        "structuredOutput": "unknown",
+        "vision": "configured",
+        "streamingToolCalls": "adapter-supported-provider-unverified",
+        "contextWindow": null,
+        "toolSchemaCompatibility": "JSON Schema; actual endpoint support unverified",
+        "parallelToolCalls": "unknown",
+        "cancellation": "local-abort-supported",
+        "errorSemantics": "typed-host-errors",
+        "adapterTransports": [
+          "tools",
+          "structured-plan"
+        ],
+        "evidence": "configuration-and-adapter; not a live provider certification"
+      },
+      {
+        "providerId": "d8d53de4-7dc4-4517-9682-b2e210686c3b",
+        "model": "deepseek-flash",
+        "protocol": "openai-compatible",
+        "toolCalling": "unknown",
+        "structuredOutput": "unknown",
+        "vision": "configured",
+        "streamingToolCalls": "adapter-supported-provider-unverified",
+        "contextWindow": null,
+        "toolSchemaCompatibility": "JSON Schema; actual endpoint support unverified",
+        "parallelToolCalls": "unknown",
+        "cancellation": "local-abort-supported",
+        "errorSemantics": "typed-host-errors",
+        "adapterTransports": [
+          "tools",
+          "structured-plan"
+        ],
+        "evidence": "configuration-and-adapter; not a live provider certification"
+      }
+    ],
+    "untrustedData": true,
+    "project": {
+      "id": "36723d52-b3fe-405c-8706-4d8c234ed776",
+      "name": "未命名工程",
+      "compositionCount": 1,
+      "assetCount": 0
+    },
+    "composition": {
+      "id": "59d8ea09-9cfe-41b8-8dc2-978e344de4de",
+      "name": "合成 01",
+      "width": 1920,
+      "height": 1080,
+      "duration": 5,
+      "fps": 30,
+      "layerCount": 0,
+      "layers": []
+    },
+    "selection": [],
+    "time": 0,
+    "transform": {
+      "orientation": "local",
+      "pivotMode": "anchor"
+    },
+    "selected": [],
+    "dependencies": [],
+    "assets": [],
+    "recentCommands": [],
+    "truncated": false,
+    "estimatedTokens": 232,
+    "skill": {
+      "id": "builtin-typography",
+      "instructions": "Inspect selected text, font size, tracking and leading. Establish hierarchy, legibility and alignment. Preserve actual text unless user asks to change content; use editable text properties."
+    },
+    "references": []
+  },
+  "currentPlan": null,
+  "toolCalls": [],
+  "usage": [],
+  "status": "failed",
+  "mode": "AGENT",
+  "pendingConfirmation": false,
+  "changes": null,
+  "error": "Error invoking remote method 'bench:chat': Error: Authorized request/input cap reached before sending",
+  "response": "Error invoking remote method 'bench:chat': Error: Authorized request/input cap reached before sending",
+  "trace": {
+    "sessionId": "d517a23b-3b09-4cb8-a370-1c0de2c4f990",
+    "planId": null,
+    "skillIds": [
+      {
+        "id": "sf.core-execution",
+        "version": "1.0.0",
+        "hash": "60abdf38a1f146e5387dc51e48fcc813b99beafb6dee01e2caabef3e7b08b261"
+      },
+      {
+        "id": "sf.shape-creation",
+        "version": "1.0.0",
+        "hash": "244bbabd8eafddb4e2a06683321ad779e66794e0dfab2f1e13f339b188ee3f22"
+      },
+      {
+        "id": "sf.typography",
+        "version": "1.0.0",
+        "hash": "1809a210dfa636fafae7bd9c8f334acfcd886337ee1006922cc094e4f3d9a5e6"
+      },
+      {
+        "id": "sf.gradient-fill",
+        "version": "1.0.0",
+        "hash": "3d8c8c4d337636f1f26cfd6187c8f29e878f4bbec541463be611eda0eb9d98f5"
+      }
+    ],
+    "selectedCapabilities": [
+      "createRectangle",
+      "createText",
+      "setFill",
+      "setPosition",
+      "addKeyframe",
+      "inspectToolContract",
+      "discoverCapabilities",
+      "inspectComposition",
+      "getCanvasInfo",
+      "getCurrentTime",
+      "inspectSelection",
+      "listLayers",
+      "inspectLayer",
+      "createShape",
+      "placeAtCompositionCenter",
+      "setFont",
+      "setFontSize",
+      "setTextContent",
+      "setTracking",
+      "setLeading",
+      "setGradientFill",
+      "effect_search"
+    ],
+    "registeredTools": [
+      "createLayer",
+      "createRectangle",
+      "createEllipse",
+      "createPolygon",
+      "createStar",
+      "createText",
+      "createPath",
+      "deleteLayer",
+      "duplicateLayer",
+      "renameLayer",
+      "reorderLayer",
+      "setLayerVisibility",
+      "setParent",
+      "createPrecomp",
+      "setPosition",
+      "setAnchor",
+      "setOpacity",
+      "setScale",
+      "setRotation",
+      "transformSelection",
+      "setTransformPivot",
+      "setTransformOrientation",
+      "setFill",
+      "setStroke",
+      "setTextContent",
+      "setFont",
+      "setFontSize",
+      "setTracking",
+      "setLeading",
+      "setTextColor",
+      "setTextAlignment",
+      "addEffect",
+      "removeEffect",
+      "setEffectParameter",
+      "enableEffect",
+      "reorderEffect",
+      "addKeyframe",
+      "deleteKeyframe",
+      "moveKeyframe",
+      "setKeyframeValue",
+      "setInterpolation",
+      "applyMotionCurve",
+      "copyEasing",
+      "reverseEasing",
+      "compileGraph",
+      "createNode",
+      "deleteNode",
+      "connectNodes",
+      "disconnectEdge",
+      "setNodeParameter",
+      "setNodePosition",
+      "enableNode",
+      "createMask",
+      "setMaskMode",
+      "setMaskPath",
+      "setMaskFeather",
+      "setMaskOpacity",
+      "setMaskExpansion",
+      "createComposition",
+      "setCompositionSize",
+      "setDuration",
+      "setFPS",
+      "openComposition",
+      "deleteComposition",
+      "createLayerFromAsset",
+      "replaceAssetReference",
+      "inspectProject",
+      "inspectComposition",
+      "listLayers",
+      "inspectLayer",
+      "inspectSelection",
+      "inspectProperty",
+      "inspectKeyframes",
+      "inspectEffects",
+      "inspectGraph",
+      "inspectAssets",
+      "getCurrentTime",
+      "getCanvasInfo",
+      "createShape",
+      "placeAtCompositionCenter",
+      "setGradientFill",
+      "animateLayerProperty",
+      "inspectToolContract",
+      "effect_list",
+      "effect_search",
+      "effect_inspect",
+      "effect_createDraft",
+      "effect_updateDraft",
+      "effect_validate",
+      "effect_compile",
+      "effect_preview",
+      "effect_evaluate",
+      "effect_getDiagnostics",
+      "effect_discardDraft",
+      "effect_applyDraft",
+      "effect_saveReusable",
+      "effect_addToLayer",
+      "effect_addToGraph",
+      "effect_setParameter",
+      "listAgentPresets",
+      "applyAgentPreset",
+      "renderFrame",
+      "analyzeLayout",
+      "analyzeColor",
+      "analyzeTypography",
+      "analyzeMotion",
+      "analyzeReference",
+      "discoverCapabilities",
+      "inspectGraphNode",
+      "inspectGraphBranch",
+      "findRelatedNodes",
+      "getGraphDependencies",
+      "renameGraphNode",
+      "reuseProgrammableEffect",
+      "setGraphOutput",
+      "layoutGraph"
+    ],
+    "availableCapabilities": [
+      "builtin:linear",
+      "builtin:ease-in",
+      "builtin:ease-out",
+      "builtin:ease-in-out",
+      "builtin:sine-in",
+      "builtin:sine-out",
+      "builtin:sine-in-out",
+      "builtin:quad-in",
+      "builtin:quad-out",
+      "builtin:quad-in-out",
+      "builtin:cubic-in",
+      "builtin:cubic-out",
+      "builtin:cubic-in-out",
+      "builtin:quart-in",
+      "builtin:quart-out",
+      "builtin:quart-in-out",
+      "builtin:quint-in",
+      "builtin:quint-out",
+      "builtin:quint-in-out",
+      "builtin:expo-in",
+      "builtin:expo-out",
+      "builtin:expo-in-out",
+      "builtin:back-in",
+      "builtin:back-out",
+      "builtin:back-in-out",
+      "builtin:fast-out",
+      "builtin:smooth",
+      "builtin:cinematic",
+      "builtin:ui-snappy",
+      "brightnessContrast",
+      "exposure",
+      "hueSaturation",
+      "temperature",
+      "tint",
+      "levels",
+      "gaussianBlur",
+      "dropShadow",
+      "glow",
+      "tintFill",
+      "radialGradient",
+      "solid",
+      "transform",
+      "mask",
+      "merge",
+      "organicTexture",
+      "source",
+      "output",
+      "passthrough",
+      "createLayer",
+      "createRectangle",
+      "createEllipse",
+      "createPolygon",
+      "createStar",
+      "createText",
+      "createPath",
+      "deleteLayer",
+      "duplicateLayer",
+      "renameLayer",
+      "reorderLayer",
+      "setLayerVisibility",
+      "setParent",
+      "createPrecomp",
+      "setPosition",
+      "setAnchor",
+      "setOpacity",
+      "setScale",
+      "setRotation",
+      "transformSelection",
+      "setTransformPivot",
+      "setTransformOrientation",
+      "setFill",
+      "setStroke",
+      "setTextContent",
+      "setFont",
+      "setFontSize",
+      "setTracking",
+      "setLeading",
+      "setTextColor",
+      "setTextAlignment",
+      "addEffect",
+      "removeEffect",
+      "setEffectParameter",
+      "enableEffect",
+      "reorderEffect",
+      "addKeyframe",
+      "deleteKeyframe",
+      "moveKeyframe",
+      "setKeyframeValue",
+      "setInterpolation",
+      "applyMotionCurve",
+      "copyEasing",
+      "reverseEasing",
+      "compileGraph",
+      "createNode",
+      "deleteNode",
+      "connectNodes",
+      "disconnectEdge",
+      "setNodeParameter",
+      "setNodePosition",
+      "enableNode",
+      "createMask",
+      "setMaskMode",
+      "setMaskPath",
+      "setMaskFeather",
+      "setMaskOpacity",
+      "setMaskExpansion",
+      "createComposition",
+      "setCompositionSize",
+      "setDuration",
+      "setFPS",
+      "openComposition",
+      "deleteComposition",
+      "createLayerFromAsset",
+      "replaceAssetReference",
+      "inspectProject",
+      "inspectComposition",
+      "listLayers",
+      "inspectLayer",
+      "inspectSelection",
+      "inspectProperty",
+      "inspectKeyframes",
+      "inspectEffects",
+      "inspectGraph",
+      "inspectAssets",
+      "getCurrentTime",
+      "getCanvasInfo",
+      "createShape",
+      "placeAtCompositionCenter",
+      "setGradientFill",
+      "animateLayerProperty",
+      "inspectToolContract",
+      "effect_list",
+      "effect_search",
+      "effect_inspect",
+      "effect_createDraft",
+      "effect_updateDraft",
+      "effect_validate",
+      "effect_compile",
+      "effect_preview",
+      "effect_evaluate",
+      "effect_getDiagnostics",
+      "effect_discardDraft",
+      "effect_applyDraft",
+      "effect_saveReusable",
+      "effect_addToLayer",
+      "effect_addToGraph",
+      "effect_setParameter",
+      "listAgentPresets",
+      "applyAgentPreset",
+      "renderFrame",
+      "analyzeLayout",
+      "analyzeColor",
+      "analyzeTypography",
+      "analyzeMotion",
+      "analyzeReference",
+      "discoverCapabilities",
+      "inspectGraphNode",
+      "inspectGraphBranch",
+      "findRelatedNodes",
+      "getGraphDependencies",
+      "renameGraphNode",
+      "reuseProgrammableEffect",
+      "setGraphOutput",
+      "layoutGraph",
+      "provider:0",
+      "provider:1"
+    ],
+    "modelCalls": [
+      {
+        "stage": "planning",
+        "model": "unknown-failed-request",
+        "durationMs": 1
+      }
+    ],
+    "planning": [],
+    "executedCommands": [],
+    "objectBindings": {},
+    "validationResults": null,
+    "finalResult": "failed",
+    "durationMs": 64
+  },
+  "executionError": {
+    "code": "COMMAND_FAILED",
+    "phase": "execute",
+    "recoverable": false,
+    "message": "Error invoking remote method 'bench:chat': Error: Authorized request/input cap reached before sending"
+  }
+}

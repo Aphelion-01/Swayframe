@@ -1,0 +1,2982 @@
+# ============================================================
+# SWAYFRAME 0.10
+# RELIABLE AGENT ARCHITECTURE
+# NATIVE SKILL RUNTIME
+# AUTONOMOUS RECOVERY SYSTEM
+# ============================================================
+
+你现在开始对 Swayframe（SF）的 AI Agent 系统
+进行一次以可靠性为最高优先级的架构升级。
+
+本轮不是简单优化 Prompt。
+
+不是继续给 Agent 增加工具。
+
+不是开发更多视觉特效。
+
+不是设计一个新的聊天界面。
+
+而是从软件架构层面解决：
+
+为什么 Swayframe 已经拥有大量编辑能力，
+但 Agent 仍然不能稳定使用这些能力？
+
+最终目标：
+
+建立一套与具体 LLM Provider 尽量解耦的
+Swayframe Native Agent Runtime。
+
+使 Agent 即使更换不同模型，
+也能够通过 SF 自身的能力发现、
+语义操作、对象解析、参数验证、
+Skill Runtime、事务执行、自主恢复
+和结果验证机制，
+尽可能稳定地完成创作任务。
+
+本轮项目代号：
+
+Swayframe Reliable Agent Architecture
+
+版本目标：
+
+0.10
+
+开发原则：
+
+RELIABILITY BEFORE CAPABILITY.
+
+CORRECTNESS BEFORE AUTONOMY.
+
+DETERMINISTIC EXECUTION BEFORE LLM RETRY.
+
+============================================================
+第一部分：当前问题与开发背景
+============================================================
+
+Swayframe 已经具备：
+
+Scene Model
+Command System
+Transaction
+Undo / Redo
+Canvas
+Timeline
+Animation Engine
+Property<T>
+Effect Engine
+Compositing Graph
+Effect Forge
+Agent Planner
+Provider Adapter
+Visual Analysis
+Agent Tools
+Capability Registry
+
+等系统。
+
+实际实现情况必须以当前仓库为准。
+
+但是 Agent 长期存在以下问题：
+
+1. createText 参数无效。
+
+2. setFill 参数无效。
+
+3. setFill layerId 无效 UUID。
+
+4. creation.tasks.dependencies 与执行顺序冲突。
+
+5. Plan Validation 失败后直接终止。
+
+6. 执行过程中发生错误后难以恢复。
+
+7. 已创建对象无法被后续步骤可靠引用。
+
+8. 部分工具参数与实际能力定义不一致。
+
+9. Agent 上下文包含大量重复工具说明。
+
+10. Agent 查询大量工具后仍可能无法执行任务。
+
+11. 简单错误可能导致整个任务失败。
+
+12. 用户无法判断失败究竟发生在哪个阶段。
+
+13. 单元测试通过并不代表真实 Provider 能稳定创作。
+
+14. Agent 有时能完成前期规划，
+    但后期实际操作失败。
+
+15. 遇到问题后反复调用 LLM，
+    却没有真正改变错误计划。
+
+此前 Swayframe 已经完成多轮 Agent 审计。
+
+如果仓库中存在：
+
+AGENT_ROOT_CAUSE_REPORT.md
+
+AGENT_ARCHITECTURE_EVOLUTION.md
+
+AGENT_TEST_COVERAGE_GAP.md
+
+AGENT_REPAIR_ROADMAP.md
+
+AGENT_EXECUTION_REPAIR_RESULT.md
+
+AGENT_AUTONOMOUS_RECOVERY_RESULT.md
+
+以及对应诊断数据，
+
+必须首先阅读。
+
+历史审计确认过的主要问题包括：
+
+AGENT-001：
+READ 后的分阶段语义预检不完整。
+
+AGENT-002：
+执行阶段错误恢复能力不足。
+
+AGENT-003：
+动态效果参数与正式能力定义不一致。
+
+AGENT-004/005：
+结构化错误信息丢失或被错误截断。
+
+AGENT-006：
+连续命令的最终状态验证可能误判。
+
+AGENT-007：
+能力上下文存在大量重复定义。
+
+AGENT-008/009：
+Provider 错误诊断及恢复分类不完整。
+
+注意：
+
+不要因为历史报告记录某个问题，
+就假定当前 HEAD 仍然存在。
+
+必须检查当前实现，
+判断已修复、部分修复或尚未修复。
+
+本轮不能重复实现已有机制。
+
+============================================================
+第二部分：总体架构目标
+============================================================
+
+建立统一 Agent 执行架构。
+
+推荐逻辑：
+
+USER REQUEST
+      |
+      v
+AGENT CONTEXT ENGINE
+      |
+      v
+CAPABILITY DISCOVERY
+      |
+      v
+SKILL ROUTER
+      |
+      v
+RELEVANT SKILL LOADING
+      |
+      v
+LLM INTENT / TASK PLANNING
+      |
+      v
+STRUCTURED SEMANTIC PLAN
+      |
+      v
+PLAN VALIDATION
+      |
+      v
+DEPENDENCY RESOLUTION
+      |
+      v
+OBJECT REFERENCE RESOLUTION
+      |
+      v
+DETERMINISTIC ACTION COMPILER
+      |
+      v
+COMMAND SYSTEM
+      |
+      v
+ISOLATED TRANSACTION
+      |
+      v
+STATE / GRAPH VERIFICATION
+      |
+      v
+RENDER VERIFICATION
+      |
+      |
+      +---- FAILURE ----+
+      |                 |
+      |                 v
+      |          AUTONOMOUS RECOVERY
+      |                 |
+      |          REPAIR / REVALIDATE
+      |                 |
+      +-----------------+
+      |
+      v
+COMMIT
+      |
+      v
+EDITABLE RESULT
+
+以上是逻辑架构。
+
+不要求每个方框对应一个新模块。
+
+必须优先复用现有架构。
+
+特别注意：
+
+不能建立第二套 Agent Orchestrator。
+
+不能建立第二套 Scene Model。
+
+不能建立第二套 Command System。
+
+不能让 Skill Runtime 绕过现有事务系统。
+
+============================================================
+第三部分：实施前的架构审计
+============================================================
+
+首先检查当前：
+
+Agent Orchestrator
+
+Agent Planner
+
+Creation Planner
+
+Agent Tool Registry
+
+Write Tools
+
+Provider Adapters
+
+Capability Registry
+
+Command Registry
+
+Agent Transaction
+
+Object Reference Resolver
+
+Visual Verification
+
+Recovery System
+
+UI Agent Controller。
+
+确定：
+
+哪些机制已经实现。
+
+哪些机制正在实际生产路径中使用。
+
+哪些机制只是测试接口。
+
+哪些旧接口已经无人使用。
+
+哪些机制存在重复。
+
+哪些机制仍然不可靠。
+
+创建：
+
+AGENT_010_ARCHITECTURE_AUDIT.md
+
+将各项标记为：
+
+KEEP
+
+PATCH
+
+REFACTOR
+
+DEFER
+
+DEPRECATE
+
+不要因为要开发新架构，
+就重写已经可靠工作的系统。
+
+必须保留：
+
+Shared Command System
+
+Property<T>
+
+Scene Model
+
+Project Serialization
+
+Draft Transaction
+
+Undo / Redo
+
+Scope Protection
+
+Baseline Conflict Detection
+
+Renderer
+
+现有安全边界。
+
+除非有新的证据证明其中存在缺陷。
+
+============================================================
+第四部分：统一工具契约
+============================================================
+
+这是 P0 任务。
+
+目标：
+
+一个操作只能有一份权威参数定义。
+
+目前需要检查：
+
+Tool Declaration
+
+JSON Schema
+
+Runtime Validator
+
+TypeScript Types
+
+Capability Definition
+
+Command Compiler。
+
+要求：
+
+尽可能从同一套正式定义中
+派生 Tool Schema 和运行时验证。
+
+不能：
+
+LLM 看到一种参数结构，
+
+Tool Adapter 接受另一种结构，
+
+Command System 又要求第三种结构。
+
+重点检查：
+
+createText
+
+setFont
+
+setFill
+
+createShape
+
+setPosition
+
+setScale
+
+setRotation
+
+addKeyframe
+
+addEffect
+
+createNode
+
+connectNodes。
+
+对于每个工具：
+
+明确：
+
+Required Fields
+
+Optional Fields
+
+Defaults
+
+Value Types
+
+Units
+
+Coordinate Spaces
+
+Supported Targets
+
+Enum Values
+
+Valid Ranges
+
+Side Effects
+
+Output Schema。
+
+例如：
+
+setFill
+
+必须能够根据：
+
+Fill Capability Definition
+
+判断：
+
+Solid
+
+Linear Gradient
+
+Radial Gradient
+
+的真实参数结构。
+
+不能让模型传入任意 record，
+然后等到最后执行阶段才发现参数不合法。
+
+对于复杂参数：
+
+优先复用正式参数 Schema。
+
+禁止维护重复的独立定义。
+
+============================================================
+第五部分：Semantic Action Compiler
+============================================================
+
+这是本轮的重要架构升级。
+
+减少模型直接构造复杂底层命令的负担。
+
+LLM 的主要职责是：
+
+表达用户意图。
+
+软件的职责是：
+
+将合法意图编译为正确 Command。
+
+例如用户：
+
+“创建一个居中的蓝色径向渐变矩形。”
+
+模型可以输出较高层的：
+
+Create Shape
+
+Set Gradient Fill
+
+Place at Composition Center。
+
+随后：
+
+Semantic Action Compiler
+
+负责：
+
+解析当前 Composition。
+
+确定实际画布尺寸。
+
+确定 Shape 类型。
+
+创建真实 Layer。
+
+取得真实 Layer ID。
+
+构造合法 Gradient Parameters。
+
+调用已有 Command。
+
+整个过程中：
+
+不要求模型自行计算所有内部字段。
+
+但：
+
+不能把 Action Compiler
+做成第二套编辑引擎。
+
+它只负责：
+
+Resolve
+
+Normalize
+
+Validate
+
+Compile。
+
+最终：
+
+仍然调用正式 Command System。
+
+复杂操作可以由多个 Command
+组成一个 Transaction。
+
+简单、稳定的工具可以继续直接调用。
+
+不要强迫全部操作通过冗长的语义编译流程。
+
+============================================================
+第六部分：Object Reference System
+============================================================
+
+这是 P0 任务。
+
+Agent 不应该依靠自行编造 UUID
+来引用刚创建的对象。
+
+必须支持：
+
+Existing Object Reference
+
+Current Selection Reference
+
+Step Result Reference
+
+Graph Node Reference。
+
+例如：
+
+Step 1：
+
+Create Rectangle。
+
+返回：
+
+actualLayerId。
+
+Step 2：
+
+Set Fill。
+
+引用：
+
+Step 1 的 Layer。
+
+Step 3：
+
+Set Position。
+
+继续引用：
+
+Step 1 的 Layer。
+
+Step 4：
+
+Add Keyframe。
+
+继续引用：
+
+同一个 Layer 的 Property。
+
+真实 ID 由程序管理。
+
+模型使用：
+
+明确的对象引用。
+
+对象解析必须验证：
+
+Object Exists
+
+Object Type
+
+Composition
+
+Scope
+
+Current Draft State。
+
+如果引用无法解析：
+
+返回结构化错误。
+
+不能：
+
+猜测 UUID。
+
+不能：
+
+根据相似名称随机选择对象。
+
+不能：
+
+把 Graph Node ID
+当作 Layer ID。
+
+不能：
+
+把 Task ID
+当作 Layer ID。
+
+已有合法 UUID 操作应保持兼容。
+
+不能为了提高成功率
+直接放宽 UUID 校验。
+
+============================================================
+第七部分：Task Dependency Engine
+============================================================
+
+这是 P0 任务。
+
+必须解决：
+
+creation.tasks.dependencies
+
+与实际执行顺序冲突的问题。
+
+建立明确的任务依赖图。
+
+支持：
+
+Dependency Validation
+
+Missing Dependency Detection
+
+Cycle Detection
+
+Producer / Consumer Binding
+
+Stable Topological Sort
+
+Execution Order Validation。
+
+例如：
+
+Analyze Typography
+      ↓
+Create Text
+      ↓
+Set Font。
+
+如果模型生成顺序错误，
+但依赖图合法且操作允许安全重排：
+
+程序应能够确定性修复。
+
+如果存在循环依赖：
+
+禁止盲目重排。
+
+如果缺少生产者任务：
+
+进入受限重新规划。
+
+如果操作之间存在不可交换的副作用：
+
+不能为了完成拓扑排序
+而改变用户要求的语义。
+
+对于依赖未来执行结果的操作：
+
+使用：
+
+DEFERRED VALIDATION。
+
+待依赖真实产生后：
+
+重新验证。
+
+不得：
+
+因为前面出现 READ
+就跳过后续 WRITE 的语义验证。
+
+============================================================
+第八部分：Autonomous Recovery System
+============================================================
+
+这是本轮最重要的能力之一。
+
+目标：
+
+Agent 不再因为一个可恢复错误
+立即终止整个创作任务。
+
+建立：
+
+DIAGNOSE
+→
+CLASSIFY
+→
+REPAIR
+→
+REVALIDATE
+→
+CONTINUE。
+
+优先支持以下恢复类型：
+
+1. Plan Dependency Recovery
+
+2. Tool Argument Recovery
+
+3. Object Reference Recovery
+
+4. Context Refresh
+
+5. Execution Recovery
+
+6. Result Verification Recovery
+
+7. Transient Provider Recovery。
+
+必须优先尝试：
+
+Deterministic Repair。
+
+例如：
+
+合法的依赖重排：
+
+拓扑排序。
+
+明确的对象引用：
+
+Step Result Binding。
+
+缺失可选参数：
+
+使用正式 Schema Default。
+
+上下文版本失效：
+
+重新读取对应 Draft。
+
+只有确定性恢复无法解决时：
+
+才调用 LLM 重新规划。
+
+不能：
+
+任何错误都重新发送整个 Prompt。
+
+============================================================
+第九部分：恢复策略与安全边界
+============================================================
+
+建立统一恢复分类：
+
+AUTO_REPAIRABLE
+
+MODEL_REPAIR_REQUIRED
+
+USER_ACTION_REQUIRED
+
+NON_RECOVERABLE。
+
+错误分类必须由程序决定。
+
+不能完全依赖模型自行判断。
+
+自动恢复不得：
+
+修改用户未授权对象。
+
+扩大原始执行 Scope。
+
+无限重试。
+
+静默忽略失败步骤。
+
+执行不完整的 JSON。
+
+绕过 Tool Validation。
+
+覆盖用户执行期间的新修改。
+
+重新执行不具备幂等性的创建操作。
+
+修改 Swayframe 内核源码。
+
+安装未受信任的外部代码。
+
+对于涉及：
+
+删除已有作品
+
+大范围重构
+
+外部 API 费用
+
+新权限
+
+外部数据传输
+
+等情况，
+
+必须遵守现有授权机制。
+
+无法安全恢复时：
+
+明确说明阻塞原因。
+
+不要假装继续成功。
+
+============================================================
+第十部分：恢复预算与死循环保护
+============================================================
+
+Agent 必须具备明确的恢复预算。
+
+区分：
+
+Planning Budget
+
+Execution Budget
+
+Recovery Budget
+
+Visual Refinement Budget。
+
+建议初期：
+
+相同错误的模型修复：
+
+最多 2 次。
+
+计划重新规划：
+
+最多 2 次。
+
+具体上限应可配置，
+并服从全局 Token / 请求预算。
+
+建立：
+
+Recovery Fingerprint。
+
+Fingerprint 应包含：
+
+Error Code
+
+Phase
+
+Task ID
+
+Relevant Field
+
+Normalized Arguments
+
+Context Version。
+
+如果：
+
+同一错误
+
+相同参数
+
+相同上下文
+
+连续出现，
+
+必须停止无效重试。
+
+不得通过无限重试
+实现表面上的自主性。
+
+同时：
+
+区分可重新尝试的瞬时错误
+与重复执行必然失败的语义错误。
+
+============================================================
+第十一部分：Swayframe Native Skill System
+============================================================
+
+现在开始实现：
+
+Swayframe Native Skill Runtime。
+
+注意：
+
+这是 Swayframe 应用内部使用的 Skill System。
+
+不是仅仅在 Codex 中安装几个 SKILL.md。
+
+也不是直接复用 Codex 的 Skill 执行器。
+
+Swayframe 必须拥有自己的：
+
+Skill Registry
+
+Skill Loader
+
+Skill Router
+
+Skill Validator
+
+Skill Execution Integration
+
+Skill Versioning
+
+Skill Test Harness。
+
+Skill 应服务于：
+
+Swayframe Agent Runtime。
+
+============================================================
+第十二部分：Skill 的架构定位
+============================================================
+
+Skill 不应成为另一套工具执行系统。
+
+Skill 负责：
+
+描述某类任务的标准流程。
+
+声明前置条件。
+
+声明所需能力。
+
+声明执行范围。
+
+声明成功条件。
+
+声明允许的恢复策略。
+
+执行仍然交给：
+
+Semantic Action Compiler
+
+Command System
+
+Agent Transaction
+
+Recovery Controller。
+
+禁止：
+
+Skill 绕过 Command System
+直接修改 Scene JSON。
+
+禁止：
+
+Skill 自己维护对象 UUID 映射。
+
+禁止：
+
+每个 Skill 自己实现一套错误恢复。
+
+这些都属于 Core Runtime。
+
+============================================================
+第十三部分：Skill 文件格式
+============================================================
+
+设计 Swayframe 原生 Skill 格式。
+
+建议结构：
+
+skills/
+    core-execution/
+        SKILL.md
+        manifest.json
+        workflow.json
+        tests/
+
+    gradient-creation/
+        SKILL.md
+        manifest.json
+        workflow.json
+        tests/
+
+    typography/
+        SKILL.md
+        manifest.json
+        workflow.json
+        tests/
+
+    keyframe-animation/
+        SKILL.md
+        manifest.json
+        workflow.json
+        tests/
+
+    compositing/
+        SKILL.md
+        manifest.json
+        workflow.json
+        tests/
+
+这是推荐组织方式。
+
+可根据现有仓库结构调整。
+
+SKILL.md：
+
+描述创作目的和操作策略。
+
+manifest.json：
+
+提供机器可读元数据。
+
+workflow.json：
+
+描述可验证的操作步骤和依赖。
+
+tests：
+
+验证 Skill 行为。
+
+其中 workflow.json 不要求所有任务
+都具有完全固定的步骤。
+
+复杂创作 Skill 可以声明：
+
+规划约束
+
+输入输出契约
+
+可用 Action
+
+验收规则。
+
+不要把 Skill 设计成只能执行
+固定脚本的僵硬系统。
+
+============================================================
+第十四部分：Skill Definition
+============================================================
+
+Skill 至少应定义：
+
+ID
+
+Name
+
+Version
+
+Description
+
+Supported Tasks
+
+Required Capabilities
+
+Optional Capabilities
+
+Supported Object Types
+
+Inputs
+
+Outputs
+
+Prerequisites
+
+Workflow Constraints
+
+Validation Rules
+
+Recovery Policy
+
+Permission Requirements
+
+Compatibility。
+
+Skill 应当可以：
+
+Enable
+
+Disable
+
+Validate
+
+Test。
+
+版本升级后：
+
+必须能够检查兼容性。
+
+如果依赖的 Capability 不存在：
+
+Skill 应报告不可用。
+
+不能向模型宣称自己能够执行。
+
+============================================================
+第十五部分：Core Execution Skill V1
+============================================================
+
+这是第一个必须完成的正式 Skill。
+
+名称：
+
+Swayframe Core Execution。
+
+作用：
+
+规范并验证 Agent
+对现有编辑能力的使用。
+
+必须覆盖：
+
+Object Reference
+
+Tool Argument Validation
+
+Dependency Management
+
+Command Compilation
+
+Transaction Safety
+
+Error Recovery
+
+Result Verification。
+
+但是：
+
+这些底层机制必须由 TypeScript Runtime 实现。
+
+Core Execution Skill 只负责：
+声明使用它们的流程和验收条件。
+
+它不能用一份 Markdown
+代替真正的执行器。
+
+核心验收：
+
+Create Rectangle
+
+→
+Set Fill
+
+→
+Set Position
+
+→
+Add Keyframe
+
+→
+Verify Scene
+
+→
+Verify Render
+
+→
+Commit。
+
+全过程：
+
+不依赖模型自行猜测 UUID。
+
+能够检测非法参数。
+
+能够处理合法依赖重排。
+
+能够恢复可修复的执行错误。
+
+============================================================
+第十六部分：Creative Skills
+============================================================
+
+Core Execution Skill 通过验收后，
+
+逐步建立以下原生技能。
+
+1. Shape Creation Skill
+
+2. Typography Skill
+
+3. Gradient / Fill Skill
+
+4. Keyframe Animation Skill
+
+5. Compositing Graph Skill。
+
+不要一开始创建几十个 Skill。
+
+每个 Skill：
+
+必须使用真实 Swayframe Capability。
+
+例如：
+
+Gradient Skill：
+
+查询 Fill Capability。
+
+确定目标支持 Fill。
+
+确定 Gradient 类型。
+
+构造合法 Color Stops。
+
+设置中心及半径。
+
+执行正式 Command。
+
+验证实际结果。
+
+Typography Skill：
+
+创建真实 Text Layer。
+
+设置字体和文字内容。
+
+使用稳定对象引用。
+
+调整排版。
+
+验证文字可见。
+
+Keyframe Skill：
+
+解析目标 Property。
+
+创建关键帧。
+
+设置时间与插值。
+
+验证 Animation Evaluation。
+
+Compositing Skill：
+
+查询真实 Node Registry。
+
+创建节点。
+
+检查端口兼容性。
+
+建立连接。
+
+检测循环。
+
+验证 Output。
+
+不得：
+
+把 Skill 仅仅做成不同名称的 Prompt 模板。
+
+============================================================
+第十七部分：Skill Router
+============================================================
+
+建立按需 Skill 选择。
+
+用户请求：
+
+“创建一个蓝色渐变矩形。”
+
+应优先加载：
+
+Core Execution
+
+Shape Creation
+
+Gradient Creation。
+
+不要同时加载：
+
+3D Modeling
+
+Camera Animation
+
+Video Generation
+
+Effect Forge
+
+Advanced Compositing
+
+等大量无关内容。
+
+用户请求：
+
+“创建具有动态背景的标题动画。”
+
+可以加载：
+
+Core Execution
+
+Typography
+
+Gradient
+
+Animation
+
+Compositing。
+
+根据任务复杂度选择。
+
+不能：
+
+每次请求都向模型发送全部 Skill 内容。
+
+============================================================
+第十八部分：Capability-Aware Skill Routing
+============================================================
+
+Skill Router 必须与：
+
+Capability Registry
+
+Effect Registry
+
+Tool Registry
+
+Node Registry
+
+建立联系。
+
+Skill 需要查询：
+
+实际可用的能力。
+
+例如：
+
+Gradient Skill
+
+不能假设当前版本一定支持所有 Gradient 类型。
+
+如果只支持：
+
+Linear
+
+Radial
+
+则只允许使用这两种。
+
+Skill 不得自行发明：
+
+不存在的 Command。
+
+如果 Capability 不足：
+
+返回：
+
+CAPABILITY_UNAVAILABLE。
+
+必要时允许由 Agent：
+
+重新选择现有能力
+
+或：
+
+调用已实现的 Effect Forge。
+
+不能靠编造 Tool 名称继续执行。
+
+============================================================
+第十九部分：不同 LLM Provider 兼容
+============================================================
+
+建立统一：
+
+Provider Capability Profile。
+
+每个 Provider 记录：
+
+Tool Calling Support
+
+Structured Output Support
+
+Vision Support
+
+Streaming Tool Calls
+
+Context Window
+
+Tool Schema Compatibility
+
+Parallel Tool Calls
+
+Cancellation Support
+
+Error Semantics。
+
+Provider Adapter 负责：
+
+将不同 API 返回内容
+规范化为统一 Agent Response。
+
+Skill Runtime 不应该：
+
+知道具体供应商的 HTTP 格式。
+
+Command System 不应该：
+
+因为切换 Provider
+就使用不同执行路径。
+
+实现：
+
+Provider Adapter
+    ↓
+Normalized Agent Response
+    ↓
+Structured Plan
+    ↓
+SF Runtime。
+
+如果某个 Provider 不支持可靠 Tool Calling：
+
+允许使用受限 Structured Plan 模式。
+
+但：
+
+所有生成计划仍必须经过
+同一套 Schema 和语义验证。
+
+不可靠或不支持的能力：
+
+必须明确标记。
+
+禁止宣称所有 API
+拥有完全相同的能力。
+
+============================================================
+第二十部分：Provider Diagnostics
+============================================================
+
+继续修复此前审计中的：
+
+AGENT-008
+
+AGENT-009。
+
+重点检查：
+
+HTTP 400 / 401 / 429 / 5xx
+
+Partial JSON
+
+Incomplete Streaming
+
+Missing Tool Call Arguments
+
+SSE Chunk Boundaries
+
+Finish Reason
+
+Timeout
+
+Cancellation。
+
+必须区分：
+
+Provider Protocol Failure
+
+Model Output Failure
+
+Tool Validation Failure
+
+Command Execution Failure。
+
+例如：
+
+401 Unauthorized
+
+不能无意义重试。
+
+429 Rate Limit
+
+应遵守服务端限流信息和用户预算。
+
+Incomplete JSON
+
+不得执行半截计划。
+
+网络瞬时错误：
+
+允许有限重试。
+
+所有 Provider：
+
+不得绕过统一 Agent Runtime。
+
+============================================================
+第二十一部分：按需工具上下文加载
+============================================================
+
+当前 Agent 曾经存在
+大量重复工具定义的问题。
+
+本轮需要优化：
+
+Agent Context Engine。
+
+采用：
+
+Capability Discovery
+
+→
+Relevant Capability Selection
+
+→
+Detailed Schema Loading。
+
+第一阶段：
+
+只向模型提供必要的能力概要。
+
+第二阶段：
+
+根据任务加载相关工具的正式参数定义。
+
+不要：
+
+每次创建文字
+都发送所有 Graph Node、
+Effect Forge 和 3D Tool 参数。
+
+但：
+
+减少 Token 不能通过删除必要的
+Scope、Permission、Version 信息实现。
+
+必须保留完整的运行时校验。
+
+记录：
+
+优化前平均输入 Token。
+
+优化后平均输入 Token。
+
+工具选择正确率。
+
+任务完成率。
+
+不能为了减少上下文
+导致可靠性下降。
+
+============================================================
+第二十二部分：Agent 工作记忆
+============================================================
+
+Agent 在多步骤任务中
+必须能够维护可靠的结构化工作状态。
+
+至少包括：
+
+Current Goal
+
+Current Composition
+
+Selected Objects
+
+Created Object References
+
+Step Results
+
+Completed Tasks
+
+Pending Tasks
+
+Failed Tasks
+
+Recovery Attempts
+
+Active Constraints
+
+Current Draft Version。
+
+这些信息不应该完全依赖
+LLM 自己从聊天历史中重新推断。
+
+应由：
+
+Agent Runtime
+
+管理。
+
+模型获取必要的结构化摘要。
+
+不要：
+
+每一步都重新发送完整聊天记录、
+全部执行日志和完整 Scene JSON。
+
+对于对象引用：
+
+始终以真实 Runtime 状态为准。
+
+============================================================
+第二十三部分：Result Verification
+============================================================
+
+工具执行成功不等于任务成功。
+
+至少建立三级验证。
+
+LEVEL 1：
+
+Tool / Command Verification。
+
+确认命令成功执行。
+
+LEVEL 2：
+
+Scene / Graph Verification。
+
+确认真实工程状态符合预期。
+
+LEVEL 3：
+
+Render / Visual Verification。
+
+确认最终渲染反映了修改。
+
+例如：
+
+setFill：
+
+不能只检查调用成功。
+
+还要检查：
+
+Fill Definition 已更新。
+
+Renderer 实际显示对应填充。
+
+对于创建文字：
+
+检查：
+
+Text Layer 存在。
+
+内容正确。
+
+文字实际可见。
+
+对于动画：
+
+检查：
+
+Keyframes 存在。
+
+指定时间求值正确。
+
+对于 Graph：
+
+检查：
+
+节点存在。
+
+连接合法。
+
+输出路径有效。
+
+不要：
+
+因为 Tool Success
+就直接返回 Completed。
+
+============================================================
+第二十四部分：视觉检查机制
+============================================================
+
+在核心执行稳定后：
+
+进一步加强视觉任务验证。
+
+尤其针对：
+
+Reference Reconstruction。
+
+建立：
+
+Geometry Check
+
+Composition Check
+
+Color Check
+
+Gradient Check
+
+Effect Check
+
+Typography Check
+
+Final Visual Check。
+
+例如 Cubic 参考图：
+
+最重要的是：
+
+立方体结构可辨认。
+
+不是单纯：
+
+青色和黑色接近。
+
+Agent 应：
+
+创建几何。
+
+预览几何。
+
+设置渐变。
+
+检查结果。
+
+添加模糊。
+
+检查是否破坏几何辨识度。
+
+添加文字。
+
+检查排版。
+
+最终进行整体视觉验证。
+
+Visual Verification：
+
+必须使用实际渲染图。
+
+不能：
+
+仅凭模型声明“已经完成”
+就通过。
+
+如果没有可用 Vision Provider：
+
+明确标记视觉验收未执行。
+
+本轮不要求重新开发复杂图像生成模型。
+
+============================================================
+第二十五部分：自主视觉修正
+============================================================
+
+当执行结果正确，
+但视觉效果不符合目标时：
+
+进入：
+
+Visual Refinement。
+
+Agent 应：
+
+Identify Difference
+
+Locate Related Object
+
+Generate Local Change
+
+Preview
+
+Compare Again。
+
+优先：
+
+修改已有参数。
+
+不应该：
+
+每次都重建整个 Composition。
+
+例如：
+
+Gradient Color Wrong
+
+→
+Modify Color Stops。
+
+Cube Geometry Wrong
+
+→
+Modify Geometry。
+
+Blur Too Strong
+
+→
+Modify Blur Radius。
+
+Text Misaligned
+
+→
+Modify Text Position。
+
+仍然必须遵守：
+
+Scope Protection
+
+Transaction Safety
+
+Recovery Budget。
+
+视觉修正和工具参数修复
+必须是两个不同的错误类别。
+
+============================================================
+第二十六部分：Agent UI 与用户体验
+============================================================
+
+当前 Agent 可能显示：
+
+大量错误 JSON。
+
+复杂嵌套 Diagnostics。
+
+重复 [omitted]。
+
+用户难以理解任务进展。
+
+需要改进为：
+
+简洁的任务状态系统。
+
+例如：
+
+正在分析需求
+
+正在规划
+
+正在验证
+
+正在创建图层
+
+检测到可恢复错误
+
+正在自动修复
+
+修复成功，继续执行
+
+正在检查结果
+
+已完成。
+
+普通用户：
+
+优先看到任务进展和结果。
+
+开发者模式：
+
+可展开：
+
+Tool Arguments
+
+Task Dependencies
+
+Error Codes
+
+Repair Attempts
+
+Execution Trace
+
+Scene Diff。
+
+必须做到：
+
+用户能够知道 Agent 正在做什么。
+
+但不会被大量技术日志淹没。
+
+不要：
+
+为了本轮新增一整套独立 Agent 工作区。
+
+优先改进现有 Agent Panel。
+
+遵守：
+
+DESIGN.md
+
+Feature Registry
+
+现有功能入口规则。
+
+============================================================
+第二十七部分：Execution Trace 与诊断
+============================================================
+
+建立统一 Trace 机制。
+
+每个任务至少记录：
+
+Task ID
+
+Plan ID
+
+Skill IDs
+
+Provider
+
+Model
+
+Selected Capabilities
+
+Executed Commands
+
+Object Reference Bindings
+
+Validation Results
+
+Recovery Attempts
+
+Scene Verification
+
+Render Verification
+
+Final Result
+
+Token Usage
+
+Duration。
+
+每个失败都应该明确知道：
+
+失败发生在：
+
+Planning
+
+Validation
+
+Object Resolution
+
+Command Execution
+
+Transaction
+
+Provider
+
+Renderer
+
+Visual Evaluation。
+
+诊断日志必须：
+
+脱敏。
+
+不记录 API Key。
+
+不默认保存完整敏感用户素材。
+
+对于用户上传的参考图片，
+不得未经授权外传。
+
+提供受控的：
+
+Export Diagnostic Report。
+
+这样以后用户反馈问题时，
+可以输出可复现的诊断信息。
+
+============================================================
+第二十八部分：安全与信任边界
+============================================================
+
+第一阶段只允许：
+
+Swayframe 自带的可信 Skill。
+
+第三方 Skill 支持：
+
+暂时不开放自动执行。
+
+Skill 文件不是可信命令来源。
+
+不得因为 SKILL.md 写了：
+
+“允许执行任意代码”
+
+就给予新的系统权限。
+
+正式操作必须经过：
+
+Permission Check
+
+Scope Validation
+
+Command Validation。
+
+Skill 不能：
+
+访问任意文件。
+
+执行系统命令。
+
+读取 API Key。
+
+修改 Renderer 源码。
+
+绕过安全沙箱。
+
+如果未来支持第三方 Skill：
+
+再建立专门的：
+
+Package Signing
+
+Permission Model
+
+Sandbox
+
+Trust Management。
+
+本轮不开发 Skill Marketplace。
+
+============================================================
+第二十九部分：失败注入与回归测试
+============================================================
+
+建立：
+
+Agent Reliability Test Harness。
+
+至少覆盖：
+
+TEST 01
+
+createText 参数错误，
+自动检测并修复。
+
+
+TEST 02
+
+setFill 动态参数非法，
+执行前拒绝或进入合法修复流程。
+
+
+TEST 03
+
+Create Rectangle
+→
+Set Fill
+
+自动绑定真实 Layer ID。
+
+
+TEST 04
+
+Create Text
+→
+Set Font
+→
+Set Position
+
+对象引用保持一致。
+
+
+TEST 05
+
+READ 后的 WRITE
+继续进行完整阶段验证。
+
+
+TEST 06
+
+任务依赖顺序错误。
+
+合法时自动拓扑排序。
+
+
+TEST 07
+
+循环依赖。
+
+必须安全拒绝。
+
+
+TEST 08
+
+执行过程中参数错误。
+
+进入有限恢复。
+
+
+TEST 09
+
+相同错误重复出现。
+
+停止无效重试。
+
+
+TEST 10
+
+LLM 返回不完整 JSON。
+
+不得执行。
+
+
+TEST 11
+
+Provider 返回 HTTP 401。
+
+不得无限重试。
+
+
+TEST 12
+
+Draft 已创建对象。
+
+恢复后不得重复创建。
+
+
+TEST 13
+
+用户修改正式工程后，
+Agent 不能覆盖新修改。
+
+
+TEST 14
+
+合法多次 Keyframe Update，
+最终态验证通过。
+
+
+TEST 15
+
+Skill 缺少 Capability。
+
+不得声明成功。
+
+
+TEST 16
+
+Skill Router 选择正确技能。
+
+
+TEST 17
+
+不同 Provider 返回等价语义计划。
+
+编译后产生一致 Command 行为。
+
+
+TEST 18
+
+工具成功，
+但 Scene 未正确修改。
+
+结果验证必须发现。
+
+
+TEST 19
+
+Scene 修改正确，
+但 Renderer 不显示。
+
+不能宣称视觉任务完成。
+
+
+TEST 20
+
+Cancel / Timeout / Budget Exhaustion
+
+必须安全停止。
+
+
+以上必须使用真实运行时与数据模型。
+
+允许通过受控 Fixture
+注入失败条件。
+
+但不能把 Fixture 测试
+冒充真实模型的开放任务表现。
+
+============================================================
+第三十部分：真实模型稳定性测试
+============================================================
+
+离线核心测试全部通过后：
+
+执行真实 Provider 验证。
+
+优先采用当前配置的：
+
+DeepSeek。
+
+如果其他 Provider 已连接且获得授权：
+
+分别测试。
+
+每个 Provider：
+
+独立统计结果。
+
+不能：
+
+只在 DeepSeek 上测试成功，
+就宣称所有 API 完全兼容。
+
+建立基础 Benchmark：
+
+BENCHMARK A
+
+创建三个矩形，
+分别填充红、绿、蓝。
+
+随后只将第二个矩形改为紫色。
+
+验证：
+
+对象引用正确。
+
+没有新增多余图层。
+
+其他两个矩形不变。
+
+
+BENCHMARK B
+
+创建 Cubic 标题。
+
+设置字体、字号、位置。
+
+然后添加中文副标题。
+
+验证：
+
+文字创建正确。
+
+字体参数正确。
+
+对象 ID 正确。
+
+
+BENCHMARK C
+
+创建径向渐变背景。
+
+调整中心、半径和颜色节点。
+
+验证：
+
+实际渲染正确。
+
+
+BENCHMARK D
+
+创建 Rectangle。
+
+添加 Position Keyframes。
+
+修改 Motion Curve。
+
+验证：
+
+动画求值正确。
+
+
+BENCHMARK E
+
+创建合成节点。
+
+连接 Gradient、Glow、Output。
+
+验证：
+
+连接合法。
+
+Renderer 实际输出。
+
+
+BENCHMARK F
+
+创建背景和文字动画。
+
+随后通过局部提示词
+修改背景颜色。
+
+必须保留文字动画。
+
+
+BENCHMARK G
+
+故意产生可恢复的任务顺序错误。
+
+验证：
+
+Recovery System 是否自动修复并继续。
+
+
+BENCHMARK H
+
+创建复杂参考图复刻任务。
+
+分别统计：
+
+工具执行成功率。
+
+Scene 结构正确率。
+
+视觉任务完成情况。
+
+注意：
+
+复杂视觉任务与基础执行任务
+必须分别统计。
+
+============================================================
+第三十一部分：Skill 效果对照测试
+============================================================
+
+必须建立：
+
+WITH SKILLS
+
+和：
+
+WITHOUT SKILLS
+
+的对照测试。
+
+使用：
+
+相同 Provider
+
+相同模型
+
+相同任务集合
+
+相同可用底层能力
+
+尽量一致的采样参数与预算。
+
+比较：
+
+Task Completion Rate
+
+Tool Validation Success
+
+Recovery Success Rate
+
+Wrong Object Modification
+
+Unnecessary Tool Calls
+
+Token Usage
+
+Execution Time。
+
+要区分：
+
+Core Runtime 修复带来的改善
+
+与：
+
+Skill Routing 带来的改善。
+
+不要：
+
+把底层 Bug 修复的提升
+全部归功于 Skill。
+
+如果 Skill 没有提高成功率，
+或者明显增加成本和复杂度：
+
+必须如实记录。
+
+必要时缩小 Skill 系统设计。
+
+============================================================
+第三十二部分：质量指标
+============================================================
+
+正式建立 Agent Reliability Metrics。
+
+至少：
+
+Tool Call Validity Rate
+
+Command Execution Success Rate
+
+Task Completion Rate
+
+Automatic Recovery Rate
+
+State Verification Rate
+
+Visual Verification Rate
+
+Unexpected Mutation Count
+
+Average Tool Calls per Task
+
+Average Input Tokens
+
+Average Recovery Tokens
+
+Average Task Duration。
+
+指标必须来自真实执行记录。
+
+不能：
+
+用“模型认为成功”
+代替任务完成。
+
+不能：
+
+用 Build Passed
+代替 Agent Reliability Passed。
+
+不能：
+
+用单次成功
+推断长期成功率。
+
+对于重复测试：
+
+记录完整样本数量、
+失败类型与条件。
+
+============================================================
+第三十三部分：开发与验收顺序
+============================================================
+
+严格按照以下阶段实施。
+
+------------------------------------------------------------
+PHASE 0 — BASELINE
+------------------------------------------------------------
+
+阅读审计报告。
+
+检查当前代码。
+
+保留失败样例。
+
+建立执行基线。
+
+确认当前已修复内容。
+
+
+------------------------------------------------------------
+PHASE 1 — EXECUTION CONTRACT
+------------------------------------------------------------
+
+统一 Tool Schema。
+
+修复动态参数。
+
+建立 Semantic Action Compiler。
+
+完善 Object Reference Resolution。
+
+完成确定性执行测试。
+
+此阶段不开发复杂 Skill。
+
+
+------------------------------------------------------------
+PHASE 2 — AUTONOMOUS RECOVERY
+------------------------------------------------------------
+
+修复 Dependency Validation。
+
+建立合法拓扑修复。
+
+完善结构化错误分类。
+
+建立 Execution Recovery。
+
+实现重复错误检测。
+
+保证 Transaction 安全。
+
+完成错误注入测试。
+
+
+------------------------------------------------------------
+PHASE 3 — CORE SKILL RUNTIME
+------------------------------------------------------------
+
+建立 Skill Registry。
+
+建立 Skill Loader。
+
+建立 Skill Router。
+
+实现 Core Execution Skill V1。
+
+保证 Skill 不绕过 Command System。
+
+完成端到端基础任务。
+
+
+------------------------------------------------------------
+PHASE 4 — CREATIVE SKILLS
+------------------------------------------------------------
+
+实现：
+
+Shape Creation
+
+Typography
+
+Gradient
+
+Keyframe Animation
+
+Compositing
+
+这些高频技能。
+
+必须由真实 Capability 支撑。
+
+避免创建大量空 Skill。
+
+
+------------------------------------------------------------
+PHASE 5 — PROVIDER / CONTEXT
+------------------------------------------------------------
+
+完善 Provider Capability Profiles。
+
+优化 Tool Schema 适配。
+
+修复 Streaming / HTTP 错误恢复。
+
+按需加载 Tool / Skill Context。
+
+降低 Token 冗余。
+
+
+------------------------------------------------------------
+PHASE 6 — VERIFICATION
+------------------------------------------------------------
+
+实现：
+
+Command Result Verification
+
+Scene State Verification
+
+Graph Verification
+
+Render Verification。
+
+补充必要视觉检查。
+
+不重写现有 Renderer。
+
+
+------------------------------------------------------------
+PHASE 7 — LIVE EVALUATION
+------------------------------------------------------------
+
+执行受控真实 Provider 验证。
+
+先进行少量基础 Smoke Tests。
+
+涉及额外付费请求时，
+必须遵守用户授权与预算限制。
+
+得到授权后开展重复可靠性测试。
+
+生成完整 Before / After 数据。
+
+没有授权或 Provider 不可用时：
+标记 LIVE NOT VERIFIED，
+不能将离线结果冒充 LIVE。
+
+
+------------------------------------------------------------
+PHASE 8 — STABILIZATION
+------------------------------------------------------------
+
+修复剩余高频失败。
+
+进行回归测试。
+
+检查是否引入新的架构复杂度。
+
+清理确认不再使用的重复适配代码。
+
+不要未经消费者核验
+直接删除历史兼容接口。
+
+============================================================
+第三十四部分：必须保留的开发边界
+============================================================
+
+禁止：
+
+为 Agent 创建第二套 Scene Model。
+
+为 Skill 创建第二套 Command System。
+
+为每个 Provider 实现不同编辑逻辑。
+
+为每个 Skill 重新实现参数校验。
+
+通过放宽 UUID 校验掩盖引用错误。
+
+通过无限 LLM 重试掩盖执行缺陷。
+
+通过静默跳过命令提高成功率。
+
+通过大量新 Prompt 掩盖工具契约问题。
+
+将 Skill 当作万能解决方案。
+
+在未验证结果前直接报告完成。
+
+在未授权情况下上传用户素材。
+
+在未授权情况下消耗大量外部 API 额度。
+
+通过删除测试让 CI 通过。
+
+通过大范围 any 规避 TypeScript 错误。
+
+为了架构整洁重写稳定 Renderer。
+
+为了新增 Skill 重构整个编辑器 UI。
+
+============================================================
+第三十五部分：自主开发要求
+============================================================
+
+本次任务需要自主推进。
+
+不要每完成一个小阶段就询问用户。
+
+常规技术决策自行处理。
+
+但必须遵守：
+
+先修基础执行链路。
+
+再实现 Skill Runtime。
+
+最后优化 Provider 和视觉能力。
+
+每完成一个阶段：
+
+运行：
+
+Typecheck
+
+Lint
+
+Unit Tests
+
+Integration Tests
+
+Build
+
+Desktop Build（适用时）。
+
+如果某个阶段未通过：
+
+优先修复当前阶段。
+
+不能：
+
+绕过失败直接宣布下一阶段完成。
+
+如果存在不可解决的外部阻塞：
+
+保留已通过的安全结果，
+记录阻塞，
+继续不依赖该条件的工作。
+
+不得伪造完成状态。
+
+============================================================
+第三十六部分：文档交付
+============================================================
+
+必须输出：
+
+AGENT_010_ARCHITECTURE_AUDIT.md
+
+AGENT_EXECUTION_CONTRACT_SPEC.md
+
+AGENT_OBJECT_REFERENCE_SPEC.md
+
+AGENT_AUTONOMOUS_RECOVERY_SPEC.md
+
+SWAYFRAME_SKILL_RUNTIME_SPEC.md
+
+SWAYFRAME_CORE_SKILL_V1.md
+
+AGENT_PROVIDER_COMPATIBILITY.md
+
+AGENT_RELIABILITY_BENCHMARK.md
+
+AGENT_010_TEST_REPORT.md
+
+AGENT_010_RESULT.md
+
+同时更新：
+
+AGENTS.md
+
+DESIGN.md
+
+以及实际相关架构文档。
+
+文档应反映真正实现的功能。
+
+不要：
+
+只创建文档，
+不修改正式代码。
+
+不要：
+
+把接口声明
+当成完整 Runtime。
+
+============================================================
+第三十七部分：最终结果报告
+============================================================
+
+最终输出：
+
+1. BASELINE
+
+升级前确认的问题。
+
+
+2. ARCHITECTURE CHANGES
+
+实际修改了哪些执行层。
+
+
+3. FIXED ROOT CAUSES
+
+哪些确认问题已经修复。
+
+
+4. SKILL SYSTEM
+
+实际实现了哪些 Skill。
+
+
+5. PROVIDER COMPATIBILITY
+
+哪些 Provider 已验证。
+
+
+6. AUTONOMOUS RECOVERY
+
+实际支持哪些错误恢复。
+
+
+7. RELIABILITY
+
+真实任务完成率。
+
+
+8. TOKEN USAGE
+
+优化前后 Token 消耗。
+
+
+9. TRANSACTION SAFETY
+
+是否存在意外修改。
+
+
+10. TESTS
+
+全部测试与构建结果。
+
+
+11. LIMITATIONS
+
+当前仍然存在的问题。
+
+
+12. NOT IMPLEMENTED
+
+尚未完成的能力。
+
+
+13. NEXT STEPS
+
+下一阶段优先建议。
+
+============================================================
+第三十八部分：最终验收
+============================================================
+
+本次升级成功的判断标准：
+
+不是：
+
+Swayframe 增加了十几个 Skill。
+
+不是：
+
+Agent 可以加载 SKILL.md。
+
+不是：
+
+Agent Prompt 更长了。
+
+也不是：
+
+代码里出现了 RecoveryController 类。
+
+而是：
+
+用户提出创作需求后，
+
+Agent 能够：
+
+识别任务。
+
+查询真实能力。
+
+选择合适 Skill。
+
+生成合法操作计划。
+
+解析对象引用。
+
+校验参数。
+
+处理依赖。
+
+执行 Command。
+
+发现可恢复错误。
+
+自动修复。
+
+重新验证。
+
+安全继续执行。
+
+检查最终状态。
+
+完成一次正式提交。
+
+将结果交还用户。
+
+例如：
+
+用户：
+
+“创建一个蓝色渐变矩形，
+然后添加 Cubic 标题，
+让标题在两秒内淡入。”
+
+Agent 应：
+
+创建 Rectangle。
+
+获得真实 ID。
+
+应用原生 Gradient。
+
+创建 Text。
+
+设置字体、位置。
+
+创建 Opacity Keyframes。
+
+验证 Scene。
+
+验证渲染。
+
+如果某一步失败：
+
+先判断能否确定性修复。
+
+如果不能：
+
+在预算和作用域内进行模型纠正。
+
+修复后继续。
+
+不得：
+
+丢失对象 ID。
+
+重复创建图层。
+
+错误修改其他图层。
+
+跳过失败步骤。
+
+无限消耗 Token。
+
+在半完成状态下声称成功。
+
+如果无法完成：
+
+必须准确说明：
+
+哪一步失败。
+
+为什么失败。
+
+已经安全完成什么。
+
+还需要什么条件。
+
+============================================================
+FINAL PRINCIPLE
+============================================================
+
+Swayframe 的 Agent 不应该依赖
+某一个特定模型才能正确执行基本编辑操作。
+
+LLM 负责：
+
+Understand
+Plan
+Reason
+Create。
+
+Skill 负责：
+
+Workflow Guidance
+Capability Selection
+Task Constraints。
+
+Runtime 负责：
+
+Validation
+Object Resolution
+Dependency Management
+Command Compilation
+Execution
+Recovery
+Verification。
+
+Renderer 负责：
+
+Visual Output。
+
+User 负责：
+
+最终创作控制权。
+
+最终希望实现：
+
+MODEL-AGNOSTIC WHERE POSSIBLE.
+
+SKILL-GUIDED WHEN USEFUL.
+
+DETERMINISTIC WHERE REQUIRED.
+
+AUTONOMOUS WHEN SAFE.
+
+VERIFIABLE BY DESIGN.
+
+现在开始执行。
+
+不要继续横向开发新的 Agent 创作功能。
+
+优先把现有工具调用与自主恢复
+做到真正可靠。
+
+只有基础执行、恢复和事务安全
+通过明确门禁后，
+才继续开发高级 Skills。
+
+============================================================
+END OF SPECIFICATION
+============================================================

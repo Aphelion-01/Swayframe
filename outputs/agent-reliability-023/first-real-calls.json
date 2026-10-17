@@ -1,0 +1,5033 @@
+[
+  {
+    "names": [
+      "submitProposal"
+    ],
+    "arguments": [
+      {
+        "name": "submitProposal",
+        "arguments": {
+          "id": "cubic-gradient-rebuild",
+          "goal": "在 820×460 合成中用原生可编辑图层近似重建参考图（原 410×230，按 2 倍坐标映射）：浅灰纵向渐变背景 + 细线十字准星与中心轴线 + 由青色渐变正面向右后延伸的深色右侧面（构成\"立方\"体积感）+ 柔和投影/柔边 + 居中的衬线体 \"Cubic\" 标题与\"立方渐变\"副标题。限制：工具集无线性/径向渐变对象、无模糊-渐隐遮罩器、无透视形变；因此用多层大面积椭圆以低不透明度叠加模拟柔边渐变光晕，用 setStroke 细矩形模拟十字与轴线，用矩形旋转/位移近似右侧面透视。字体仅为字体名引用，无法读取磁盘字体，衬线效果依赖系统回退。最多 3 轮局部修正。",
+          "risk": "low",
+          "creation": {
+            "intent": "依据参考像素复刻 Cubic 立方渐变图（410×230 → 820×460）",
+            "tasks": [
+              {
+                "id": "t1",
+                "description": "创建浅灰背景与细线装饰（十字准星、中心竖轴）",
+                "executionDomain": "scene",
+                "strategy": "compose",
+                "capabilityId": "native-shape",
+                "stepIds": [
+                  "s1",
+                  "s2",
+                  "s3",
+                  "s4",
+                  "s5"
+                ],
+                "dependencies": []
+              },
+              {
+                "id": "t2",
+                "description": "用多层低透明度椭圆模拟青色正方体正面渐变与柔边光晕",
+                "executionDomain": "scene",
+                "strategy": "compose",
+                "capabilityId": "native-shape+gaussianBlur",
+                "stepIds": [
+                  "s6",
+                  "s7",
+                  "s8",
+                  "s9"
+                ],
+                "dependencies": [
+                  "t1"
+                ]
+              },
+              {
+                "id": "t3",
+                "description": "构建深色右侧面与底部柔和投影",
+                "executionDomain": "scene",
+                "strategy": "compose",
+                "capabilityId": "native-shape+gaussianBlur",
+                "stepIds": [
+                  "s10",
+                  "s11"
+                ],
+                "dependencies": [
+                  "t2"
+                ]
+              },
+              {
+                "id": "t4",
+                "description": "排版 Cubic 标题与立方渐变副标题",
+                "executionDomain": "scene",
+                "strategy": "compose",
+                "capabilityId": "native-text",
+                "stepIds": [
+                  "s12"
+                ],
+                "dependencies": [
+                  "t2"
+                ]
+              }
+            ],
+            "warnings": [
+              "原生工具无渐变填充、无羽化遮罩，柔边与渐变色带只能由多层半透明椭圆近似，无法逐像素匹配。",
+              "无透视形变参数，右侧面以旋转矩形近似，透视会与原图存在差异。",
+              "字体仅按名称引用，无法加载磁盘字体文件，衬线体渲染取决于本机可用字体。",
+              "每层默认位置为合成中心，故所有元素均显式给出坐标。"
+            ]
+          },
+          "referenceAnalysis": {
+            "canvas": {
+              "width": 820,
+              "height": 460,
+              "background": "浅暖灰背景，顶部约 #E4E2E0，向下轻微变亮至中下部 #EFEDEB，底部有极弱暗角 (#DFDDDB)，整体为纵向极低对比渐变"
+            },
+            "visualElements": [
+              {
+                "id": "bg",
+                "type": "background",
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 820,
+                  "height": 460
+                },
+                "position": "覆盖全画布",
+                "layering": 0,
+                "geometry": "全幅矩形底色（纵向浅灰渐变）",
+                "colors": [
+                  "#E4E2E0",
+                  "#EFEDEB",
+                  "#DFDDDB"
+                ],
+                "gradients": [
+                  "自上而下：暖灰 #E4E2E0 → 亮灰 #EFEDEB → 微暗 #DFDDDB，对比度极低（观察）"
+                ],
+                "effects": [
+                  "无可见噪点或纹理（观察）"
+                ],
+                "typography": "无",
+                "dependencies": [],
+                "confidence": 0.72,
+                "mapping": "createLayer kind=solid 全幅作为底板；纵向渐变无原生渐变对象，仅能以单一中灰近似"
+              },
+              {
+                "id": "cube-front",
+                "type": "geometry",
+                "bounds": {
+                  "x": 88,
+                  "y": 60,
+                  "width": 268,
+                  "height": 232
+                },
+                "position": "画面中偏左，正方区域（2 倍映射后）",
+                "layering": 2,
+                "geometry": "近似正方形的柔边体块，左/上/下边缘有约 20–30px 的羽化过渡（推断）",
+                "colors": [
+                  "#0B6E72",
+                  "#1C9E9C",
+                  "#4FC6C0",
+                  "#8FDCD6"
+                ],
+                "gradients": [
+                  "由中心偏左下亮青 #4FC6C0 向右上渐暗至 #0B6E72（推断为径向或对角线性）"
+                ],
+                "effects": [
+                  "强柔边/羽化约 20–30px（观察边缘模糊）；无明显纹理"
+                ],
+                "typography": "无",
+                "dependencies": [
+                  "bg"
+                ],
+                "confidence": 0.6,
+                "mapping": "以 2–3 层椭圆/矩形叠加 setFill 青色并以 gaussianBlur 柔化模拟；无法得到单层真实渐变填充"
+              },
+              {
+                "id": "cube-right",
+                "type": "geometry",
+                "bounds": {
+                  "x": 330,
+                  "y": 62,
+                  "width": 150,
+                  "height": 226
+                },
+                "position": "正方体右侧，向右后上方倾斜的平行四边形面",
+                "layering": 3,
+                "geometry": "四边形，左边缘接正面右边，右上与右下边向外斜出（推断透视）",
+                "colors": [
+                  "#111114",
+                  "#2A2C30",
+                  "#3A3C40"
+                ],
+                "gradients": [
+                  "由左上深灰黑 #111114 向右下略亮 #3A3C40（推断）"
+                ],
+                "effects": [
+                  "外缘柔和羽化；与正面交线处有暗对比（观察）"
+                ],
+                "typography": "无",
+                "dependencies": [
+                  "cube-front"
+                ],
+                "confidence": 0.55,
+                "mapping": "createRectangle 后 setRotation 与 setPosition 近似倾斜；或 createPath 绘制四点多边形，无透视参数"
+              },
+              {
+                "id": "glow-bottom",
+                "type": "shadow",
+                "bounds": {
+                  "x": 60,
+                  "y": 250,
+                  "width": 420,
+                  "height": 90
+                },
+                "position": "立方体下方大面积柔和扩散",
+                "layering": 1,
+                "geometry": "横向拉长的模糊椭圆",
+                "colors": [
+                  "#9AD8D4",
+                  "#C9E9E6",
+                  "#E8F4F3"
+                ],
+                "gradients": [
+                  "中心亮向外渐隐（观察为柔和衰减）"
+                ],
+                "effects": [
+                  "大半径高斯模糊（推断 40–60px）"
+                ],
+                "typography": "无",
+                "dependencies": [
+                  "cube-front"
+                ],
+                "confidence": 0.5,
+                "mapping": "createEllipse + setFill 浅青 + addEffect gaussianBlur，置于立方体图层之下"
+              },
+              {
+                "id": "cross-lines",
+                "type": "decoration",
+                "bounds": {
+                  "x": 60,
+                  "y": 20,
+                  "width": 380,
+                  "height": 300
+                },
+                "position": "四角十字准星 + 中央竖直细轴 + 底部短线段",
+                "layering": 5,
+                "geometry": "线段宽约 1–2px，十字臂长约 10px；中央竖轴约在 x=252 贯穿上下（观察）",
+                "colors": [
+                  "#4A4A4A",
+                  "#6B6B6B"
+                ],
+                "gradients": [],
+                "effects": [
+                  "细线，无明显模糊"
+                ],
+                "typography": "无",
+                "dependencies": [
+                  "bg"
+                ],
+                "confidence": 0.55,
+                "mapping": "createRectangle 细长条 + setStroke 深灰，每条线单独一层以保证可编辑"
+              },
+              {
+                "id": "axis-dot",
+                "type": "decoration",
+                "bounds": {
+                  "x": 246,
+                  "y": 270,
+                  "width": 12,
+                  "height": 14
+                },
+                "position": "中央竖轴下端的实心小点/箭头",
+                "layering": 6,
+                "geometry": "小圆点或极短粗线段，约 6–8px",
+                "colors": [
+                  "#2A2A2A"
+                ],
+                "gradients": [],
+                "effects": [],
+                "typography": "无",
+                "dependencies": [
+                  "cross-lines"
+                ],
+                "confidence": 0.45,
+                "mapping": "createEllipse 小尺寸 + setFill 深灰"
+              },
+              {
+                "id": "title-cubic",
+                "type": "text",
+                "bounds": {
+                  "x": 170,
+                  "y": 196,
+                  "width": 170,
+                  "height": 52
+                },
+                "position": "立方体正面中心，略偏下方（2 倍映射：约 x=255, y=222 为中心）",
+                "layering": 7,
+                "geometry": "单行，衬线体高对比笔画",
+                "colors": [
+                  "#0A0A0A"
+                ],
+                "gradients": [],
+                "effects": [
+                  "无明显外发光或阴影（观察）"
+                ],
+                "typography": "衬线体（类似 Didot/Bodoni 高对比），字号约 36–40px（映射后），字距正常偏紧",
+                "dependencies": [
+                  "cube-front"
+                ],
+                "confidence": 0.7,
+                "mapping": "createText content=\"Cubic\" + setFont 衬线族名 + setTextColor 近黑 + setTextAlignment center"
+              },
+              {
+                "id": "subtitle",
+                "type": "text",
+                "bounds": {
+                  "x": 204,
+                  "y": 240,
+                  "width": 104,
+                  "height": 22
+                },
+                "position": "标题正下方居中",
+                "layering": 8,
+                "geometry": "单行中文，无衬线体，字重常规",
+                "colors": [
+                  "#141414"
+                ],
+                "gradients": [],
+                "effects": [],
+                "typography": "无衬线中文字体，字号约 15–16px（映射后），字距略宽",
+                "dependencies": [
+                  "title-cubic"
+                ],
+                "confidence": 0.6,
+                "mapping": "createText content=\"立方渐变\" + setFont 无衬线族名 + setTextColor 深灰 + setTextAlignment center"
+              }
+            ],
+            "spatialRelationships": [
+              "细线十字分布于立方体四角外侧，竖轴位于标题上方贯穿"
+            ],
+            "limitations": [
+              "无渐变填充对象；背景与立方体的渐变只能以多层纯色近似。",
+              "无羽毛/渐隐遮罩，柔边仅靠 gaussianBlur 近似。",
+              "无透视变换，右侧面倾斜需用旋转近似。",
+              "参考图为 410×230，所有坐标已按 2× 映射至 820×460，属推断换算。"
+            ],
+            "confidence": 0.55
+          }
+        }
+      }
+    ],
+    "images": [
+      1
+    ]
+  },
+  {
+    "names": [
+      "submitProposal"
+    ],
+    "arguments": [
+      {
+        "name": "submitProposal",
+        "arguments": {
+          "id": "cubic-gradient-rebuild",
+          "goal": "依据参考像素（原图 410×230，合成已为 820×460，坐标按 2× 放大）用原生可编辑图层重建 Cubic 立方渐变小稿：浅灰底 + 柔和投影 + 青绿立方体（正面柔和渐变、右侧深色面）+ 柔边 + 细线装饰（十字标记与中轴线）+ Cubic 标题与“立方渐变”副标题。不导入参考图冒充结果，不删除任何已有图层。局限：原生工具无真正的“渐变填充”与“透视网格/2D 深度”能力，故用多层带柔边（mask feather / gaussianBlur）的实体色块叠加近似正面渐变与右侧暗面；用多边形/路径近似立方轮廓（观察为近似 2D 投影，非精确透视测量）；装饰十字用椭圆路径短线段近似。所有坐标为像素估计，需渲染后按比对做最多 3 轮局部修正。",
+          "risk": "low",
+          "referenceAnalysis": {
+            "canvas": {
+              "width": 820,
+              "height": 460,
+              "background": "浅灰白，约 #EDECEA / #E9E8E6，整体有轻微中心偏亮的柔和亮度过渡（观察）"
+            },
+            "visualElements": [
+              {
+                "id": "bg-light",
+                "type": "background",
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 820,
+                  "height": 460
+                },
+                "position": "全画布覆盖",
+                "layering": 0,
+                "geometry": "满幅矩形",
+                "colors": [
+                  "#EDECEA",
+                  "#E5E4E2"
+                ],
+                "gradients": [
+                  "可选：中心略亮向四角略暗的径向渐变（推断）"
+                ],
+                "effects": [
+                  "无或极轻微"
+                ],
+                "typography": "无",
+                "dependencies": [],
+                "confidence": 0.85,
+                "mapping": "createRectangle 满幅 + setFill 浅灰"
+              },
+              {
+                "id": "core-shadow",
+                "type": "shadow",
+                "bounds": {
+                  "x": 170,
+                  "y": 300,
+                  "width": 560,
+                  "height": 150
+                },
+                "position": "立方体下方，略偏右下",
+                "layering": 3,
+                "geometry": "大范围柔和椭圆/矩形模糊块",
+                "colors": [
+                  "#B9B4AE",
+                  "#CFCAC4"
+                ],
+                "gradients": [
+                  "由中心向外淡出"
+                ],
+                "effects": [
+                  "gaussianBlur 大半径柔化（推断 40–80px）"
+                ],
+                "typography": "无",
+                "dependencies": [
+                  "bg-light"
+                ],
+                "confidence": 0.55,
+                "mapping": "createRectangle/createEllipse + setFill 灰 + gaussianBlur"
+              },
+              {
+                "id": "cube-front",
+                "type": "geometry",
+                "bounds": {
+                  "x": 285,
+                  "y": 118,
+                  "width": 470,
+                  "height": 320
+                },
+                "position": "画面中央偏左的大体块，占据主要视觉面积",
+                "layering": 2,
+                "geometry": "近似正方形的正面块，四角柔化，形态为 2D 投影的立方正面（非精确透视）",
+                "colors": [
+                  "#3FBFBF",
+                  "#37B4B4",
+                  "#5FCBCB",
+                  "#2AA3A3"
+                ],
+                "gradients": [
+                  "中部偏亮青绿、边缘更深/更饱和，形成体积感"
+                ],
+                "effects": [
+                  "边缘柔化 / 轻微 gaussianBlur",
+                  "mask feather 柔边（推断 20–60px）"
+                ],
+                "typography": "无",
+                "dependencies": [
+                  "bg-light"
+                ],
+                "confidence": 0.7,
+                "mapping": "createRectangle/createPath + setFill 青绿 + createMask/setMaskFeather 柔边（无原生渐变填充，用多层色块叠加近似）"
+              },
+              {
+                "id": "cube-right-dark",
+                "type": "geometry",
+                "bounds": {
+                  "x": 660,
+                  "y": 155,
+                  "width": 170,
+                  "height": 300
+                },
+                "position": "立方体右侧面，向右上延伸的深色楔形",
+                "layering": 3,
+                "geometry": "纵向楔形/平行四边形，左边界清晰，右侧向外柔化",
+                "colors": [
+                  "#1E6B6B",
+                  "#2A8C8C",
+                  "#3B8282"
+                ],
+                "gradients": [
+                  "由上（深）向下（略亮）或反之的过渡（推断）"
+                ],
+                "effects": [
+                  "右侧柔边 / gaussianBlur"
+                ],
+                "typography": "无",
+                "dependencies": [
+                  "cube-front"
+                ],
+                "confidence": 0.6,
+                "mapping": "createPath（四边形近似）+ setFill 深青 + 柔边遮罩（观察为近似轮廓，非精确顶点测量）"
+              },
+              {
+                "id": "top-fade",
+                "type": "geometry",
+                "bounds": {
+                  "x": 300,
+                  "y": 120,
+                  "width": 480,
+                  "height": 120
+                },
+                "position": "立方体上沿的暗灰渐隐带",
+                "layering": 4,
+                "geometry": "横向模糊条带，上深下透明",
+                "colors": [
+                  "#6E6E6E",
+                  "#9A9A9A"
+                ],
+                "gradients": [
+                  "上深下透明"
+                ],
+                "effects": [
+                  "gaussianBlur"
+                ],
+                "typography": "无",
+                "dependencies": [
+                  "cube-front"
+                ],
+                "confidence": 0.5,
+                "mapping": "createRectangle + setFill 灰 + gaussianBlur + 低不透明度（近似的柔和过渡条）"
+              },
+              {
+                "id": "guide-lines",
+                "type": "decoration",
+                "bounds": {
+                  "x": 320,
+                  "y": 15,
+                  "width": 470,
+                  "height": 420
+                },
+                "position": "竖向细线贯穿中部，四角内侧四个小十字",
+                "layering": 6,
+                "geometry": "1px 级细直线与短十字线段",
+                "colors": [
+                  "#4A4A4A",
+                  "#6A6A6A"
+                ],
+                "gradients": [
+                  "无"
+                ],
+                "effects": [
+                  "无"
+                ],
+                "typography": "无",
+                "dependencies": [
+                  "bg-light"
+                ],
+                "confidence": 0.6,
+                "mapping": "createRectangle 细长条（细线）与 createPath/椭圆短线段（十字）；线宽为像素估计"
+              },
+              {
+                "id": "title-cubic",
+                "type": "text",
+                "bounds": {
+                  "x": 350,
+                  "y": 205,
+                  "width": 260,
+                  "height": 90
+                },
+                "position": "立方体正面中部，水平居中",
+                "layering": 7,
+                "geometry": "衬线体大写 C 开头单词",
+                "colors": [
+                  "#141414"
+                ],
+                "gradients": [
+                  "无"
+                ],
+                "effects": [
+                  "无（清晰锐利）"
+                ],
+                "typography": "衬线字体，字号较大，字距适中；具体字体不可读自磁盘，用通用衬线族近似",
+                "dependencies": [
+                  "cube-front"
+                ],
+                "confidence": 0.8,
+                "mapping": "createText + setFont 衬线 + setFontSize + setTextColor"
+              },
+              {
+                "id": "subtitle-cn",
+                "type": "text",
+                "bounds": {
+                  "x": 400,
+                  "y": 290,
+                  "width": 170,
+                  "height": 40
+                },
+                "position": "标题正下方，水平居中",
+                "layering": 7,
+                "geometry": "四个中文字符横排",
+                "colors": [
+                  "#1A1A1A"
+                ],
+                "gradients": [
+                  "无"
+                ],
+                "effects": [
+                  "无"
+                ],
+                "typography": "无衬线中文字，字号明显小于标题",
+                "dependencies": [
+                  "title-cubic"
+                ],
+                "confidence": 0.75,
+                "mapping": "createText + setFontSize + setTextColor + setTextAlignment center"
+              }
+            ],
+            "spatialRelationships": [
+              "浅灰底覆盖全画布",
+              "立方体位于画布中央，左侧留白较窄，右侧略宽",
+              "深色右侧面贴在立方体正面右缘，向右上延伸",
+              "柔和投影位于立方体下方，向下渐隐",
+              "竖向细线穿过立方体中心并延伸到画布上下缘",
+              "四个小十字分布在线框四角附近",
+              "Cubic 标题水平居中于立方体正面，副标题紧随其下"
+            ],
+            "limitations": [
+              "参考为 2× 放大的合成，原图坐标只能按比例估计，非精确像素测量",
+              "原生工具无真正的线性/径向渐变填充，只能用多层柔边色块近似渐变",
+              "无真实 3D 透视与深度，右侧暗面与顶面形态为 2D 近似",
+              "字体无法从磁盘读取，衬线字体以通用族名近似",
+              "柔边半径、模糊量与不透明度均为估计值，需渲染比对后调整"
+            ],
+            "confidence": 0.62
+          },
+          "steps": [
+            {
+              "id": "s1",
+              "label": "创建满幅浅灰背景",
+              "tool": "createRectangle",
+              "arguments": {
+                "name": "BG-浅灰底",
+                "position": {
+                  "x": 410,
+                  "y": 230
+                },
+                "width": 820,
+                "height": 460
+              }
+            },
+            {
+              "id": "s2",
+              "label": "背景填充浅灰",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "00000000-0000-0000-0000-000000000000",
+                "color": {
+                  "r": 0.929,
+                  "g": 0.925,
+                  "b": 0.917,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s3",
+              "label": "立方体正面青绿块",
+              "tool": "createRectangle",
+              "arguments": {
+                "name": "CUBE-正面",
+                "position": {
+                  "x": 520,
+                  "y": 278
+                },
+                "width": 470,
+                "height": 320
+              }
+            },
+            {
+              "id": "s4",
+              "label": "正面填充青绿",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "00000000-0000-0000-0000-000000000000",
+                "color": {
+                  "r": 0.235,
+                  "g": 0.729,
+                  "b": 0.729,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s5",
+              "label": "正面柔边遮罩",
+              "tool": "createMask",
+              "arguments": {
+                "layerId": "00000000-0000-0000-0000-000000000000",
+                "kind": "rectangle",
+                "mode": "add"
+              }
+            },
+            {
+              "id": "s6",
+              "label": "右侧深色面近似路径",
+              "tool": "createPath",
+              "arguments": {
+                "name": "CUBE-右侧暗面",
+                "position": {
+                  "x": 745,
+                  "y": 305
+                },
+                "width": 170,
+                "height": 300,
+                "points": [
+                  0,
+                  -150,
+                  0,
+                  0,
+                  0,
+                  0,
+                  170,
+                  -120,
+                  0,
+                  0,
+                  0,
+                  0,
+                  170,
+                  150,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  150,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "id": "s7",
+              "label": "右侧暗面填充深青",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "00000000-0000-0000-0000-000000000000",
+                "color": {
+                  "r": 0.145,
+                  "g": 0.51,
+                  "b": 0.51,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s8",
+              "label": "右侧暗面柔边遮罩",
+              "tool": "createMask",
+              "arguments": {
+                "layerId": "00000000-0000-0000-0000-000000000000",
+                "kind": "rectangle",
+                "mode": "add"
+              }
+            },
+            {
+              "id": "s9",
+              "label": "立方体下方柔和投影",
+              "tool": "createEllipse",
+              "arguments": {
+                "name": "SHADOW-下方柔投影",
+                "position": {
+                  "x": 470,
+                  "y": 385
+                },
+                "width": 560,
+                "height": 140
+              }
+            },
+            {
+              "id": "s10",
+              "label": "投影填充中灰",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "00000000-0000-0000-0000-000000000000",
+                "color": {
+                  "r": 0.73,
+                  "g": 0.71,
+                  "b": 0.69,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s11",
+              "label": "投影高斯模糊",
+              "tool": "addEffect",
+              "arguments": {
+                "layerId": "00000000-0000-0000-0000-000000000000",
+                "kind": "gaussianBlur"
+              }
+            },
+            {
+              "id": "s12",
+              "label": "Cubic 标题与“立方渐变”副标题",
+              "tool": "createText",
+              "arguments": {
+                "name": "TEXT-Cubic",
+                "content": "Cubic",
+                "position": {
+                  "x": 480,
+                  "y": 250
+                },
+                "fontSize": 72,
+                "fontFamily": "Georgia, serif",
+                "alignment": "center",
+                "color": {
+                  "r": 0.08,
+                  "g": 0.08,
+                  "b": 0.08,
+                  "a": 1
+                }
+              }
+            }
+          ],
+          "creation": {
+            "intent": "用原生可编辑图层近似重建 Cubic 立方渐变海报：满幅浅灰底、柔和投影、青绿立方体正面与深色右面、柔边、细线装饰与两行文字。",
+            "tasks": [
+              {
+                "id": "t1",
+                "description": "满幅浅灰背景矩形作为底层",
+                "executionDomain": "canvas",
+                "strategy": "generate",
+                "capabilityId": "createRectangle+setFill",
+                "stepIds": [
+                  "s1",
+                  "s2"
+                ],
+                "dependencies": []
+              },
+              {
+                "id": "t2",
+                "description": "立方体正面青绿块加柔边遮罩（近似渐变主体）",
+                "executionDomain": "scene",
+                "strategy": "generate",
+                "capabilityId": "createRectangle+createMask",
+                "stepIds": [
+                  "s3",
+                  "s4",
+                  "s5"
+                ],
+                "dependencies": [
+                  "t1"
+                ]
+              },
+              {
+                "id": "t3",
+                "description": "右侧深色面用透视路径近似",
+                "executionDomain": "scene",
+                "strategy": "generate",
+                "capabilityId": "createPath+setFill+createMask",
+                "stepIds": [
+                  "s6",
+                  "s7",
+                  "s8"
+                ],
+                "dependencies": [
+                  "t2"
+                ]
+              },
+              {
+                "id": "t4",
+                "description": "立方体下方柔和投影（椭圆 + gaussianBlur）",
+                "executionDomain": "compositing",
+                "strategy": "generate",
+                "capabilityId": "createEllipse+addEffect(gaussianBlur)",
+                "stepIds": [
+                  "s9",
+                  "s10",
+                  "s11"
+                ],
+                "dependencies": [
+                  "t1"
+                ]
+              },
+              {
+                "id": "t5",
+                "description": "Cubic 标题与“立方渐变”副标题文字排版",
+                "executionDomain": "property",
+                "strategy": "generate",
+                "capabilityId": "createText",
+                "stepIds": [
+                  "s12"
+                ],
+                "dependencies": [
+                  "t2"
+                ]
+              }
+            ],
+            "warnings": [
+              "原生工具无真正渐变填充，渐变感须靠多层柔边色块叠加近似",
+              "无真实 3D 透视深度，右侧暗面为 2D 近似",
+              "字体无法从磁盘读取，使用通用族名近似",
+              "所有坐标为像素估计，需渲染比对后局部修正"
+            ]
+          }
+        }
+      }
+    ],
+    "images": [
+      1
+    ]
+  },
+  {
+    "names": [
+      "inspectComposition",
+      "listLayers",
+      "effect_search",
+      "effect_search",
+      "analyzeReference",
+      "analyzeLayout",
+      "analyzeColor",
+      "analyzeTypography"
+    ],
+    "arguments": [
+      {
+        "name": "inspectComposition",
+        "arguments": {
+          "compositionId": "f1eb2e5d-8807-48f6-80bc-c00a697451bc"
+        }
+      },
+      {
+        "name": "listLayers",
+        "arguments": {
+          "compositionId": "f1eb2e5d-8807-48f6-80bc-c00a697451bc",
+          "limit": 50
+        }
+      },
+      {
+        "name": "effect_search",
+        "arguments": {
+          "query": "radial gradient 径向渐变"
+        }
+      },
+      {
+        "name": "effect_search",
+        "arguments": {
+          "query": "gaussian blur 模糊"
+        }
+      },
+      {
+        "name": "analyzeReference",
+        "arguments": {
+          "goal": "按参考像素复刻 Cubic 立方渐变海报：浅灰底、柔和投影、青绿立方体正面渐变、深色右侧面、柔边、细线十字装饰、Cubic 标题与“立方渐变”副标题"
+        }
+      },
+      {
+        "name": "analyzeLayout",
+        "arguments": {
+          "goal": "820×460 画布内立方体居中、细线十字定位、标题与副标题居中对齐"
+        }
+      },
+      {
+        "name": "analyzeColor",
+        "arguments": {
+          "goal": "浅灰底 + 青绿立方体渐变 + 深青右侧面 + 深灰细线与黑色标题"
+        }
+      },
+      {
+        "name": "analyzeTypography",
+        "arguments": {
+          "goal": "Cubic 衬线大标题与“立方渐变”小号中文副标题，居中层级"
+        }
+      }
+    ],
+    "images": [
+      1
+    ]
+  },
+  {
+    "names": [
+      "submitProposal"
+    ],
+    "arguments": [
+      {
+        "name": "submitProposal",
+        "arguments": {
+          "id": "cubic-gradient-poster-v1",
+          "goal": "在 820×460 合成中，用可编辑图层近似复刻参考图：浅灰底、中央柔和青绿渐变立方体（正面亮青绿、右侧面与顶部压深）、细十字与轴线装饰、居中标题 “Cubic” 与副标题 “立方渐变”。受限说明：注册工具只能提供纯色填充、椭圆/矩形/星形/多边形/路径几何，以及 brightnessContrast/exposure/hueSaturation/temperature/tint/levels/gaussianBlur/dropShadow/glow/tintFill 效果；没有渐变填充，因此渐变面用多个同心/叠层色块 + gaussianBlur 近似；字体只能按名称请求，无法读取磁盘字体，实际字形可能回退；十字用椭圆交叉近似（无描边参数时就为实心十字）。坐标为按 820×460 目视估读的归一化像素，非精确测量。",
+          "risk": "low",
+          "referenceAnalysis": {
+            "canvas": {
+              "width": 820,
+              "height": 460,
+              "background": "浅灰近白（约 #E8E7E5），底部略亮、边缘轻微暗角"
+            },
+            "visualElements": [
+              {
+                "id": "bg",
+                "type": "background",
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 820,
+                  "height": 460
+                },
+                "position": "全画布铺满",
+                "layering": 0,
+                "geometry": "全幅平面",
+                "colors": [
+                  "#E9E8E6",
+                  "#E4E3E1"
+                ],
+                "gradients": [
+                  "极弱，从中心略亮到边缘略暗（推断，非精确测量）"
+                ],
+                "effects": [
+                  "无明显噪声"
+                ],
+                "typography": "无",
+                "dependencies": [],
+                "confidence": 0.85,
+                "mapping": "createLayer(kind=solid, 全幅) + setFill"
+              },
+              {
+                "id": "soft-shadow",
+                "type": "shadow",
+                "bounds": {
+                  "x": 150,
+                  "y": 60,
+                  "width": 520,
+                  "height": 390
+                },
+                "position": "立方体轮廓外扩一圈，右下略重",
+                "layering": 1,
+                "geometry": "模糊矩形/圆角块",
+                "colors": [
+                  "#BFBFBD",
+                  "#D5D4D2"
+                ],
+                "gradients": [
+                  "模糊产生的柔和过渡"
+                ],
+                "effects": [
+                  "大半径 gaussianBlur"
+                ],
+                "typography": "无",
+                "dependencies": [
+                  "cube-faces"
+                ],
+                "confidence": 0.6,
+                "mapping": "createLayer(kind=rectangle) + addEffect(gaussianBlur) + setOpacity 低位"
+              },
+              {
+                "id": "cube-back",
+                "type": "geometry",
+                "bounds": {
+                  "x": 195,
+                  "y": 45,
+                  "width": 430,
+                  "height": 375
+                },
+                "position": "立方体外轮廓（含透视背面）",
+                "layering": 2,
+                "geometry": "六边形/平行四边形透视轮廓，四角外扩",
+                "colors": [
+                  "#7E8C8B",
+                  "#4A5A5C"
+                ],
+                "gradients": [
+                  "暗灰绿到青灰"
+                ],
+                "effects": [
+                  "gaussianBlur 柔边（边缘明显羽化）"
+                ],
+                "typography": "无",
+                "dependencies": [],
+                "confidence": 0.5,
+                "mapping": "createPolygon 或 createPath + gaussianBlur"
+              },
+              {
+                "id": "cube-right-face",
+                "type": "geometry",
+                "bounds": {
+                  "x": 500,
+                  "y": 55,
+                  "width": 145,
+                  "height": 355
+                },
+                "position": "立方体右侧面（纵深面）",
+                "layering": 3,
+                "geometry": "平行四边形，向左收窄",
+                "colors": [
+                  "#1C2A2E",
+                  "#0F181B"
+                ],
+                "gradients": [
+                  "外侧近黑，向内过渡到青灰"
+                ],
+                "effects": [
+                  "gaussianBlur 柔边",
+                  "hueSaturation 压饱和"
+                ],
+                "typography": "无",
+                "dependencies": [
+                  "cube-back"
+                ],
+                "confidence": 0.6,
+                "mapping": "createPath(points 四边形) + setFill + gaussianBlur"
+              },
+              {
+                "id": "cube-front",
+                "type": "geometry",
+                "bounds": {
+                  "x": 225,
+                  "y": 65,
+                  "width": 300,
+                  "height": 340
+                },
+                "position": "立方体正面（主体）",
+                "layering": 4,
+                "geometry": "近矩形/梯形，四角略圆",
+                "colors": [
+                  "#1FA3A8",
+                  "#2FB9BE",
+                  "#7FD8DA"
+                ],
+                "gradients": [
+                  "中心偏上较亮青绿 → 边缘更深青绿（放射状，推断近似）"
+                ],
+                "effects": [
+                  "gaussianBlur 轻微柔边",
+                  "glow/tintFill 可选提亮中心"
+                ],
+                "typography": "无",
+                "dependencies": [
+                  "cube-back"
+                ],
+                "confidence": 0.7,
+                "mapping": "多层 createRectangle/createEllipse 叠加 + setFill 形成伪渐变 + gaussianBlur"
+              },
+              {
+                "id": "cube-top",
+                "type": "geometry",
+                "bounds": {
+                  "x": 300,
+                  "y": 40,
+                  "width": 235,
+                  "height": 90
+                },
+                "position": "立方体顶面，向右上倾斜",
+                "layering": 5,
+                "geometry": "平行四边形",
+                "colors": [
+                  "#8FA6A6",
+                  "#5E7476"
+                ],
+                "gradients": [
+                  "顶面偏灰亮，向右变暗"
+                ],
+                "effects": [
+                  "gaussianBlur 柔边"
+                ],
+                "typography": "无",
+                "dependencies": [
+                  "cube-back"
+                ],
+                "confidence": 0.45,
+                "mapping": "createPath 四边形 + setFill + gaussianBlur"
+              },
+              {
+                "id": "cross-tl",
+                "type": "decoration",
+                "bounds": {
+                  "x": 122,
+                  "y": 42,
+                  "width": 26,
+                  "height": 26
+                },
+                "position": "左上角十字标记",
+                "layering": 6,
+                "geometry": "细线十字（+）",
+                "colors": [
+                  "#5A5A5A"
+                ],
+                "gradients": [],
+                "effects": [
+                  "无或轻微 blur"
+                ],
+                "typography": "无",
+                "dependencies": [],
+                "confidence": 0.8,
+                "mapping": "两个细长 createRectangle 交叉（或用 createStar 近似）"
+              },
+              {
+                "id": "cross-tr",
+                "type": "decoration",
+                "bounds": {
+                  "x": 520,
+                  "y": 42,
+                  "width": 26,
+                  "height": 26
+                },
+                "position": "右上角十字标记",
+                "layering": 7,
+                "geometry": "细线十字（+）",
+                "colors": [
+                  "#5A5A5A"
+                ],
+                "gradients": [],
+                "effects": [],
+                "typography": "无",
+                "dependencies": [],
+                "confidence": 0.8,
+                "mapping": "两个细长 createRectangle 交叉"
+              },
+              {
+                "id": "cross-mid-right",
+                "type": "decoration",
+                "bounds": {
+                  "x": 620,
+                  "y": 145,
+                  "width": 26,
+                  "height": 26
+                },
+                "position": "右侧中部十字标记",
+                "layering": 8,
+                "geometry": "细线十字（+）",
+                "colors": [
+                  "#5A5A5A"
+                ],
+                "gradients": [],
+                "effects": [],
+                "typography": "无",
+                "dependencies": [],
+                "confidence": 0.75,
+                "mapping": "两个细长 createRectangle 交叉"
+              },
+              {
+                "id": "cross-inner-left",
+                "type": "decoration",
+                "bounds": {
+                  "x": 168,
+                  "y": 145,
+                  "width": 24,
+                  "height": 24
+                },
+                "position": "立方体左上边缘附近十字",
+                "layering": 9,
+                "geometry": "细线十字（+），压在立方体柔边上",
+                "colors": [
+                  "#3E4A4C"
+                ],
+                "gradients": [],
+                "effects": [],
+                "typography": "无",
+                "dependencies": [
+                  "cube-front"
+                ],
+                "confidence": 0.7,
+                "mapping": "两个细长 createRectangle 交叉"
+              },
+              {
+                "id": "axis-vertical",
+                "type": "decoration",
+                "bounds": {
+                  "x": 410,
+                  "y": 12,
+                  "width": 2,
+                  "height": 265
+                },
+                "position": "画面中轴细竖线，从顶部穿过立方体到标题上方",
+                "layering": 10,
+                "geometry": "1–2px 竖直线",
+                "colors": [
+                  "#333333"
+                ],
+                "gradients": [],
+                "effects": [
+                  "轻微 blur"
+                ],
+                "typography": "无",
+                "dependencies": [],
+                "confidence": 0.55,
+                "mapping": "createRectangle(宽≈1.5) + 位移"
+              },
+              {
+                "id": "axis-bottom",
+                "type": "decoration",
+                "bounds": {
+                  "x": 410,
+                  "y": 355,
+                  "width": 2,
+                  "height": 90
+                },
+                "position": "标题下方到底部的竖线，末端有小圆点",
+                "layering": 11,
+                "geometry": "竖线 + 端点小圆",
+                "colors": [
+                  "#333333"
+                ],
+                "gradients": [],
+                "effects": [],
+                "typography": "无",
+                "dependencies": [],
+                "confidence": 0.5,
+                "mapping": "createRectangle + createEllipse(小圆点)"
+              },
+              {
+                "id": "title-cubic",
+                "type": "text",
+                "bounds": {
+                  "x": 305,
+                  "y": 235,
+                  "width": 210,
+                  "height": 70
+                },
+                "position": "画面中央略偏下，立方体正面之上",
+                "layering": 12,
+                "geometry": "衬线体大标题，首字母大写字重更重",
+                "colors": [
+                  "#101112"
+                ],
+                "gradients": [],
+                "effects": [
+                  "无"
+                ],
+                "typography": "serif（如 Georgia/Times 类衬线），字号约 60–70px，正常字距，居中",
+                "dependencies": [
+                  "cube-front"
+                ],
+                "confidence": 0.7,
+                "mapping": "createText(content='Cubic', fontSize≈64, fontFamily='Georgia', alignment=center)"
+              },
+              {
+                "id": "subtitle-cn",
+                "type": "text",
+                "bounds": {
+                  "x": 350,
+                  "y": 305,
+                  "width": 120,
+                  "height": 26
+                },
+                "position": "标题正下方居中",
+                "layering": 13,
+                "geometry": "无衬线中文小字",
+                "colors": [
+                  "#1A1A1A"
+                ],
+                "gradients": [],
+                "effects": [
+                  "轻微抗锯齿"
+                ],
+                "typography": "sans-serif 中文，字号约 16–18px，字距略宽，居中",
+                "dependencies": [
+                  "title-cubic"
+                ],
+                "confidence": 0.75,
+                "mapping": "createText(content='立方渐变', fontSize≈18, fontFamily='sans-serif', alignment=center)"
+              }
+            ],
+            "spatialRelationships": [
+              "立方体占据画布中央约 55% 宽、80% 高，四周留白",
+              "四个十字标记分布在立方体四角外侧，右侧中部另有一个",
+              "垂直轴线沿合成中轴 x≈410 贯穿顶部并经标题上沿",
+              "标题与副标题位于立方体正面中心区域，完全覆盖渐变面上",
+              "整体层序：底色 → 柔影 → 立方体背面 → 右/顶面 → 正面 → 装饰线与十字 → 文字"
+            ],
+            "limitations": [
+              "参考图为授权像素，未提供精确色值/坐标，所有 bounds 与色值为目视估读",
+              "无渐变填充能力，渐变只能用叠层色块 + 模糊近似",
+              "无法加载指定字体文件，衬线体可能回退",
+              "十字的细线宽度与端点样式无法完全复刻",
+              "柔和羽化边缘的精确半径不可测"
+            ],
+            "confidence": 0.62
+          },
+          "creation": {
+            "intent": "在现有 820×460 合成中创建可编辑图层，近似复刻 Cubic 立方渐变海报",
+            "tasks": [
+              {
+                "id": "t1",
+                "description": "创建浅灰全幅背景层并设为底色",
+                "executionDomain": "scene",
+                "strategy": "compose",
+                "capabilityId": "createLayer",
+                "stepIds": [
+                  "s01"
+                ],
+                "dependencies": []
+              },
+              {
+                "id": "t2",
+                "description": "创建柔和投影与立方体暗部基底层",
+                "executionDomain": "scene",
+                "strategy": "compose",
+                "capabilityId": "createLayer",
+                "stepIds": [
+                  "s02",
+                  "s03"
+                ],
+                "dependencies": [
+                  "t1"
+                ]
+              },
+              {
+                "id": "t3",
+                "description": "用叠层色块近似青绿渐变正面与深色侧面/顶面",
+                "executionDomain": "scene",
+                "strategy": "compose",
+                "capabilityId": "createRectangle",
+                "stepIds": [
+                  "s04",
+                  "s05",
+                  "s06",
+                  "s07"
+                ],
+                "dependencies": [
+                  "t2"
+                ]
+              },
+              {
+                "id": "t4",
+                "description": "添加柔边与细微调色效果",
+                "executionDomain": "effect-forge",
+                "strategy": "reuse",
+                "capabilityId": "gaussianBlur",
+                "stepIds": [
+                  "s08",
+                  "s09"
+                ],
+                "dependencies": [
+                  "t3"
+                ]
+              },
+              {
+                "id": "t5",
+                "description": "添加十字装饰与中轴细线",
+                "executionDomain": "scene",
+                "strategy": "compose",
+                "capabilityId": "createRectangle",
+                "stepIds": [
+                  "s10",
+                  "s11"
+                ],
+                "dependencies": [
+                  "t4"
+                ]
+              },
+              {
+                "id": "t6",
+                "description": "添加标题与副标题文本",
+                "executionDomain": "scene",
+                "strategy": "generate",
+                "capabilityId": "createText",
+                "stepIds": [
+                  "s12",
+                  "s13"
+                ],
+                "dependencies": [
+                  "t5"
+                ]
+              }
+            ],
+            "warnings": [
+              "渐变与柔边为近似，非逐像素匹配",
+              "字体可能回退，需人工确认",
+              "坐标为目视估读，可能需微调"
+            ]
+          },
+          "steps": [
+            {
+              "id": "s01",
+              "label": "创建浅灰全幅背景",
+              "tool": "createLayer",
+              "arguments": {
+                "kind": "solid",
+                "name": "背景-浅灰",
+                "position": {
+                  "x": 410,
+                  "y": 230
+                },
+                "width": 820,
+                "height": 460
+              }
+            },
+            {
+              "id": "s02",
+              "label": "背景填充设为近白浅灰",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "00000000-0000-0000-0000-000000000000",
+                "color": {
+                  "r": 0.914,
+                  "g": 0.91,
+                  "b": 0.898,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s03",
+              "label": "创建柔和投影块（立方体外扩范围）",
+              "tool": "createRectangle",
+              "arguments": {
+                "name": "投影-柔影",
+                "position": {
+                  "x": 410,
+                  "y": 255
+                },
+                "width": 540,
+                "height": 400
+              }
+            },
+            {
+              "id": "s04",
+              "label": "投影块填中灰并加高斯模糊做柔影",
+              "tool": "addEffect",
+              "arguments": {
+                "layerId": "00000000-0000-0000-0000-000000000000",
+                "kind": "gaussianBlur"
+              }
+            },
+            {
+              "id": "s05",
+              "label": "创建立方体暗部基底（外轮廓）",
+              "tool": "createPolygon",
+              "arguments": {
+                "name": "立方体-暗基底",
+                "position": {
+                  "x": 410,
+                  "y": 232
+                },
+                "width": 450,
+                "height": 380
+              }
+            },
+            {
+              "id": "s06",
+              "label": "暗基底填深灰绿",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "00000000-0000-0000-0000-000000000000",
+                "color": {
+                  "r": 0.25,
+                  "g": 0.32,
+                  "b": 0.33,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s07",
+              "label": "创建右/顶面深色块（压暗纵深）",
+              "tool": "createRectangle",
+              "arguments": {
+                "name": "立方体-深色右侧面",
+                "position": {
+                  "x": 565,
+                  "y": 235
+                },
+                "width": 140,
+                "height": 350
+              }
+            },
+            {
+              "id": "s08",
+              "label": "深色面填近黑青灰",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "00000000-0000-0000-0000-000000000000",
+                "color": {
+                  "r": 0.07,
+                  "g": 0.11,
+                  "b": 0.13,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s09",
+              "label": "创建正面青绿主体块",
+              "tool": "createRectangle",
+              "arguments": {
+                "name": "立方体-正面青绿",
+                "position": {
+                  "x": 380,
+                  "y": 240
+                },
+                "width": 300,
+                "height": 340
+              }
+            },
+            {
+              "id": "s10",
+              "label": "正面填中青绿",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "00000000-0000-0000-0000-000000000000",
+                "color": {
+                  "r": 0.145,
+                  "g": 0.647,
+                  "b": 0.663,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s11",
+              "label": "创建中心较亮青绿叠层（伪渐变高光）",
+              "tool": "createEllipse",
+              "arguments": {
+                "name": "渐变叠层-中心亮",
+                "position": {
+                  "x": 380,
+                  "y": 220
+                },
+                "width": 220,
+                "height": 200
+              }
+            },
+            {
+              "id": "s12",
+              "label": "亮层填浅青并加模糊融合，形成柔和渐变",
+              "tool": "addEffect",
+              "arguments": {
+                "layerId": "00000000-0000-0000-0000-000000000000",
+                "kind": "gaussianBlur"
+              }
+            },
+            {
+              "id": "s13",
+              "label": "创建竖直细轴装饰线",
+              "tool": "createRectangle",
+              "arguments": {
+                "name": "装饰-中轴竖线",
+                "position": {
+                  "x": 410,
+                  "y": 130
+                },
+                "width": 2,
+                "height": 240
+              }
+            },
+            {
+              "id": "s14",
+              "label": "创建十字装饰（水平条）",
+              "tool": "createRectangle",
+              "arguments": {
+                "name": "装饰-十字横条",
+                "position": {
+                  "x": 135,
+                  "y": 55
+                },
+                "width": 22,
+                "height": 2
+              }
+            },
+            {
+              "id": "s15",
+              "label": "创建十字装饰（垂直条）",
+              "tool": "createRectangle",
+              "arguments": {
+                "name": "装饰-十字竖条",
+                "position": {
+                  "x": 135,
+                  "y": 55
+                },
+                "width": 2,
+                "height": 22
+              }
+            },
+            {
+              "id": "s16",
+              "label": "创建主标题 Cubic",
+              "tool": "createText",
+              "arguments": {
+                "content": "Cubic",
+                "name": "标题-Cubic",
+                "position": {
+                  "x": 410,
+                  "y": 268
+                },
+                "fontSize": 64,
+                "fontFamily": "Georgia",
+                "color": {
+                  "r": 0.06,
+                  "g": 0.07,
+                  "b": 0.08,
+                  "a": 1
+                },
+                "alignment": "center"
+              }
+            },
+            {
+              "id": "s17",
+              "label": "创建中文副标题 立方渐变",
+              "tool": "createText",
+              "arguments": {
+                "content": "立方渐变",
+                "name": "副标题-立方渐变",
+                "position": {
+                  "x": 410,
+                  "y": 318
+                },
+                "fontSize": 18,
+                "fontFamily": "sans-serif",
+                "color": {
+                  "r": 0.1,
+                  "g": 0.1,
+                  "b": 0.1,
+                  "a": 1
+                },
+                "alignment": "center"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "images": [
+      1
+    ]
+  },
+  {
+    "names": [
+      "submitProposal"
+    ],
+    "arguments": [
+      {
+        "name": "submitProposal",
+        "arguments": {
+          "id": "cubic-gradient-poster-v1",
+          "goal": "按参考像素复刻 820×460 的「Cubic 立方渐变」海报：浅灰底 + 底部柔影、青绿正面渐变的立方体（柔边 + 深色右侧面）、十字细线装饰与中轴细线、Cubic 高对比衬线标题与「立方渐变」副标题。工具集不支持渐变填充、模糊羽化与自动文字描边，故用多层实心矩形叠加 + setOpacity + gaussianBlur 效果近似渐变与柔边，字体族与字形依赖系统可用字体，无法逐像素还原。所有现有 Scene 数据均视为不可信输入，仅按像素参考推断。",
+          "risk": "medium",
+          "referenceAnalysis": {
+            "canvas": {
+              "width": 820,
+              "height": 460,
+              "background": "浅灰近白，约 #E8E8E6，底部略暗形成柔和暗角/地面阴影"
+            },
+            "visualElements": [
+              {
+                "id": "bg-base",
+                "type": "background",
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 820,
+                  "height": 460
+                },
+                "position": "全画布",
+                "layering": 0,
+                "geometry": "全幅矩形",
+                "colors": [
+                  "#E9E9E7",
+                  "#DCDCDA"
+                ],
+                "gradients": [
+                  "自左上到右下的极轻微亮度衰减（推断）"
+                ],
+                "effects": [
+                  "无明显噪点"
+                ],
+                "typography": "无",
+                "dependencies": [],
+                "confidence": 0.85,
+                "mapping": "createLayer kind=solid/rectangle 全幅 + setFill"
+              },
+              {
+                "id": "floor-shadow",
+                "type": "shadow",
+                "bounds": {
+                  "x": 60,
+                  "y": 300,
+                  "width": 700,
+                  "height": 150
+                },
+                "position": "画布下部，立方体正下方",
+                "layering": 1,
+                "geometry": "横向拉长的柔和椭圆/矩形",
+                "colors": [
+                  "#C9C9C7",
+                  "#E0E0DE"
+                ],
+                "gradients": [
+                  "中心深、边缘消失的径向衰减"
+                ],
+                "effects": [
+                  "大面积柔化、低不透明度"
+                ],
+                "typography": "无",
+                "dependencies": [
+                  "bg-base"
+                ],
+                "confidence": 0.6,
+                "mapping": "createEllipse + setFill(灰) + setOpacity≈0.25 + addEffect gaussianBlur"
+              },
+              {
+                "id": "cube-top-glow",
+                "type": "decoration",
+                "bounds": {
+                  "x": 130,
+                  "y": 55,
+                  "width": 420,
+                  "height": 120
+                },
+                "position": "立方体顶面/上部云雾状暗青",
+                "layering": 2,
+                "geometry": "柔化不规则块面",
+                "colors": [
+                  "#0E2A2E",
+                  "#1B4A50"
+                ],
+                "gradients": [
+                  "顶部深、向下渐浅"
+                ],
+                "effects": [
+                  "强柔边（blur）"
+                ],
+                "typography": "无",
+                "dependencies": [
+                  "bg-base"
+                ],
+                "confidence": 0.5,
+                "mapping": "createRectangle/ellipse + setFill(深青) + addEffect gaussianBlur（近似，无法真正实现云雾）"
+              },
+              {
+                "id": "cube-face",
+                "type": "geometry",
+                "bounds": {
+                  "x": 120,
+                  "y": 80,
+                  "width": 340,
+                  "height": 320
+                },
+                "position": "画面中部偏左，立方体正面",
+                "layering": 3,
+                "geometry": "近正方形，四角近似直角，边缘柔化 ~15-25px",
+                "colors": [
+                  "#1FA7A8",
+                  "#2BC0C2",
+                  "#0F6E74",
+                  "#8FBFC2"
+                ],
+                "gradients": [
+                  "中心偏左上亮青，向右下过渡为深青绿（推断）"
+                ],
+                "effects": [
+                  "边缘羽化、轻微外发光"
+                ],
+                "typography": "无",
+                "dependencies": [
+                  "bg-base",
+                  "floor-shadow"
+                ],
+                "confidence": 0.65,
+                "mapping": "createRectangle(340×320 @ center≈(290,240)) + setFill 中青 + addEffect gaussianBlur 小半径近似柔边；gaussianBlur 为近似而非真羽化"
+              },
+              {
+                "id": "cube-face-hi",
+                "type": "decoration",
+                "bounds": {
+                  "x": 150,
+                  "y": 110,
+                  "width": 240,
+                  "height": 210
+                },
+                "position": "正面偏左上高光区",
+                "layering": 4,
+                "geometry": "柔化矩形/椭圆",
+                "colors": [
+                  "#3FD0CF",
+                  "#7FE0DE"
+                ],
+                "gradients": [
+                  "径向亮青高光"
+                ],
+                "effects": [
+                  "blur 柔化"
+                ],
+                "typography": "无",
+                "dependencies": [
+                  "cube-face"
+                ],
+                "confidence": 0.45,
+                "mapping": "createEllipse + setFill 亮青 + setOpacity≈0.6 + addEffect gaussianBlur（伪高光）"
+              },
+              {
+                "id": "cube-side",
+                "type": "geometry",
+                "bounds": {
+                  "x": 455,
+                  "y": 85,
+                  "width": 130,
+                  "height": 290
+                },
+                "position": "立方体右侧面，向右收窄的梯形",
+                "layering": 5,
+                "geometry": "梯形（上短下长或反之），右缘更暗",
+                "colors": [
+                  "#0A3538",
+                  "#062025",
+                  "#123F42"
+                ],
+                "gradients": [
+                  "由左向右逐渐加深"
+                ],
+                "effects": [
+                  "边缘柔化"
+                ],
+                "typography": "无",
+                "dependencies": [
+                  "cube-face"
+                ],
+                "confidence": 0.55,
+                "mapping": "createPolygon 近似梯形（仅宽高参数，无法指定顶点）→ 若需精确侧边用 createPath 指定 6 数点/点 + setFill 深青 + blur"
+              },
+              {
+                "id": "guide-vline",
+                "type": "decoration",
+                "bounds": {
+                  "x": 289,
+                  "y": 5,
+                  "width": 2,
+                  "height": 330
+                },
+                "position": "画布中轴偏左，自上而下贯穿立方体上部",
+                "layering": 6,
+                "geometry": "细直线（含底部小圆点与下端短箭头感）",
+                "colors": [
+                  "#3A3A3A",
+                  "#6A6A6A"
+                ],
+                "gradients": [
+                  "无"
+                ],
+                "effects": [
+                  "无"
+                ],
+                "typography": "无",
+                "dependencies": [
+                  "bg-base"
+                ],
+                "confidence": 0.7,
+                "mapping": "createRectangle(2×330) 细条 + setFill 深灰；底部小圆点用 createEllipse + setOpacity"
+              },
+              {
+                "id": "plus-tl",
+                "type": "decoration",
+                "bounds": {
+                  "x": 128,
+                  "y": 42,
+                  "width": 26,
+                  "height": 26
+                },
+                "position": "立方体左上外角",
+                "layering": 6,
+                "geometry": "十字",
+                "colors": [
+                  "#333333"
+                ],
+                "gradients": [
+                  "无"
+                ],
+                "effects": [
+                  "无"
+                ],
+                "typography": "无",
+                "dependencies": [
+                  "bg-base"
+                ],
+                "confidence": 0.75,
+                "mapping": "两条细矩形交叉（createRectangle×2 或 createPath 十字）"
+              },
+              {
+                "id": "plus-tr",
+                "type": "decoration",
+                "bounds": {
+                  "x": 342,
+                  "y": 40,
+                  "width": 26,
+                  "height": 26
+                },
+                "position": "立方体右上外角",
+                "layering": 6,
+                "geometry": "十字",
+                "colors": [
+                  "#333333"
+                ],
+                "gradients": [
+                  "无"
+                ],
+                "effects": [
+                  "无"
+                ],
+                "typography": "无",
+                "dependencies": [
+                  "bg-base"
+                ],
+                "confidence": 0.75,
+                "mapping": "两条细矩形交叉"
+              },
+              {
+                "id": "plus-inner",
+                "type": "decoration",
+                "bounds": {
+                  "x": 170,
+                  "y": 108,
+                  "width": 22,
+                  "height": 22
+                },
+                "position": "正面左上内部（青底上）",
+                "layering": 7,
+                "geometry": "十字",
+                "colors": [
+                  "#1E6F72",
+                  "#3E9A9C"
+                ],
+                "gradients": [
+                  "无"
+                ],
+                "effects": [
+                  "无"
+                ],
+                "typography": "无",
+                "dependencies": [
+                  "cube-face"
+                ],
+                "confidence": 0.6,
+                "mapping": "两条细矩形交叉 + setFill 青灰"
+              },
+              {
+                "id": "plus-right",
+                "type": "decoration",
+                "bounds": {
+                  "x": 448,
+                  "y": 118,
+                  "width": 24,
+                  "height": 24
+                },
+                "position": "立方体右侧外角",
+                "layering": 7,
+                "geometry": "十字",
+                "colors": [
+                  "#333333"
+                ],
+                "gradients": [
+                  "无"
+                ],
+                "effects": [
+                  "无"
+                ],
+                "typography": "无",
+                "dependencies": [
+                  "cube-side"
+                ],
+                "confidence": 0.65,
+                "mapping": "两条细矩形交叉"
+              },
+              {
+                "id": "title-cubic",
+                "type": "text",
+                "bounds": {
+                  "x": 225,
+                  "y": 225,
+                  "width": 175,
+                  "height": 62
+                },
+                "position": "立方体正面偏下中部",
+                "layering": 8,
+                "geometry": "高对比衬线体（Didone 风格），首字母大写",
+                "colors": [
+                  "#111111"
+                ],
+                "gradients": [
+                  "无"
+                ],
+                "effects": [
+                  "无（背景已提供对比）"
+                ],
+                "typography": "衬线、粗笔画对比强、字号约 56-64px、居中",
+                "dependencies": [
+                  "cube-face"
+                ],
+                "confidence": 0.7,
+                "mapping": "createText content='Cubic' + setFont(可用衬线族，如 Didot/Playfair 近似) + setFontSize≈58 + setTextColor 近黑；字形依赖系统字体，无法保证一致"
+              },
+              {
+                "id": "subtitle",
+                "type": "text",
+                "bounds": {
+                  "x": 258,
+                  "y": 292,
+                  "width": 110,
+                  "height": 26
+                },
+                "position": "标题正下方",
+                "layering": 8,
+                "geometry": "无衬线小字，字距略宽",
+                "colors": [
+                  "#1A1A1A"
+                ],
+                "gradients": [
+                  "无"
+                ],
+                "effects": [
+                  "无"
+                ],
+                "typography": "无衬线、字号约 18-20px、居中、tracking 略正",
+                "dependencies": [
+                  "title-cubic",
+                  "cube-face"
+                ],
+                "confidence": 0.65,
+                "mapping": "createText content='立方渐变' + setFont 无衬线 + setFontSize≈19 + setTracking 小正值 + setTextAlignment center"
+              }
+            ],
+            "spatialRelationships": [
+              "立方体正面位于画面中部偏左，占据约 40% 宽度",
+              "深色右侧面紧贴正面右侧，向右收窄形成三维感",
+              "标题与副标题居中叠在正面青色区域内，水平中心与中轴细线基本对齐",
+              "四个十字装饰分别位于立方体左上、右上、右中和正面左上内部，构成对齐标记",
+              "底部阴影位于立方体正下方，宽度略大于立方体"
+            ],
+            "limitations": [
+              "工具集无渐变填充，多层实心色块 + 不透明度只能近似渐变，会出现色带",
+              "无真正羽化/渐变遮罩，柔边与云雾状顶部只能用 gaussianBlur 近似",
+              "无法描边文字或读取磁盘字体，标题字形与系统字体相关",
+              "createPolygon 仅接受宽高，无法精确控制梯形顶点，侧脸几何需用 createPath 近似",
+              "像素级边界为目测推断，非精确测量"
+            ],
+            "confidence": 0.6
+          },
+          "creation": {
+            "intent": "在 820×460 合成中用可编辑图层近似复刻参考海报：分层建立背景、阴影、立方体正面/侧面/高光、装饰细线与文字。",
+            "tasks": [
+              {
+                "id": "t-bg",
+                "description": "建立全幅浅灰背景与底部柔影层",
+                "executionDomain": "canvas",
+                "strategy": "compose",
+                "capabilityId": "layer.create",
+                "stepIds": [
+                  "s1",
+                  "s2",
+                  "s3"
+                ],
+                "dependencies": []
+              },
+              {
+                "id": "t-cube",
+                "description": "建立立方体正面、侧脸与高光近似层",
+                "executionDomain": "canvas",
+                "strategy": "compose",
+                "capabilityId": "layer.create",
+                "stepIds": [
+                  "s4",
+                  "s5",
+                  "s6",
+                  "s7",
+                  "s8"
+                ],
+                "dependencies": [
+                  "t-bg"
+                ]
+              },
+              {
+                "id": "t-deco",
+                "description": "建立十字装饰与中轴细线",
+                "executionDomain": "canvas",
+                "strategy": "compose",
+                "capabilityId": "layer.create",
+                "stepIds": [
+                  "s9",
+                  "s10"
+                ],
+                "dependencies": [
+                  "t-bg"
+                ]
+              },
+              {
+                "id": "t-text",
+                "description": "建立 Cubic 标题与立方渐变副标题",
+                "executionDomain": "canvas",
+                "strategy": "compose",
+                "capabilityId": "text.create",
+                "stepIds": [
+                  "s11",
+                  "s12"
+                ],
+                "dependencies": [
+                  "t-cube"
+                ]
+              }
+            ],
+            "warnings": [
+              "无渐变/羽化原生支持，需多层叠加近似",
+              "字体与字形依赖系统可用字体",
+              "边界为目测估计，执行后需人工微调"
+            ]
+          },
+          "steps": [
+            {
+              "id": "s1",
+              "label": "全幅浅灰背景",
+              "tool": "createLayer",
+              "arguments": {
+                "kind": "solid",
+                "name": "背景-浅灰",
+                "position": {
+                  "x": 410,
+                  "y": 230
+                },
+                "width": 820,
+                "height": 460
+              }
+            },
+            {
+              "id": "s2",
+              "label": "背景填充色",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "00000000-0000-0000-0000-000000000000",
+                "color": {
+                  "r": 0.913,
+                  "g": 0.913,
+                  "b": 0.904,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s3",
+              "label": "底部柔影椭圆",
+              "tool": "createEllipse",
+              "arguments": {
+                "name": "地面柔影",
+                "position": {
+                  "x": 410,
+                  "y": 372
+                },
+                "width": 700,
+                "height": 150
+              }
+            },
+            {
+              "id": "s4",
+              "label": "柔影填灰并降低不透明度",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "00000000-0000-0000-0000-000000000000",
+                "color": {
+                  "r": 0.76,
+                  "g": 0.76,
+                  "b": 0.75,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s5",
+              "label": "立方体正面主色块",
+              "tool": "createRectangle",
+              "arguments": {
+                "name": "立方体正面",
+                "position": {
+                  "x": 290,
+                  "y": 240
+                },
+                "width": 340,
+                "height": 320
+              }
+            },
+            {
+              "id": "s6",
+              "label": "正面填中青绿",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "00000000-0000-0000-0000-000000000000",
+                "color": {
+                  "r": 0.13,
+                  "g": 0.66,
+                  "b": 0.66,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s7",
+              "label": "正面左上亮青高光",
+              "tool": "createEllipse",
+              "arguments": {
+                "name": "正面高光",
+                "position": {
+                  "x": 270,
+                  "y": 215
+                },
+                "width": 240,
+                "height": 210
+              }
+            },
+            {
+              "id": "s8",
+              "label": "高光填亮青并可降低不透明度",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "00000000-0000-0000-0000-000000000000",
+                "color": {
+                  "r": 0.25,
+                  "g": 0.82,
+                  "b": 0.81,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s9",
+              "label": "右侧面深青梯形近似",
+              "tool": "createPath",
+              "arguments": {
+                "name": "立方体侧面",
+                "position": {
+                  "x": 520,
+                  "y": 230
+                },
+                "width": 130,
+                "height": 290,
+                "points": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  130,
+                  -10,
+                  0,
+                  0,
+                  0,
+                  0,
+                  130,
+                  290,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  300,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "id": "s10",
+              "label": "侧面填深青",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "00000000-0000-0000-0000-000000000000",
+                "color": {
+                  "r": 0.04,
+                  "g": 0.21,
+                  "b": 0.22,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s11",
+              "label": "Cubic 标题",
+              "tool": "createText",
+              "arguments": {
+                "content": "Cubic",
+                "name": "标题-Cubic",
+                "position": {
+                  "x": 312,
+                  "y": 256
+                },
+                "fontSize": 58,
+                "fontFamily": "Georgia",
+                "color": {
+                  "r": 0.07,
+                  "g": 0.07,
+                  "b": 0.07,
+                  "a": 1
+                },
+                "alignment": "center"
+              }
+            },
+            {
+              "id": "s12",
+              "label": "副标题立方渐变",
+              "tool": "createText",
+              "arguments": {
+                "content": "立方渐变",
+                "name": "副标题-立方渐变",
+                "position": {
+                  "x": 312,
+                  "y": 305
+                },
+                "fontSize": 19,
+                "fontFamily": "Noto Sans SC",
+                "color": {
+                  "r": 0.1,
+                  "g": 0.1,
+                  "b": 0.1,
+                  "a": 1
+                },
+                "alignment": "center"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "images": [
+      1
+    ]
+  },
+  {
+    "names": [
+      "submitProposal"
+    ],
+    "arguments": [
+      {
+        "name": "submitProposal",
+        "arguments": {
+          "id": "palette-contrast-hierarchy-v1",
+          "goal": "在 820×460 合成中重建\"浅灰底 + 青绿立方体渐变 + 深青右侧面 + 深灰细线与黑色标题\"的配色、对比与视觉层级：浅灰背景提供高对比底，青绿渐变立方体为最大色块（主视觉），深青右侧面制造明暗纵深，深灰细线为次级结构，黑色标题为最高对比焦点。层级顺序为背景 → 细线 → 立方体左面 → 右侧面 → 标题。注意：立方体用\"层叠矩形 + 旋转/缩放\"做可编辑近似，无法做真正的网格渐变；仅使用已注册工具，不执行任何写入。",
+          "steps": [
+            {
+              "id": "s1",
+              "label": "浅灰全幅背景（对比基准）",
+              "tool": "createLayer",
+              "arguments": {
+                "kind": "solid",
+                "name": "背景-浅灰",
+                "width": 820,
+                "height": 460,
+                "position": {
+                  "x": 410,
+                  "y": 230
+                },
+                "layerId": "aaaa1111-1111-4111-8111-111111111111"
+              }
+            },
+            {
+              "id": "s2",
+              "label": "背景填浅灰 #E9EAEC",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "aaaa1111-1111-4111-8111-111111111111",
+                "color": {
+                  "r": 0.914,
+                  "g": 0.918,
+                  "b": 0.925,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s3",
+              "label": "深灰细线（水平结构线，低对比次级元素）",
+              "tool": "createRectangle",
+              "arguments": {
+                "name": "细线-深灰",
+                "width": 700,
+                "height": 2,
+                "position": {
+                  "x": 410,
+                  "y": 330
+                },
+                "layerId": "bbbb2222-2222-4222-8222-222222222222"
+              }
+            },
+            {
+              "id": "s4",
+              "label": "细线填深灰 #6B6F76",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "bbbb2222-2222-4222-8222-222222222222",
+                "color": {
+                  "r": 0.42,
+                  "g": 0.435,
+                  "b": 0.463,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s5",
+              "label": "立方体左面-青绿主色块",
+              "tool": "createRectangle",
+              "arguments": {
+                "name": "立方体-左面",
+                "width": 200,
+                "height": 200,
+                "position": {
+                  "x": 330,
+                  "y": 230
+                },
+                "layerId": "cccc3333-3333-4333-8333-333333333333"
+              }
+            },
+            {
+              "id": "s6",
+              "label": "左面填青绿 #2FB6A0",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "cccc3333-3333-4333-8333-333333333333",
+                "color": {
+                  "r": 0.184,
+                  "g": 0.714,
+                  "b": 0.627,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s7",
+              "label": "左面加垂直缩放做明暗渐变近似（0.86~1.0）",
+              "tool": "addKeyframe",
+              "arguments": {
+                "layerId": "cccc3333-3333-4333-8333-333333333333",
+                "property": "scale",
+                "time": 0,
+                "value": {
+                  "x": 1,
+                  "y": 1
+                },
+                "interpolation": {
+                  "type": "linear"
+                }
+              }
+            },
+            {
+              "id": "s8",
+              "label": "渐变关键帧终点",
+              "tool": "addKeyframe",
+              "arguments": {
+                "layerId": "cccc3333-3333-4333-8333-333333333333",
+                "property": "scale",
+                "time": 5,
+                "value": {
+                  "x": 1,
+                  "y": 0.86
+                },
+                "interpolation": {
+                  "type": "linear"
+                }
+              }
+            },
+            {
+              "id": "s9",
+              "label": "立方体右侧面-深青（暗面纵深）",
+              "tool": "createPolygon",
+              "arguments": {
+                "name": "立方体-右侧面",
+                "width": 90,
+                "height": 200,
+                "position": {
+                  "x": 470,
+                  "y": 230
+                },
+                "layerId": "dddd4444-4444-4444-8444-444444444444"
+              }
+            },
+            {
+              "id": "s10",
+              "label": "右侧面填深青 #11615A",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "dddd4444-4444-4444-8444-444444444444",
+                "color": {
+                  "r": 0.067,
+                  "g": 0.38,
+                  "b": 0.353,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s11",
+              "label": "黑色标题（最高对比焦点）",
+              "tool": "createText",
+              "arguments": {
+                "content": "立方体",
+                "position": {
+                  "x": 410,
+                  "y": 400
+                },
+                "fontSize": 44,
+                "fontFamily": "Inter",
+                "color": {
+                  "r": 0,
+                  "g": 0,
+                  "b": 0,
+                  "a": 1
+                },
+                "alignment": "center",
+                "layerId": "eeee5555-5555-4555-8555-555555555555"
+              }
+            },
+            {
+              "id": "s12",
+              "label": "锁定层级：细线置底、标题置顶，保证视觉顺序",
+              "tool": "reorderLayer",
+              "arguments": {
+                "layerId": "bbbb2222-2222-4222-8222-222222222222",
+                "index": 1
+              }
+            }
+          ],
+          "risk": "medium",
+          "creation": {
+            "intent": "按参考图的极简配色重建三层视觉层级：浅灰背景（低层级、高对比底）、青绿立方体与深青暗面（主色块与纵深）、深灰细线与黑色标题（次级结构与视觉焦点）。",
+            "tasks": [
+              {
+                "id": "t1",
+                "description": "创建并填色的浅灰全幅背景，确立对比基准",
+                "executionDomain": "scene",
+                "strategy": "compose",
+                "capabilityId": "layer.solid.background",
+                "stepIds": [
+                  "s1",
+                  "s2"
+                ],
+                "dependencies": []
+              },
+              {
+                "id": "t2",
+                "description": "创建深灰细线结构元素并置于底层",
+                "executionDomain": "scene",
+                "strategy": "compose",
+                "capabilityId": "shape.rectangle.hairline",
+                "stepIds": [
+                  "s3",
+                  "s4",
+                  "s12"
+                ],
+                "dependencies": [
+                  "t1"
+                ]
+              },
+              {
+                "id": "t3",
+                "description": "用矩形+缩放关键帧近似青绿渐变立方体左面",
+                "executionDomain": "animation",
+                "strategy": "compose",
+                "capabilityId": "shape.rectangle.gradientProxy",
+                "stepIds": [
+                  "s5",
+                  "s6",
+                  "s7",
+                  "s8"
+                ],
+                "dependencies": [
+                  "t1"
+                ]
+              },
+              {
+                "id": "t4",
+                "description": "创建深青右侧面形成明暗纵深",
+                "executionDomain": "scene",
+                "strategy": "compose",
+                "capabilityId": "shape.polygon.darkFace",
+                "stepIds": [
+                  "s9",
+                  "s10"
+                ],
+                "dependencies": [
+                  "t3"
+                ]
+              },
+              {
+                "id": "t5",
+                "description": "创建黑色标题作为最高对比焦点",
+                "executionDomain": "scene",
+                "strategy": "compose",
+                "capabilityId": "text.title.black",
+                "stepIds": [
+                  "s11"
+                ],
+                "dependencies": [
+                  "t1"
+                ]
+              }
+            ],
+            "warnings": [
+              "无法创建真正的网格/线性渐变，青绿渐变仅用缩放关键帧粗略近似（可编辑但非真实渐变）。",
+              "右侧面用 polygon 近似侧棱，透视角度取决于默认多边形边数，可能需要人工微调。",
+              "参考图为极暗背景，本方案按用户目标文字改为浅灰底，因此背景对比方向与参考图相反。"
+            ]
+          }
+        }
+      }
+    ],
+    "images": [
+      1
+    ]
+  },
+  {
+    "names": [
+      "submitProposal"
+    ],
+    "arguments": [
+      {
+        "name": "submitProposal",
+        "arguments": {
+          "id": "typography-hierarchy-cubic",
+          "goal": "在 820×460 合成中建立居中的两级文字层级：Cubic 衬线大标题（约相当于含帽高比 0.30 的尺度，fontSize 96）+ 中文小号副标题（fontSize 30，即约 0.31 倍），并加入一条很轻的分隔线来稳定基线轴。层级靠「字号比 3.2:1、字重不可调、追踪与行距微调」建立；由于工具集不支持字重、字色以外的斜体/字重变化，也无法替换为真正的渐变填充或排版级渐变色，副标题的「渐变」只能用逐字分层 + 不同透明度/相近色调的近似手法在局限内表达（需人工确认是否接受），但本提案为保持可编辑性，副标题仍作单一文本层使用统一颜色。所有可读性判断基于合成尺寸，未做真实渲染测量。",
+          "risk": "low",
+          "steps": [
+            {
+              "id": "bg",
+              "label": "创建深底背景矩形铺满合成",
+              "tool": "createRectangle",
+              "arguments": {
+                "name": "背景-深蓝",
+                "position": {
+                  "x": 410,
+                  "y": 230
+                },
+                "width": 820,
+                "height": 460
+              }
+            },
+            {
+              "id": "bg-fill",
+              "label": "背景填充为画面中的深蓝近黑",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "00000000-0000-0000-0000-000000000000",
+                "color": {
+                  "r": 0.043,
+                  "g": 0.055,
+                  "b": 0.086,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "title",
+              "label": "创建衬线大标题「Cubic」，居中、fontSize 96",
+              "tool": "createText",
+              "arguments": {
+                "content": "Cubic",
+                "position": {
+                  "x": 410,
+                  "y": 196
+                },
+                "width": 700,
+                "height": 130,
+                "fontSize": 96,
+                "fontFamily": "Times New Roman",
+                "color": {
+                  "r": 0.94,
+                  "g": 0.94,
+                  "b": 0.96,
+                  "a": 1
+                },
+                "alignment": "center",
+                "name": "标题-Cubic"
+              }
+            },
+            {
+              "id": "title-tracking",
+              "label": "标题略收紧字距(-10)以获得紧凑大标题节奏",
+              "tool": "setTracking",
+              "arguments": {
+                "layerId": "00000000-0000-0000-0000-000000000000",
+                "value": -10
+              }
+            },
+            {
+              "id": "sub",
+              "label": "创建中文副标题「立方渐变」，fontSize 30，居中对齐",
+              "tool": "createText",
+              "arguments": {
+                "content": "立方渐变",
+                "position": {
+                  "x": 410,
+                  "y": 286
+                },
+                "width": 600,
+                "height": 52,
+                "fontSize": 30,
+                "fontFamily": "Source Han Serif SC",
+                "color": {
+                  "r": 0.78,
+                  "g": 0.79,
+                  "b": 0.84,
+                  "a": 1
+                },
+                "alignment": "center",
+                "name": "副标题-立方渐变"
+              }
+            },
+            {
+              "id": "sub-tracking",
+              "label": "副标题放宽字距(+80)以拉开层级气质差距",
+              "tool": "setTracking",
+              "arguments": {
+                "layerId": "00000000-0000-0000-0000-000000000000",
+                "value": 80
+              }
+            },
+            {
+              "id": "sub-leading",
+              "label": "副标题行距设为 1.4(相对 fontSize)，处于可读区间",
+              "tool": "setLeading",
+              "arguments": {
+                "layerId": "00000000-0000-0000-0000-000000000000",
+                "value": 1.4
+              }
+            },
+            {
+              "id": "rule",
+              "label": "创建细分隔线（宽 120 高 2）居中于标题与副标题之间",
+              "tool": "createRectangle",
+              "arguments": {
+                "name": "层级分隔线",
+                "position": {
+                  "x": 410,
+                  "y": 248
+                },
+                "width": 120,
+                "height": 2
+              }
+            },
+            {
+              "id": "rule-fill",
+              "label": "分隔线填充为中灰，弱化存在感",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "00000000-0000-0000-0000-000000000000",
+                "color": {
+                  "r": 0.55,
+                  "g": 0.56,
+                  "b": 0.62,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "rule-opacity",
+              "label": "分隔线不透明度降到 0.5，避免与文字争夺注意力",
+              "tool": "setOpacity",
+              "arguments": {
+                "layerId": "00000000-0000-0000-0000-000000000000",
+                "value": 0.5
+              }
+            },
+            {
+              "id": "verify",
+              "label": "逐层核对：字号比 96:30≈3.2、对齐轴 x=410、行距与追踪处于可读区间；字体缺失时替换为可用衬线体并复检中文回退",
+              "tool": "setTransformOrientation",
+              "arguments": {
+                "orientation": "local"
+              }
+            }
+          ],
+          "creation": {
+            "intent": "构建两级居中文字层级，用字号比、追踪、行距与弱化色差表达主副关系，并补一条极细分隔线稳定视觉轴。",
+            "tasks": [
+              {
+                "id": "t1",
+                "description": "铺深蓝背景，作为文字对比度基底",
+                "executionDomain": "scene",
+                "strategy": "compose",
+                "capabilityId": "shape.rectangle",
+                "stepIds": [
+                  "bg",
+                  "bg-fill",
+                  "rule",
+                  "rule-fill",
+                  "rule-opacity"
+                ],
+                "dependencies": []
+              },
+              {
+                "id": "t2",
+                "description": "创建主标题与副标题，设定字号、颜色、字体与居中",
+                "executionDomain": "scene",
+                "strategy": "compose",
+                "capabilityId": "text.create",
+                "stepIds": [
+                  "title",
+                  "sub"
+                ],
+                "dependencies": [
+                  "t1"
+                ]
+              },
+              {
+                "id": "t3",
+                "description": "用追踪与行距微调排版层级与可读性",
+                "executionDomain": "property",
+                "strategy": "modify-existing",
+                "capabilityId": "text.tracking-leading",
+                "stepIds": [
+                  "title-tracking",
+                  "sub-tracking",
+                  "sub-leading"
+                ],
+                "dependencies": [
+                  "t2"
+                ]
+              },
+              {
+                "id": "t4",
+                "description": "核对层级、轴对齐与字体可用性，必要时替换字体后复检",
+                "executionDomain": "canvas",
+                "strategy": "modify-existing",
+                "capabilityId": "review.typography",
+                "stepIds": [
+                  "verify"
+                ],
+                "dependencies": [
+                  "t3"
+                ]
+              }
+            ],
+            "warnings": [
+              "副标题的「渐变」无法用文字填充渐变色实现，仅能用逐字分层+透明度/色调近似；本提案为保持可编辑性未采用该近似。",
+              "工具集不能读取磁盘字体，fontFamily 仅为名称引用，缺失时会回退，需人工确认渲染结果。",
+              "无法设置字重/斜体，也无法做真实渲染测量，可读性判断为估算。",
+              "背景色取自参考图的深蓝近黑，为估计值。"
+            ]
+          }
+        }
+      }
+    ],
+    "images": [
+      1
+    ]
+  },
+  {
+    "names": [
+      "submitPlan"
+    ],
+    "arguments": [
+      {
+        "name": "submitPlan",
+        "arguments": {
+          "id": "cubic-gradient-rebuild-v2",
+          "goal": "在 820×460 合成内用原生可编辑图层复刻「Cubic 立方渐变」：浅灰满幅底、青绿渐变立方体正面（原生 radialGradient 节点）、深青右侧面（透视四边形路径）、gaussianBlur 柔边与底部柔和投影、中轴细线与四角十字装饰、Georgia 衬线标题 Cubic 与中文副标题「立方渐变」。不导入参考图，不删除任何已有图层。",
+          "risk": "medium",
+          "steps": [
+            {
+              "id": "s01",
+              "label": "满幅浅灰背景层",
+              "tool": "createLayer",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000001",
+                "kind": "solid",
+                "name": "BG-浅灰底",
+                "position": {
+                  "x": 410,
+                  "y": 230
+                },
+                "width": 820,
+                "height": 460
+              }
+            },
+            {
+              "id": "s02",
+              "label": "背景填充浅灰 (#EAE9E7)",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000001",
+                "color": {
+                  "r": 0.918,
+                  "g": 0.914,
+                  "b": 0.906,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s03",
+              "label": "立方体下方柔和投影椭圆",
+              "tool": "createEllipse",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000002",
+                "name": "SHADOW-落地柔影",
+                "position": {
+                  "x": 430,
+                  "y": 390
+                },
+                "width": 620,
+                "height": 130
+              }
+            },
+            {
+              "id": "s04",
+              "label": "投影填充中灰",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000002",
+                "color": {
+                  "r": 0.72,
+                  "g": 0.706,
+                  "b": 0.694,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s05",
+              "label": "投影降低不透明度",
+              "tool": "setOpacity",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000002",
+                "value": 0.55
+              }
+            },
+            {
+              "id": "s06",
+              "label": "投影高斯模糊近似柔化",
+              "tool": "addEffect",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000002",
+                "kind": "gaussianBlur",
+                "effectId": "b1a00001-0000-4000-8000-0000000000f1"
+              }
+            },
+            {
+              "id": "s07",
+              "label": "投影模糊半径 70",
+              "tool": "setEffectParameter",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000002",
+                "effectId": "b1a00001-0000-4000-8000-0000000000f1",
+                "key": "radius",
+                "value": 70
+              }
+            },
+            {
+              "id": "s08",
+              "label": "立方体正面基底（青绿实体块）",
+              "tool": "createRectangle",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000003",
+                "name": "CUBE-正面基底",
+                "position": {
+                  "x": 520,
+                  "y": 278
+                },
+                "width": 470,
+                "height": 320
+              }
+            },
+            {
+              "id": "s09",
+              "label": "正面基底填充中青绿",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000003",
+                "color": {
+                  "r": 0.129,
+                  "g": 0.651,
+                  "b": 0.651,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s10",
+              "label": "正面径向渐变节点（中心亮青→边缘深青）",
+              "tool": "createNode",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000003",
+                "nodeId": "b1a00001-0000-4000-8000-0000000000a1",
+                "type": "radialGradient",
+                "position": {
+                  "x": 120,
+                  "y": 0
+                }
+              }
+            },
+            {
+              "id": "s11",
+              "label": "渐变中心点略偏左上",
+              "tool": "setNodeParameter",
+              "arguments": {
+                "nodeId": "b1a00001-0000-4000-8000-0000000000a1",
+                "key": "center",
+                "value": {
+                  "x": 0.42,
+                  "y": 0.4
+                }
+              }
+            },
+            {
+              "id": "s12",
+              "label": "渐变半径 0.62",
+              "tool": "setNodeParameter",
+              "arguments": {
+                "nodeId": "b1a00001-0000-4000-8000-0000000000a1",
+                "key": "radius",
+                "value": 0.62
+              }
+            },
+            {
+              "id": "s13",
+              "label": "渐变色标：亮青→青绿→深青",
+              "tool": "setNodeParameter",
+              "arguments": {
+                "nodeId": "b1a00001-0000-4000-8000-0000000000a1",
+                "key": "stops",
+                "value": [
+                  0,
+                  0.36,
+                  0.83,
+                  0.82,
+                  1,
+                  0.5,
+                  0.22,
+                  0.68,
+                  0.68,
+                  1,
+                  1,
+                  0.09,
+                  0.42,
+                  0.44,
+                  1
+                ]
+              }
+            },
+            {
+              "id": "s14",
+              "label": "立方体正面整体柔边（近似羽化）",
+              "tool": "addEffect",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000003",
+                "kind": "gaussianBlur",
+                "effectId": "b1a00001-0000-4000-8000-0000000000f2"
+              }
+            },
+            {
+              "id": "s15",
+              "label": "正面柔边半径 22",
+              "tool": "setEffectParameter",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000003",
+                "effectId": "b1a00001-0000-4000-8000-0000000000f2",
+                "key": "radius",
+                "value": 22
+              }
+            },
+            {
+              "id": "s16",
+              "label": "立方体右侧深色面（透视四边形路径）",
+              "tool": "createPath",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000004",
+                "name": "CUBE-右侧暗面",
+                "position": {
+                  "x": 620,
+                  "y": 278
+                },
+                "width": 220,
+                "height": 330,
+                "points": [
+                  220,
+                  -20,
+                  0,
+                  0,
+                  0,
+                  0,
+                  340,
+                  40,
+                  0,
+                  0,
+                  0,
+                  0,
+                  330,
+                  350,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  300,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "id": "s17",
+              "label": "右侧暗面填充深青",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000004",
+                "color": {
+                  "r": 0.055,
+                  "g": 0.302,
+                  "b": 0.318,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s18",
+              "label": "右侧暗面柔边",
+              "tool": "addEffect",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000004",
+                "kind": "gaussianBlur",
+                "effectId": "b1a00001-0000-4000-8000-0000000000f3"
+              }
+            },
+            {
+              "id": "s19",
+              "label": "暗面柔边半径 18",
+              "tool": "setEffectParameter",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000004",
+                "effectId": "b1a00001-0000-4000-8000-0000000000f3",
+                "key": "radius",
+                "value": 18
+              }
+            },
+            {
+              "id": "s20",
+              "label": "立方体上沿暗灰渐隐带（近似柔和过渡）",
+              "tool": "createRectangle",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000005",
+                "name": "CUBE-上沿暗带",
+                "position": {
+                  "x": 540,
+                  "y": 175
+                },
+                "width": 460,
+                "height": 110
+              }
+            },
+            {
+              "id": "s21",
+              "label": "上沿暗带填充深灰",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000005",
+                "color": {
+                  "r": 0.29,
+                  "g": 0.31,
+                  "b": 0.32,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s22",
+              "label": "上沿暗带低不透明度",
+              "tool": "setOpacity",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000005",
+                "value": 0.42
+              }
+            },
+            {
+              "id": "s23",
+              "label": "上沿暗带高斯模糊",
+              "tool": "addEffect",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000005",
+                "kind": "gaussianBlur",
+                "effectId": "b1a00001-0000-4000-8000-0000000000f4"
+              }
+            },
+            {
+              "id": "s24",
+              "label": "上沿暗带模糊半径 55",
+              "tool": "setEffectParameter",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000005",
+                "effectId": "b1a00001-0000-4000-8000-0000000000f4",
+                "key": "radius",
+                "value": 55
+              }
+            },
+            {
+              "id": "s25",
+              "label": "中轴竖向细线",
+              "tool": "createRectangle",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000006",
+                "name": "DECO-中轴细线",
+                "position": {
+                  "x": 600,
+                  "y": 205
+                },
+                "width": 2,
+                "height": 410
+              }
+            },
+            {
+              "id": "s26",
+              "label": "中轴细线填深灰",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000006",
+                "color": {
+                  "r": 0.22,
+                  "g": 0.23,
+                  "b": 0.24,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s27",
+              "label": "中轴细线不透明度 0.75",
+              "tool": "setOpacity",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000006",
+                "value": 0.75
+              }
+            },
+            {
+              "id": "s28",
+              "label": "中轴底部小圆点",
+              "tool": "createEllipse",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000007",
+                "name": "DECO-中轴端点",
+                "position": {
+                  "x": 600,
+                  "y": 400
+                },
+                "width": 8,
+                "height": 8
+              }
+            },
+            {
+              "id": "s29",
+              "label": "端点填深灰",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000007",
+                "color": {
+                  "r": 0.22,
+                  "g": 0.23,
+                  "b": 0.24,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s30",
+              "label": "十字标记-左上（横线）",
+              "tool": "createRectangle",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000008",
+                "name": "DECO-十字左上-横",
+                "position": {
+                  "x": 262,
+                  "y": 68
+                },
+                "width": 26,
+                "height": 2
+              }
+            },
+            {
+              "id": "s31",
+              "label": "十字标记-左上（竖线）",
+              "tool": "createRectangle",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000009",
+                "name": "DECO-十字左上-竖",
+                "position": {
+                  "x": 262,
+                  "y": 68
+                },
+                "width": 2,
+                "height": 26
+              }
+            },
+            {
+              "id": "s32",
+              "label": "十字标记-右上（横线）",
+              "tool": "createRectangle",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-00000000000a",
+                "name": "DECO-十字右上-横",
+                "position": {
+                  "x": 812,
+                  "y": 68
+                },
+                "width": 26,
+                "height": 2
+              }
+            },
+            {
+              "id": "s33",
+              "label": "十字标记-右上（竖线）",
+              "tool": "createRectangle",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-00000000000b",
+                "name": "DECO-十字右上-竖",
+                "position": {
+                  "x": 812,
+                  "y": 68
+                },
+                "width": 2,
+                "height": 26
+              }
+            },
+            {
+              "id": "s34",
+              "label": "十字标记-内侧（横线）",
+              "tool": "createRectangle",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-00000000000c",
+                "name": "DECO-十字内侧-横",
+                "position": {
+                  "x": 348,
+                  "y": 152
+                },
+                "width": 20,
+                "height": 2
+              }
+            },
+            {
+              "id": "s35",
+              "label": "十字标记-内侧（竖线）",
+              "tool": "createRectangle",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-00000000000d",
+                "name": "DECO-十字内侧-竖",
+                "position": {
+                  "x": 348,
+                  "y": 152
+                },
+                "width": 2,
+                "height": 20
+              }
+            },
+            {
+              "id": "s36",
+              "label": "十字标记-右侧（横线）",
+              "tool": "createRectangle",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-00000000000e",
+                "name": "DECO-十字右侧-横",
+                "position": {
+                  "x": 810,
+                  "y": 178
+                },
+                "width": 22,
+                "height": 2
+              }
+            },
+            {
+              "id": "s37",
+              "label": "十字标记-右侧（竖线）",
+              "tool": "createRectangle",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-00000000000f",
+                "name": "DECO-十字右侧-竖",
+                "position": {
+                  "x": 810,
+                  "y": 178
+                },
+                "width": 2,
+                "height": 22
+              }
+            },
+            {
+              "id": "s38",
+              "label": "外部十字填深灰",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000008",
+                "color": {
+                  "r": 0.24,
+                  "g": 0.25,
+                  "b": 0.26,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s39",
+              "label": "Cubic 衬线标题",
+              "tool": "createText",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000010",
+                "name": "TEXT-Cubic",
+                "content": "Cubic",
+                "position": {
+                  "x": 560,
+                  "y": 258
+                },
+                "width": 340,
+                "height": 110,
+                "fontSize": 78,
+                "fontFamily": "Georgia, serif",
+                "color": {
+                  "r": 0.06,
+                  "g": 0.07,
+                  "b": 0.07,
+                  "a": 1
+                },
+                "alignment": "center"
+              }
+            },
+            {
+              "id": "s40",
+              "label": "标题字距微收",
+              "tool": "setTracking",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000010",
+                "value": -5
+              }
+            },
+            {
+              "id": "s41",
+              "label": "中文副标题「立方渐变」",
+              "tool": "createText",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000011",
+                "name": "TEXT-立方渐变",
+                "content": "立方渐变",
+                "position": {
+                  "x": 560,
+                  "y": 320
+                },
+                "width": 300,
+                "height": 44,
+                "fontSize": 24,
+                "fontFamily": "Noto Sans SC",
+                "color": {
+                  "r": 0.1,
+                  "g": 0.11,
+                  "b": 0.11,
+                  "a": 1
+                },
+                "alignment": "center"
+              }
+            },
+            {
+              "id": "s42",
+              "label": "副标题字距放宽",
+              "tool": "setTracking",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000011",
+                "value": 40
+              }
+            },
+            {
+              "id": "s43",
+              "label": "图处理图自动左到右排布",
+              "tool": "layoutGraph",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000003"
+              }
+            }
+          ],
+          "creation": {
+            "intent": "在 820×460 合成内以原生可编辑图层复刻参考海报：浅灰满幅底、青绿渐变立方体（正面用原生 radialGradient 节点近似渐变、右侧面用透视四边形路径）、gaussianBlur 柔边与底部柔和投影、中轴细线 + 四角十字装饰、Georgia 衬线标题与中文副标题。参考图为 410×230 视觉稿，全部坐标按 2× 换算为合成像素。不导入参考图、不删除已有图层。",
+            "tasks": [
+              {
+                "id": "t1",
+                "description": "建立满幅浅灰背景作为底层与对比基准",
+                "executionDomain": "scene",
+                "strategy": "generate",
+                "capabilityId": "createLayer(kind=solid)+setFill",
+                "stepIds": [
+                  "s01",
+                  "s02"
+                ],
+                "dependencies": []
+              },
+              {
+                "id": "t2",
+                "description": "底部柔和投影：椭圆 + 中灰填充 + 低不透明度 + gaussianBlur 近似柔化",
+                "executionDomain": "compositing",
+                "strategy": "reuse",
+                "capabilityId": "gaussianBlur",
+                "stepIds": [
+                  "s03",
+                  "s04",
+                  "s05",
+                  "s06",
+                  "s07"
+                ],
+                "dependencies": [
+                  "t1"
+                ]
+              },
+              {
+                "id": "t3",
+                "description": "立方体正面：实体青绿基底 + 原生 radialGradient 节点近似中心亮青/边缘深青的渐变 + 整体柔边",
+                "executionDomain": "compositing",
+                "strategy": "reuse",
+                "capabilityId": "radialGradient+gaussianBlur",
+                "stepIds": [
+                  "s08",
+                  "s09",
+                  "s10",
+                  "s11",
+                  "s12",
+                  "s13",
+                  "s14",
+                  "s15"
+                ],
+                "dependencies": [
+                  "t1",
+                  "t2"
+                ]
+              },
+              {
+                "id": "t4",
+                "description": "右侧深色面：带真实控制点的透视四边形路径 + 深青填充 + 柔边",
+                "executionDomain": "scene",
+                "strategy": "generate",
+                "capabilityId": "createPath+setFill+gaussianBlur",
+                "stepIds": [
+                  "s16",
+                  "s17",
+                  "s18",
+                  "s19"
+                ],
+                "dependencies": [
+                  "t3"
+                ]
+              },
+              {
+                "id": "t5",
+                "description": "立方体上沿暗灰渐隐带，近似顶部柔和过渡",
+                "executionDomain": "compositing",
+                "strategy": "reuse",
+                "capabilityId": "gaussianBlur",
+                "stepIds": [
+                  "s20",
+                  "s21",
+                  "s22",
+                  "s23",
+                  "s24"
+                ],
+                "dependencies": [
+                  "t3"
+                ]
+              },
+              {
+                "id": "t6",
+                "description": "细线装饰：中轴竖线 + 端点圆点 + 四角十字标记（细矩形交叉）",
+                "executionDomain": "scene",
+                "strategy": "generate",
+                "capabilityId": "createRectangle+createEllipse+setFill",
+                "stepIds": [
+                  "s25",
+                  "s26",
+                  "s27",
+                  "s28",
+                  "s29",
+                  "s30",
+                  "s31",
+                  "s32",
+                  "s33",
+                  "s34",
+                  "s35",
+                  "s36",
+                  "s37",
+                  "s38"
+                ],
+                "dependencies": [
+                  "t1"
+                ]
+              },
+              {
+                "id": "t7",
+                "description": "排版层级：Georgia 衬线大标题 Cubic 与中文副标题「立方渐变」，居中轴对齐并微调字距",
+                "executionDomain": "property",
+                "strategy": "generate",
+                "capabilityId": "createText+setTracking",
+                "stepIds": [
+                  "s39",
+                  "s40",
+                  "s41",
+                  "s42"
+                ],
+                "dependencies": [
+                  "t3"
+                ]
+              },
+              {
+                "id": "t8",
+                "description": "对含渐变节点的图层执行图自动排布，保持连接与 ID 不变",
+                "executionDomain": "compositing",
+                "strategy": "modify-existing",
+                "capabilityId": "layoutGraph",
+                "stepIds": [
+                  "s43"
+                ],
+                "dependencies": [
+                  "t3",
+                  "t4"
+                ]
+              }
+            ],
+            "warnings": [
+              "原生工具无真正的线性/网格渐变填充，立方体正面渐变由原生 radialGradient 节点（中心亮青→边缘深青）近似，非参考图可能存在的线性渐变方向。",
+              "无真正的羽化/3D 透视：柔边由 gaussianBlur 近似（会同时柔化内容），右侧暗面为 2D 四边形近似，非精确透视测量。",
+              "字体不能从磁盘读取，Georgia / Noto Sans SC 仅为族名引用，缺失时由系统回退，字形无法逐像素还原。",
+              "参考原图为 410×230，全部坐标按 2× 换算为 820×460 像素估计值，渲染比对后建议最多 3 轮局部修正（优先修立方体边界、标题基线、细线位置）。",
+              "本方案不导入参考图、不删除任何已有图层；若合成中已有同名内容需人工重命名而非覆盖。"
+            ]
+          }
+        }
+      }
+    ],
+    "images": [
+      1
+    ]
+  },
+  {
+    "names": [
+      "submitPlan"
+    ],
+    "arguments": [
+      {
+        "name": "submitPlan",
+        "arguments": {
+          "id": "cubic-gradient-rebuild-v3",
+          "goal": "在 820×460 合成内用原生可编辑图层复刻「Cubic 立方渐变」：浅灰满幅底、青绿渐变立方体正面（原生 radialGradient 节点）、深青右侧面（透视四边形路径）、gaussianBlur 柔边与底部柔和投影、中轴细线与四角十字装饰、Georgia 衬线标题 Cubic 与中文副标题「立方渐变」。不导入参考图，不删除任何已有图层。",
+          "risk": "medium",
+          "steps": [
+            {
+              "id": "s01",
+              "label": "满幅浅灰背景层",
+              "tool": "createLayer",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000001",
+                "kind": "solid",
+                "name": "BG-浅灰底",
+                "position": {
+                  "x": 410,
+                  "y": 230
+                },
+                "width": 820,
+                "height": 460
+              }
+            },
+            {
+              "id": "s02",
+              "label": "背景填充浅灰 (#EAE9E7)",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000001",
+                "color": {
+                  "r": 0.918,
+                  "g": 0.914,
+                  "b": 0.906,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s03",
+              "label": "立方体下方柔和投影椭圆",
+              "tool": "createEllipse",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000002",
+                "name": "SHADOW-落地柔影",
+                "position": {
+                  "x": 430,
+                  "y": 390
+                },
+                "width": 620,
+                "height": 130
+              }
+            },
+            {
+              "id": "s04",
+              "label": "投影填充中灰",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000002",
+                "color": {
+                  "r": 0.72,
+                  "g": 0.706,
+                  "b": 0.694,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s05",
+              "label": "投影降低不透明度",
+              "tool": "setOpacity",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000002",
+                "value": 0.55
+              }
+            },
+            {
+              "id": "s06",
+              "label": "投影高斯模糊近似柔化",
+              "tool": "addEffect",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000002",
+                "kind": "gaussianBlur",
+                "effectId": "b1a00001-0000-4000-8000-0000000000f1"
+              }
+            },
+            {
+              "id": "s07",
+              "label": "投影模糊半径 70",
+              "tool": "setEffectParameter",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000002",
+                "effectId": "b1a00001-0000-4000-8000-0000000000f1",
+                "key": "radius",
+                "value": 70
+              }
+            },
+            {
+              "id": "s08",
+              "label": "立方体正面基底（青绿实体块）",
+              "tool": "createRectangle",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000003",
+                "name": "CUBE-正面基底",
+                "position": {
+                  "x": 520,
+                  "y": 278
+                },
+                "width": 470,
+                "height": 320
+              }
+            },
+            {
+              "id": "s09",
+              "label": "正面基底填充中青绿",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000003",
+                "color": {
+                  "r": 0.129,
+                  "g": 0.651,
+                  "b": 0.651,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s10",
+              "label": "正面径向渐变节点（中心亮青→边缘深青）",
+              "tool": "createNode",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000003",
+                "nodeId": "b1a00001-0000-4000-8000-0000000000a1",
+                "type": "radialGradient",
+                "position": {
+                  "x": 120,
+                  "y": 0
+                }
+              }
+            },
+            {
+              "id": "s11",
+              "label": "渐变中心点略偏左上",
+              "tool": "setNodeParameter",
+              "arguments": {
+                "nodeId": "b1a00001-0000-4000-8000-0000000000a1",
+                "key": "center",
+                "value": {
+                  "x": 0.42,
+                  "y": 0.4
+                }
+              }
+            },
+            {
+              "id": "s12",
+              "label": "渐变半径 0.62",
+              "tool": "setNodeParameter",
+              "arguments": {
+                "nodeId": "b1a00001-0000-4000-8000-0000000000a1",
+                "key": "radius",
+                "value": 0.62
+              }
+            },
+            {
+              "id": "s13",
+              "label": "渐变色标：亮青→青绿→深青",
+              "tool": "setNodeParameter",
+              "arguments": {
+                "nodeId": "b1a00001-0000-4000-8000-0000000000a1",
+                "key": "stops",
+                "value": [
+                  0,
+                  0.36,
+                  0.83,
+                  0.82,
+                  1,
+                  0.5,
+                  0.22,
+                  0.68,
+                  0.68,
+                  1,
+                  1,
+                  0.09,
+                  0.42,
+                  0.44,
+                  1
+                ]
+              }
+            },
+            {
+              "id": "s14",
+              "label": "立方体正面整体柔边（近似羽化）",
+              "tool": "addEffect",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000003",
+                "kind": "gaussianBlur",
+                "effectId": "b1a00001-0000-4000-8000-0000000000f2"
+              }
+            },
+            {
+              "id": "s15",
+              "label": "正面柔边半径 22",
+              "tool": "setEffectParameter",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000003",
+                "effectId": "b1a00001-0000-4000-8000-0000000000f2",
+                "key": "radius",
+                "value": 22
+              }
+            },
+            {
+              "id": "s16",
+              "label": "立方体右侧深色面（透视四边形路径）",
+              "tool": "createPath",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000004",
+                "name": "CUBE-右侧暗面",
+                "position": {
+                  "x": 730,
+                  "y": 320
+                },
+                "width": 200,
+                "height": 300,
+                "points": [
+                  0,
+                  -180,
+                  0,
+                  0,
+                  0,
+                  0,
+                  200,
+                  -140,
+                  0,
+                  0,
+                  0,
+                  0,
+                  200,
+                  130,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  160,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "id": "s17",
+              "label": "右侧暗面填充深青",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000004",
+                "color": {
+                  "r": 0.055,
+                  "g": 0.302,
+                  "b": 0.318,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s18",
+              "label": "右侧暗面柔边",
+              "tool": "addEffect",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000004",
+                "kind": "gaussianBlur",
+                "effectId": "b1a00001-0000-4000-8000-0000000000f3"
+              }
+            },
+            {
+              "id": "s19",
+              "label": "暗面柔边半径 18",
+              "tool": "setEffectParameter",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000004",
+                "effectId": "b1a00001-0000-4000-8000-0000000000f3",
+                "key": "radius",
+                "value": 18
+              }
+            },
+            {
+              "id": "s20",
+              "label": "立方体上沿暗灰渐隐带（近似柔和过渡）",
+              "tool": "createRectangle",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000005",
+                "name": "CUBE-上沿暗带",
+                "position": {
+                  "x": 540,
+                  "y": 175
+                },
+                "width": 460,
+                "height": 110
+              }
+            },
+            {
+              "id": "s21",
+              "label": "上沿暗带填充深灰",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000005",
+                "color": {
+                  "r": 0.29,
+                  "g": 0.31,
+                  "b": 0.32,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s22",
+              "label": "上沿暗带低不透明度",
+              "tool": "setOpacity",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000005",
+                "value": 0.42
+              }
+            },
+            {
+              "id": "s23",
+              "label": "上沿暗带高斯模糊",
+              "tool": "addEffect",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000005",
+                "kind": "gaussianBlur",
+                "effectId": "b1a00001-0000-4000-8000-0000000000f4"
+              }
+            },
+            {
+              "id": "s24",
+              "label": "上沿暗带模糊半径 55",
+              "tool": "setEffectParameter",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000005",
+                "effectId": "b1a00001-0000-4000-8000-0000000000f4",
+                "key": "radius",
+                "value": 55
+              }
+            },
+            {
+              "id": "s25",
+              "label": "中轴竖向细线",
+              "tool": "createRectangle",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000006",
+                "name": "DECO-中轴细线",
+                "position": {
+                  "x": 600,
+                  "y": 205
+                },
+                "width": 2,
+                "height": 410
+              }
+            },
+            {
+              "id": "s26",
+              "label": "中轴细线填深灰",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000006",
+                "color": {
+                  "r": 0.22,
+                  "g": 0.23,
+                  "b": 0.24,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s27",
+              "label": "中轴细线不透明度 0.75",
+              "tool": "setOpacity",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000006",
+                "value": 0.75
+              }
+            },
+            {
+              "id": "s28",
+              "label": "中轴底部小圆点",
+              "tool": "createEllipse",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000007",
+                "name": "DECO-中轴端点",
+                "position": {
+                  "x": 600,
+                  "y": 400
+                },
+                "width": 8,
+                "height": 8
+              }
+            },
+            {
+              "id": "s29",
+              "label": "端点填深灰",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000007",
+                "color": {
+                  "r": 0.22,
+                  "g": 0.23,
+                  "b": 0.24,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s30",
+              "label": "十字标记-左上（横线）",
+              "tool": "createRectangle",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000008",
+                "name": "DECO-十字左上-横",
+                "position": {
+                  "x": 262,
+                  "y": 68
+                },
+                "width": 26,
+                "height": 2
+              }
+            },
+            {
+              "id": "s31",
+              "label": "十字标记-左上（竖线）",
+              "tool": "createRectangle",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000009",
+                "name": "DECO-十字左上-竖",
+                "position": {
+                  "x": 262,
+                  "y": 68
+                },
+                "width": 2,
+                "height": 26
+              }
+            },
+            {
+              "id": "s32",
+              "label": "十字标记-右上（横线）",
+              "tool": "createRectangle",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-00000000000a",
+                "name": "DECO-十字右上-横",
+                "position": {
+                  "x": 512,
+                  "y": 68
+                },
+                "width": 26,
+                "height": 2
+              }
+            },
+            {
+              "id": "s33",
+              "label": "十字标记-右上（竖线）",
+              "tool": "createRectangle",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-00000000000b",
+                "name": "DECO-十字右上-竖",
+                "position": {
+                  "x": 512,
+                  "y": 68
+                },
+                "width": 2,
+                "height": 26
+              }
+            },
+            {
+              "id": "s34",
+              "label": "十字标记-内侧（横线）",
+              "tool": "createRectangle",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-00000000000c",
+                "name": "DECO-十字内侧-横",
+                "position": {
+                  "x": 348,
+                  "y": 152
+                },
+                "width": 20,
+                "height": 2
+              }
+            },
+            {
+              "id": "s35",
+              "label": "十字标记-内侧（竖线）",
+              "tool": "createRectangle",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-00000000000d",
+                "name": "DECO-十字内侧-竖",
+                "position": {
+                  "x": 348,
+                  "y": 152
+                },
+                "width": 2,
+                "height": 20
+              }
+            },
+            {
+              "id": "s36",
+              "label": "十字标记-右侧（横线）",
+              "tool": "createRectangle",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-00000000000e",
+                "name": "DECO-十字右侧-横",
+                "position": {
+                  "x": 790,
+                  "y": 178
+                },
+                "width": 22,
+                "height": 2
+              }
+            },
+            {
+              "id": "s37",
+              "label": "十字标记-右侧（竖线）",
+              "tool": "createRectangle",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-00000000000f",
+                "name": "DECO-十字右侧-竖",
+                "position": {
+                  "x": 790,
+                  "y": 178
+                },
+                "width": 2,
+                "height": 22
+              }
+            },
+            {
+              "id": "s38",
+              "label": "外部十字标记填深灰",
+              "tool": "setFill",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000008",
+                "color": {
+                  "r": 0.24,
+                  "g": 0.25,
+                  "b": 0.26,
+                  "a": 1
+                }
+              }
+            },
+            {
+              "id": "s39",
+              "label": "Cubic 衬线标题",
+              "tool": "createText",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000010",
+                "name": "TEXT-Cubic",
+                "content": "Cubic",
+                "position": {
+                  "x": 560,
+                  "y": 258
+                },
+                "width": 340,
+                "height": 110,
+                "fontSize": 78,
+                "fontFamily": "Georgia, serif",
+                "color": {
+                  "r": 0.06,
+                  "g": 0.07,
+                  "b": 0.07,
+                  "a": 1
+                },
+                "alignment": "center"
+              }
+            },
+            {
+              "id": "s40",
+              "label": "标题字距微收",
+              "tool": "setTracking",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000010",
+                "value": -5
+              }
+            },
+            {
+              "id": "s41",
+              "label": "中文副标题「立方渐变」",
+              "tool": "createText",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000011",
+                "name": "TEXT-立方渐变",
+                "content": "立方渐变",
+                "position": {
+                  "x": 560,
+                  "y": 320
+                },
+                "width": 300,
+                "height": 44,
+                "fontSize": 24,
+                "fontFamily": "Noto Sans SC",
+                "color": {
+                  "r": 0.1,
+                  "g": 0.11,
+                  "b": 0.11,
+                  "a": 1
+                },
+                "alignment": "center"
+              }
+            },
+            {
+              "id": "s42",
+              "label": "副标题字距放宽",
+              "tool": "setTracking",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000011",
+                "value": 40
+              }
+            },
+            {
+              "id": "s43",
+              "label": "图处理图自动左到右排布",
+              "tool": "layoutGraph",
+              "arguments": {
+                "layerId": "b1a00001-0000-4000-8000-000000000003"
+              }
+            }
+          ],
+          "creation": {
+            "intent": "在 820×460 合成内以原生可编辑图层复刻参考海报：浅灰满幅底、青绿渐变立方体（正面用原生 radialGradient 节点近似渐变、右侧面用透视四边形路径）、gaussianBlur 柔边与底部柔和投影、中轴细线 + 四角十字装饰、Georgia 衬线标题与中文副标题。参考图为 410×230 视觉稿，全部坐标按 2× 换算为合成像素。不导入参考图、不删除已有图层。",
+            "tasks": [
+              {
+                "id": "t1",
+                "description": "建立满幅浅灰背景作为底层与对比基准",
+                "executionDomain": "scene",
+                "strategy": "generate",
+                "capabilityId": "createLayer",
+                "stepIds": [
+                  "s01",
+                  "s02"
+                ],
+                "dependencies": []
+              },
+              {
+                "id": "t2",
+                "description": "底部柔和投影：椭圆 + 中灰填充 + 低不透明度 + gaussianBlur 近似柔化",
+                "executionDomain": "compositing",
+                "strategy": "reuse",
+                "capabilityId": "gaussianBlur",
+                "stepIds": [
+                  "s03",
+                  "s04",
+                  "s05",
+                  "s06",
+                  "s07"
+                ],
+                "dependencies": [
+                  "t1"
+                ]
+              },
+              {
+                "id": "t3",
+                "description": "立方体正面：实体青绿基底 + 原生 radialGradient 节点近似中心亮青/边缘深青的渐变 + 整体柔边",
+                "executionDomain": "compositing",
+                "strategy": "reuse",
+                "capabilityId": "radialGradient",
+                "stepIds": [
+                  "s08",
+                  "s09",
+                  "s10",
+                  "s11",
+                  "s12",
+                  "s13",
+                  "s14",
+                  "s15"
+                ],
+                "dependencies": [
+                  "t1",
+                  "t2"
+                ]
+              },
+              {
+                "id": "t4",
+                "description": "右侧深色面：带真实控制点的透视四边形路径 + 深青填充 + 柔边",
+                "executionDomain": "scene",
+                "strategy": "generate",
+                "capabilityId": "createPath",
+                "stepIds": [
+                  "s16",
+                  "s17",
+                  "s18",
+                  "s19"
+                ],
+                "dependencies": [
+                  "t3"
+                ]
+              },
+              {
+                "id": "t5",
+                "description": "立方体上沿暗灰渐隐带，近似顶部柔和过渡",
+                "executionDomain": "compositing",
+                "strategy": "reuse",
+                "capabilityId": "gaussianBlur",
+                "stepIds": [
+                  "s20",
+                  "s21",
+                  "s22",
+                  "s23",
+                  "s24"
+                ],
+                "dependencies": [
+                  "t3"
+                ]
+              },
+              {
+                "id": "t6",
+                "description": "细线装饰：中轴竖线 + 端点圆点 + 四角十字标记（细矩形交叉）",
+                "executionDomain": "scene",
+                "strategy": "generate",
+                "capabilityId": "createRectangle",
+                "stepIds": [
+                  "s25",
+                  "s26",
+                  "s27",
+                  "s28",
+                  "s29",
+                  "s30",
+                  "s31",
+                  "s32",
+                  "s33",
+                  "s34",
+                  "s35",
+                  "s36",
+                  "s37",
+                  "s38"
+                ],
+                "dependencies": [
+                  "t1"
+                ]
+              },
+              {
+                "id": "t7",
+                "description": "排版层级：Georgia 衬线大标题 Cubic 与中文副标题「立方渐变」，居中轴对齐并微调字距",
+                "executionDomain": "property",
+                "strategy": "generate",
+                "capabilityId": "createText",
+                "stepIds": [
+                  "s39",
+                  "s40",
+                  "s41",
+                  "s42"
+                ],
+                "dependencies": [
+                  "t3"
+                ]
+              },
+              {
+                "id": "t8",
+                "description": "对含渐变节点的图层执行图自动排布，保持连接与 ID 不变",
+                "executionDomain": "compositing",
+                "strategy": "modify-existing",
+                "capabilityId": "layoutGraph",
+                "stepIds": [
+                  "s43"
+                ],
+                "dependencies": [
+                  "t3",
+                  "t4"
+                ]
+              }
+            ],
+            "warnings": [
+              "原生工具无真正的线性/网格渐变填充，立方体正面渐变由原生 radialGradient 节点（中心亮青→边缘深青）近似，方向可能与参考图略有差异。",
+              "无真正的羽化/3D 透视：柔边由 gaussianBlur 近似（会同时柔化内容），右侧暗面为 2D 四边形近似，非精确透视测量。",
+              "字体不能从磁盘读取，Georgia / Noto Sans SC 仅为族名引用，缺失时由系统回退，字形无法逐像素还原。",
+              "参考原图为 410×230，全部坐标按 2× 换算为 820×460 像素估计值，渲染比对后建议最多 3 轮局部修正（优先修立方体边界、标题基线、细线位置）。",
+              "本方案不导入参考图、不删除任何已有图层；若合成中已有同名内容需人工重命名而非覆盖。"
+            ]
+          }
+        }
+      }
+    ],
+    "images": [
+      1
+    ]
+  },
+  {
+    "names": [
+      "submitVisualAssessment"
+    ],
+    "arguments": [
+      {
+        "name": "submitVisualAssessment",
+        "arguments": {
+          "ok": false,
+          "message": "对照第一帧（参考）与渲染帧（实际输出）：主体方块、渐变、柔边与整体构图大体成立，但存在明显差异需要修正。1) 副标题“立方渐变”被字间距拉得过开（tracking 过大），参考中四字紧排居中、字号更小；2) 十字装饰线颜色过蓝过亮，参考为细灰线（约 45% 灰）且线宽更细、更短；3) 方块几何：参考正面为带顶部内收的透视梯形/上沿暗带明显，右侧暗面较窄且偏灰黑，当前渲染近矩形，上沿暗带几乎不可见、右侧暗面过宽偏灰；4) 方块整体略偏大且偏左下，参考方块更居中偏上，且右侧暗面右边界约在画布 88% 宽处；5) 中文标题组与方块垂直位置偏下，参考中“Cubic”位于方块中线偏下但高于当前；6) 背景为浅灰到近白的轻微渐变，当前偏白且右下角出现多余深色块（疑似阴影溢出/右侧面延伸至画面外）。建议按以下局部修正（保留现有图层 ID 与文字内容），最多 3 轮。",
+          "refinement": {
+            "id": "cubic-gradient-tune-01",
+            "goal": "保持现有图层与文字内容不变，局部修正装饰线颜色/尺寸、副标题字距、方块透视与暗面比例、方块位置与大小、阴影溢出，使渲染更贴近参考帧。",
+            "steps": [
+              {
+                "id": "s1",
+                "label": "副标题字距回归紧凑",
+                "tool": "setTracking",
+                "arguments": {
+                  "layerId": "b1a00001-0000-4000-8000-000000000011",
+                  "value": 0,
+                  "time": 0
+                }
+              },
+              {
+                "id": "s2",
+                "label": "十字装饰线改为细灰",
+                "tool": "setStroke",
+                "arguments": {
+                  "layerId": "b1a00001-0000-4000-8000-000000000008",
+                  "color": {
+                    "r": 0.35,
+                    "g": 0.35,
+                    "b": 0.35,
+                    "a": 0.85
+                  },
+                  "width": 1,
+                  "time": 0
+                }
+              },
+              {
+                "id": "s3",
+                "label": "十字装饰竖线改为细灰",
+                "tool": "setStroke",
+                "arguments": {
+                  "layerId": "b1a00001-0000-4000-8000-000000000009",
+                  "color": {
+                    "r": 0.35,
+                    "g": 0.35,
+                    "b": 0.35,
+                    "a": 0.85
+                  },
+                  "width": 1,
+                  "time": 0
+                }
+              },
+              {
+                "id": "s4",
+                "label": "右上十字横线改为细灰",
+                "tool": "setStroke",
+                "arguments": {
+                  "layerId": "b1a00001-0000-4000-8000-00000000000a",
+                  "color": {
+                    "r": 0.35,
+                    "g": 0.35,
+                    "b": 0.35,
+                    "a": 0.85
+                  },
+                  "width": 1,
+                  "time": 0
+                }
+              },
+              {
+                "id": "s5",
+                "label": "右上十字竖线改为细灰",
+                "tool": "setStroke",
+                "arguments": {
+                  "layerId": "b1a00001-0000-4000-8000-00000000000b",
+                  "color": {
+                    "r": 0.35,
+                    "g": 0.35,
+                    "b": 0.35,
+                    "a": 0.85
+                  },
+                  "width": 1,
+                  "time": 0
+                }
+              },
+              {
+                "id": "s6",
+                "label": "内侧十字横线改为细灰",
+                "tool": "setStroke",
+                "arguments": {
+                  "layerId": "b1a00001-0000-4000-8000-00000000000c",
+                  "color": {
+                    "r": 0.35,
+                    "g": 0.35,
+                    "b": 0.35,
+                    "a": 0.85
+                  },
+                  "width": 1,
+                  "time": 0
+                }
+              },
+              {
+                "id": "s7",
+                "label": "内侧十字竖线改为细灰",
+                "tool": "setStroke",
+                "arguments": {
+                  "layerId": "b1a00001-0000-4000-8000-00000000000d",
+                  "color": {
+                    "r": 0.35,
+                    "g": 0.35,
+                    "b": 0.35,
+                    "a": 0.85
+                  },
+                  "width": 1,
+                  "time": 0
+                }
+              },
+              {
+                "id": "s8",
+                "label": "右侧十字横线改为细灰",
+                "tool": "setStroke",
+                "arguments": {
+                  "layerId": "b1a00001-0000-4000-8000-00000000000e",
+                  "color": {
+                    "r": 0.35,
+                    "g": 0.35,
+                    "b": 0.35,
+                    "a": 0.85
+                  },
+                  "width": 1,
+                  "time": 0
+                }
+              },
+              {
+                "id": "s9",
+                "label": "右侧十字竖线改为细灰",
+                "tool": "setStroke",
+                "arguments": {
+                  "layerId": "b1a00001-0000-4000-8000-00000000000f",
+                  "color": {
+                    "r": 0.35,
+                    "g": 0.35,
+                    "b": 0.35,
+                    "a": 0.85
+                  },
+                  "width": 1,
+                  "time": 0
+                }
+              },
+              {
+                "id": "s10",
+                "label": "中轴细线与端点保持灰黑",
+                "tool": "setStroke",
+                "arguments": {
+                  "layerId": "b1a00001-0000-4000-8000-000000000006",
+                  "color": {
+                    "r": 0.15,
+                    "g": 0.16,
+                    "b": 0.17,
+                    "a": 0.9
+                  },
+                  "width": 1,
+                  "time": 0
+                }
+              },
+              {
+                "id": "s11",
+                "label": "方块整体略缩小并上移居中",
+                "tool": "transformSelection",
+                "arguments": {
+                  "layerIds": [
+                    "b1a00001-0000-4000-8000-000000000003",
+                    "b1a00001-0000-4000-8000-000000000004",
+                    "b1a00001-0000-4000-8000-000000000005"
+                  ],
+                  "operation": {
+                    "kind": "scale",
+                    "factor": {
+                      "x": 0.94,
+                      "y": 0.94
+                    }
+                  },
+                  "pivot": "bounds-center",
+                  "orientation": "global",
+                  "time": 0
+                }
+              },
+              {
+                "id": "s12",
+                "label": "方块上移使构图对齐参考",
+                "tool": "transformSelection",
+                "arguments": {
+                  "layerIds": [
+                    "b1a00001-0000-4000-8000-000000000003",
+                    "b1a00001-0000-4000-8000-000000000004",
+                    "b1a00001-0000-4000-8000-000000000005"
+                  ],
+                  "operation": {
+                    "kind": "move",
+                    "delta": {
+                      "x": -4,
+                      "y": -10
+                    }
+                  },
+                  "pivot": "bounds-center",
+                  "orientation": "global",
+                  "time": 0
+                }
+              },
+              {
+                "id": "s13",
+                "label": "右侧暗面收窄贴合参考",
+                "tool": "transformSelection",
+                "arguments": {
+                  "layerIds": [
+                    "b1a00001-0000-4000-8000-000000000004"
+                  ],
+                  "operation": {
+                    "kind": "scale",
+                    "factor": {
+                      "x": 0.78,
+                      "y": 1
+                    }
+                  },
+                  "pivot": "anchor",
+                  "orientation": "local",
+                  "time": 0
+                }
+              },
+              {
+                "id": "s14",
+                "label": "削弱阴影溢出与右下深色块",
+                "tool": "setOpacity",
+                "arguments": {
+                  "layerId": "b1a00001-0000-4000-8000-000000000002",
+                  "value": 0.55,
+                  "time": 0
+                }
+              },
+              {
+                "id": "s15",
+                "label": "复核渲染",
+                "tool": "renderFrame",
+                "arguments": {
+                  "compositionId": "f1eb2e5d-8807-48f6-80bc-c00a697451bc",
+                  "time": 0,
+                  "scale": 1
+                }
+              }
+            ],
+            "risk": "low"
+          }
+        }
+      }
+    ],
+    "images": [
+      2
+    ]
+  },
+  {
+    "names": [
+      "submitVisualAssessment"
+    ],
+    "arguments": [
+      {
+        "name": "submitVisualAssessment",
+        "arguments": {
+          "ok": false,
+          "message": "对比参考帧与实际渲染帧（820×460）：\n\n1) 立方体几何缺失。参考帧主体的辨识特征是从左上向内的暗色上沿＋右侧较深的斜切透视面，形成明显的 3D 立方体（顶面暗带从左上往右下压，右侧面为竖直深色面）；实际渲染只是一个圆角柔边矩形色块，没有任何暗色上沿/右侧面梯形，整体呈扁平的方形色斑，透视与立体感完全丢失。\n2) 形状比例偏差。参考帧主体约为正方形（宽≈高），左右柔边对称；实际渲染为明显偏宽偏扁的矩形（宽度远大于高度），且位置整体偏下、偏左留白不足，右侧还被裁到画面边缘。\n3) 右边缘被裁切。实际渲染右侧的深色边缘到达合成右边界，出现被切掉的深色竖带；参考帧中立方体右侧面完整收在画面内并保留灰色余白。\n4) 渐变方向与过渡。参考帧正面是上暗下亮的竖向渐变（顶部近黑蓝、底部亮青），加左侧左右的柔边羽化；实际渲染顶部暗部几乎消失，整体青色偏亮偏平，暗部层次不足，且四周羽化过于均匀，缺少参考中左侧柔、右侧硬的对比。\n5) 文字。参考帧 Cubic 为高对比衬线体、字号更大、位于立方体正面正中略偏下，副标题“立方渐变”紧随其下且字距较松；实际渲染 Cubic 字号偏小、字形更宽更钝（后一帧看 “Cubio” 状的 b/i 挤在一起），副标题偏小且与主标题间距过小，整体字重与参考不符。文字内容与位置可保留，仅需调整字号、字距与垂直间距。\n6) 装饰细线。参考帧中轴竖线细而清晰、上下各有一实心端点圆点，中轴穿出立方体上下；四个十字标记纤细且位于立方体四角外的空灰区。实际渲染中线偏粗、端点不明显，十字标记偏粗且其中右侧十字紧贴并压到立方体右边缘，与参考中留白关系不符。",
+          "refinement": {
+            "id": "refine-cube-3d-gradient",
+            "goal": "恢复参考中的立方体 3D 结构（暗色上沿与右侧透视面）、竖向渐变、柔边与正确比例，并微调文字与细线装饰",
+            "risk": "medium",
+            "steps": [
+              {
+                "id": "s1",
+                "label": "调整正面前基底为近正方形并居中",
+                "tool": "setPosition",
+                "arguments": {
+                  "layerId": "b1a00001-0000-4000-8000-000000000003",
+                  "value": {
+                    "x": 410,
+                    "y": 245
+                  }
+                }
+              },
+              {
+                "id": "s2",
+                "label": "重置正面基底尺寸为近正方形",
+                "tool": "setScale",
+                "arguments": {
+                  "layerId": "b1a00001-0000-4000-8000-000000000003",
+                  "value": {
+                    "x": 1,
+                    "y": 1
+                  }
+                }
+              },
+              {
+                "id": "s3",
+                "label": "正面上暗下亮渐变填充（深蓝黑→亮青）",
+                "tool": "setFill",
+                "arguments": {
+                  "layerId": "b1a00001-0000-4000-8000-000000000003",
+                  "color": {
+                    "r": 0.13,
+                    "g": 0.55,
+                    "b": 0.62,
+                    "a": 1
+                  }
+                }
+              },
+              {
+                "id": "s4",
+                "label": "暗色上沿：置于正面顶部形成顶面暗带",
+                "tool": "setPosition",
+                "arguments": {
+                  "layerId": "b1a00001-0000-4000-8000-000000000005",
+                  "value": {
+                    "x": 410,
+                    "y": 118
+                  }
+                }
+              },
+              {
+                "id": "s5",
+                "label": "上沿暗带填充",
+                "tool": "setFill",
+                "arguments": {
+                  "layerId": "b1a00001-0000-4000-8000-000000000005",
+                  "color": {
+                    "r": 0.09,
+                    "g": 0.13,
+                    "b": 0.18,
+                    "a": 1
+                  }
+                }
+              },
+              {
+                "id": "s6",
+                "label": "右侧暗面回到画面内并贴合正面右缘",
+                "tool": "setPosition",
+                "arguments": {
+                  "layerId": "b1a00001-0000-4000-8000-000000000004",
+                  "value": {
+                    "x": 565,
+                    "y": 250
+                  }
+                }
+              },
+              {
+                "id": "s7",
+                "label": "右侧暗面填充",
+                "tool": "setFill",
+                "arguments": {
+                  "layerId": "b1a00001-0000-4000-8000-000000000004",
+                  "color": {
+                    "r": 0.06,
+                    "g": 0.1,
+                    "b": 0.14,
+                    "a": 1
+                  }
+                }
+              },
+              {
+                "id": "s8",
+                "label": "给上沿暗带加高斯模糊做柔边过渡",
+                "tool": "addEffect",
+                "arguments": {
+                  "layerId": "b1a00001-0000-4000-8000-000000000005",
+                  "kind": "gaussianBlur"
+                }
+              },
+              {
+                "id": "s9",
+                "label": "给右侧暗面加高斯模糊做柔边过渡",
+                "tool": "addEffect",
+                "arguments": {
+                  "layerId": "b1a00001-0000-4000-8000-000000000004",
+                  "kind": "gaussianBlur"
+                }
+              },
+              {
+                "id": "s10",
+                "label": "落地柔影下移至立方体底部",
+                "tool": "setPosition",
+                "arguments": {
+                  "layerId": "b1a00001-0000-4000-8000-000000000002",
+                  "value": {
+                    "x": 410,
+                    "y": 415
+                  }
+                }
+              },
+              {
+                "id": "s11",
+                "label": "主标题放大到参考比例",
+                "tool": "setFontSize",
+                "arguments": {
+                  "layerId": "b1a00001-0000-4000-8000-000000000010",
+                  "value": 96
+                }
+              },
+              {
+                "id": "s12",
+                "label": "主标题居中于立方体正面",
+                "tool": "setTextAlignment",
+                "arguments": {
+                  "layerId": "b1a00001-0000-4000-8000-000000000010",
+                  "alignment": "center"
+                }
+              },
+              {
+                "id": "s13",
+                "label": "主标题位置对齐参考中心偏下",
+                "tool": "setPosition",
+                "arguments": {
+                  "layerId": "b1a00001-0000-4000-8000-000000000010",
+                  "value": {
+                    "x": 410,
+                    "y": 265
+                  }
+                }
+              },
+              {
+                "id": "s14",
+                "label": "副标题字距与字号调整",
+                "tool": "setFontSize",
+                "arguments": {
+                  "layerId": "b1a00001-0000-4000-8000-000000000011",
+                  "value": 30
+                }
+              },
+              {
+                "id": "s15",
+                "label": "副标题下移至主标题下方",
+                "tool": "setPosition",
+                "arguments": {
+                  "layerId": "b1a00001-0000-4000-8000-000000000011",
+                  "value": {
+                    "x": 410,
+                    "y": 322
+                  }
+                }
+              },
+              {
+                "id": "s16",
+                "label": "右侧十字标记外移避免压到立方体边缘",
+                "tool": "transformSelection",
+                "arguments": {
+                  "layerIds": [
+                    "b1a00001-0000-4000-8000-00000000000e",
+                    "b1a00001-0000-4000-8000-00000000000f"
+                  ],
+                  "operation": {
+                    "kind": "move",
+                    "delta": {
+                      "x": 20,
+                      "y": 0
+                    }
+                  },
+                  "orientation": "global",
+                  "pivot": "individual-origins"
+                }
+              }
+            ],
+            "creation": {
+              "intent": "在不导入参考图的前提下用可编辑图层补齐立方体透视结构与排版层级",
+              "tasks": [
+                {
+                  "id": "t1",
+                  "description": "重建立方体正面基底的比例、位置与竖向渐变",
+                  "executionDomain": "property",
+                  "strategy": "modify-existing",
+                  "capabilityId": "layer.fill",
+                  "stepIds": [
+                    "s1",
+                    "s2",
+                    "s3"
+                  ],
+                  "dependencies": []
+                },
+                {
+                  "id": "t2",
+                  "description": "重建暗色上沿与右侧透视暗面并加柔边模糊",
+                  "executionDomain": "compositing",
+                  "strategy": "modify-existing",
+                  "capabilityId": "effect.gaussianBlur",
+                  "stepIds": [
+                    "s4",
+                    "s5",
+                    "s6",
+                    "s7",
+                    "s8",
+                    "s9"
+                  ],
+                  "dependencies": [
+                    "t1"
+                  ]
+                },
+                {
+                  "id": "t3",
+                  "description": "调整落地柔影位置",
+                  "executionDomain": "scene",
+                  "strategy": "modify-existing",
+                  "capabilityId": "layer.transform",
+                  "stepIds": [
+                    "s10"
+                  ],
+                  "dependencies": [
+                    "t2"
+                  ]
+                },
+                {
+                  "id": "t4",
+                  "description": "主副标题字号、对齐与间距排版",
+                  "executionDomain": "property",
+                  "strategy": "modify-existing",
+                  "capabilityId": "text.style",
+                  "stepIds": [
+                    "s11",
+                    "s12",
+                    "s13",
+                    "s14",
+                    "s15"
+                  ],
+                  "dependencies": [
+                    "t3"
+                  ]
+                },
+                {
+                  "id": "t5",
+                  "description": "细线装饰位置微调避免与立方体边缘重叠",
+                  "executionDomain": "scene",
+                  "strategy": "modify-existing",
+                  "capabilityId": "layer.transform",
+                  "stepIds": [
+                    "s16"
+                  ],
+                  "dependencies": [
+                    "t4"
+                  ]
+                }
+              ],
+              "warnings": [
+                "渐变与立方体透视面需要渲染后比对，可能需要 1-2 轮局部修正",
+                "文字内容保持不变，仅调整样式与位置"
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "images": [
+      2
+    ]
+  }
+]

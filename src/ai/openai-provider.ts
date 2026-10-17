@@ -1,3 +1,12 @@
+import {
+  httpDiagnostic,
+  isModelUnavailable,
+  modelUnavailableMessage,
+} from './provider-diagnostics';
+import {
+  structuredPlanRequest,
+  normalizeStructuredResponse,
+} from './structured-plan';
 import { z } from 'zod';
 import {
   AIError,
@@ -14,10 +23,10 @@ import type {
   ProviderCredentials,
 } from './contracts';
 const toolSchema = z.object({
-  id: z.string().max(200),
+  id: z.string().min(1).max(200),
   type: z.literal('function'),
   function: z.object({
-    name: z.string().max(64),
+    name: z.string().min(1).max(64),
     arguments: z.string().max(200000),
   }),
 });
@@ -46,14 +55,28 @@ const completionSchema = z.object({
 function response(raw: unknown, model: string): ChatResponse {
   const parsed = completionSchema.safeParse(raw);
   if (!parsed.success)
-    throw new AIError('invalid_response', '服务返回了无效响应');
+    throw new AIError('invalid_response', '服务返回了无效响应', {
+      kind: 'protocol',
+      incomplete: true,
+    });
   const value = parsed.data;
+  const callIds = (value.choices[0]!.message.tool_calls ?? []).map((t) => t.id);
+  if (new Set(callIds).size !== callIds.length)
+    throw new AIError('invalid_response', '服务返回了重复的工具调用标识', {
+      kind: 'protocol',
+      incomplete: false,
+    });
   if (
     ['length', 'content_filter'].includes(value.choices[0]!.finish_reason ?? '')
   )
     throw new AIError(
       'invalid_response',
       '服务未返回完整结果，请调整请求后重试',
+      {
+        kind: 'finish-reason',
+        finishReason: value.choices[0]!.finish_reason ?? '',
+        incomplete: value.choices[0]!.finish_reason === 'length',
+      },
     );
   return {
     text: value.choices[0]!.message.content ?? '',
@@ -63,8 +86,16 @@ function response(raw: unknown, model: string): ChatResponse {
       try {
         args = JSON.parse(t.function.arguments);
       } catch {
-        throw new AIError('invalid_response', '工具参数不是完整 JSON');
+        throw new AIError('invalid_response', '工具参数不是完整 JSON', {
+          kind: 'partial-tool-arguments',
+          incomplete: true,
+        });
       }
+      if (!args || typeof args !== 'object' || Array.isArray(args))
+        throw new AIError('invalid_response', '工具参数必须是完整对象', {
+          kind: 'partial-tool-arguments',
+          incomplete: true,
+        });
       return { id: t.id, name: t.function.name, arguments: args };
     }),
     ...(value.usage
@@ -107,17 +138,24 @@ export class OpenAICompatibleProvider implements AIProvider {
     endpoint: string,
     body: unknown | undefined,
     signal: AbortSignal | undefined,
-    parse: (r: Response, signal: AbortSignal) => Promise<T>,
+    parse: (r: Response, signal: AbortSignal, touch: () => void) => Promise<T>,
   ): Promise<T> {
     if (signal?.aborted) throw new AIError('cancelled', '已停止');
     const controller = new AbortController();
     let timeout = false;
     const cancel = () => controller.abort();
     signal?.addEventListener('abort', cancel, { once: true });
-    const timer = setTimeout(() => {
+    const expire = () => {
       timeout = true;
       controller.abort();
-    }, this.options.timeoutMs ?? 45000);
+    };
+    const idleMs = this.options.timeoutMs ?? 45000;
+    let timer = setTimeout(expire, idleMs);
+    const touch = () => {
+      clearTimeout(timer);
+      timer = setTimeout(expire, idleMs);
+    };
+    const deadline = setTimeout(expire, Math.max(idleMs, 180000));
     try {
       const credentials = credentialsSchema.parse(await this.credentials());
       if (!credentials.apiKey.trim())
@@ -128,7 +166,9 @@ export class OpenAICompatibleProvider implements AIProvider {
           timeout ? '服务请求超时' : '已停止',
         );
       const result = await this.fetcher(
-        this.config.baseUrl.replace(/\/$/, '') + endpoint,
+        this.config.baseUrl
+          .replace(/\/+$/, '')
+          .replace(/\/(?:chat\/completions|models)$/, '') + endpoint,
         {
           method: body === undefined ? 'GET' : 'POST',
           redirect: 'error',
@@ -142,27 +182,36 @@ export class OpenAICompatibleProvider implements AIProvider {
         },
       );
       if (!result.ok) {
-        await result.body?.cancel();
+        const details = await httpDiagnostic(result, controller.signal, [
+          credentials.apiKey,
+          ...Object.values(credentials.headers),
+        ]);
         const code =
           result.status === 401 || result.status === 403
             ? 'invalid_key'
-            : result.status === 429
-              ? 'rate_limit'
-              : result.status >= 500
-                ? 'provider'
-                : 'invalid_request';
+            : isModelUnavailable(details)
+              ? 'invalid_request'
+              : result.status === 429
+                ? 'rate_limit'
+                : result.status >= 500
+                  ? 'provider'
+                  : 'invalid_request';
         throw new AIError(
           code,
           code === 'invalid_key'
             ? '密钥无效或无访问权限，请检查服务设置'
-            : code === 'rate_limit'
-              ? '服务请求达到速率限制'
-              : code === 'provider'
-                ? '模型服务暂时不可用'
-                : '请求或模型不可用，请检查服务设置',
+            : isModelUnavailable(details)
+              ? modelUnavailableMessage
+              : code === 'rate_limit'
+                ? '服务请求达到速率限制'
+                : code === 'provider'
+                  ? '模型服务暂时不可用'
+                  : '请求或模型不可用，请检查服务设置',
+          details,
         );
       }
-      return await parse(result, controller.signal);
+      touch();
+      return await parse(result, controller.signal, touch);
     } catch (error) {
       if (controller.signal.aborted)
         throw new AIError(
@@ -173,6 +222,7 @@ export class OpenAICompatibleProvider implements AIProvider {
       throw new AIError('network', '无法连接模型服务，请检查地址与网络');
     } finally {
       clearTimeout(timer);
+      clearTimeout(deadline);
       signal?.removeEventListener('abort', cancel);
     }
   }
@@ -259,7 +309,10 @@ export class OpenAICompatibleProvider implements AIProvider {
     signal?: AbortSignal,
     onText?: (text: string) => void,
   ): Promise<ChatResponse> {
-    const request = chatRequestSchema.parse(raw);
+    const original = chatRequestSchema.parse(raw);
+    const structured =
+      original.responseMode === 'structured-plan' && !!original.tools?.length;
+    const request = structured ? structuredPlanRequest(original) : original;
     if (
       request.messages.some((m) => m.images?.length) &&
       !this.config.models
@@ -274,6 +327,9 @@ export class OpenAICompatibleProvider implements AIProvider {
       ...(new URL(this.config.baseUrl).hostname === 'api.deepseek.com'
         ? { thinking: { type: 'disabled' } }
         : {}),
+      ...(request.maxOutputTokens === undefined
+        ? {}
+        : { max_tokens: request.maxOutputTokens }),
       messages: request.messages.map((m) => ({
         role: m.role,
         content: m.images?.length
@@ -316,141 +372,158 @@ export class OpenAICompatibleProvider implements AIProvider {
         ? { stream: true, stream_options: { include_usage: true } }
         : {}),
     };
-    return this.request('/chat/completions', body, signal, async (r, s) => {
-      if (
-        !request.stream ||
-        !r.headers.get('content-type')?.includes('text/event-stream')
-      ) {
-        let raw: unknown;
-        try {
-          raw = JSON.parse(await this.boundedText(r, s));
-        } catch (e) {
-          if (e instanceof AIError) throw e;
-          throw new AIError('invalid_response', '服务响应格式无效');
-        }
-        const result = response(raw, request.model);
-        if (result.text) onText?.(result.text);
-        return result;
-      }
-      const reader = r.body?.getReader();
-      if (!reader) throw new AIError('invalid_response', '服务返回空响应');
-      const decoder = new TextDecoder();
-      let buffer = '',
-        size = 0,
-        text = '',
-        done = false,
-        finish: string | null = null;
-      let usage: unknown;
-      const calls = new Map<
-        number,
-        {
-          id: string;
-          type: 'function';
-          function: { name: string; arguments: string };
-        }
-      >();
-      const line = (value: string) => {
-        if (!value.startsWith('data:')) return;
-        const data = value.slice(5).trim();
-        if (data === '[DONE]') {
-          done = true;
-          return;
-        }
-        if (!data) return;
-        let raw: unknown;
-        try {
-          raw = JSON.parse(data);
-        } catch {
-          throw new AIError('invalid_response', '流式响应格式无效');
-        }
-        const parsed = z
-          .object({
-            choices: z.array(
-              z.object({
-                delta: z.object({
-                  content: z.string().nullable().optional(),
-                  tool_calls: z
-                    .array(
-                      z.object({
-                        index: z.number().int().min(0).max(99),
-                        id: z.string().optional(),
-                        function: z
-                          .object({
-                            name: z.string().optional(),
-                            arguments: z.string().optional(),
-                          })
-                          .optional(),
-                      }),
-                    )
-                    .optional(),
-                }),
-                finish_reason: z.string().nullable().optional(),
-              }),
-            ),
-            usage: z.unknown().optional(),
-          })
-          .safeParse(raw);
-        if (!parsed.success)
-          throw new AIError('invalid_response', '流式响应格式无效');
-        if (parsed.data.usage) usage = parsed.data.usage;
-        for (const choice of parsed.data.choices) {
-          if (choice.delta.content) {
-            text += choice.delta.content;
-            onText?.(choice.delta.content);
+    const result = await this.request(
+      '/chat/completions',
+      body,
+      signal,
+      async (r, s, touch) => {
+        if (
+          !request.stream ||
+          !r.headers.get('content-type')?.includes('text/event-stream')
+        ) {
+          let raw: unknown;
+          try {
+            raw = JSON.parse(await this.boundedText(r, s));
+          } catch (e) {
+            if (e instanceof AIError) throw e;
+            throw new AIError('invalid_response', '服务响应格式无效', {
+              kind: 'invalid-json',
+              incomplete: true,
+            });
           }
-          if (choice.finish_reason) finish = choice.finish_reason;
-          for (const t of choice.delta.tool_calls ?? []) {
-            const item = calls.get(t.index) ?? {
-              id: '',
-              type: 'function' as const,
-              function: { name: '', arguments: '' },
-            };
-            if (t.id) item.id = t.id;
-            if (t.function?.name) item.function.name += t.function.name;
-            if (t.function?.arguments)
-              item.function.arguments += t.function.arguments;
-            calls.set(t.index, item);
-          }
+          const result = response(raw, request.model);
+          if (result.text) onText?.(result.text);
+          return result;
         }
-      };
-      try {
-        while (!done) {
-          s.throwIfAborted();
-          const next = await reader.read();
-          if (next.done) break;
-          size += next.value.byteLength;
-          if (size > (this.options.maxResponseBytes ?? 2000000))
-            throw new AIError('invalid_response', '服务响应超过大小限制');
-          buffer += decoder.decode(next.value, { stream: true });
-          let index: number;
-          while ((index = buffer.indexOf('\n')) >= 0) {
-            line(buffer.slice(0, index).replace(/\r$/, ''));
-            buffer = buffer.slice(index + 1);
-          }
-        }
-        if (buffer.trim()) line(buffer.trim());
-        if (!done || !finish)
-          throw new AIError(
-            'invalid_response',
-            '流式响应被中断，未执行任何工具',
-          );
-        return response(
+        const reader = r.body?.getReader();
+        if (!reader) throw new AIError('invalid_response', '服务返回空响应');
+        const decoder = new TextDecoder();
+        let buffer = '',
+          size = 0,
+          text = '',
+          done = false,
+          finish: string | null = null;
+        let usage: unknown;
+        const calls = new Map<
+          number,
           {
-            model: request.model,
-            choices: [
-              {
-                message: { content: text, tool_calls: [...calls.values()] },
-                finish_reason: finish,
-              },
-            ],
-            ...(usage ? { usage } : {}),
-          },
-          request.model,
-        );
-      } finally {
-        await reader.cancel().catch(() => {});
-        reader.releaseLock();
-      }
-    });
+            id: string;
+            type: 'function';
+            function: { name: string; arguments: string };
+          }
+        >();
+        const line = (value: string) => {
+          if (!value.startsWith('data:')) return;
+          const data = value.slice(5).trim();
+          if (data === '[DONE]') {
+            done = true;
+            return;
+          }
+          if (!data) return;
+          let raw: unknown;
+          try {
+            raw = JSON.parse(data);
+          } catch {
+            throw new AIError('invalid_response', '流式响应格式无效', {
+              kind: 'protocol',
+              incomplete: true,
+            });
+          }
+          const parsed = z
+            .object({
+              choices: z.array(
+                z.object({
+                  delta: z.object({
+                    content: z.string().nullable().optional(),
+                    tool_calls: z
+                      .array(
+                        z.object({
+                          index: z.number().int().min(0).max(99),
+                          id: z.string().optional(),
+                          function: z
+                            .object({
+                              name: z.string().optional(),
+                              arguments: z.string().optional(),
+                            })
+                            .optional(),
+                        }),
+                      )
+                      .optional(),
+                  }),
+                  finish_reason: z.string().nullable().optional(),
+                }),
+              ),
+              usage: z.unknown().optional(),
+            })
+            .safeParse(raw);
+          if (!parsed.success)
+            throw new AIError('invalid_response', '流式响应格式无效', {
+              kind: 'protocol',
+              incomplete: true,
+            });
+          if (parsed.data.usage) usage = parsed.data.usage;
+          for (const choice of parsed.data.choices) {
+            if (choice.delta.content) {
+              text += choice.delta.content;
+              onText?.(choice.delta.content);
+            }
+            if (choice.finish_reason) finish = choice.finish_reason;
+            for (const t of choice.delta.tool_calls ?? []) {
+              const item = calls.get(t.index) ?? {
+                id: '',
+                type: 'function' as const,
+                function: { name: '', arguments: '' },
+              };
+              if (t.id) item.id = t.id;
+              if (t.function?.name) item.function.name += t.function.name;
+              if (t.function?.arguments)
+                item.function.arguments += t.function.arguments;
+              calls.set(t.index, item);
+            }
+          }
+        };
+        try {
+          while (!done) {
+            s.throwIfAborted();
+            const next = await reader.read();
+            if (next.done) break;
+            touch();
+            size += next.value.byteLength;
+            if (size > (this.options.maxResponseBytes ?? 2000000))
+              throw new AIError('invalid_response', '服务响应超过大小限制');
+            buffer += decoder.decode(next.value, { stream: true });
+            let index: number;
+            while ((index = buffer.indexOf('\n')) >= 0) {
+              line(buffer.slice(0, index).replace(/\r$/, ''));
+              buffer = buffer.slice(index + 1);
+            }
+          }
+          if (buffer.trim()) line(buffer.trim());
+          if (!done || !finish)
+            throw new AIError(
+              'invalid_response',
+              '流式响应被中断，未执行任何工具',
+              { kind: 'incomplete-stream', incomplete: true },
+            );
+          return response(
+            {
+              model: request.model,
+              choices: [
+                {
+                  message: { content: text, tool_calls: [...calls.values()] },
+                  finish_reason: finish,
+                },
+              ],
+              ...(usage ? { usage } : {}),
+            },
+            request.model,
+          );
+        } finally {
+          await reader.cancel().catch(() => {});
+          reader.releaseLock();
+        }
+      },
+    );
+    return structured ? normalizeStructuredResponse(result, original) : result;
   }
 }

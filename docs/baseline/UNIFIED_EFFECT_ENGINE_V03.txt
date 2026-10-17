@@ -1,0 +1,2466 @@
+你现在开始进行 Swayframe 的下一次核心架构升级。
+
+项目名称：
+
+Swayframe
+
+本次开发代号：
+
+Swayframe V0.3
+Unified Effect Engine
+Programmable Effect Runtime
+AI Effect Forge
+
+======================================================================
+一、项目背景
+======================================================================
+
+Swayframe 是一款：
+
+Human-first, AI-native Motion Design & Compositing Software。
+
+它不是简单模仿 After Effects 的编辑器。
+
+其核心目标是：
+
+人类创作者可以使用成熟、专业的传统编辑方式完成作品。
+
+AI Agent 不仅能够操作软件已有功能，
+还能够利用软件提供的底层可编程能力，
+创造新的视觉效果和可复用创作工具。
+
+目前 Swayframe 已经实现了大量基本功能，包括：
+
+Canvas
+Timeline
+Keyframe
+Motion Curve
+Inspector
+Scene Outliner
+Compositing Graph
+Effects
+AI Agent
+Desktop Application
+
+具体实现情况以当前仓库为准。
+
+但是当前存在一个重要问题：
+
+AI Agent 的能力基本停留在：
+
+操作已有图层、属性和效果。
+
+例如：
+
+当用户要求创建一个径向渐变时，
+
+Agent 可能通过：
+
+创建两个图层
+添加 Gaussian Blur
+叠加图层
+
+来模拟效果。
+
+这种方法虽然可能获得近似的视觉效果，
+但无法准确表达用户真正需要的视觉处理操作。
+
+同时：
+
+当前许多 Effects 分散在不同面板，
+Inspector、Timeline 和 Compositing Graph
+之间缺乏足够统一的效果定义及执行机制。
+
+本次升级必须从底层解决这些问题。
+
+======================================================================
+二、核心目标
+======================================================================
+
+最终让 Swayframe 具有三种 Agent 能力。
+
+LEVEL 1 — OPERATOR
+
+Agent 可以操作已有软件功能。
+
+例如：
+
+创建图层
+修改属性
+创建关键帧
+移动对象
+应用现有效果
+
+
+LEVEL 2 — COMPOSER
+
+Agent 可以通过组合已有功能构建复杂作品。
+
+例如：
+
+复杂动画编排
+自动排版
+多节点合成
+效果链构建
+
+
+LEVEL 3 — TOOLMAKER
+
+Agent 可以创造新的程序化视觉效果。
+
+例如：
+
+生成 WGSL Shader
+创建自定义 Generator
+实现自定义 Image Filter
+生成参数化视觉处理节点
+将新效果保存为可复用工具
+
+
+本次升级最重要的是：
+
+真正实现 LEVEL 3 的技术基础。
+
+但同时：
+
+不要让 Agent 遇到任何问题都重新编写代码。
+
+必须采用：
+
+Existing Native Capability
+        ↓
+Reusable Composition
+        ↓
+Programmable Effect
+        ↓
+New Effect Creation
+
+这样的能力选择策略。
+
+已有原生功能能够准确完成时：
+
+优先使用已有功能。
+
+现有功能无法满足用户需求时：
+
+才进入新的程序化效果创建流程。
+
+======================================================================
+三、开发原则
+======================================================================
+
+本次必须遵守：
+
+1. 保留已有正常工作的功能。
+
+2. 不为了新的 Effect Engine 重写整个软件。
+
+3. 不直接让 AI 修改 Swayframe 核心源码。
+
+4. 所有新功能必须兼容现有 Command System。
+
+5. 所有正式 Scene 修改必须支持 Undo / Redo。
+
+6. 所有可动画参数使用统一 Property<T> 系统。
+
+7. Inspector / Timeline / Compositing Graph
+   不能分别维护不同版本的效果实现。
+
+8. Agent 创建的效果必须可编辑、可复用、可保存。
+
+9. 不允许出现只有 UI、没有真实渲染能力的假功能。
+
+10. 不允许以“完成架构文档”代替代码实现。
+
+11. 不得破坏现有工程文件兼容性。
+
+12. 不得绕过 DESIGN.md 规定的功能入口架构。
+
+======================================================================
+四、先进行仓库审计
+======================================================================
+
+开始编码前：
+
+完整检查当前项目架构。
+
+重点审计：
+
+Renderer
+Render Graph
+Compositing Graph
+Effects
+Effect Stack
+Inspector
+Property<T>
+Animation Evaluator
+Timeline
+Command System
+Undo / Redo
+Project Serialization
+Asset Management
+Feature Registry
+Command Registry
+AI Agent
+Agent Tools
+Electron / Desktop Services
+
+同时确定：
+
+当前实际使用什么渲染后端。
+
+例如：
+
+Canvas2D
+SVG
+WebGL
+WebGPU
+Rust / wgpu
+其他混合架构
+
+必须以真实仓库代码为准。
+
+不要假设项目已经使用 WebGPU。
+
+不要为了使用 WGSL
+直接重写现有 Renderer。
+
+创建：
+
+EFFECT_ENGINE_ARCHITECTURE_AUDIT.md
+
+记录：
+
+Existing architecture
+
+Existing effects
+
+Existing effect implementations
+
+Existing node types
+
+Duplicated implementations
+
+Rendering backend
+
+Animation integration
+
+Serialization
+
+Agent limitations
+
+Migration risks
+
+完成审计后立即进入实施。
+
+不要等待用户确认普通技术决策。
+
+======================================================================
+五、正式建立 Unified Effect Architecture
+======================================================================
+
+建立统一的：
+
+Visual Processing Architecture。
+
+核心结构：
+
+                  VISUAL CAPABILITY REGISTRY
+                             |
+        +--------------------+--------------------+
+        |                    |                    |
+     Built-in             Custom              AI-created
+        |                    |                    |
+        +--------------------+--------------------+
+                             |
+                    EFFECT RUNTIME
+                             |
+                RENDER GRAPH / EVALUATOR
+                             |
+           +-----------------+------------------+
+           |                 |                  |
+        Inspector         Timeline        Compositing Graph
+           |                 |                  |
+      Parameter UI      Animation          Node UI
+
+
+核心要求：
+
+所有内置效果、自定义效果和 AI 创建的效果
+都必须拥有统一的定义和执行协议。
+
+但必须区分以下视觉能力类型：
+
+1. FILL
+
+例如：
+
+Solid Color
+Linear Gradient
+Radial Gradient
+
+
+2. GENERATOR
+
+例如：
+
+Noise
+Checkerboard
+Procedural Texture
+Full-frame Gradient
+
+
+3. FILTER / EFFECT
+
+例如：
+
+Gaussian Blur
+Glow
+Exposure
+Hue / Saturation
+Distortion
+
+
+4. COMPOSITOR
+
+例如：
+
+Merge
+Blend
+Matte
+Displacement
+
+
+不要把所有能力强行当作：
+
+Image → Filter → Image。
+
+必须支持：
+
+无图像输入的 Generator
+
+以及：
+
+具有多个输入端口的 Compositor。
+
+======================================================================
+六、建立 Visual Capability Definition
+======================================================================
+
+根据当前项目 TypeScript 架构设计统一协议。
+
+参考：
+
+interface VisualCapabilityDefinition {
+    id: string;
+
+    name: string;
+
+    version: string;
+
+    category:
+      | "fill"
+      | "generator"
+      | "filter"
+      | "compositor";
+
+    description?: string;
+
+    inputs: PortDefinition[];
+
+    outputs: PortDefinition[];
+
+    parameters: ParameterDefinition[];
+
+    implementation: ImplementationReference;
+
+    capabilities: {
+        animatable: boolean;
+        realtime: boolean;
+        deterministic: boolean;
+    };
+}
+
+以上只是概念接口。
+
+具体类型可以根据现有架构调整。
+
+核心要求：
+
+Definition：
+
+描述一个效果是什么。
+
+Instance：
+
+描述某一次使用。
+
+Preset：
+
+描述一组保存的参数。
+
+三者必须分开。
+
+不要混为一个对象。
+
+======================================================================
+七、统一参数系统
+======================================================================
+
+所有 Effect Parameter
+必须使用或适配现有：
+
+Property<T>
+
+至少支持：
+
+Float
+Integer
+Boolean
+Color
+Vec2
+Vec3
+Enum
+Gradient Stops
+Texture Input
+
+根据需要逐步扩展。
+
+ParameterDefinition 至少包含：
+
+id
+name
+type
+defaultValue
+min
+max
+step
+unit
+animatable
+uiHints
+
+例如：
+
+Gaussian Blur：
+
+radius
+
+type:
+float
+
+default:
+0
+
+min:
+0
+
+max:
+200
+
+animatable:
+true
+
+
+程序化新效果也必须能够自动生成：
+
+Inspector Parameter UI。
+
+不能每次 AI 创建效果后：
+
+再让开发者手动写一个 React 设置面板。
+
+======================================================================
+八、统一效果入口
+======================================================================
+
+这是本轮的重要 UX 任务。
+
+目前效果分散在多个地方。
+
+现在必须统一。
+
+当用户选中图层：
+
+Inspector 中应该出现：
+
+Effects                          [+]
+
+点击：
+
++
+
+打开统一 Effect Browser。
+
+Effect Browser 支持：
+
+Search
+
+Categories
+
+Built-in
+
+My Effects
+
+Recent
+
+Favorites
+
+AI Drafts
+
+至少实现：
+
+搜索
+分类
+内置效果
+用户效果
+
+其他能力可以增量完成。
+
+统一分类可以参考：
+
+Blur
+Color
+Distort
+Stylize
+Generate
+Utility
+
+不要机械套用旧分类。
+
+分类需要适应 Swayframe 已有功能。
+
+======================================================================
+九、Inspector Effects
+======================================================================
+
+用户选中一个图层。
+
+例如：
+
+Rectangle。
+
+Inspector：
+
+Transform
+
+Appearance
+
+Effects
+    Gaussian Blur
+        Radius
+        Quality
+
+    Glow
+        Threshold
+        Intensity
+
+用户必须可以：
+
+Add Effect
+Remove Effect
+Enable / Disable
+Reorder Effect
+Modify Parameter
+Animate Parameter
+Save Preset
+
+所有操作都通过：
+
+Command System
+
+正式提交。
+
+连续调整参数时：
+
+遵循已有 Transaction / Undo 规则。
+
+======================================================================
+十、Fill 与 Effects 必须合理区分
+======================================================================
+
+不要因为统一效果系统，
+就破坏普通用户对 Appearance 的理解。
+
+例如：
+
+Rectangle
+
+Appearance
+    Fill
+        Solid
+        Linear Gradient
+        Radial Gradient
+
+Effects
+    Gaussian Blur
+    Glow
+
+Radial Gradient 作为图形填充时：
+
+优先出现在 Fill。
+
+用户要生成整张渐变纹理时：
+
+可以通过 Generator 使用。
+
+用户使用 Compositing Graph 时：
+
+可以添加 Radial Gradient Node。
+
+三者调用：
+
+同一份 Radial Gradient Capability。
+
+但 UI 入口按照任务语义区分。
+
+======================================================================
+十一、Compositing Graph Integration
+======================================================================
+
+这是本轮必须完成的部分。
+
+统一 Effect Engine 必须能够与：
+
+Compositing Graph
+
+连接。
+
+例如：
+
+Source
+   |
+Gaussian Blur
+   |
+Exposure
+   |
+Output
+
+Inspector 中添加的 Gaussian Blur：
+
+不应该与 Graph 中的 Gaussian Blur
+使用两套独立算法。
+
+对于线性 Effect Stack：
+
+Inspector Effect Stack
+
+和：
+
+Layer Compositing Graph
+
+应该是同一份处理数据的不同视图。
+
+如果 Graph 存在：
+
+Branch
+Merge
+Multi-input processing
+
+则 Inspector 可以：
+
+显示处理摘要
+提供 Open in Graph
+编辑能够安全映射的参数
+
+但不能强行把复杂分支压缩为线性 Effect Stack。
+
+避免：
+
+一套 Effect Stack 数据
+
+加上：
+
+一套 Node Graph 数据
+
+双向同步后逐渐不一致。
+
+必须明确：
+
+Single Source of Truth。
+
+用户 Graph 与内部 Render Graph 继续分离。
+
+User Graph
+    ↓
+Graph Compiler
+    ↓
+Internal Render Graph
+    ↓
+Renderer
+
+======================================================================
+十二、Effect Browser 与 Node Browser
+======================================================================
+
+Effect Browser：
+
+主要服务于：
+
+选中对象后添加效果。
+
+Node Browser：
+
+主要服务于：
+
+创建图像处理流程。
+
+两者可以共享：
+
+Visual Capability Registry。
+
+但是呈现方式不同。
+
+例如：
+
+Gaussian Blur
+
+在 Inspector：
+
+Add Effect → Gaussian Blur
+
+在 Compositing Graph：
+
+Add Node → Blur → Gaussian Blur
+
+必须使用：
+
+同一个 capabilityId。
+
+不要重复注册两套效果定义。
+
+======================================================================
+十三、建立 Programmable Effect Runtime
+======================================================================
+
+这是本次核心技术升级。
+
+Swayframe 必须拥有：
+
+加载程序化效果
+验证程序化效果
+执行程序化效果
+实时预览
+参数绑定
+保存效果
+重新加载效果
+
+的能力。
+
+但：
+
+不要允许 Agent 自由修改软件内核。
+
+推荐建立：
+
+Programmable Effect Runtime
+
+作为隔离的扩展层。
+
+如果当前渲染后端支持 WebGPU：
+
+优先研究：
+
+WGSL Shader
+
+作为首批可编程效果格式。
+
+如果当前渲染后端不支持：
+
+先设计 Renderer Adapter。
+
+根据当前实际技术栈选择可行实现。
+
+不要为了追求架构完美：
+
+直接全面替换已经正常工作的 Renderer。
+
+======================================================================
+十四、Shader Effect 格式
+======================================================================
+
+设计类似：
+
+ProgrammableEffectPackage
+
+包含：
+
+manifest
+effect definition
+shader source
+parameter schema
+input/output ports
+version
+dependencies
+metadata
+content hash
+
+例如：
+
+{
+  "id": "custom.organic-gradient",
+
+  "name": "Organic Gradient",
+
+  "version": "1.0.0",
+
+  "category": "generator",
+
+  "entryPoint": "main",
+
+  "parameters": [
+    {
+      "id": "radius",
+      "type": "float",
+      "defaultValue": 0.5
+    }
+  ],
+
+  "implementation": {
+    "language": "wgsl",
+    "source": "shader.wgsl"
+  }
+}
+
+这只是参考结构。
+
+最终设计应考虑：
+
+项目序列化
+跨平台加载
+版本兼容
+效果重命名
+效果依赖
+内容校验
+
+======================================================================
+十五、Shader 参数绑定
+======================================================================
+
+Effect Parameters：
+
+必须能够映射为：
+
+Shader Uniforms
+或其他安全的运行时输入。
+
+例如：
+
+Center X
+Center Y
+Radius
+Color A
+Color B
+Time
+
+修改 Inspector 数值：
+
+Shader 输出立即更新。
+
+Timeline 创建 Keyframe：
+
+Property<T>
+    ↓
+Animation Evaluator
+    ↓
+Current Parameter Value
+    ↓
+Shader Uniform
+    ↓
+Renderer
+
+不能创建另一套独立的 Shader Animation System。
+
+======================================================================
+十六、程序化效果支持时间
+======================================================================
+
+未来很多效果需要：
+
+动态噪声
+流体扰动
+动画渐变
+动态折射
+程序化纹理
+
+因此：
+
+Runtime 应有明确的：
+
+time
+frame
+resolution
+aspectRatio
+
+等标准上下文输入。
+
+但必须保证：
+
+同一时间点
+同一参数
+同一确定性种子
+
+能够得到可重复的结果。
+
+不要：
+
+每次渲染随机变化。
+
+对于随机效果：
+
+提供明确 Seed。
+
+======================================================================
+十七、程序化效果的执行安全
+======================================================================
+
+必须建立安全边界。
+
+Agent 生成的新效果：
+
+不得默认拥有：
+
+任意文件系统权限
+网络权限
+操作系统命令执行权限
+修改工程外部文件权限
+Electron Node.js 权限
+修改核心应用源码权限
+
+不要直接执行：
+
+Agent 生成的任意 JavaScript。
+
+第一阶段优先：
+
+受控 Shader / 声明式图像运算。
+
+如果未来需要：
+
+WASM
+CPU Plugins
+Script Runtime
+
+必须单独设计权限、资源限制和隔离机制。
+
+新 Shader：
+
+先验证：
+
+Syntax
+Compilation
+Port Compatibility
+Parameter Binding
+Resource Limits
+
+再进入预览阶段。
+
+需要控制：
+
+Texture Size
+Pass Count
+Allocation
+Execution Budget
+
+并具备：
+
+失败回退
+禁用异常效果
+错误报告
+
+注意：
+
+Shader 编译成功不代表运行绝对安全。
+
+不要在未经验证的情况下，
+直接将 AI 生成代码自动安装到正式效果库。
+
+======================================================================
+十八、Effect Draft Lifecycle
+======================================================================
+
+AI 创建的新效果必须经过：
+
+Draft
+    ↓
+Validate
+    ↓
+Compile
+    ↓
+Preview
+    ↓
+Evaluate
+    ↓
+Accept / Reject
+    ↓
+Save as Reusable Effect
+
+其中：
+
+Draft：
+
+临时效果定义。
+
+Validate：
+
+检查参数和代码。
+
+Compile：
+
+检查程序实现能否编译。
+
+Preview：
+
+在测试环境中实际渲染。
+
+Evaluate：
+
+检查视觉效果与用户意图是否一致。
+
+Accept：
+
+用户接受效果实例。
+
+Save：
+
+用户明确决定是否保存到个人效果库。
+
+不要让 Agent：
+
+自动将所有实验效果永久注册为正式效果。
+
+用户拒绝：
+
+必须能丢弃 Draft。
+
+======================================================================
+十九、第一项基准效果：Radial Gradient
+======================================================================
+
+必须首先真正实现：
+
+Radial Gradient。
+
+这将成为本轮第一个完整 Benchmark。
+
+要求：
+
+不能使用两个图层叠加 Gaussian Blur
+来模拟基础径向渐变。
+
+必须通过：
+
+统一 Generator / Fill Capability
+
+实现。
+
+至少支持：
+
+Center X
+Center Y
+
+Radius
+
+Aspect Ratio
+
+Color Stops
+
+Opacity
+
+Interpolation
+
+Gradient Transform
+
+其中：
+
+Center
+Radius
+Opacity
+
+必须支持关键帧。
+
+Color Stops 至少支持多个 Stop。
+
+如果现有颜色系统支持：
+
+应使用一致的色彩空间和混合策略。
+
+正确处理：
+
+Alpha
+Premultiplication
+Color interpolation
+
+避免出现明显的透明边缘或色彩插值错误。
+
+======================================================================
+二十、Radial Gradient 三种使用方式
+======================================================================
+
+必须验证：
+
+CASE A
+
+选中 Rectangle。
+
+Inspector：
+
+Appearance → Fill → Radial Gradient
+
+能够编辑：
+
+Center
+Radius
+Color Stops。
+
+
+CASE B
+
+创建独立 Generator。
+
+生成整张 Radial Gradient Texture。
+
+
+CASE C
+
+打开 Compositing Graph。
+
+添加：
+
+Radial Gradient Node。
+
+连接：
+
+Radial Gradient
+    ↓
+Gaussian Blur
+    ↓
+Output
+
+三个入口必须共享：
+
+同一份核心渐变算法。
+
+不能：
+
+Fill 一套实现
+
+Generator 一套实现
+
+Graph Node 再实现一套。
+
+======================================================================
+二十一、第二项基准效果：Gaussian Blur
+======================================================================
+
+审计当前已有 Gaussian Blur。
+
+目标：
+
+将其迁移进入统一 Effect Registry。
+
+保证：
+
+Inspector 添加
+
+Graph 添加
+
+参数动画
+
+Undo / Redo
+
+保存 / 加载
+
+最终渲染
+
+使用同一份效果定义和兼容的执行实现。
+
+不要无意义地重新实现已经正确工作的模糊算法。
+
+优先：
+
+Adapter / Migration。
+
+======================================================================
+二十二、第三项基准效果：Custom Procedural Effect
+======================================================================
+
+手工创建一个：
+
+Custom Procedural Effect。
+
+例如：
+
+Animated Noise Gradient。
+
+它必须验证：
+
+1. 可以通过 Effect Package 加载。
+
+2. 可以显示在 Effect Browser。
+
+3. 可以暴露可编辑参数。
+
+4. 参数可以通过 Inspector 修改。
+
+5. 参数可以使用 Timeline 动画。
+
+6. 可以在 Compositing Graph 中使用。
+
+7. 可以保存为项目依赖资源。
+
+8. 保存工程后可以重新打开。
+
+9. 可以被禁用和删除。
+
+10. 不需要修改核心 Renderer 源码。
+
+这项测试是：
+
+Programmable Effect Runtime
+
+是否真正成立的关键。
+
+======================================================================
+二十三、用户效果库
+======================================================================
+
+建立：
+
+User Effect Library。
+
+最小分类：
+
+Built-in
+
+My Effects
+
+AI Drafts
+
+后续可以加入：
+
+Favorites
+Recent
+Shared
+
+但是：
+
+不要现在开发完整插件商店。
+
+用户保存的自定义效果至少包含：
+
+Effect Definition
+
+Implementation Source
+
+Parameter Schema
+
+Version
+
+Dependencies
+
+Identity / Content Hash
+
+必须能区分：
+
+更新效果定义
+
+和：
+
+修改当前效果实例参数。
+
+======================================================================
+二十四、工程可移植性
+======================================================================
+
+用户创建一个自定义效果。
+
+然后：
+
+Save Project。
+
+关闭 Swayframe。
+
+重新打开。
+
+必须恢复：
+
+效果定义引用
+效果实例
+参数
+关键帧
+节点连接
+程序实现
+版本信息
+
+如果另一台设备缺少效果实现：
+
+不能：
+
+静默删除效果。
+
+应当：
+
+提示 Missing Effect
+
+提供：
+
+Relink
+Install trusted package
+Replace
+Disable
+
+等恢复方式。
+
+设计项目内嵌资源与外部用户库引用的策略。
+
+确保用户能够在不同机器间迁移项目。
+
+未经用户授权的外部代码包：
+
+不得自动获得执行权限。
+
+======================================================================
+二十五、正式升级 Agent
+======================================================================
+
+现有 Agent 不应该被删除。
+
+在现有 Agent Tool System 上：
+
+增加：
+
+Effect Forge Capabilities。
+
+建议提供：
+
+effect.list
+
+effect.inspect
+
+effect.search
+
+effect.createDraft
+
+effect.validate
+
+effect.compile
+
+effect.preview
+
+effect.updateDraft
+
+effect.applyDraft
+
+effect.saveReusable
+
+effect.discardDraft
+
+effect.addToLayer
+
+effect.addToGraph
+
+effect.setParameter
+
+effect.getDiagnostics
+
+具体命名以现有 Agent Tool 风格为准。
+
+这些 Tool：
+
+必须调用已有 Effect System。
+
+不要创建：
+
+一套只供 AI 使用的特殊效果系统。
+
+======================================================================
+二十六、Agent 决策策略
+======================================================================
+
+Agent 在收到视觉效果请求时：
+
+首先：
+
+Understand Intent。
+
+然后：
+
+Search Native Capabilities。
+
+判断：
+
+是否已有精确实现。
+
+如果有：
+
+Use Existing Capability。
+
+如果没有：
+
+判断能否通过已有 Node Graph
+准确、合理地组合实现。
+
+如果可以：
+
+Compose Existing Capabilities。
+
+如果组合会导致：
+
+结构冗余
+参数难以控制
+性能浪费
+效果语义错误
+
+则：
+
+Create New Programmable Effect。
+
+不要：
+
+强制所有任务通过代码实现。
+
+但也不要：
+
+把已有工具组合当作唯一解决方案。
+
+======================================================================
+二十七、Agent Effect Forge Loop
+======================================================================
+
+正式建立：
+
+Understand
+    ↓
+Search
+    ↓
+Design
+    ↓
+Generate
+    ↓
+Validate
+    ↓
+Compile
+    ↓
+Render
+    ↓
+Inspect
+    ↓
+Refine
+    ↓
+Apply
+    ↓
+Offer Save
+
+的工作流。
+
+Agent 必须能够：
+
+读取渲染结果。
+
+如果现有 Visual Observer
+支持帧截图分析：
+
+直接复用。
+
+如果没有：
+
+至少实现：
+
+Render Preview
++
+Diagnostics Feedback
+
+作为最低可用闭环。
+
+不要假装：
+
+Shader 编译成功
+
+等于：
+
+视觉结果符合要求。
+
+不得在没有视觉检查的情况下，
+声称已经完成视觉质量验证。
+
+======================================================================
+二十八、Agent 必须生成真正可调节的效果
+======================================================================
+
+例如用户请求：
+
+创建一种液态折射效果。
+
+Agent 不能只生成：
+
+一个固定结果的视频或图片。
+
+应该尝试生成：
+
+Custom Effect Definition
+
+包含：
+
+Refraction Strength
+Noise Scale
+Distortion Speed
+Edge Turbulence
+Chromatic Dispersion
+
+等参数。
+
+这些参数：
+
+可以修改
+可以动画
+可以保存
+可以复用
+
+如果 Agent 无法可靠推导参数：
+
+可以先暴露核心参数。
+
+不要为了参数数量牺牲效果正确性。
+
+======================================================================
+二十九、Agent 必须明确告知用户使用的实现方式
+======================================================================
+
+例如：
+
+用户：
+
+生成一个径向渐变。
+
+Agent：
+
+Found native capability:
+Radial Gradient
+
+Applied as:
+Fill
+
+
+或者：
+
+用户：
+
+创建液态折射效果。
+
+Agent：
+
+No matching native effect found.
+
+Created:
+Custom Procedural Effect
+
+Status:
+Draft compiled successfully.
+
+Parameters:
+5
+
+用户可以：
+
+Preview
+Apply
+Save
+Discard
+
+不要把这些技术细节全部堆在聊天正文。
+
+应通过清晰的状态和操作入口呈现。
+
+======================================================================
+三十、避免 Agent 过度创造
+======================================================================
+
+建立明确的反例测试。
+
+用户要求：
+
+Gaussian Blur。
+
+如果软件已有原生 Gaussian Blur：
+
+Agent 必须直接使用。
+
+不得重新生成 Gaussian Blur Shader。
+
+
+用户要求：
+
+Radial Gradient。
+
+如果统一系统已提供：
+
+Radial Gradient：
+
+Agent 必须使用该能力。
+
+
+用户要求：
+
+不存在的新型动态折射效果。
+
+Agent 可以：
+
+进入 Effect Forge。
+
+只有这样：
+
+Agent 才是理性选择工具，
+
+而不是：
+
+盲目调用工具
+或
+盲目生成代码。
+
+======================================================================
+三十一、Effect Forge 与 Command System
+======================================================================
+
+以下动作：
+
+Apply Effect
+
+Remove Effect
+
+Set Effect Parameter
+
+Reorder Effect
+
+Add Effect Node
+
+Connect Effect Node
+
+Replace Effect Definition
+
+都必须使用：
+
+Command System。
+
+例如：
+
+Agent 创建并应用新效果：
+
+Create Draft
+    ↓
+Validate
+    ↓
+Apply Effect Transaction
+    ↓
+Commit
+
+Undo：
+
+应该能够撤销效果应用。
+
+但不应无意删除：
+
+用户已经保存到个人效果库中的正式资源。
+
+区分：
+
+Project State
+
+和：
+
+User Library State。
+
+======================================================================
+三十二、性能与缓存
+======================================================================
+
+统一效果系统不能明显拖慢：
+
+Canvas
+Timeline
+Playback
+
+重点考虑：
+
+Shader compilation cache
+
+Effect pipeline cache
+
+Parameter dirty state
+
+Frame cache
+
+Incremental rendering
+
+Render Graph invalidation
+
+实时调整参数时：
+
+优先更新参数绑定。
+
+不要每次拖动 Radius：
+
+都重新编译 Shader。
+
+只有源码、入口签名或相关管线配置改变时，
+才触发必要的重新编译。
+
+参数变化：
+
+通常只更新 Uniform / Runtime Parameters。
+
+具体优化以渲染后端实际能力为准。
+
+======================================================================
+三十三、效果错误处理
+======================================================================
+
+自定义效果编译失败时：
+
+不能导致整个软件崩溃。
+
+至少提供：
+
+Compilation Error
+
+Validation Error
+
+Unsupported Feature
+
+Missing Dependency
+
+Runtime Failure
+
+清晰诊断。
+
+效果发生错误：
+
+不能使整个工程丢失。
+
+允许：
+
+Disable Effect
+
+Edit Source
+
+Retry Compilation
+
+Discard Draft
+
+必要时：
+
+使用安全的失败显示或旁路策略。
+
+======================================================================
+三十四、保持 Project Serialization 兼容
+======================================================================
+
+检查现有工程文件结构。
+
+如果需要新增：
+
+effects
+
+capability references
+
+effect packages
+
+shader assets
+
+graph compatibility
+
+schemaVersion
+
+则：
+
+实现明确迁移逻辑。
+
+不能：
+
+为了新效果系统
+
+导致旧工程无法打开。
+
+必须测试：
+
+Old Project
+    ↓
+Load
+    ↓
+Migrate
+    ↓
+Save
+    ↓
+Reload
+
+至少保证当前已支持的效果不丢失。
+
+======================================================================
+三十五、保持信息架构一致
+======================================================================
+
+读取：
+
+DESIGN.md
+
+FEATURE_LOCATION_MATRIX.md
+
+以及：
+
+Feature Registry / Contribution Points
+
+本轮新增 UI 必须遵守现有规则。
+
+Effects：
+
+统一由：
+
+Inspector Effects
+
+承担主要入口。
+
+Radial Gradient Fill：
+
+由：
+
+Appearance Fill
+
+承担主要入口。
+
+Compositing Nodes：
+
+由：
+
+Graph Add Node
+
+承担主要入口。
+
+AI Drafts：
+
+通过：
+
+Effect Browser / Agent
+
+管理。
+
+不要创建：
+
+新的永久顶部工具栏
+
+或者：
+
+额外的 Effect Sidebar
+
+来绕过现有 UI 架构。
+
+不得重新引入：
+
+功能入口分散
+
+的问题。
+
+======================================================================
+三十六、测试矩阵
+======================================================================
+
+至少实现以下测试。
+
+TEST-01
+
+Built-in Gaussian Blur
+
+Inspector Add
+→ Parameter Edit
+→ Render
+→ Undo
+→ Redo
+
+
+TEST-02
+
+Gaussian Blur
+
+Graph Node
+→ Connect
+→ Render
+
+
+TEST-03
+
+Same Effect Definition
+
+Inspector
+vs
+Graph
+
+验证：
+
+参数一致性
+渲染一致性
+
+
+TEST-04
+
+Radial Gradient
+
+Fill
+vs
+Generator
+vs
+Graph
+
+验证共享实现。
+
+
+TEST-05
+
+Custom Shader
+
+Load
+→ Validate
+→ Compile
+→ Preview
+
+
+TEST-06
+
+Custom Shader
+
+Parameter Change
+→ Render Update
+
+
+TEST-07
+
+Custom Shader
+
+Add Keyframe
+→ Evaluate Time
+→ Render
+
+
+TEST-08
+
+Custom Shader
+
+Save
+→ Close
+→ Reload
+→ Render
+
+
+TEST-09
+
+Invalid Shader
+
+Compilation Failure
+→ Diagnostic
+→ No App Crash
+
+
+TEST-10
+
+Agent Native Capability Selection
+
+Request:
+Gaussian Blur
+
+Expected:
+Use Built-in Gaussian Blur
+
+
+TEST-11
+
+Agent Native Gradient Selection
+
+Request:
+Radial Gradient
+
+Expected:
+Use Native Radial Gradient
+
+
+TEST-12
+
+Agent Toolmaker
+
+Request:
+Create a custom animated procedural texture.
+
+Expected:
+Generate Draft
+→ Validate
+→ Compile
+→ Preview
+→ Apply
+
+
+TEST-13
+
+Effect Package Versioning
+
+旧工程引用指定版本效果，
+不能因用户库更新而静默改变外观。
+
+
+TEST-14
+
+Export Consistency
+
+同一帧的 Preview 与 Export
+必须调用兼容的效果执行路径，
+不能出现预览有自定义效果、
+导出时效果消失的问题。
+
+======================================================================
+三十七、实施顺序
+======================================================================
+
+必须按以下顺序推进。
+
+--------------------------------------------------
+PHASE 0 — Architecture Audit
+--------------------------------------------------
+
+审计现有系统。
+
+识别现有 Renderer、Effect、Graph 的真实能力。
+
+先确认升级路径。
+
+
+--------------------------------------------------
+PHASE 1 — Unified Capability Registry
+--------------------------------------------------
+
+统一：
+
+Effect Definition
+Effect Instance
+Parameters
+Ports
+Categories
+Versions
+
+迁移已有：
+
+Gaussian Blur
+基础 Color Effects
+
+至少完成一个真实效果。
+
+
+--------------------------------------------------
+PHASE 2 — Unified UI
+--------------------------------------------------
+
+Inspector Effects
+
+Add Effect Browser
+
+Effect Stack
+
+统一入口
+
+Compositing Graph integration
+
+避免重复功能。
+
+
+--------------------------------------------------
+PHASE 3 — Radial Gradient
+--------------------------------------------------
+
+正式实现：
+
+Radial Gradient Fill / Generator。
+
+验证：
+
+Inspector
+Timeline
+Graph
+
+共享底层能力。
+
+
+--------------------------------------------------
+PHASE 4 — Programmable Runtime
+--------------------------------------------------
+
+完成：
+
+Programmable Effect Package
+Source Validation
+Compilation
+Parameter Binding
+Preview
+Error Handling
+
+手工完成一个 Custom Procedural Effect。
+
+
+--------------------------------------------------
+PHASE 5 — User Effect Library
+--------------------------------------------------
+
+实现：
+
+Save
+Load
+Version
+Reuse
+Project Dependency
+Draft Management
+
+
+--------------------------------------------------
+PHASE 6 — Agent Toolmaker
+--------------------------------------------------
+
+实现：
+
+Effect Forge Tools
+
+Capability Search
+
+Programmatic Effect Generation
+
+Validation
+
+Compile
+
+Preview
+
+Apply
+
+Save
+
+
+--------------------------------------------------
+PHASE 7 — Full Integration
+--------------------------------------------------
+
+Undo / Redo
+
+Timeline Animation
+
+Compositing Graph
+
+Project Serialization
+
+Export
+
+Performance
+
+Error Recovery
+
+完整验证。
+
+======================================================================
+三十八、不要过度开发
+======================================================================
+
+本轮不做：
+
+完整 Plugin Marketplace
+
+远程插件分发平台
+
+任意 Python 脚本执行系统
+
+任意 JavaScript 扩展执行
+
+自由修改 Renderer 源码
+
+完整通用 GPU 计算框架
+
+AI 自动发布公共插件
+
+复杂权限市场
+
+支持所有图像处理语言
+
+重新开发整个 3D Renderer
+
+大型视觉 UI 重设计
+
+核心目标是：
+
+建立一条稳定可扩展的程序化效果链路。
+
+而不是：
+
+一次性实现整个插件生态。
+
+======================================================================
+三十九、文档交付
+======================================================================
+
+本轮需要生成：
+
+EFFECT_ENGINE_ARCHITECTURE_AUDIT.md
+
+EFFECT_ENGINE_ARCHITECTURE.md
+
+PROGRAMMABLE_EFFECT_SPEC.md
+
+EFFECT_FORGE_AGENT_SPEC.md
+
+EFFECT_ENGINE_TEST_REPORT.md
+
+同时更新：
+
+DESIGN.md
+
+FEATURE_LOCATION_MATRIX.md
+
+AGENTS.md
+
+但：
+
+不要编写大量没有代码支撑的空洞计划。
+
+文档必须反映真实实现。
+
+======================================================================
+四十、开发质量门禁
+======================================================================
+
+每一阶段完成后：
+
+运行：
+
+typecheck
+
+lint
+
+unit tests
+
+integration tests
+
+build
+
+desktop build（适用时）
+
+如果现有测试有历史失败：
+
+记录并区分：
+
+Existing Failure
+
+New Regression
+
+不要为了通过测试：
+
+删除测试
+禁用类型检查
+大范围使用 any
+跳过核心功能验证。
+
+如果出现关键回归：
+
+先修复再继续。
+
+======================================================================
+四十一、自主执行规则
+======================================================================
+
+本次任务需要你持续执行。
+
+不要在每一个阶段结束后问：
+
+是否继续？
+
+对于：
+
+接口命名
+组件拆分
+Registry 实现
+参数模型
+菜单归属
+文件组织
+测试补充
+
+等常规决策：
+
+自行根据现有架构和本提示词决定。
+
+如果某项高级能力无法可靠完成：
+
+保留架构接口，
+
+明确标记未完成状态，
+
+继续实现其余部分。
+
+禁止：
+
+用 Mock Implementation
+
+冒充正式完成。
+
+禁止：
+
+将存在一份 TypeScript Interface
+当成效果运行时已经实现。
+
+优先保证：
+
+一条真实端到端功能链路。
+
+======================================================================
+四十二、最终验收：完整案例
+======================================================================
+
+最终必须可以完成以下流程。
+
+用户：
+
+“创建一个白色中心、蓝色边缘的径向渐变。”
+
+Agent：
+
+搜索已有 Capability。
+
+找到：
+
+Radial Gradient。
+
+创建：
+
+Radial Gradient Fill / Generator。
+
+用户可以：
+
+调整 Center
+调整 Radius
+编辑 Color Stops
+添加 Keyframe
+打开 Compositing Graph
+保存工程
+导出动画
+
+
+然后：
+
+用户：
+
+“创建一种软件还没有的动态有机纹理，
+  带有可调整的噪声密度和流动速度。”
+
+Agent：
+
+搜索已有 Capability。
+
+判断无法准确满足。
+
+进入：
+
+Effect Forge。
+
+设计：
+
+Procedural Effect。
+
+生成：
+
+Effect Definition
+Shader Implementation
+Parameter Schema
+
+执行：
+
+Validate
+Compile
+Preview
+
+用户确认：
+
+Apply。
+
+随后：
+
+Inspector 中出现：
+
+Organic Texture
+
+    Density
+    Flow Speed
+    Color A
+    Color B
+    Seed
+
+用户可以：
+
+修改参数
+添加关键帧
+在节点中使用
+保存为 My Effects
+关闭工程
+重新打开继续编辑。
+
+
+如果上述第二条流程仍然需要：
+
+手动修改源码
+重新编译整个 Swayframe
+创建多个普通图层模拟
+人工编写 Inspector React UI
+
+那么本轮的核心目标尚未完成。
+
+======================================================================
+最终目标
+======================================================================
+
+将 Swayframe Agent 从：
+
+AI that operates existing tools
+
+升级为：
+
+AI that can create reusable tools.
+
+同时：
+
+保持 Human-first。
+
+AI 创造的效果：
+
+最终必须交给用户控制。
+
+必须：
+
+Editable
+Animatable
+Reusable
+Serializable
+Portable
+Inspectable
+Recoverable
+
+Swayframe 不应该只是：
+
+拥有很多功能的编辑器。
+
+还应该是：
+
+一个能够持续创造新功能的创作环境。
+
+现在开始审计并实施。
+
+不要停留在讨论层面。
+
+优先完成：
+
+Unified Effect Engine
++
+Radial Gradient
++
+Programmable Effect Runtime
+
+这三个真实可运行的基础。
+
+然后继续推进：
+
+Effect Forge Agent。

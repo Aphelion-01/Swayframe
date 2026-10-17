@@ -33,13 +33,16 @@ it('keeps failed input and lets the user retry instead of clearing it before exe
   fireEvent.change(screen.getByLabelText('Agent 需求'), {
     target: { value: '保留这段修改需求' },
   });
-  fireEvent.click(screen.getByText('发送'));
+  fireEvent.click(screen.getByRole('button', { name: '发送' }));
   await waitFor(() => expect(s.agent.getSnapshot().status).toBe('failed'));
   expect(
     (screen.getByLabelText('Agent 需求') as HTMLTextAreaElement).value,
   ).toBe('保留这段修改需求');
   expect(screen.getAllByText('测试网络错误').length).toBeGreaterThan(0);
-  expect((screen.getByText('发送') as HTMLButtonElement).disabled).toBe(false);
+  expect(
+    (screen.getByRole('button', { name: '发送' }) as HTMLButtonElement)
+      .disabled,
+  ).toBe(false);
 });
 it('warns about text-only models when references are present, preserves input and allows text after reference removal', async () => {
   const s = await setup();
@@ -63,14 +66,22 @@ it('warns about text-only models when references are present, preserves input an
   fireEvent.change(screen.getByLabelText('Agent 需求'), {
     target: { value: '参照图片创建标题' },
   });
-  fireEvent.click(screen.getByText('发送'));
+  fireEvent.click(screen.getByRole('button', { name: '发送' }));
   expect(screen.getByText(/当前参考无法发送/)).toBeTruthy();
   expect(s.agent.getSnapshot().status).toBe('idle');
   expect(
     (screen.getByLabelText('Agent 需求') as HTMLTextAreaElement).value,
   ).toBe('参照图片创建标题');
   fireEvent.click(screen.getByLabelText('移除参考 参考.png'));
-  fireEvent.click(screen.getByText('发送'));
+  fireEvent.click(screen.getByRole('button', { name: '发送' }));
+  await waitFor(() =>
+    expect(s.agent.getSnapshot().pendingConfirmation).toBe(true),
+  );
+  fireEvent.click(screen.getByText('预览修改方案'));
+  await waitFor(() =>
+    expect(s.agent.getSnapshot().creationProposal).toBeDefined(),
+  );
+  fireEvent.click(screen.getByText('接受修改'));
   await waitFor(() => expect(s.agent.getSnapshot().status).toBe('completed'));
   expect(
     (screen.getByLabelText('Agent 需求') as HTMLTextAreaElement).value,
@@ -175,7 +186,10 @@ it('no-provider state opens application settings and keeps prompt execution disa
     render(<AgentPanel {...s} />);
     fireEvent.click(screen.getByText('配置 AI 服务'));
     expect(open).toHaveBeenCalledOnce();
-    expect((screen.getByText('发送') as HTMLButtonElement).disabled).toBe(true);
+    expect(
+      (screen.getByRole('button', { name: '发送' }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
   } finally {
     window.removeEventListener('swayframe:ai-settings', open);
   }
@@ -187,6 +201,14 @@ it('real panel prompt runs native controller tools and commands, updates scene r
     target: { value: '创建一个标题 HELLO SWAYFRAME，放在中心' },
   });
   fireEvent.keyDown(screen.getByLabelText('Agent 需求'), { key: 'Enter' });
+  await waitFor(() =>
+    expect(s.agent.getSnapshot().pendingConfirmation).toBe(true),
+  );
+  fireEvent.click(screen.getByText('预览修改方案'));
+  await waitFor(() =>
+    expect(s.agent.getSnapshot().creationProposal).toBeDefined(),
+  );
+  fireEvent.click(screen.getByText('接受修改'));
   await waitFor(() => expect(s.agent.getSnapshot().status).toBe('completed'));
   const project = s.store.commands.getSnapshot(),
     c = project.compositions[0]!,
@@ -219,10 +241,190 @@ it('Assist only plans and Shift+Enter retains multiline input', async () => {
     shiftKey: true,
   });
   expect(s.agent.getSnapshot().status).toBe('idle');
-  fireEvent.click(screen.getByText('发送'));
+  fireEvent.click(screen.getByRole('button', { name: '发送' }));
   await waitFor(() => expect(s.agent.getSnapshot().status).toBe('completed'));
   expect(s.store.commands.undoStack).toHaveLength(0);
   expect(s.store.commands.getSnapshot().compositions[0]!.layers).toHaveLength(
     0,
   );
+});
+it('native planning preserves complete typed contracts below the provider message limit', async () => {
+  const s = await setup();
+  const id = s.manager.resolve().provider.id;
+  s.manager.register(
+    new MockAIProvider(id, 'Contract QA', async (request) => {
+      expect(request.messages.every((m) => m.content.length <= 200000)).toBe(
+        true,
+      );
+      const system = request.messages[0]!.content;
+      expect(system).toContain('stepResult');
+      expect(system).toContain('createRectangle');
+      expect(system).toContain('setFill');
+      expect(system).not.toContain('"name":"addKeyframe"');
+      return {
+        text: '',
+        model: 'mock-v1',
+        toolCalls: [
+          {
+            id: 'plan',
+            name: 'submitPlan',
+            arguments: {
+              id: 'ref-plan',
+              goal: 'create fill',
+              risk: 'low',
+              steps: [
+                {
+                  id: 'rect',
+                  label: 'create',
+                  tool: 'createRectangle',
+                  arguments: {},
+                },
+                {
+                  id: 'fill',
+                  label: 'fill',
+                  tool: 'setFill',
+                  arguments: {
+                    layerId: {
+                      kind: 'stepResult',
+                      stepId: 'rect',
+                      output: 'layerId',
+                    },
+                    color: { r: 0, g: 0, b: 1, a: 1 },
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      };
+    }),
+  );
+  await s.agent.run('创建并填充');
+  const snapshot = s.agent.getSnapshot();
+  expect(snapshot.error).toBeNull();
+  if (snapshot.pendingConfirmation)
+    await s.agent.apply(snapshot.currentPlan!.id);
+  expect(s.agent.getSnapshot().status).toBe('completed');
+  expect(s.store.commands.undoStack).toHaveLength(1);
+});
+it('a rejected reference proposal reports its actual step and tool, and retains redacted original arguments', async () => {
+  const s = await setup();
+  const id = s.manager.resolve().provider.id;
+  const analysis = {
+    canvas: { width: 100, height: 100, background: 'blue' },
+    visualElements: [
+      {
+        id: 'a',
+        type: 'geometry',
+        bounds: { x: 0, y: 0, width: 1, height: 1 },
+        position: 'center',
+        layering: 0,
+        geometry: 'rectangle',
+        colors: ['blue'],
+        gradients: [],
+        effects: [],
+        typography: '',
+        dependencies: [],
+        confidence: 1,
+        mapping: 'createRectangle',
+      },
+    ],
+    spatialRelationships: [],
+    limitations: [],
+    confidence: 1,
+  };
+  const proposal = {
+    id: 'ref',
+    goal: 'reference',
+    risk: 'low',
+    referenceAnalysis: analysis,
+    steps: [
+      {
+        id: 'create_bg',
+        label: 'create',
+        tool: 'createRectangle',
+        arguments: {},
+      },
+      {
+        id: 'fill_bg',
+        label: 'fill',
+        tool: 'setFill',
+        arguments: { layerId: 'create_bg', color: { r: 0, g: 0, b: 1, a: 1 } },
+      },
+    ],
+  };
+  const chat = vi.fn(async () => ({
+    text: '',
+    model: 'mock-v1',
+    toolCalls: [
+      { id: 'proposal', name: 'submitProposal', arguments: proposal },
+    ],
+  }));
+  s.manager.register(new MockAIProvider(id, 'Reference QA', chat));
+  s.agent.setReferences(
+    [
+      {
+        id: crypto.randomUUID(),
+        name: 'fixture.png',
+        kind: 'image',
+        frames: ['data:image/png;base64,AAAA'],
+      },
+    ],
+    'overall',
+  );
+  await s.agent.run('reference');
+  const state = s.agent.getSnapshot();
+  expect(state.status).toBe('failed');
+  expect(chat).toHaveBeenCalledTimes(2);
+  expect(state.toolCalls[0]).toMatchObject({
+    tool: 'setFill',
+    stepId: 'fill_bg',
+    phase: 'preflight',
+    status: 'failed',
+  });
+  expect(state.toolCalls[0]?.label).toContain('创作建议预检');
+  expect(JSON.stringify(state.toolCalls[0]?.result)).toContain('create_bg');
+  expect(JSON.stringify(state.toolCalls[0]?.result)).not.toContain('base64');
+  expect(s.store.commands.undoStack).toHaveLength(0);
+  render(<AgentPanel store={s.store} agent={s.agent} manager={s.manager} />);
+  const recoveryDetails = screen
+    .getByText(/开发者详情：恢复记录/)
+    .closest('details');
+  expect(recoveryDetails?.open).toBe(false);
+  expect(
+    screen.getByText('开发者详情：错误字段与调用参数').closest('details')?.open,
+  ).toBe(false);
+});
+
+it('clear context removes prior optional diagnostics and preview, preserving the real Scene and Undo', async () => {
+  const s = await setup();
+  render(<AgentPanel {...s} />);
+  fireEvent.change(screen.getByLabelText('Agent 需求'), {
+    target: { value: '创建标题' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: '发送' }));
+  await waitFor(() =>
+    expect(s.agent.getSnapshot().pendingConfirmation).toBe(true),
+  );
+  fireEvent.click(screen.getByText('预览修改方案'));
+  await waitFor(() =>
+    expect(s.agent.getSnapshot().creationProposal).toBeDefined(),
+  );
+  fireEvent.click(screen.getByText('接受修改'));
+  await waitFor(() => expect(s.agent.getSnapshot().status).toBe('completed'));
+  expect(s.agent.getSnapshot().trace).toBeTruthy();
+  const saved = s.store.save(),
+    history = s.store.commands.undoStack.length;
+  fireEvent.click(screen.getByRole('button', { name: '清空上下文' }));
+  const state = s.agent.getSnapshot();
+  expect(state.trace).toBeUndefined();
+  expect(state.visualReviews).toBeUndefined();
+  expect(state.verification).toBeUndefined();
+  expect(state.workingMemory).toBeUndefined();
+  expect(state.beforeSnapshot).toBeUndefined();
+  expect(state.afterSnapshot).toBeUndefined();
+  expect(state.references).toHaveLength(0);
+  expect(s.store.save()).toBe(saved);
+  expect(s.store.commands.undoStack.length).toBe(history);
+  expect(screen.queryByText('查看修改前后')).toBeNull();
 });

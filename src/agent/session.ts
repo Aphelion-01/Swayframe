@@ -1,5 +1,17 @@
+import type { AgentWorkingMemory, AgentExecutionTrace } from './working-memory';
+import type {
+  ExecutionEvidence,
+  ExecutionVerification,
+} from './execution-verification';
+import type { RecoveryController, RecoveryRecord } from './recovery-controller';
+import type { AgentExecutionDetails } from './execution-error';
 import type { AgentReference, ReferenceMode } from './references';
 import { z } from 'zod';
+import {
+  creationDetailsSchema,
+  type ExecutionScope,
+} from './creation-contracts';
+import type { CreationChangeProposal } from './creation-scope';
 import { newId } from '../core/core-types';
 import type { Project } from '../core/project-model';
 import type {
@@ -21,6 +33,7 @@ export const agentPlanSchema = z
     goal: z.string().min(1).max(1000),
     steps: z.array(planStepSchema).min(1).max(100),
     risk: z.enum(['low', 'medium', 'high']),
+    creation: creationDetailsSchema.optional(),
   })
   .strict();
 export type AgentPlan = z.infer<typeof agentPlanSchema>;
@@ -39,6 +52,10 @@ export interface AgentActivity {
   tool: string;
   label: string;
   status: 'running' | 'completed' | 'failed';
+  stepId?: string;
+  taskId?: string;
+  phase?: string;
+  errorId?: string;
   result?: unknown;
 }
 export interface AgentChangeSet {
@@ -49,6 +66,8 @@ export interface AgentChangeSet {
 }
 export interface AgentSession {
   sessionId: string;
+  workingMemory?: AgentWorkingMemory;
+  trace?: AgentExecutionTrace;
   skillId: string;
   references: readonly AgentReference[];
   referenceMode: ReferenceMode;
@@ -63,10 +82,27 @@ export interface AgentSession {
   pendingConfirmation: boolean;
   changes: AgentChangeSet | null;
   error: string | null;
+  executionError?: AgentExecutionDetails;
+  recoveryTrace?: readonly RecoveryRecord[];
+  recoveryStatus?: string;
+  recoveries?: readonly {
+    stepId: string;
+    attempt: number;
+    outcome: 'requested' | 'rejected' | 'resumed';
+    error: AgentExecutionDetails;
+  }[];
   response: string;
   verification?: string;
+  visualReviews?: readonly {
+    iteration: number;
+    message: string;
+    image?: string;
+  }[];
   beforeSnapshot?: string;
   afterSnapshot?: string;
+  executionScope?: ExecutionScope;
+  creationProposal?: CreationChangeProposal;
+  previewSnapshot?: string;
 }
 export const emptySession = (
   mode: 'ASSIST' | 'AGENT' = 'AGENT',
@@ -87,30 +123,68 @@ export const emptySession = (
   changes: null,
   error: null,
   response: '',
+  workingMemory: undefined,
+  trace: undefined,
+  executionError: undefined,
+  recoveryTrace: undefined,
+  recoveryStatus: undefined,
+  recoveries: undefined,
+  verification: undefined,
+  visualReviews: undefined,
+  beforeSnapshot: undefined,
+  afterSnapshot: undefined,
+  executionScope: undefined,
+  creationProposal: undefined,
+  previewSnapshot: undefined,
 });
 export interface AgentTransactionPort {
-  execute(tool: string, args: unknown, signal: AbortSignal): Promise<unknown>;
+  execute(
+    tool: string,
+    args: unknown,
+    signal: AbortSignal,
+    stepId?: string,
+  ): Promise<unknown>;
+  resolveArguments?(tool: string, args: unknown): unknown;
   getSnapshot(): Project;
+  evidence?(): ExecutionEvidence;
   commit(label: string): AgentChangeSet;
   discard(): void;
 }
 export interface AgentRuntimePort {
   project(): Project;
+  setRecoveryController?(controller: RecoveryController): void;
   context(prompt: string): unknown;
+  recoveryContext?(draft: Project): unknown;
   tools(): readonly ToolDefinition[];
   setSkill?(id: string): void;
+  setExecutionScope?(scope?: ExecutionScope): void;
+  creationContext?(): unknown;
+  reviewDraft?(base: Project, draft: Project): CreationChangeProposal;
   setReferences?(
     references: readonly AgentReference[],
     mode: ReferenceMode,
   ): void;
   readTools?(): readonly ToolDefinition[];
   permission(tool: string, args: unknown): ToolPermission;
-  validate(plan: AgentPlan): void;
+  validate(plan: AgentPlan, project?: Project): void;
+  preparePlan?(plan: AgentPlan): AgentPlan;
   inspect?(tool: string, args: unknown, signal: AbortSignal): Promise<unknown>;
   begin(
     project: Project,
     authorization?: { destructiveConfirmed: boolean },
   ): AgentTransactionPort;
+  executionMetadata?(): {
+    skillIds: AgentExecutionTrace['skillIds'];
+    selectedCapabilities: readonly string[];
+    registeredTools?: readonly string[];
+    availableCapabilities?: readonly string[];
+  };
+  verifyExecution?(
+    base: Project,
+    draft: Project,
+    evidence: ExecutionEvidence,
+    signal: AbortSignal,
+  ): Promise<ExecutionVerification>;
   verify?(
     project: Project,
     signal: AbortSignal,
@@ -123,6 +197,7 @@ export interface AgentRuntimePort {
   render?(project: Project, signal: AbortSignal): Promise<string>;
 }
 export interface AgentModelPort {
+  chatOnce?: AgentModelPort['chat'];
   chat(
     task: 'general' | 'planning' | 'vision',
     request: Omit<ChatRequest, 'model'>,

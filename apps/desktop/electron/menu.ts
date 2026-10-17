@@ -20,6 +20,9 @@ export function installMenu(
   ): MenuItemConstructorOptions => ({
     label,
     accelerator,
+    enabled:
+      action !== 'image-to-layers' ||
+      (process.platform === 'darwin' && process.arch === 'arm64'),
     click: () =>
       window.webContents.send('swayframe:action', action as DesktopAction),
   });

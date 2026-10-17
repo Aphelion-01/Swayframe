@@ -11,6 +11,12 @@ export default defineConfig({
   base: './',
   build: {
     rollupOptions: {
+      input: {
+        app: 'index.html',
+        agentCoreV2: 'src/agent-v2/index.ts',
+        editorOperations: 'src/desktop/editor-operations.ts',
+      },
+      preserveEntrySignatures: 'strict',
       output: { manualChunks: { vendor: ['react', 'react-dom', 'zod'] } },
     },
   },

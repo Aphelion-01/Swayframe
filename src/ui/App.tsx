@@ -1,3 +1,6 @@
+import { LayerPackImportDialog } from './LayerPackImportDialog';
+import { MediaPlayback } from './MediaPlayback';
+import { configureEffectTrust } from '../core/effect-trust';
 import { ApplicationSettings } from './ai/AISettings';
 import './ai/ai.css';
 import { dropAssets } from './asset-import';
@@ -12,6 +15,7 @@ import { Workspace } from './workspace/layout';
 import type { EditorStore } from './editor-store';
 
 export function App({ store }: { store: EditorStore }) {
+  configureEffectTrust(localStorage);
   const view = useEditorSlice(store, [
     'project',
     'error',
@@ -41,8 +45,10 @@ export function App({ store }: { store: EditorStore }) {
           void dropAssets(store, e);
         }}
       >
+        <MediaPlayback store={store} />
         <Toolbar store={store} />
         <ApplicationSettings />
+        <LayerPackImportDialog store={store} />
         <Workspace
           left={<LayerPanel store={store} />}
           center={<Canvas store={store} />}

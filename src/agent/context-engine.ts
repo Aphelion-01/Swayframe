@@ -55,6 +55,8 @@ const brief = (layer: Layer) => ({
   id: layer.id,
   name: layer.name.slice(0, 100),
   type: layer.type,
+  ...(layer.type === 'shape' ? { shapeKind: layer.shapeKind } : {}),
+  gradient: layer.editor?.gradient ?? 'none',
   visible: layer.visible,
   locked: layer.locked,
   ...(layer.editor?.parentId ? { parentId: layer.editor.parentId } : {}),

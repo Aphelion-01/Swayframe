@@ -1,0 +1,261 @@
+{
+  "sessionId": "94b915fe-c80e-4f62-95a4-6f7e1234dd03",
+  "skillId": "auto",
+  "references": [],
+  "referenceMode": "overall",
+  "activeProjectId": "25505e76-2e67-453e-aaf3-046380bbe617",
+  "conversation": [
+    {
+      "role": "user",
+      "content": "Create Cubic serif text; correct invalid size to exactly 64, inspect composition, set Times New Roman font and opacity animation 0 to 1 over 1s."
+    }
+  ],
+  "selectedContext": {},
+  "currentPlan": null,
+  "toolCalls": [
+    {
+      "id": "preflight-0",
+      "tool": "createText",
+      "stepId": "text",
+      "taskId": "text-read-animation",
+      "phase": "preflight",
+      "errorId": "94b915fe-c80e-4f62-95a4-6f7e1234dd03:preflight-0",
+      "label": "计划预检 · createText",
+      "status": "failed",
+      "result": {
+        "code": "SCHEMA_INVALID",
+        "phase": "preflight",
+        "stepId": "text",
+        "taskId": "text-read-animation",
+        "toolName": "createText",
+        "field": "fontSize",
+        "recoverable": true,
+        "message": "createText 参数校验失败：fontSize Too small: expected number to be >=1",
+        "expected": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 2000
+        },
+        "received": -1,
+        "cause": {
+          "validationStatus": "REJECTED",
+          "originalCause": {
+            "code": "invalid_arguments",
+            "name": "Error",
+            "message": "createText 参数校验失败：fontSize Too small: expected number to be >=1",
+            "issues": [
+              {
+                "field": "[omitted]",
+                "expected": "[omitted]",
+                "received": "[omitted]",
+                "reason": "[omitted]",
+                "recoverable": "[omitted]"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "usage": [
+    null
+  ],
+  "status": "failed",
+  "mode": "AGENT",
+  "pendingConfirmation": false,
+  "changes": null,
+  "error": "[\n  {\n    \"code\": \"unrecognized_keys\",\n    \"keys\": [\n      \"maxTokens\"\n    ],\n    \"path\": [],\n    \"message\": \"Unrecognized key: \\\"maxTokens\\\"\"\n  }\n]",
+  "response": "[\n  {\n    \"code\": \"unrecognized_keys\",\n    \"keys\": [\n      \"maxTokens\"\n    ],\n    \"path\": [],\n    \"message\": \"Unrecognized key: \\\"maxTokens\\\"\"\n  }\n]",
+  "recoveryTrace": [
+    {
+      "stage": "validate",
+      "strategy": "initial",
+      "outcome": "rejected",
+      "attempt": 0,
+      "before": {
+        "id": "text-read-animation",
+        "goal": "Create Cubic serif text; correct invalid size to exactly 64, inspect composition, set Times New Roman font and opacity animation 0 to 1 over 1s.",
+        "steps": [
+          {
+            "id": "text",
+            "label": "text",
+            "tool": "createText",
+            "arguments": {
+              "content": "Cubic",
+              "fontSize": -1
+            }
+          },
+          {
+            "id": "read",
+            "label": "read",
+            "tool": "inspectComposition",
+            "arguments": {}
+          },
+          {
+            "id": "font",
+            "label": "font",
+            "tool": "setFont",
+            "arguments": {
+              "layerId": {
+                "kind": "stepResult",
+                "stepId": "text",
+                "output": "layerId"
+              },
+              "fontFamily": "Times New Roman"
+            }
+          },
+          {
+            "id": "kf0",
+            "label": "kf0",
+            "tool": "addKeyframe",
+            "arguments": {
+              "layerId": {
+                "kind": "stepResult",
+                "stepId": "text",
+                "output": "layerId"
+              },
+              "property": "opacity",
+              "time": 0,
+              "value": 0
+            }
+          },
+          {
+            "id": "kf1",
+            "label": "kf1",
+            "tool": "addKeyframe",
+            "arguments": {
+              "layerId": {
+                "kind": "stepResult",
+                "stepId": "text",
+                "output": "layerId"
+              },
+              "property": "opacity",
+              "time": 1,
+              "value": 1
+            }
+          }
+        ],
+        "risk": "low"
+      },
+      "error": {
+        "errorCode": "TOOL_ARGUMENT_INVALID",
+        "category": "MODEL_REPAIR_REQUIRED",
+        "phase": "preflight",
+        "taskId": "text-read-animation",
+        "stepId": "text",
+        "tool": "createText",
+        "field": "fontSize",
+        "reason": "createText 参数校验失败：fontSize Too small: expected number to be >=1",
+        "expected": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 2000
+        },
+        "received": -1,
+        "repairScope": "affected-tasks"
+      }
+    },
+    {
+      "stage": "model-repair",
+      "strategy": "affected-plan-patch",
+      "outcome": "requested",
+      "attempt": 1,
+      "before": {
+        "id": "text-read-animation",
+        "goal": "Create Cubic serif text; correct invalid size to exactly 64, inspect composition, set Times New Roman font and opacity animation 0 to 1 over 1s.",
+        "steps": [
+          {
+            "id": "text",
+            "label": "text",
+            "tool": "createText",
+            "arguments": {
+              "content": "Cubic",
+              "fontSize": -1
+            }
+          },
+          {
+            "id": "read",
+            "label": "read",
+            "tool": "inspectComposition",
+            "arguments": {}
+          },
+          {
+            "id": "font",
+            "label": "font",
+            "tool": "setFont",
+            "arguments": {
+              "layerId": {
+                "kind": "stepResult",
+                "stepId": "text",
+                "output": "layerId"
+              },
+              "fontFamily": "Times New Roman"
+            }
+          },
+          {
+            "id": "kf0",
+            "label": "kf0",
+            "tool": "addKeyframe",
+            "arguments": {
+              "layerId": {
+                "kind": "stepResult",
+                "stepId": "text",
+                "output": "layerId"
+              },
+              "property": "opacity",
+              "time": 0,
+              "value": 0
+            }
+          },
+          {
+            "id": "kf1",
+            "label": "kf1",
+            "tool": "addKeyframe",
+            "arguments": {
+              "layerId": {
+                "kind": "stepResult",
+                "stepId": "text",
+                "output": "layerId"
+              },
+              "property": "opacity",
+              "time": 1,
+              "value": 1
+            }
+          }
+        ],
+        "risk": "low"
+      },
+      "error": {
+        "errorCode": "TOOL_ARGUMENT_INVALID",
+        "category": "MODEL_REPAIR_REQUIRED",
+        "phase": "preflight",
+        "taskId": "text-read-animation",
+        "stepId": "text",
+        "tool": "createText",
+        "field": "fontSize",
+        "reason": "createText 参数校验失败：fontSize Too small: expected number to be >=1",
+        "expected": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 2000
+        },
+        "received": -1,
+        "repairScope": "affected-tasks"
+      }
+    },
+    {
+      "stage": "model-repair",
+      "strategy": "compact-feedback",
+      "outcome": "sent",
+      "attempt": 1,
+      "requestDigest": "47490abf6db63a12db541bb06cdd05ffd3ffcbfbdeb028cc6cfa9014a8ef082b"
+    }
+  ],
+  "recoveryStatus": "正在检查执行计划",
+  "executionError": {
+    "code": "PROVIDER_FAILED",
+    "phase": "provider",
+    "recoverable": false,
+    "message": "[\n  {\n    \"code\": \"unrecognized_keys\",\n    \"keys\": [\n      \"maxTokens\"\n    ],\n    \"path\": [],\n    \"message\": \"Unrecognized key: \\\"maxTokens\\\"\"\n  }\n]"
+  }
+}

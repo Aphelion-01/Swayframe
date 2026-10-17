@@ -23,6 +23,8 @@ export function AnimatedField({
   unit = '',
   linkMode = 'offset',
   defaultLinked = true,
+  step = 1,
+  integer = false,
 }: {
   store: EditorStore;
   property: Property<AnimValue>;
@@ -34,6 +36,8 @@ export function AnimatedField({
   unit?: string;
   linkMode?: AxisLinkMode;
   defaultLinked?: boolean;
+  step?: number;
+  integer?: boolean;
 }) {
   const { linked, toggle } = useAxisLink(property.id, defaultLinked);
   const [menu, setMenu] = useState<{ x: number; y: number }>();
@@ -68,6 +72,7 @@ export function AnimatedField({
     value = evaluateProperty(property, time),
     current = property.keyframes.some((k) => Math.abs(k.time - time) < 1e-8);
   const edit = (value: AnimValue) => {
+    if (integer && typeof value === 'number') value = Math.round(value);
     if (transformPropertyEdit(store, property.id, value, true)) return;
     store.setPropertyPreview(undefined);
     const selected = activeComposition(
@@ -97,6 +102,7 @@ export function AnimatedField({
     return store.run(`修改${label}`, [store.valueCommand(property.id, value)]);
   };
   const preview = (value: AnimValue) => {
+    if (integer && typeof value === 'number') value = Math.round(value);
     if (transformPropertyEdit(store, property.id, value, false)) return;
     store.setPropertyPreview({
       id: property.id,
@@ -249,6 +255,7 @@ export function AnimatedField({
           previewValue={typeof shown === 'number' ? shown * factor : undefined}
           min={min}
           max={max}
+          step={step}
           onPreview={(n) => preview(n / factor)}
           onCancel={cancel}
           onCommit={(n) => edit(n / factor)}
@@ -321,6 +328,7 @@ export function AnimatedField({
                 }
                 min={min}
                 max={max}
+                step={step}
                 onPreview={(n) => preview(updateAxis(i, n / factor))}
                 onCancel={cancel}
                 onCommit={(n) => edit(updateAxis(i, n / factor))}
@@ -339,6 +347,9 @@ export function AnimatedField({
               compactLabel={k.toUpperCase()}
               label={`${label} ${k.toUpperCase()}${unit}`}
               mixed={mixed(k)}
+              step={step}
+              min={min}
+              max={max}
               value={(value as Vec2)[k] * factor}
               previewValue={(shown as Vec2)[k] * factor}
               onPreview={(n) =>

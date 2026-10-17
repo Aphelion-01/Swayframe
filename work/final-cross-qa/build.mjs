@@ -1,0 +1,2 @@
+import {build} from 'esbuild';import fs from 'node:fs/promises';
+const stage='work/final-cross-qa/.compiled/desktop-dist';await fs.mkdir(stage,{recursive:true});await build({entryPoints:['work/final-cross-qa/main.ts'],outfile:stage+'/main.cjs',bundle:true,platform:'node',format:'cjs',target:'node22',external:['electron']});for(const name of ['preload.cjs','mcp-server.cjs','export-worker.cjs','sf-segment-image'])await fs.copyFile('desktop-dist/'+name,stage+'/'+name);

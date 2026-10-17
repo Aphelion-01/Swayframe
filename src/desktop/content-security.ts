@@ -5,6 +5,6 @@ export function rendererContentSecurityPolicy(development = false) {
     (development ? " 'unsafe-inline'" : '') +
     "; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: swayframe-asset:; connect-src 'self' swayframe-asset: blob: data:" +
     (development ? ' ws://127.0.0.1:5175' : '') +
-    "; worker-src 'self' blob:; object-src 'none'; base-uri 'self'"
+    "; media-src 'self' data: blob: swayframe-asset:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'"
   );
 }

@@ -124,3 +124,25 @@ it('saves a DeepSeek preset and requires a new key when changing supplier', asyn
   );
   expect(JSON.stringify(localStorage)).not.toContain('TEST_KEY');
 });
+import { AdvancedAISettings } from '../src/ui/ai/AdvancedAISettings';
+it('recovery phase budgets use the existing settings Section, are collapsed and persist independently', async () => {
+  const p = createAIPlatform(undefined, true);
+  const manager = new AIProviderManager(p.storage, p.transport);
+  await manager.initialize();
+  render(<AdvancedAISettings manager={manager} tab="Agent" />);
+  const summary = screen.queryByText('自动恢复预算');
+  if (!summary)
+    throw Error('Existing Agent settings tab must expose recovery budget');
+  expect(summary.closest('details')?.open).toBe(false);
+  fireEvent.change(screen.getByLabelText('规划请求上限'), {
+    target: { value: '10' },
+  });
+  await waitFor(() =>
+    expect(
+      manager.getSnapshot().settings.agent.recovery?.planningRequests,
+    ).toBe(10),
+  );
+  expect(
+    manager.getSnapshot().settings.agent.recovery?.executionModelRepairs,
+  ).toBeUndefined();
+});

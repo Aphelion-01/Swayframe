@@ -1,0 +1,13 @@
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { App } from '../../src/ui/App';
+import { EditorStore } from '../../src/ui/editor-store';
+import { loadProject } from '../../src/core/project-io';
+import fixture from './live-followup/live-final.swayframe?raw';
+import '../../src/ui/design-tokens.css';
+import '../../src/ui/base.css';
+import '../../src/ui/editor-theme.css';
+const store = new EditorStore(loadProject(fixture));
+store.select(store.getSnapshot().project.compositions[0].layers.find(l=>l.editor?.graph?.nodes.some(n=>n.type==='radialGradient')).id);
+store.setTime(0.7);
+ReactDOM.createRoot(document.getElementById('root')).render(<App store={store}/>);

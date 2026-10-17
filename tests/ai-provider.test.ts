@@ -6,6 +6,7 @@ import {
   credentialsSchema,
 } from '../src/ai/contracts';
 import type { ProviderConfig } from '../src/ai/contracts';
+import { modelUnavailableMessage } from '../src/ai/provider-diagnostics';
 const config: ProviderConfig = {
   id: '00000000-0000-4000-8000-000000000111',
   name: 'test',
@@ -38,6 +39,67 @@ const raw = {
   ],
   usage: { prompt_tokens: 12, completion_tokens: 3, total_tokens: 15 },
 };
+it('classifies model_not_found on HTTP 503 as a configuration failure without leaking the server body', async () => {
+  const fetcher = vi.fn<typeof fetch>(
+    async () =>
+      new Response(
+        JSON.stringify({
+          error: {
+            code: 'model_not_found',
+            message: 'No channel SECRET_TEST_VALUE',
+            param: 'SECRET_TEST_VALUE',
+          },
+        }),
+        { status: 503 },
+      ),
+  );
+  const provider = new OpenAICompatibleProvider(config, credentials, fetcher);
+  const error = await provider
+    .chat({ model: 'model', messages: [{ role: 'user', content: 'test' }] })
+    .catch((e) => e);
+  expect(error).toBeInstanceOf(AIError);
+  expect(error.code).toBe('invalid_request');
+  expect(error.message).toBe(modelUnavailableMessage);
+  expect(error.details).toMatchObject({ status: 503, code: 'model_not_found' });
+  expect(JSON.stringify(error)).not.toContain('SECRET_TEST_VALUE');
+  expect(fetcher).toHaveBeenCalledTimes(1);
+});
+it('keeps an ordinary 503 retryable instead of misclassifying an outage as a missing model', async () => {
+  const provider = new OpenAICompatibleProvider(
+    config,
+    credentials,
+    async () =>
+      new Response(
+        JSON.stringify({ error: { code: 'upstream_unavailable' } }),
+        { status: 503 },
+      ),
+  );
+  await expect(
+    provider.chat({
+      model: 'model',
+      messages: [{ role: 'user', content: 'test' }],
+    }),
+  ).rejects.toMatchObject({
+    code: 'provider',
+    details: { status: 503, code: 'upstream_unavailable' },
+  });
+});
+it('preserves authentication precedence when a 401 also contains a model error code', async () => {
+  const provider = new OpenAICompatibleProvider(
+    config,
+    credentials,
+    async () =>
+      new Response(JSON.stringify({ error: { code: 'model_not_found' } }), {
+        status: 401,
+      }),
+  );
+  await expect(
+    provider.chat({
+      model: 'model',
+      messages: [{ role: 'user', content: 'test' }],
+    }),
+  ).rejects.toMatchObject({ code: 'invalid_key' });
+});
 it('uses DeepSeek non-thinking mode for named Agent tools and leaves other services unchanged', async () => {
   const fetcher = vi.fn<typeof fetch>(
     async () => new Response(JSON.stringify(raw)),
@@ -307,4 +369,91 @@ it('bounds time, response size and rejects text-only vision, unsafe URLs and mal
       messages: [{ role: 'user', content: 'test' }],
     }),
   ).rejects.toBeInstanceOf(AIError);
+});
+it('accepts pasted full API endpoints without duplicating chat/completions or models', async () => {
+  const fetcher = vi.fn<typeof fetch>(
+    async () => new Response(JSON.stringify(raw)),
+  );
+  for (const suffix of [
+    '/chat/completions',
+    '/chat/completions/',
+    '/models',
+    '',
+  ]) {
+    await new OpenAICompatibleProvider(
+      { ...config, baseUrl: config.baseUrl + suffix },
+      credentials,
+      fetcher,
+    ).chat({ model: 'model', messages: [{ role: 'user', content: 'test' }] });
+    expect(fetcher.mock.lastCall?.[0]).toBe(
+      'https://example.com/v1/chat/completions',
+    );
+  }
+});
+it('keeps an active tool stream alive while enforcing an idle timeout', async () => {
+  vi.useFakeTimers();
+  try {
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        for (const [time, text] of [
+          [20, 'data: {"choices":[{"delta":{"content":"thinking"}}]}\n\n'],
+          [
+            50,
+            'data: {"choices":[{"delta":{"content":"done"},"finish_reason":"stop"}]}\n\n',
+          ],
+          [80, 'data: [DONE]\n\n'],
+        ] as const)
+          setTimeout(() => controller.enqueue(encoder.encode(text)), time);
+      },
+    });
+    const provider = new OpenAICompatibleProvider(
+      config,
+      credentials,
+      async () =>
+        new Response(stream, {
+          headers: { 'Content-Type': 'text/event-stream' },
+        }),
+      { timeoutMs: 40 },
+    );
+    const work = provider.chat({
+      model: 'model',
+      messages: [{ role: 'user', content: 'test' }],
+      stream: true,
+    });
+    await vi.advanceTimersByTimeAsync(85);
+    expect((await work).text).toBe('thinkingdone');
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it('enforces an explicit output cap in the actual HTTP body without changing requests that omit it', async () => {
+  const fetcher = vi.fn<typeof fetch>(
+    async () => new Response(JSON.stringify(raw)),
+  );
+  const provider = new OpenAICompatibleProvider(config, credentials, fetcher);
+  await provider.chat({
+    model: 'model',
+    messages: [{ role: 'user', content: 'test' }],
+    maxOutputTokens: 2000,
+  });
+  expect(JSON.parse(String(fetcher.mock.calls[0]![1]!.body)).max_tokens).toBe(
+    2000,
+  );
+  await provider.chat({
+    model: 'model',
+    messages: [{ role: 'user', content: 'test' }],
+  });
+  expect(
+    JSON.parse(String(fetcher.mock.calls[1]![1]!.body)),
+  ).not.toHaveProperty('max_tokens');
+  await expect(
+    provider.chat({
+      model: 'model',
+      messages: [{ role: 'user', content: 'test' }],
+      maxOutputTokens: 9000,
+    }),
+  ).rejects.toBeTruthy();
+  expect(fetcher).toHaveBeenCalledTimes(2);
 });

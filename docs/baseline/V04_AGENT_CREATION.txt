@@ -1,0 +1,2002 @@
+# Swayframe V0.4
+# Agent-Guided Creation & Intelligent Compositing
+# Revised Implementation Specification
+
+你现在开始对 Swayframe 的 AI Agent 创作系统
+进行一次核心架构与交互升级。
+
+本轮开发重点：
+
+Agent Planning
+Task Decomposition
+Capability Discovery
+Intelligent Tool Selection
+Graph Construction
+Node-Level Prompt Editing
+Branch-Level Modification
+Change Scope Protection
+Capability Reuse
+
+本次任务不是：
+
+增加更多 AI 按钮。
+
+不是：
+
+开发第二套 Compositing Graph。
+
+不是：
+
+让 Agent 更频繁地编写 Shader。
+
+而是：
+
+让 Agent 真正理解 Swayframe 的创作结构，
+能够根据复杂需求制定合理方案，
+智能使用软件已有能力，
+并允许创作者对生成结果进行精确、局部、可控的修改。
+
+============================================================
+一、产品核心目标
+============================================================
+
+Swayframe 是一款：
+
+Human-first, AI-native
+Motion Design & Compositing Software。
+
+传统操作模式必须完整保留。
+
+用户不使用 AI，
+依然可以通过：
+
+Canvas
+Inspector
+Timeline
+Motion Curve
+Compositing Graph
+
+完成专业创作。
+
+AI Agent 的角色不是：
+
+模仿人类不停点击按钮。
+
+而是：
+
+理解需求
+→
+分析现有工程
+→
+拆解任务
+→
+查询已有能力
+→
+选择最合理的实现方式
+→
+执行修改
+→
+检查结果
+→
+将控制权交还给用户。
+
+Agent 应具备三个能力层级：
+
+L1 — OPERATOR
+
+调用原生编辑命令。
+
+L2 — COMPOSER
+
+组合现有图层、动画、节点和效果。
+
+L3 — TOOLMAKER
+
+当现有能力无法满足需求时，
+调用 Effect Forge 创造程序化效果。
+
+本轮优先完善：
+
+L1 + L2。
+
+L3 复用现有 V0.3 架构，
+不重新开发一套 Effect Forge。
+
+============================================================
+二、本轮必须解决的五个问题
+============================================================
+
+问题一：
+
+Agent 不理解复杂任务的结构。
+
+例如：
+
+用户希望制作：
+
+“蓝色动态渐变背景，
+带有柔和噪声和发光，
+标题从下方向上弹入。”
+
+Agent 可能把所有东西作为一个任务执行，
+导致结构混乱。
+
+必须能够拆分：
+
+背景生成
+视觉处理
+文字对象
+运动动画
+最终合成。
+
+------------------------------------------------------------
+
+问题二：
+
+Agent 不知道什么时候使用已有能力。
+
+例如：
+
+软件已经存在 Radial Gradient，
+却用多个图层和 Gaussian Blur 模拟。
+
+或者：
+
+已有 Gaussian Blur，
+却重新生成一个模糊 Shader。
+
+必须建立：
+
+Capability Discovery
++
+Reuse-First Strategy。
+
+------------------------------------------------------------
+
+问题三：
+
+Agent 不理解现有工程。
+
+用户希望修改背景颜色，
+Agent 却重新创建整套背景结构。
+
+必须能够：
+
+Inspect Existing Scene
+
+Inspect Existing Graph
+
+Locate Relevant Object
+
+Identify Related Parameters
+
+Modify Existing Content。
+
+------------------------------------------------------------
+
+问题四：
+
+Agent 无法限制修改范围。
+
+用户只希望修改一个节点，
+Agent 却改变整个 Composition。
+
+必须实现：
+
+Parameter Scope
+Node Scope
+Branch Scope
+Composition Scope。
+
+------------------------------------------------------------
+
+问题五：
+
+Agent 创建的结构不便于用户继续编辑。
+
+必须保证：
+
+生成的内容能够在：
+
+Canvas
+Inspector
+Timeline
+Compositing Graph
+
+中正常编辑。
+
+禁止：
+
+将复杂作品简单转换成不可编辑的最终图片。
+
+============================================================
+三、执行优先级
+============================================================
+
+本轮严格分为三个阶段。
+
+PHASE A — MUST COMPLETE
+
+Agent Planner
+Capability Discovery
+Prompt-to-Composition
+Prompt-to-Graph
+Native Capability Reuse
+
+PHASE B — MUST COMPLETE
+
+Node-Level Prompt
+Branch-Level Prompt
+Scope Protection
+Graph Change Proposal
+Local Modification
+
+PHASE C — CONDITIONAL
+
+Generative AI Nodes
+Effect Forge Deep Integration
+Advanced Node Group
+Complex Graph Optimization
+
+本轮资源分配：
+
+优先完成：
+
+PHASE A
++
+PHASE B。
+
+只有 A、B 真正通过验收后，
+才继续深入 C。
+
+不能为了开发 C，
+导致 A、B 停留在接口或 Demo 阶段。
+
+============================================================
+四、审计现有系统
+============================================================
+
+首先检查整个仓库。
+
+重点检查：
+
+Agent Runtime
+Agent Tool Registry
+Command System
+Feature Registry
+Capability Registry
+Effect Registry
+Graph Node Registry
+Compositing Graph
+Graph Compiler
+Scene Model
+Property<T>
+Animation Engine
+Timeline
+Motion Curve
+Effect Forge
+Renderer
+Project Serialization
+Undo / Redo
+
+检查：
+
+现有功能是否真的可用。
+
+不能仅根据：
+
+存在 Interface
+存在 Component
+存在按钮
+
+就判断能力已经实现。
+
+创建：
+
+AGENT_CREATION_AUDIT.md
+
+记录：
+
+Implemented
+Partial
+Missing
+Duplicated
+Broken
+Reusable
+Architecture Risks
+
+完成后立即开始实际编码。
+
+============================================================
+五、Agent 必须先理解任务，再执行
+============================================================
+
+从现在开始：
+
+Agent 收到创作需求后，
+不能立即开始创建节点。
+
+必须先运行：
+
+Intent Analysis
++
+Project Inspection
++
+Task Decomposition。
+
+例如：
+
+用户：
+
+“创建一个科技感标题动画，
+具有深蓝色径向渐变背景，
+轻微流动噪声，
+标题从下方弹入。”
+
+Agent 应生成如下结构化任务：
+
+TASK 1
+
+Create Gradient Background
+
+TASK 2
+
+Create Noise Treatment
+
+TASK 3
+
+Apply Glow
+
+TASK 4
+
+Create Text Layer
+
+TASK 5
+
+Animate Text Position
+
+TASK 6
+
+Apply Motion Curve
+
+TASK 7
+
+Composite Result
+
+并为每项任务指定：
+
+Execution Domain。
+
+例如：
+
+TASK 1 → Generator / Fill
+
+TASK 2 → Effect Engine / Graph
+
+TASK 3 → Effect Engine
+
+TASK 4 → Scene / Text Layer
+
+TASK 5 → Timeline
+
+TASK 6 → Motion Curve
+
+TASK 7 → Compositing Graph / Renderer
+
+注意：
+
+Task Decomposition 不等于 Node Decomposition。
+
+不是每项任务都需要对应一个节点。
+
+============================================================
+六、建立 Agent Planner
+============================================================
+
+建立或扩展：
+
+Agent Planner。
+
+参考结构：
+
+interface CreationPlan {
+  id: string;
+
+  goal: string;
+
+  targetCompositionId: string;
+
+  scope: ExecutionScope;
+
+  tasks: CreationTask[];
+
+  dependencies: TaskDependency[];
+
+  proposedChanges: ProposedChange[];
+
+  status: PlanStatus;
+}
+
+interface CreationTask {
+  id: string;
+
+  description: string;
+
+  executionDomain:
+    | "scene"
+    | "canvas"
+    | "property"
+    | "animation"
+    | "compositing"
+    | "generation"
+    | "effect-forge";
+
+  strategy:
+    | "modify-existing"
+    | "reuse"
+    | "compose"
+    | "generate"
+    | "forge";
+
+  capabilityId?: string;
+
+  targetIds?: string[];
+
+  dependencies?: string[];
+}
+
+以上为参考类型。
+
+具体实现必须复用仓库已有数据模型。
+
+不能因为示例接口不同，
+重新建立不兼容的第二套系统。
+
+Plan 必须使用结构化数据，
+并通过 Schema Validation。
+
+不能直接执行模型输出的任意 JSON。
+
+============================================================
+七、Capability Discovery
+============================================================
+
+Agent 必须能够主动查询：
+
+当前 Swayframe 已经具有哪些能力。
+
+至少包括：
+
+Scene Commands
+
+Shape / Text Creation
+
+Native Effects
+
+Fill Capabilities
+
+Generators
+
+Animation Commands
+
+Motion Presets
+
+Compositing Nodes
+
+User Effects
+
+Programmable Effects
+
+Effect Forge
+
+已接入的生成式 AI Provider。
+
+对于每个 Capability，
+至少能查询：
+
+ID
+Name
+Category
+Input Types
+Output Types
+Parameters
+Execution Domain
+Availability
+Animatable
+Realtime / Async
+Cost
+Compatibility。
+
+重点：
+
+查询真实 Registry。
+
+不能依靠 LLM 猜测某个功能是否存在。
+
+============================================================
+八、Agent 的实现选择策略
+============================================================
+
+正式定义以下优先级：
+
+1. MODIFY EXISTING
+
+2. REUSE EXISTING CAPABILITY
+
+3. COMPOSE EXISTING CAPABILITIES
+
+4. GENERATIVE OPERATION
+
+5. EFFECT FORGE
+
+但需要综合评估：
+
+Semantic Accuracy
+Visual Fidelity
+Editability
+Performance
+Graph Complexity
+Execution Cost
+Portability。
+
+例如：
+
+用户：
+
+“把背景调成紫色。”
+
+如果现有 Gradient Node 能通过 Color Stops 修改：
+
+必须优先修改已有节点。
+
+禁止：
+
+直接创建新的背景图层。
+
+------------------------------------------------------------
+
+用户：
+
+“添加高斯模糊。”
+
+如果存在 Gaussian Blur：
+
+直接使用。
+
+禁止：
+
+重新生成模糊 Shader。
+
+------------------------------------------------------------
+
+用户：
+
+“创建复杂液态折射。”
+
+如果现有 Distortion、
+Noise 和 Refraction 能够准确实现：
+
+优先组合已有能力。
+
+只有现有能力确实不足，
+才调用 Effect Forge。
+
+============================================================
+九、建立统一的创作执行接口
+============================================================
+
+Agent Planner 不能只控制 Compositing Graph。
+
+它必须能够将任务分发给：
+
+Scene System
+Property System
+Animation Engine
+Motion Curve
+Compositing Graph
+Effect Engine
+Effect Forge。
+
+例如：
+
+创建 Text：
+
+使用 Scene Command。
+
+修改 Position：
+
+使用 Property Command。
+
+创建 Position Keyframe：
+
+使用 Animation Command。
+
+调整运动曲线：
+
+使用 Motion Curve Command。
+
+创建 Blur Node：
+
+使用 Graph Command。
+
+生成新 Shader：
+
+使用 Effect Forge。
+
+所有正式修改必须通过：
+
+Command System。
+
+禁止 Agent：
+
+直接修改 Scene JSON。
+
+============================================================
+十、Prompt-to-Graph
+============================================================
+
+当用户需求确实需要多个视觉处理阶段时，
+Agent 可以自动构建：
+
+Compositing Graph。
+
+例如：
+
+用户：
+
+“创建动态蓝色渐变背景，
+添加流动噪声和柔和发光。”
+
+Agent：
+
+查询现有节点。
+
+创建：
+
+Radial Gradient
+Noise Processing
+Glow
+Output
+
+按照真实端口语义连接。
+
+不得假设所有效果都是单输入单输出。
+
+必须支持：
+
+Typed Ports
+Port Compatibility
+Graph Validation
+Cycle Detection
+Node Configuration
+Stable IDs。
+
+生成的 Graph 必须：
+
+可编辑
+可检查
+可保存
+可撤销
+可重新加载。
+
+============================================================
+十一、Prompt-to-Composition
+============================================================
+
+用户的完整创作需求，
+不应该全部转换为节点。
+
+例如：
+
+“制作科技感标题动画。”
+
+最终工程可能包含：
+
+SCENE
+
+Background Layer
+Text Layer
+
+TIMELINE
+
+Text Position Keyframes
+Opacity Keyframes
+Motion Curve
+
+COMPOSITING GRAPH
+
+Gradient
+Noise
+Glow
+Merge
+
+这些内容必须共同组成：
+
+同一个可编辑工程。
+
+禁止：
+
+Text Animation 被转换成大量无意义节点。
+
+禁止：
+
+Compositing Graph 重新实现一套 Timeline。
+
+============================================================
+十二、建立 Graph Inspection
+============================================================
+
+Agent 修改现有作品之前，
+必须先读取现有结构。
+
+提供：
+
+graph.inspect
+graph.inspectNode
+graph.inspectBranch
+graph.findRelatedNodes
+graph.getDependencies
+
+具体命名复用现有工具风格。
+
+至少能够查询：
+
+Node ID
+Node Type
+Parameters
+Input Connections
+Output Connections
+Semantic Role
+Group
+Enabled State
+Source Asset
+Output Dependencies。
+
+Agent 必须知道：
+
+哪些节点已经存在。
+
+哪些节点能够复用。
+
+哪些节点属于目标分支。
+
+哪些节点不应被修改。
+
+============================================================
+十三、实现 Node-Level Prompt
+============================================================
+
+这是本轮重点功能。
+
+当用户选中一个节点后，
+
+Inspector 提供：
+
+Modify with AI。
+
+用户输入：
+
+“让这个模糊更明显。”
+
+Agent：
+
+读取当前 Gaussian Blur。
+
+检查 Radius。
+
+生成：
+
+Parameter Change Proposal。
+
+例如：
+
+Radius:
+20 → 35
+
+不得：
+
+创建第二个 Blur Node。
+
+不得：
+
+重新生成 Shader。
+
+不得：
+
+修改整个 Graph。
+
+------------------------------------------------------------
+
+对于 Radial Gradient：
+
+用户输入：
+
+“让蓝色中心更亮一些。”
+
+Agent 应优先调整：
+
+Color Stops
+Radius
+Center
+
+等已有参数。
+
+而不是：
+
+创建多个新图层。
+
+============================================================
+十四、Node-Level Prompt 的默认权限
+============================================================
+
+用户从某个节点发起 AI 修改时：
+
+默认：
+
+PARAMETER_ONLY。
+
+如果参数不足：
+
+可以提出：
+
+SELECTED_NODE
+
+级别的修改方案。
+
+如果当前节点无法单独完成：
+
+可以建议：
+
+SELECTED_BRANCH。
+
+但是：
+
+Agent 不能自行扩大修改范围。
+
+扩大 Scope 时：
+
+必须向用户说明：
+
+为什么需要扩大。
+
+哪些节点将受到影响。
+
+未经接受：
+
+不得修改其他节点。
+
+============================================================
+十五、建立 Branch-Level Prompt
+============================================================
+
+这是本轮另一个最高优先级功能。
+
+用户能够选择：
+
+某个节点分支。
+
+然后输入：
+
+“让背景变成紫色，
+降低发光强度，
+但不要修改文字动画。”
+
+Agent 必须：
+
+1. 识别背景分支。
+
+2. 定位 Gradient Node。
+
+3. 定位 Glow Node。
+
+4. 修改 Color Stops。
+
+5. 修改 Glow Intensity。
+
+6. 保留 Noise Node。
+
+7. 保留 Text Layer。
+
+8. 保留文字 Keyframes。
+
+9. 保留 Motion Curve。
+
+10. 保留其他无关内容。
+
+如果无法可靠定位背景分支：
+
+不得猜测后直接大范围修改。
+
+应提供候选对象或要求用户选择。
+
+============================================================
+十六、建立修改范围保护
+============================================================
+
+定义：
+
+PARAMETER_ONLY
+
+SELECTED_NODE
+
+SELECTED_BRANCH
+
+FULL_COMPOSITION
+
+并建立：
+
+Scope Validator。
+
+不能只在 Prompt 中写：
+
+“不要修改其他内容”。
+
+必须由代码检查：
+
+拟修改对象 ID
+
+拟删除对象 ID
+
+拟新增连接
+
+受影响的分支边界
+
+是否超出 Scope。
+
+如果超出：
+
+Reject Plan
+
+或：
+
+Request Scope Expansion。
+
+尤其注意：
+
+修改一个分支的输出，
+可能影响最终合成画面。
+
+这属于预期的下游渲染变化。
+
+但不意味着：
+
+Agent 可以修改下游无关节点的参数和结构。
+
+必须区分：
+
+Rendering Dependency
+
+和：
+
+Mutation Permission。
+
+============================================================
+十七、建立 Graph Change Proposal
+============================================================
+
+对已有工程的 AI 修改，
+先生成结构化 Proposal。
+
+Proposal 至少包含：
+
+Created Objects
+
+Deleted Objects
+
+Modified Objects
+
+Created Nodes
+
+Deleted Nodes
+
+Modified Nodes
+
+Created Connections
+
+Removed Connections
+
+Changed Parameters
+
+Affected Scope
+
+Unchanged Scope
+
+Warnings
+
+Estimated Cost。
+
+例如：
+
+Target:
+
+Background Branch
+
+Changes:
+
+Gradient Color Stop:
+Blue → Purple
+
+Glow Intensity:
+1.5 → 0.8
+
+Preserved:
+
+Text Layer
+Text Keyframes
+Motion Curve
+Camera
+Other Branches
+
+提供：
+
+Preview
+Accept
+Reject。
+
+正式提交必须：
+
+一次 Transaction
+
+支持 Undo / Redo。
+
+预览不得直接污染正式工程状态。
+
+============================================================
+十八、建立最小修改原则
+============================================================
+
+正式引入：
+
+MINIMUM NECESSARY CHANGE。
+
+例如：
+
+只需要修改两个参数，
+就不应该：
+
+创建四个节点。
+
+只需要修改已有 Node，
+就不应该：
+
+删除原 Node 再创建新 Node。
+
+只需要修改背景分支，
+就不应该：
+
+重新构建整个 Composition。
+
+只需要创建关键帧，
+就不应该：
+
+创建复杂 Motion Graph。
+
+Agent Planner 应评估：
+
+Node Count Increase
+
+New Layer Count
+
+Redundant Processing
+
+Affected Object Count
+
+Execution Cost
+
+并优先选择：
+
+满足需求且结构简单的方案。
+
+============================================================
+十九、AI Graph 自动布局
+============================================================
+
+Agent 自动生成的 Graph 必须易于理解。
+
+遵循：
+
+Left-to-right Processing Flow。
+
+自动布局：
+
+Sources
+→
+Processing
+→
+Composite
+→
+Output。
+
+要求：
+
+避免节点重叠。
+
+减少连线交叉。
+
+多分支之间保持空间分隔。
+
+使用语义化节点名称。
+
+复杂分支允许折叠或分组。
+
+但不要为了美观：
+
+把所有节点封装成不可检查的黑盒。
+
+优先复用现有 Graph Layout Engine。
+
+============================================================
+二十、Node Group
+============================================================
+
+如果现有 Node Group 已实现：
+
+让 Agent 能够：
+
+创建
+检查
+修改
+复用
+
+节点组。
+
+例如：
+
+Organic Background
+
+内部：
+
+Noise
+Distortion
+Gradient
+Glow
+
+对外暴露：
+
+Color
+Flow Speed
+Noise Scale
+Glow Strength。
+
+如果目前没有完整 Node Group：
+
+仅实现本轮实际需要的最小能力。
+
+不要因为开发大型 Node Group 系统，
+延误 Node-Level 和 Branch-Level AI。
+
+============================================================
+二十一、Effect Forge 的定位
+============================================================
+
+Effect Forge 继续保留。
+
+但本轮：
+
+不要求重新开发 Effect Forge。
+
+Agent 必须通过：
+
+Capability Discovery
+
+判断是否已有足够能力。
+
+如果不存在合适实现：
+
+才考虑：
+
+Create Programmable Effect Draft。
+
+新效果必须继续遵循：
+
+Validate
+Compile
+Preview
+Apply
+Save。
+
+不能让 Agent 直接修改：
+
+Swayframe Renderer Source。
+
+如果 Effect Forge 尚未完成：
+
+Agent 应报告：
+
+Capability Gap。
+
+不得假装已经创建新的原生效果。
+
+============================================================
+二十二、UI 设计
+============================================================
+
+严格遵守：
+
+DESIGN.md
+
+FEATURE_LOCATION_MATRIX.md
+
+已有 Feature Registry。
+
+不要新增第二套 AI Graph Editor。
+
+不要新增大量永久工具栏。
+
+建议交互：
+
+GLOBAL ASSISTANT
+
+输入：
+
+完整创作需求。
+
+
+COMPOSITING GRAPH
+
+提供：
+
+Generate from Prompt。
+
+
+NODE INSPECTOR
+
+提供：
+
+Modify with AI。
+
+
+SELECTED BRANCH
+
+提供：
+
+Modify Branch with AI。
+
+
+PROPOSAL PANEL
+
+展示：
+
+拟修改内容
+预览
+接受
+拒绝。
+
+这些入口必须复用：
+
+现有 Agent Runtime。
+
+不能每个入口独立创建一套 AI Agent。
+
+============================================================
+二十三、Agent 的交互反馈
+============================================================
+
+Agent 执行任务时，
+应让用户知道当前在做什么。
+
+例如：
+
+Analyzing Composition
+
+Finding Existing Capabilities
+
+Planning Changes
+
+Validating Graph
+
+Previewing Result
+
+Applying Changes
+
+但不要：
+
+把模型内部推理过程
+或者大量技术日志
+直接堆给普通用户。
+
+提供简洁的：
+
+Task Summary
+
+Implementation Strategy
+
+Changed Objects
+
+Current Status。
+
+例如：
+
+已找到现有 Radial Gradient。
+
+将修改：
+
+Background Gradient
+Glow Intensity
+
+不会修改：
+
+Title Animation。
+
+============================================================
+二十四、严禁重复生成式执行
+============================================================
+
+如果已有生成式 AI Node：
+
+本轮必须保证：
+
+Timeline Scrubbing
+
+不触发模型重新生成。
+
+普通参数变化：
+
+不自动触发外部模型请求。
+
+修改 Prompt：
+
+可以标记结果过期。
+
+必须通过：
+
+Generate
+Regenerate
+
+明确触发生成式执行。
+
+对于 API 费用相关操作：
+
+应显示成本或预算信息。
+
+不要在当前任务中重新开发大型模型管理系统。
+
+============================================================
+二十五、Project Persistence
+============================================================
+
+保存工程后：
+
+必须保留：
+
+Scene Objects
+
+Timeline Animation
+
+Compositing Graph
+
+Node Parameters
+
+Accepted AI Changes
+
+Semantic Metadata
+
+Custom Effect References
+
+Prompt Configuration（需要长期保存的部分）
+
+重新打开：
+
+所有结构必须正常恢复。
+
+Agent 的临时 Task Plan
+不必永久写入工程。
+
+只有正式接受或需要复现的配置，
+才进入 Project Serialization。
+
+============================================================
+二十六、测试 A：基础复用
+============================================================
+
+用户：
+
+“创建一个径向渐变。”
+
+预期：
+
+Agent 查询：
+
+Radial Gradient。
+
+如果已有：
+
+直接使用。
+
+不得：
+
+创建两个普通图层
+再用 Gaussian Blur 模拟。
+
+验证：
+
+参数可编辑。
+
+============================================================
+二十七、测试 B：Prompt-to-Graph
+============================================================
+
+用户：
+
+“创建蓝色渐变背景，
+添加流动噪声和柔和发光。”
+
+预期：
+
+Agent：
+
+生成结构化计划。
+
+使用已有：
+
+Gradient
+Noise
+Glow
+
+等能力。
+
+创建合法 Graph。
+
+正确连接。
+
+渲染成功。
+
+节点可以手动修改。
+
+============================================================
+二十八、测试 C：Prompt-to-Composition
+============================================================
+
+用户：
+
+“创建一个科技感标题动画，
+使用蓝色渐变背景，
+标题从下方弹入。”
+
+预期：
+
+Scene：
+
+Background
+Text
+
+Timeline：
+
+Position
+Opacity
+Motion Curve
+
+Graph：
+
+Gradient
+Glow
+必要处理节点。
+
+要求：
+
+文字保留为 Text Layer。
+
+动画保留为原生 Keyframe。
+
+不允许：
+
+生成一张包含文字的图片
+冒充可编辑标题。
+
+============================================================
+二十九、测试 D：Node-Level Modification
+============================================================
+
+已有：
+
+Gaussian Blur。
+
+Radius：
+
+20。
+
+用户选中该节点：
+
+“让模糊再强一点。”
+
+Agent：
+
+读取现有参数。
+
+提出合理调整。
+
+不得：
+
+增加第二个 Blur。
+
+不得：
+
+修改其他节点。
+
+Undo：
+
+正确恢复。
+
+============================================================
+三十、测试 E：Branch-Level Modification
+============================================================
+
+这是本轮最重要的验收案例。
+
+首先：
+
+让 Agent 创建一份：
+
+蓝色渐变背景
++
+流动噪声
++
+Glow
++
+文字弹入动画
+
+的 Composition。
+
+随后：
+
+用户选中背景分支。
+
+输入：
+
+“把背景改成紫色，
+稍微降低发光强度，
+但是不要改变文字动画。”
+
+预期：
+
+1. 修改已有 Gradient。
+
+2. 修改已有 Glow。
+
+3. 保留 Noise。
+
+4. 不增加多余节点。
+
+5. 不重新创建背景。
+
+6. 不修改 Text Layer 内容。
+
+7. 不修改 Text Position Keyframes。
+
+8. 不修改 Motion Curve。
+
+9. 不修改 Camera。
+
+10. 不修改无关 Graph Branch。
+
+11. 能够预览修改。
+
+12. 能够接受或拒绝。
+
+13. Undo 一次撤销整次 AI 修改。
+
+14. Save / Reload 后效果正确。
+
+必须验证：
+
+Node IDs
+
+Keyframe Data
+
+Animation Curves
+
+Unrelated Branch Data
+
+在修改前后保持不变。
+
+不能仅凭最终截图相似
+就认为没有影响无关内容。
+
+============================================================
+三十一、测试 F：最小修改原则
+============================================================
+
+用户：
+
+“创建一个红色矩形。”
+
+预期：
+
+创建 Rectangle Layer。
+
+不得：
+
+创建复杂 Graph。
+
+------------------------------------------------------------
+
+用户：
+
+“将它移动到右边。”
+
+预期：
+
+Modify Position。
+
+------------------------------------------------------------
+
+用户：
+
+“让它在两秒内移动到右边。”
+
+预期：
+
+创建 Position Keyframes。
+
+------------------------------------------------------------
+
+用户：
+
+“让移动更有弹性。”
+
+预期：
+
+优先调整 Motion Curve。
+
+不得：
+
+重新生成整段动画。
+
+============================================================
+三十二、测试 G：Effect Forge 后备
+============================================================
+
+用户：
+
+“创建一种现有节点无法准确实现的
+特殊程序化流体纹理。”
+
+Agent：
+
+检查已有能力。
+
+如果现有组合不足：
+
+调用 Effect Forge。
+
+如果 Effect Forge 可用：
+
+创建 Draft
+Validate
+Compile
+Preview。
+
+如果不可用：
+
+明确反馈。
+
+不得：
+
+假装生成成功。
+
+不得：
+
+用不相关效果静默替代。
+
+============================================================
+三十三、代码质量
+============================================================
+
+必须补充自动测试。
+
+至少包含：
+
+Planner Schema Validation
+
+Task Decomposition
+
+Capability Matching
+
+Existing Capability Reuse
+
+Graph Type Validation
+
+Graph Cycle Detection
+
+Graph Construction
+
+Node Parameter Modification
+
+Branch Scope Protection
+
+Proposal Validation
+
+Transaction / Undo
+
+Existing Scene Preservation
+
+Timeline Animation Preservation
+
+Project Round-trip。
+
+所有核心测试应使用：
+
+真实应用数据模型与 Command System。
+
+对于 Agent 模型输出：
+
+可以使用固定测试响应，
+验证规划结果到命令执行的流程。
+
+但不能把固定响应测试
+冒充真实模型在开放任务上的规划能力。
+
+至少另行完成一次真实 Provider 的端到端验证，
+或者明确记录未能验证的原因。
+
+============================================================
+三十四、质量门禁
+============================================================
+
+每完成一个子阶段：
+
+Typecheck
+
+Lint
+
+Unit Tests
+
+Integration Tests
+
+Build
+
+Desktop Build（适用时）。
+
+如果某个功能尚未完整：
+
+标记：
+
+PARTIAL
+
+或：
+
+NOT IMPLEMENTED。
+
+禁止：
+
+只创建 UI 入口，
+没有真实执行能力。
+
+禁止：
+
+只生成漂亮节点图，
+但 Renderer 无法正确执行。
+
+禁止：
+
+只修改最终画面，
+却无法恢复可编辑结构。
+
+============================================================
+三十五、最终交付文档
+============================================================
+
+输出：
+
+AGENT_CREATION_AUDIT.md
+
+AGENT_PLANNER_SPEC.md
+
+AGENT_GRAPH_CONSTRUCTION_SPEC.md
+
+NODE_AND_BRANCH_AI_SPEC.md
+
+AGENT_CREATION_TEST_REPORT.md
+
+以及：
+
+AGENT_CREATION_RESULT.md
+
+其中 RESULT 必须包含：
+
+Implemented
+
+Reused Existing Systems
+
+Prompt-to-Graph Results
+
+Prompt-to-Composition Results
+
+Node-Level AI Results
+
+Branch-Level AI Results
+
+Scope Protection Results
+
+Test Results
+
+Known Issues
+
+Not Implemented
+
+Next Steps。
+
+============================================================
+三十六、自主开发规则
+============================================================
+
+本次开发需要持续推进。
+
+不要每完成一个组件就停下来询问。
+
+普通架构选择自行决定。
+
+先完成：
+
+Audit。
+
+随后：
+
+Planner
++
+Capability Discovery。
+
+接着：
+
+Prompt-to-Composition
++
+Prompt-to-Graph。
+
+最后重点完成：
+
+Node-Level Prompt
++
+Branch-Level Modification
++
+Scope Protection。
+
+不要为了追求功能数量，
+跳过完整端到端测试。
+
+不得对缺失的功能进行虚假完成声明。
+
+============================================================
+三十七、最终产品验收
+============================================================
+
+最终必须实现以下真实工作流：
+
+STEP 1
+
+用户输入：
+
+“创建一个蓝色动态渐变背景，
+带有柔和发光，
+标题从下方向上弹入。”
+
+STEP 2
+
+Agent：
+
+理解需求。
+
+拆分任务。
+
+查询已有能力。
+
+选择执行系统。
+
+STEP 3
+
+Agent 创建：
+
+可编辑 Background
+
+可编辑 Text Layer
+
+原生 Timeline Animation
+
+必要的 Compositing Nodes。
+
+STEP 4
+
+用户进入 Compositing Graph。
+
+看到：
+
+清晰的背景处理分支。
+
+STEP 5
+
+用户选中背景分支。
+
+输入：
+
+“背景变成紫色，
+Glow 弱一点，
+其他内容保持不变。”
+
+STEP 6
+
+Agent：
+
+检查当前 Graph。
+
+找到已有 Gradient。
+
+找到已有 Glow。
+
+修改参数。
+
+生成可预览的修改方案。
+
+STEP 7
+
+用户接受修改。
+
+STEP 8
+
+验证：
+
+Background 已变化。
+
+Text Animation 没变化。
+
+无关节点没变化。
+
+没有重复创建效果。
+
+STEP 9
+
+用户：
+
+Undo。
+
+能够一次恢复修改。
+
+STEP 10
+
+Save Project。
+
+Close。
+
+Reopen。
+
+所有内容仍然正确。
+
+只有这一整条工作流真实完成，
+本轮 V0.4 的核心目标才算完成。
+
+============================================================
+最终原则
+============================================================
+
+Swayframe Agent 不应该：
+
+不停创造新的东西，
+再把它们堆进工程。
+
+它应该：
+
+理解现有结构。
+
+理解用户目标。
+
+找到最合适的创作工具。
+
+尽可能复用已有内容。
+
+只在必要时创建新能力。
+
+并且：
+
+能够精准修改用户指定的部分。
+
+保留用户已经满意的其他部分。
+
+Human controls the result.
+
+Agent understands the task.
+
+Existing capabilities are reused.
+
+Graph preserves the structure.
+
+Effect Forge extends the boundary.
+
+现在开始执行。

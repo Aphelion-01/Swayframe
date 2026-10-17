@@ -1,3 +1,4 @@
+import { assetResponse } from './asset-response';
 import { protocol } from 'electron';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -48,9 +49,7 @@ export class NativeAssets {
       if (!file) return new Response('Not found', { status: 404 });
       try {
         const { bytes, mime } = await readImage(file);
-        return new Response(new Uint8Array(bytes), {
-          headers: { 'Content-Type': mime },
-        });
+        return assetResponse(bytes, mime, request.headers.get('range'));
       } catch {
         return new Response('Missing media', { status: 404 });
       }

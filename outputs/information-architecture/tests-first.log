@@ -1,0 +1,4292 @@
+
+> motion-system@0.9.11 test
+> vitest run
+
+
+ RUN  v5.0.3 /Users/aphelion-01/Documents/Codex/2026-10-03/referenced-chatgpt-conversation-this-is-an
+
+ ❯ tests/acceptance.test.tsx (5 tests | 4 failed) 791ms
+   ❯ A-01～A-09 用户流程集成验收 (5)
+     × A-01 / A-02 / A-05：新建合成、Canvas 拖动、属性面板 编辑和逐步 Undo/Redo 161ms
+     × A-03 / A-04：手动 Spring 入场淡入，四类图层与文件在关闭重开后保持一致 27ms
+     × A-08：Provider 输出建议时不修改工程；应用后可撤销 37ms
+     × A-09：真实文件输入拒绝非法 JSON 和未知版本，当前工程不部分变化 46ms
+ ❯ tests/workspace-ux.test.tsx (8 tests | 1 failed) 1839ms
+   × 工具快捷键遵循画布/时间轴/文字焦点，并支持命令搜索 381ms
+ ❯ tests/timeline.test.tsx (3 tests | 2 failed) 159ms
+   ❯ 时间轴 integration (3)
+     × 四个 Transform 可创建关键帧；Spring 和删除操作可撤销 117ms
+     × Position 与 Opacity 在相同时间由统一引擎求值 37ms
+ ❯ tests/editor.test.tsx (5 tests | 5 failed) 325ms
+   ❯ 图层面板 / 属性面板 integration (5)
+     × 创建三类基础图层、重命名、Transform、显隐、排序与删除均可撤销 145ms
+     × 非法 属性面板 输入保留工程值并显示错误 41ms
+     × Escape 放弃尚未提交的数值且不增加历史 49ms
+     × 语义元数据编辑也经过可撤销 Command 44ms
+     × 本地持久化从同一个 Command 快照恢复，错误文件不污染现有数据 42ms
+ ❯ tests/workflow-ui.test.tsx (2 tests | 2 failed) 248ms
+   × 正常菜单新建工程清空旧数据和历史，命名合成自动激活，创建对象同步Selection 212ms
+   × BENCH-A Inspector数值实际完成0→115→100；Scene、Timeline与Undo一致 34ms
+ ❯ tests/compositing-ui.test.tsx (1 test | 1 failed) 153ms
+   × GUI 遮罩、羽化动画与效果排序均进入共享命令历史 148ms
+ ❯ tests/basic-editor-ui.test.tsx (1 test | 1 failed) 113ms
+   × 动画开关、属性筛选、图层快捷键和输入焦点隔离在真实 UI 中协同工作 111ms
+ ❯ tests/graph-ui.test.tsx (1 test | 1 failed) 120ms
+   × 曲线面板缓出与速度输入真实修改动画，撤销恢复 118ms
+ ❯ tests/editor-bugfix-v0910.test.tsx (5 tests | 1 failed) 1208ms
+   × right click opens icon creation pie on layers and timeline, file menu contains only project actions 62ms
+ ❯ tests/path-ui.test.tsx (1 test | 1 failed) 115ms
+   × 路径和文字样式有可操作入口，修改经同一历史 112ms
+ ❯ tests/ui-redesign.test.tsx (5 tests | 1 failed) 303ms
+   × 切换工作区保留助手草稿和待审建议，生成建议不修改Scene 55ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 20 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/acceptance.test.tsx > A-01～A-09 用户流程集成验收 > A-01 / A-02 / A-05：新建合成、Canvas 拖动、属性面板 编辑和逐步 Undo/Redo
+TestingLibraryElementError: Unable to find an element with the text: 文件, which matches selector 'summary span'. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"editor-app"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"topbar"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"application-name"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"Swayframe"[39m
+            [33mdraggable[39m=[32m"false"[39m
+            [33msrc[39m=[32m"./branding/wordmark.png"[39m
+          [36m/>[39m
+        [36m</span>[39m
+        [36m<nav[39m
+          [33maria-label[39m=[32m"应用菜单"[39m
+          [33mclass[39m=[32m"application-menus"[39m
+        [36m>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m文件[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"文件"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘N[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m打开工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘O[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m保存工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m工程另存为[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建合成[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m合成设置[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导入图片到素材库[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导出[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m设置 · AI[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</details>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m编辑[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"编辑"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m撤销[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m重做[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m剪切[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘X[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m复制[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘C[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m粘贴[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘V[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m创建副本[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘D[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m删除选中[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ tests/acceptance.test.tsx:52:28
+     50|     const store = start();
+     51|     store.setAutoKeyframes(true);
+     52|     fireEvent.click(screen.getByText('文件', { selector: 'summary span' …
+       |                            ^
+     53|     fireEvent.click(screen.getByRole('button', { name: '新建合成' }));
+     54|     fireEvent.click(screen.getByRole('button', { name: '创建合成' }));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/20]⎯
+
+ FAIL  tests/acceptance.test.tsx > A-01～A-09 用户流程集成验收 > A-03 / A-04：手动 Spring 入场淡入，四类图层与文件在关闭重开后保持一致
+TestingLibraryElementError: Unable to find an element with the text: 文件, which matches selector 'summary span'. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"editor-app"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"topbar"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"application-name"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"Swayframe"[39m
+            [33mdraggable[39m=[32m"false"[39m
+            [33msrc[39m=[32m"./branding/wordmark.png"[39m
+          [36m/>[39m
+        [36m</span>[39m
+        [36m<nav[39m
+          [33maria-label[39m=[32m"应用菜单"[39m
+          [33mclass[39m=[32m"application-menus"[39m
+        [36m>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m文件[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"文件"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘N[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m打开工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘O[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m保存工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m工程另存为[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建合成[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m合成设置[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导入图片到素材库[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导出[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m设置 · AI[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</details>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m编辑[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"编辑"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m撤销[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m重做[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m剪切[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘X[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m复制[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘C[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m粘贴[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘V[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m创建副本[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘D[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m删除选中[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ tests/acceptance.test.tsx:92:28
+     90|   it('A-03 / A-04：手动 Spring 入场淡入，四类图层与文件在关闭重开后保持一致', async () => {
+     91|     const store = start();
+     92|     fireEvent.click(screen.getByText('文件', { selector: 'summary span' …
+       |                            ^
+     93|     createObject('创建 矩形');
+     94|     openTimelineLayers();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/20]⎯
+
+ FAIL  tests/acceptance.test.tsx > A-01～A-09 用户流程集成验收 > A-08：Provider 输出建议时不修改工程；应用后可撤销
+TestingLibraryElementError: Unable to find an element with the text: 文件, which matches selector 'summary span'. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"editor-app"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"topbar"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"application-name"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"Swayframe"[39m
+            [33mdraggable[39m=[32m"false"[39m
+            [33msrc[39m=[32m"./branding/wordmark.png"[39m
+          [36m/>[39m
+        [36m</span>[39m
+        [36m<nav[39m
+          [33maria-label[39m=[32m"应用菜单"[39m
+          [33mclass[39m=[32m"application-menus"[39m
+        [36m>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m文件[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"文件"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘N[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m打开工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘O[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m保存工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m工程另存为[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建合成[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m合成设置[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导入图片到素材库[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导出[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m设置 · AI[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</details>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m编辑[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"编辑"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m撤销[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m重做[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m剪切[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘X[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m复制[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘C[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m粘贴[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘V[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m创建副本[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘D[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m删除选中[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ tests/acceptance.test.tsx:174:28
+    172|   it('A-08：Provider 输出建议时不修改工程；应用后可撤销', async () => {
+    173|     const store = start();
+    174|     fireEvent.click(screen.getByText('文件', { selector: 'summary span' …
+       |                            ^
+    175|     createObject('创建 矩形');
+    176|     openTimelineLayers();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/20]⎯
+
+ FAIL  tests/acceptance.test.tsx > A-01～A-09 用户流程集成验收 > A-09：真实文件输入拒绝非法 JSON 和未知版本，当前工程不部分变化
+TestingLibraryElementError: Unable to find an element with the text: 文件, which matches selector 'summary span'. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"editor-app"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"topbar"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"application-name"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"Swayframe"[39m
+            [33mdraggable[39m=[32m"false"[39m
+            [33msrc[39m=[32m"./branding/wordmark.png"[39m
+          [36m/>[39m
+        [36m</span>[39m
+        [36m<nav[39m
+          [33maria-label[39m=[32m"应用菜单"[39m
+          [33mclass[39m=[32m"application-menus"[39m
+        [36m>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m文件[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"文件"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘N[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m打开工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘O[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m保存工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m工程另存为[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建合成[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m合成设置[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导入图片到素材库[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导出[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m设置 · AI[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</details>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m编辑[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"编辑"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m撤销[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m重做[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m剪切[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘X[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m复制[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘C[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m粘贴[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘V[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m创建副本[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘D[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m删除选中[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ tests/acceptance.test.tsx:193:28
+    191|   it('A-09：真实文件输入拒绝非法 JSON 和未知版本，当前工程不部分变化', async () => {
+    192|     const store = start();
+    193|     fireEvent.click(screen.getByText('文件', { selector: 'summary span' …
+       |                            ^
+    194|     createObject('创建 矩形');
+    195|     openTimelineLayers();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/20]⎯
+
+ FAIL  tests/basic-editor-ui.test.tsx > 动画开关、属性筛选、图层快捷键和输入焦点隔离在真实 UI 中协同工作
+TestingLibraryElementError: Unable to find an element with the text: 文件, which matches selector 'summary span'. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"editor-app"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"topbar"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"application-name"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"Swayframe"[39m
+            [33mdraggable[39m=[32m"false"[39m
+            [33msrc[39m=[32m"./branding/wordmark.png"[39m
+          [36m/>[39m
+        [36m</span>[39m
+        [36m<nav[39m
+          [33maria-label[39m=[32m"应用菜单"[39m
+          [33mclass[39m=[32m"application-menus"[39m
+        [36m>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m文件[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"文件"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘N[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m打开工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘O[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m保存工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m工程另存为[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建合成[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m合成设置[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导入图片到素材库[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导出[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m设置 · AI[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</details>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m编辑[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"编辑"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m撤销[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m重做[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m剪切[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘X[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m复制[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘C[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m粘贴[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘V[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m创建副本[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘D[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m删除选中[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ tests/basic-editor-ui.test.tsx:22:26
+     20|   render(<App store={store} />);
+     21|   openTimelineLayers();
+     22|   fireEvent.click(screen.getByText('文件', { selector: 'summary span' })…
+       |                          ^
+     23|   createObject('创建 矩形');
+     24|   openTimelineLayers();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/20]⎯
+
+ FAIL  tests/compositing-ui.test.tsx > GUI 遮罩、羽化动画与效果排序均进入共享命令历史
+TestingLibraryElementError: Unable to find an element with the text: 文件, which matches selector 'summary span'. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"editor-app"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"topbar"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"application-name"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"Swayframe"[39m
+            [33mdraggable[39m=[32m"false"[39m
+            [33msrc[39m=[32m"./branding/wordmark.png"[39m
+          [36m/>[39m
+        [36m</span>[39m
+        [36m<nav[39m
+          [33maria-label[39m=[32m"应用菜单"[39m
+          [33mclass[39m=[32m"application-menus"[39m
+        [36m>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m文件[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"文件"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘N[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m打开工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘O[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m保存工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m工程另存为[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建合成[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m合成设置[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导入图片到素材库[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导出[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m设置 · AI[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</details>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m编辑[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"编辑"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m撤销[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m重做[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m剪切[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘X[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m复制[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘C[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m粘贴[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘V[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m创建副本[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘D[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m删除选中[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ tests/compositing-ui.test.tsx:25:26
+     23|   const store = new EditorStore(createDefaultProject());
+     24|   render(<App store={store} />);
+     25|   fireEvent.click(screen.getByText('文件', { selector: 'summary span' })…
+       |                          ^
+     26|   createObject('创建 矩形');
+     27|   fireEvent.click(screen.getByText('效果与遮罩'));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/20]⎯
+
+ FAIL  tests/editor-bugfix-v0910.test.tsx > right click opens icon creation pie on layers and timeline, file menu contains only project actions
+TestingLibraryElementError: Unable to find an element with the text: 文件, which matches selector 'summary span'. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"editor-app"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"topbar"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"application-name"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"Swayframe"[39m
+            [33mdraggable[39m=[32m"false"[39m
+            [33msrc[39m=[32m"./branding/wordmark.png"[39m
+          [36m/>[39m
+        [36m</span>[39m
+        [36m<nav[39m
+          [33maria-label[39m=[32m"应用菜单"[39m
+          [33mclass[39m=[32m"application-menus"[39m
+        [36m>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m文件[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"文件"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘N[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m打开工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘O[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m保存工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m工程另存为[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建合成[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m合成设置[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导入图片到素材库[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导出[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m设置 · AI[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</details>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m编辑[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"编辑"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m撤销[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m重做[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m剪切[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘X[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m复制[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘C[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m粘贴[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘V[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m创建副本[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘D[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m删除选中[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ tests/editor-bugfix-v0910.test.tsx:148:26
+    146| it('right click opens icon creation pie on layers and timeline, file m…
+    147|   const { store } = setup();
+    148|   fireEvent.click(screen.getByText('文件', { selector: 'summary span' })…
+       |                          ^
+    149|   expect(screen.queryByRole('button', { name: '创建 矩形' })).toBeNull();
+    150|   fireEvent.contextMenu(document.querySelector('.layer-list')!, {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/20]⎯
+
+ FAIL  tests/editor.test.tsx > 图层面板 / 属性面板 integration > 创建三类基础图层、重命名、Transform、显隐、排序与删除均可撤销
+TestingLibraryElementError: Unable to find an element with the text: 文件, which matches selector 'summary span'. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"editor-app"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"topbar"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"application-name"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"Swayframe"[39m
+            [33mdraggable[39m=[32m"false"[39m
+            [33msrc[39m=[32m"./branding/wordmark.png"[39m
+          [36m/>[39m
+        [36m</span>[39m
+        [36m<nav[39m
+          [33maria-label[39m=[32m"应用菜单"[39m
+          [33mclass[39m=[32m"application-menus"[39m
+        [36m>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m文件[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"文件"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘N[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m打开工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘O[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m保存工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m工程另存为[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建合成[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m合成设置[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导入图片到素材库[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导出[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m设置 · AI[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</details>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m编辑[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"编辑"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m撤销[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m重做[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m剪切[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘X[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m复制[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘C[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m粘贴[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘V[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m创建副本[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘D[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m删除选中[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ tests/editor.test.tsx:23:28
+     21|   it('创建三类基础图层、重命名、Transform、显隐、排序与删除均可撤销', () => {
+     22|     const store = setup();
+     23|     fireEvent.click(screen.getByText('文件', { selector: 'summary span' …
+       |                            ^
+     24|     createObject('创建 矩形');
+     25|     fireEvent.change(screen.getByLabelText('图层名称'), {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/20]⎯
+
+ FAIL  tests/editor.test.tsx > 图层面板 / 属性面板 integration > 非法 属性面板 输入保留工程值并显示错误
+TestingLibraryElementError: Unable to find an element with the text: 文件, which matches selector 'summary span'. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"editor-app"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"topbar"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"application-name"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"Swayframe"[39m
+            [33mdraggable[39m=[32m"false"[39m
+            [33msrc[39m=[32m"./branding/wordmark.png"[39m
+          [36m/>[39m
+        [36m</span>[39m
+        [36m<nav[39m
+          [33maria-label[39m=[32m"应用菜单"[39m
+          [33mclass[39m=[32m"application-menus"[39m
+        [36m>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m文件[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"文件"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘N[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m打开工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘O[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m保存工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m工程另存为[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建合成[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m合成设置[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导入图片到素材库[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导出[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m设置 · AI[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</details>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m编辑[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"编辑"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m撤销[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m重做[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m剪切[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘X[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m复制[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘C[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m粘贴[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘V[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m创建副本[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘D[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m删除选中[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ tests/editor.test.tsx:70:28
+     68|   it('非法 属性面板 输入保留工程值并显示错误', () => {
+     69|     const store = setup();
+     70|     fireEvent.click(screen.getByText('文件', { selector: 'summary span' …
+       |                            ^
+     71|     createObject('创建 矩形');
+     72|     const before = store.commands.getSnapshot();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/20]⎯
+
+ FAIL  tests/editor.test.tsx > 图层面板 / 属性面板 integration > Escape 放弃尚未提交的数值且不增加历史
+TestingLibraryElementError: Unable to find an element with the text: 文件, which matches selector 'summary span'. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"editor-app"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"topbar"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"application-name"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"Swayframe"[39m
+            [33mdraggable[39m=[32m"false"[39m
+            [33msrc[39m=[32m"./branding/wordmark.png"[39m
+          [36m/>[39m
+        [36m</span>[39m
+        [36m<nav[39m
+          [33maria-label[39m=[32m"应用菜单"[39m
+          [33mclass[39m=[32m"application-menus"[39m
+        [36m>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m文件[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"文件"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘N[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m打开工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘O[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m保存工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m工程另存为[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建合成[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m合成设置[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导入图片到素材库[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导出[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m设置 · AI[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</details>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m编辑[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"编辑"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m撤销[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m重做[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m剪切[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘X[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m复制[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘C[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m粘贴[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘V[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m创建副本[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘D[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m删除选中[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ tests/editor.test.tsx:82:28
+     80|   it('Escape 放弃尚未提交的数值且不增加历史', () => {
+     81|     const store = setup();
+     82|     fireEvent.click(screen.getByText('文件', { selector: 'summary span' …
+       |                            ^
+     83|     createObject('创建 矩形');
+     84|     const before = store.commands.getSnapshot();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/20]⎯
+
+ FAIL  tests/editor.test.tsx > 图层面板 / 属性面板 integration > 语义元数据编辑也经过可撤销 Command
+TestingLibraryElementError: Unable to find an element with the text: 文件, which matches selector 'summary span'. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"editor-app"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"topbar"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"application-name"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"Swayframe"[39m
+            [33mdraggable[39m=[32m"false"[39m
+            [33msrc[39m=[32m"./branding/wordmark.png"[39m
+          [36m/>[39m
+        [36m</span>[39m
+        [36m<nav[39m
+          [33maria-label[39m=[32m"应用菜单"[39m
+          [33mclass[39m=[32m"application-menus"[39m
+        [36m>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m文件[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"文件"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘N[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m打开工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘O[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m保存工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m工程另存为[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建合成[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m合成设置[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导入图片到素材库[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导出[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m设置 · AI[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</details>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m编辑[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"编辑"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m撤销[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m重做[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m剪切[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘X[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m复制[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘C[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m粘贴[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘V[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m创建副本[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘D[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m删除选中[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ tests/editor.test.tsx:95:28
+     93|   it('语义元数据编辑也经过可撤销 Command', () => {
+     94|     const store = setup();
+     95|     fireEvent.click(screen.getByText('文件', { selector: 'summary span' …
+       |                            ^
+     96|     createObject('创建 矩形');
+     97|     const before = store.commands.getSnapshot();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/20]⎯
+
+ FAIL  tests/editor.test.tsx > 图层面板 / 属性面板 integration > 本地持久化从同一个 Command 快照恢复，错误文件不污染现有数据
+TestingLibraryElementError: Unable to find an element with the text: 文件, which matches selector 'summary span'. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"editor-app"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"topbar"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"application-name"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"Swayframe"[39m
+            [33mdraggable[39m=[32m"false"[39m
+            [33msrc[39m=[32m"./branding/wordmark.png"[39m
+          [36m/>[39m
+        [36m</span>[39m
+        [36m<nav[39m
+          [33maria-label[39m=[32m"应用菜单"[39m
+          [33mclass[39m=[32m"application-menus"[39m
+        [36m>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m文件[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"文件"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘N[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m打开工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘O[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m保存工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m工程另存为[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建合成[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m合成设置[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导入图片到素材库[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导出[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m设置 · AI[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</details>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m编辑[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"编辑"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m撤销[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m重做[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m剪切[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘X[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m复制[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘C[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m粘贴[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘V[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m创建副本[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘D[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m删除选中[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ tests/editor.test.tsx:119:28
+    117|     const store = createPersistedStore(adapter);
+    118|     render(<App store={store} />);
+    119|     fireEvent.click(screen.getByText('文件', { selector: 'summary span' …
+       |                            ^
+    120|     createObject('创建 矩形');
+    121|     const before = store.commands.getSnapshot();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/20]⎯
+
+ FAIL  tests/graph-ui.test.tsx > 曲线面板缓出与速度输入真实修改动画，撤销恢复
+TestingLibraryElementError: Unable to find an element with the text: 文件, which matches selector 'summary span'. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"editor-app"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"topbar"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"application-name"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"Swayframe"[39m
+            [33mdraggable[39m=[32m"false"[39m
+            [33msrc[39m=[32m"./branding/wordmark.png"[39m
+          [36m/>[39m
+        [36m</span>[39m
+        [36m<nav[39m
+          [33maria-label[39m=[32m"应用菜单"[39m
+          [33mclass[39m=[32m"application-menus"[39m
+        [36m>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m文件[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"文件"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘N[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m打开工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘O[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m保存工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m工程另存为[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建合成[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m合成设置[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导入图片到素材库[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导出[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m设置 · AI[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</details>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m编辑[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"编辑"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m撤销[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m重做[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m剪切[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘X[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m复制[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘C[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m粘贴[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘V[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m创建副本[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘D[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m删除选中[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ tests/graph-ui.test.tsx:22:26
+     20|   render(<App store={store} />);
+     21|   openTimelineLayers();
+     22|   fireEvent.click(screen.getByText('文件', { selector: 'summary span' })…
+       |                          ^
+     23|   createObject('创建 矩形');
+     24|   openTimelineLayers();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/20]⎯
+
+ FAIL  tests/path-ui.test.tsx > 路径和文字样式有可操作入口，修改经同一历史
+TestingLibraryElementError: Unable to find an element with the text: 文件, which matches selector 'summary span'. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"editor-app"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"topbar"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"application-name"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"Swayframe"[39m
+            [33mdraggable[39m=[32m"false"[39m
+            [33msrc[39m=[32m"./branding/wordmark.png"[39m
+          [36m/>[39m
+        [36m</span>[39m
+        [36m<nav[39m
+          [33maria-label[39m=[32m"应用菜单"[39m
+          [33mclass[39m=[32m"application-menus"[39m
+        [36m>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m文件[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"文件"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘N[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m打开工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘O[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m保存工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m工程另存为[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建合成[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m合成设置[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导入图片到素材库[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导出[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m设置 · AI[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</details>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m编辑[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"编辑"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m撤销[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m重做[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m剪切[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘X[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m复制[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘C[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m粘贴[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘V[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m创建副本[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘D[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m删除选中[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ tests/path-ui.test.tsx:19:26
+     17|   const store = new EditorStore(createDefaultProject());
+     18|   render(<App store={store} />);
+     19|   fireEvent.click(screen.getByText('文件', { selector: 'summary span' })…
+       |                          ^
+     20|   createObject('创建 路径');
+     21|   const before = store.commands.getSnapshot();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/20]⎯
+
+ FAIL  tests/timeline.test.tsx > 时间轴 integration > 四个 Transform 可创建关键帧；Spring 和删除操作可撤销
+TestingLibraryElementError: Unable to find an element with the text: 文件, which matches selector 'summary span'. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"editor-app"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"topbar"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"application-name"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"Swayframe"[39m
+            [33mdraggable[39m=[32m"false"[39m
+            [33msrc[39m=[32m"./branding/wordmark.png"[39m
+          [36m/>[39m
+        [36m</span>[39m
+        [36m<nav[39m
+          [33maria-label[39m=[32m"应用菜单"[39m
+          [33mclass[39m=[32m"application-menus"[39m
+        [36m>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m文件[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"文件"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘N[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m打开工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘O[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m保存工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m工程另存为[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建合成[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m合成设置[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导入图片到素材库[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导出[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m设置 · AI[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</details>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m编辑[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"编辑"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m撤销[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m重做[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m剪切[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘X[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m复制[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘C[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m粘贴[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘V[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m创建副本[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘D[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m删除选中[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ tests/timeline.test.tsx:22:28
+     20|     render(<App store={store} />);
+     21|     openTimelineLayers();
+     22|     fireEvent.click(screen.getByText('文件', { selector: 'summary span' …
+       |                            ^
+     23|     createObject('创建 矩形');
+     24|     openTimelineLayers();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/20]⎯
+
+ FAIL  tests/timeline.test.tsx > 时间轴 integration > Position 与 Opacity 在相同时间由统一引擎求值
+TestingLibraryElementError: Unable to find an element with the text: 文件, which matches selector 'summary span'. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"editor-app"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"topbar"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"application-name"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"Swayframe"[39m
+            [33mdraggable[39m=[32m"false"[39m
+            [33msrc[39m=[32m"./branding/wordmark.png"[39m
+          [36m/>[39m
+        [36m</span>[39m
+        [36m<nav[39m
+          [33maria-label[39m=[32m"应用菜单"[39m
+          [33mclass[39m=[32m"application-menus"[39m
+        [36m>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m文件[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"文件"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘N[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m打开工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘O[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m保存工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m工程另存为[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建合成[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m合成设置[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导入图片到素材库[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导出[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m设置 · AI[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</details>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m编辑[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"编辑"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m撤销[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m重做[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m剪切[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘X[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m复制[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘C[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m粘贴[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘V[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m创建副本[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘D[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m删除选中[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ tests/timeline.test.tsx:61:28
+     59|     render(<App store={store} />);
+     60|     openTimelineLayers();
+     61|     fireEvent.click(screen.getByText('文件', { selector: 'summary span' …
+       |                            ^
+     62|     createObject('创建 矩形');
+     63|     openTimelineLayers();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/20]⎯
+
+ FAIL  tests/ui-redesign.test.tsx > 切换工作区保留助手草稿和待审建议，生成建议不修改Scene
+TestingLibraryElementError: Unable to find an element with the text: 文件, which matches selector 'summary span'. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"editor-app"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"topbar"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"application-name"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"Swayframe"[39m
+            [33mdraggable[39m=[32m"false"[39m
+            [33msrc[39m=[32m"./branding/wordmark.png"[39m
+          [36m/>[39m
+        [36m</span>[39m
+        [36m<nav[39m
+          [33maria-label[39m=[32m"应用菜单"[39m
+          [33mclass[39m=[32m"application-menus"[39m
+        [36m>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m文件[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"文件"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘N[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m打开工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘O[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m保存工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m工程另存为[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建合成[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m合成设置[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导入图片到素材库[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导出[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m设置 · AI[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</details>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m编辑[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"编辑"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m撤销[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m重做[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m剪切[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘X[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m复制[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘C[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m粘贴[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘V[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m创建副本[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘D[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m删除选中[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ tests/ui-redesign.test.tsx:128:26
+    126|   const store = new EditorStore(createDefaultProject());
+    127|   render(<App store={store} />);
+    128|   fireEvent.click(screen.getByText('文件', { selector: 'summary span' })…
+       |                          ^
+    129|   createObject('创建 矩形');
+    130|   const before = store.getSnapshot().project;
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/20]⎯
+
+ FAIL  tests/workflow-ui.test.tsx > 正常菜单新建工程清空旧数据和历史，命名合成自动激活，创建对象同步Selection
+TestingLibraryElementError: Unable to find an element with the text: 文件, which matches selector 'summary span'. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"editor-app"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"topbar"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"application-name"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"Swayframe"[39m
+            [33mdraggable[39m=[32m"false"[39m
+            [33msrc[39m=[32m"./branding/wordmark.png"[39m
+          [36m/>[39m
+        [36m</span>[39m
+        [36m<nav[39m
+          [33maria-label[39m=[32m"应用菜单"[39m
+          [33mclass[39m=[32m"application-menus"[39m
+        [36m>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m文件[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"文件"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘N[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m打开工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘O[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m保存工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m工程另存为[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建合成[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m合成设置[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导入图片到素材库[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导出[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m设置 · AI[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</details>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m编辑[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"编辑"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m撤销[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m重做[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m剪切[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘X[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m复制[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘C[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m粘贴[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘V[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m创建副本[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘D[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m删除选中[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m全选[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘A[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</details>[39m
+         ...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ menu tests/workflow-ui.test.tsx:28:26
+     26| });
+     27| function menu() {
+     28|   fireEvent.click(screen.getByText('文件', { selector: 'summary span' })…
+       |                          ^
+     29| }
+     30| function edit(label: string, value: string) {
+ ❯ tests/workflow-ui.test.tsx:49:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/20]⎯
+
+ FAIL  tests/workflow-ui.test.tsx > BENCH-A Inspector数值实际完成0→115→100；Scene、Timeline与Undo一致
+TestingLibraryElementError: Unable to find an element with the text: 文件, which matches selector 'summary span'. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"editor-app"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"topbar"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"application-name"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"Swayframe"[39m
+            [33mdraggable[39m=[32m"false"[39m
+            [33msrc[39m=[32m"./branding/wordmark.png"[39m
+          [36m/>[39m
+        [36m</span>[39m
+        [36m<nav[39m
+          [33maria-label[39m=[32m"应用菜单"[39m
+          [33mclass[39m=[32m"application-menus"[39m
+        [36m>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m文件[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"文件"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘N[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m打开工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘O[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m保存工程[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m工程另存为[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧S[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m新建合成[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m合成设置[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导入图片到素材库[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m导出[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m设置 · AI[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</details>[39m
+          [36m<details[39m
+            [33mclass[39m=[32m"toolbar-menu"[39m
+          [36m>[39m
+            [36m<summary>[39m
+              [0m编辑[0m
+            [36m</summary>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"编辑"[39m
+              [33mclass[39m=[32m"dropdown-menu"[39m
+              [33mrole[39m=[32m"menu"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m撤销[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m重做[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘⇧Z[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m剪切[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘X[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m复制[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘C[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m粘贴[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘V[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m创建副本[0m
+                [36m</span>[39m
+                [36m<kbd>[39m
+                  [0m⌘D[0m
+                [36m</kbd>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mdisabled[39m=[32m""[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [0m删除选中[0m
+                [36m</span>[39m
+                [36m<kbd />[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mrole[39m=[32m"menuitem"[39m
+              [36m>[39m
+                [36m<span>[39m
+                  [...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ menu tests/workflow-ui.test.tsx:28:26
+     26| });
+     27| function menu() {
+     28|   fireEvent.click(screen.getByText('文件', { selector: 'summary span' })…
+       |                          ^
+     29| }
+     30| function edit(label: string, value: string) {
+ ❯ tests/workflow-ui.test.tsx:87:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/20]⎯
+
+ FAIL  tests/workspace-ux.test.tsx > 工具快捷键遵循画布/时间轴/文字焦点，并支持命令搜索
+AssertionError: expected 'brightnessContrast' to be 'gaussianBlur' // Object.is equality
+
+Expected: "gaussianBlur"
+Received: "brightnessContrast"
+
+ ❯ tests/workspace-ux.test.tsx:125:5
+    123|       -1,
+    124|     )?.kind,
+    125|   ).toBe('gaussianBlur');
+       |     ^
+    126| });
+    127| it('画布拖动创建与取消均不产生过程中的正式工程修改', () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/20]⎯
+
+
+ Test Files  11 failed | 97 passed (108)
+      Tests  20 failed | 377 passed (397)
+   Start at  18:14:20
+   Duration  7.75s (tests 60%, import 16%, environment 14%, transform 9%, worker 1%)
+
+    Isolate  108 workers spawned · ~159ms startup each (spawn + environment, per file)
+             at least ~1.75s faster with isolate: false — reuses workers across files instead of one per file
+

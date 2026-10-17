@@ -1,0 +1,1185 @@
+# Swayframe
+# Autonomous Agent Recovery System
+# Agent Self-Healing & Reliable Task Execution
+
+你现在开始对 Swayframe 的 AI Agent
+进行一次执行机制升级。
+
+本轮核心目标：
+
+让 Agent 从：
+
+遇到错误就停止的 Tool-Calling Agent
+
+升级为：
+
+能够理解错误、修复计划、
+重新验证、安全恢复执行的 Autonomous Agent。
+
+本轮不是新增视觉效果。
+
+不是增加 Agent 可调用的工具数量。
+
+不是放宽参数校验。
+
+而是让 Agent 对现有工具的使用更加可靠。
+
+==================================================
+一、当前真实问题
+==================================================
+
+真实 DeepSeek deepseek-flash 执行创作任务时，
+出现以下错误：
+
+code:
+SCHEMA_INVALID
+
+phase:
+preflight
+
+field:
+creation.tasks.dependencies
+
+message:
+任务依赖与执行顺序不符
+
+cause.producer:
+analyzeTypography
+
+recoverable:
+false
+
+截图同时显示：
+
+Plan Correction Attempt 0
+
+Plan Correction Attempt 1
+
+以及包含大量嵌套 diagnostics、
+[omitted] 和转义 JSON 的错误信息。
+
+此前还出现：
+
+createText 参数无效
+
+setFill 参数无效
+
+setFill layerId 无效 UUID。
+
+这些错误反复造成整个创作任务失败。
+
+当前最严重的问题：
+
+系统虽然能够检测错误，
+但缺少可靠的自主修复流程。
+
+本轮必须解决这一问题。
+
+==================================================
+二、首先复现本次依赖错误
+==================================================
+
+检查真实 Execution Trace。
+
+重点获取：
+
+Creation Plan
+Task IDs
+Task Dependencies
+Step IDs
+Tool Calls
+Step Result References
+Execution Order
+Validation Results
+Correction Attempt 0
+Correction Attempt 1。
+
+调查：
+
+analyzeTypography 是什么类型的任务？
+
+由哪个模块创建？
+
+哪个任务依赖它？
+
+它的实际位置在哪里？
+
+为什么执行顺序与依赖关系冲突？
+
+这是模型生成的问题，
+还是 Planner/Compiler 转换的问题？
+
+两次 Correction Attempt 是否真的修改了计划？
+
+如果修改了，
+为什么仍然失败？
+
+如果没有修改，
+为什么继续重复请求模型？
+
+必须基于实际计划和源码回答。
+
+不能只根据错误字符串猜测。
+
+==================================================
+三、建立统一 Error Classification
+==================================================
+
+检查现有：
+
+AgentExecutionError
+AgentToolError
+PlanValidationError
+ProviderError。
+
+复用已有结构化错误系统。
+
+至少区分：
+
+PLAN_SCHEMA_INVALID
+
+PLAN_DEPENDENCY_INVALID
+
+PLAN_CYCLE_DETECTED
+
+STEP_RESULT_UNRESOLVED
+
+TOOL_ARGUMENT_INVALID
+
+OBJECT_REFERENCE_INVALID
+
+CONTEXT_STALE
+
+CAPABILITY_UNAVAILABLE
+
+COMMAND_FAILED
+
+RESULT_VERIFICATION_FAILED
+
+PROVIDER_TRANSIENT_FAILURE
+
+PERMISSION_DENIED
+
+UNSAFE_OPERATION
+
+USER_CANCELLED。
+
+不要所有错误都使用：
+
+SCHEMA_INVALID。
+
+特别注意：
+
+任务依赖与执行顺序不符，
+属于计划依赖语义错误。
+
+不应该仅仅作为 JSON Schema 错误处理。
+
+建立明确的恢复分类：
+
+AUTO_REPAIRABLE
+
+MODEL_REPAIR_REQUIRED
+
+USER_ACTION_REQUIRED
+
+NON_RECOVERABLE。
+
+这些类别应由确定性逻辑判断，
+不能完全交给 LLM 自己决定。
+
+==================================================
+四、修复 recoverable 判定
+==================================================
+
+调查当前为什么：
+
+creation.tasks.dependencies
+
+被标记为：
+
+recoverable: false。
+
+如果只是合法任务之间的执行顺序错误，
+则应允许安全的确定性修复。
+
+如果存在循环依赖、
+缺少必要任务或不可满足的条件，
+则需要重新规划或安全终止。
+
+不能：
+
+将所有依赖错误一律标记为可恢复。
+
+也不能：
+
+将所有依赖错误一律标记为不可恢复。
+
+必须根据真实依赖图和约束判断。
+
+==================================================
+五、建立 Deterministic Plan Repair
+==================================================
+
+这是本轮最高优先级。
+
+对于结构化 Creation Plan：
+
+建立真正的任务依赖图。
+
+节点：
+
+Task ID。
+
+边：
+
+Dependency。
+
+检查：
+
+Missing Dependency
+
+Duplicate Dependency
+
+Self Dependency
+
+Cycle
+
+Invalid Producer
+
+Invalid Consumer
+
+Execution Order Conflict
+
+Step Result Reference。
+
+对于无环、依赖完整且允许重排的计划：
+
+使用稳定拓扑排序生成合法执行顺序。
+
+确保：
+
+Producer
+
+先于：
+
+Consumer。
+
+必须保留：
+
+原始任务内容
+稳定 Task ID
+合法 Step Result Reference
+必要的用户顺序约束。
+
+不能：
+
+通过删除任务解决依赖错误。
+
+不能：
+
+为了排序成功忽略数据依赖。
+
+不能：
+
+擅自改变不可交换操作的语义。
+
+如果存在多种排序且无法确定是否等价：
+
+不要盲目排序。
+
+进入模型重新规划或明确报告。
+
+==================================================
+六、建立 Plan Repair Verification
+==================================================
+
+自动修复计划后：
+
+必须再次运行：
+
+Schema Validation
+
+Dependency Validation
+
+Capability Validation
+
+Scope Validation
+
+Tool Argument Validation。
+
+只有全部通过当前阶段所需的验证：
+
+才能进入执行。
+
+如果存在依赖未来执行结果的步骤：
+
+明确标记：
+
+DEFERRED。
+
+执行到对应阶段时重新验证。
+
+不能：
+
+Plan Repair 后直接跳过 Validator。
+
+==================================================
+七、建立 LLM-assisted Plan Repair
+==================================================
+
+如果确定性代码无法修复：
+
+允许调用当前 Agent 模型重新规划。
+
+但不应该重新发送整个庞大的上下文。
+
+优先发送：
+
+Original Goal Summary
+
+Relevant Task IDs
+
+Failed Dependency
+
+Validation Error
+
+Allowed Capabilities
+
+Relevant Constraints。
+
+例如：
+
+错误：
+
+TASK_B depends on TASK_A,
+but TASK_A is scheduled after TASK_B.
+
+要求模型：
+
+只修复受影响的计划部分。
+
+不得：
+
+无理由重新设计整个 Composition。
+
+模型返回修正计划后：
+
+必须重新验证。
+
+LLM 不得绕过程序校验。
+
+==================================================
+八、建立 Autonomous Recovery Controller
+==================================================
+
+复用现有 Agent Orchestrator。
+
+增加统一恢复协调机制。
+
+执行流程：
+
+PLAN
+    ↓
+VALIDATE
+    ↓
+REPAIR IF NECESSARY
+    ↓
+REVALIDATE
+    ↓
+EXECUTE IN DRAFT
+    ↓
+VERIFY RESULT
+    ↓
+RECOVER IF NECESSARY
+    ↓
+COMMIT。
+
+同一个 Recovery Controller
+应支持不同阶段的错误恢复。
+
+但必须避免：
+
+重复创建另一套 Agent Orchestrator。
+
+不要建立：
+
+第二套 Command System。
+
+不要改变已有正式事务语义。
+
+==================================================
+九、恢复策略优先级
+==================================================
+
+所有可恢复错误：
+
+优先尝试确定性修复。
+
+例如：
+
+任务顺序冲突：
+
+合法时进行拓扑排序。
+
+对象引用：
+
+通过 Step Result Map 解析。
+
+参数默认值：
+
+使用正式 Schema 定义。
+
+过期对象引用：
+
+重新读取 Draft Scene。
+
+瞬时网络错误：
+
+根据错误类型有限重试。
+
+只有确定性恢复无法完成时：
+
+才请求模型重新规划。
+
+不要：
+
+每出现一个错误
+就立刻重新调用 LLM。
+
+==================================================
+十、执行期恢复
+==================================================
+
+如果工具执行过程中出现错误：
+
+例如：
+
+setFill 参数非法。
+
+必须：
+
+获取结构化错误。
+
+定位实际失败步骤。
+
+检查之前的 Draft Commands。
+
+决定：
+
+局部修复
+
+或：
+
+从安全 Checkpoint 重新执行。
+
+不得：
+
+默认删除整个创作计划。
+
+不得：
+
+重新执行已经成功且不具备幂等性的操作。
+
+对于：
+
+Create Layer
+
+Create Node
+
+Add Effect
+
+Add Keyframe
+
+必须避免：
+
+恢复时重复创建。
+
+最终正式 Commit：
+
+保持一次事务。
+
+Undo 一次可以撤销本轮 Agent 修改。
+
+==================================================
+十一、Object Reference Recovery
+==================================================
+
+检查此前 Object Reference 修复结果。
+
+必须支持：
+
+Existing Object Reference
+
+Current Selection Reference
+
+Step Result Reference
+
+Graph Node Reference。
+
+例如：
+
+Create Text
+    ↓
+返回真实 Layer ID
+    ↓
+Set Font
+    ↓
+Set Fill / Color
+    ↓
+Set Position。
+
+执行器应当管理真实 ID 映射。
+
+不能依赖 LLM 自行构造 UUID。
+
+如果对象引用失效：
+
+优先使用确定性 Resolver 恢复。
+
+不得：
+
+为了恢复操作，
+随意选择名称相似的其他图层。
+
+==================================================
+十二、避免无效重复
+==================================================
+
+建立：
+
+Recovery Fingerprint。
+
+Fingerprint 使用：
+
+Error Code
+
+Phase
+
+Tool / Task ID
+
+Relevant Field
+
+Normalized Arguments
+
+Relevant Context Version。
+
+使用稳定的摘要算法记录指纹。
+
+不要直接将整份巨大 Plan JSON
+作为 Fingerprint 传回模型。
+
+如果：
+
+相同错误
+
+相同输入
+
+相同上下文
+
+连续出现，
+
+则停止这一条无效恢复路径。
+
+检查：
+
+Attempt 0
+
+Attempt 1
+
+是否真正产生不同计划。
+
+如果没有：
+
+不要继续进行相同请求。
+
+==================================================
+十三、限制 Token 浪费
+==================================================
+
+当前截图中的：
+
+diagnostics
+
+plan
+
+error
+
+fingerprint
+
+互相嵌套，
+并包含大量重复 JSON。
+
+必须检查错误反馈构造过程。
+
+明确区分：
+
+INTERNAL EXECUTION TRACE
+
+和：
+
+MODEL RECOVERY FEEDBACK。
+
+完整 Trace：
+
+保留在受控的开发诊断系统中。
+
+发送给 LLM 的 Recovery Feedback：
+
+必须简洁、结构化、有界。
+
+例如：
+
+{
+  "errorCode": "PLAN_DEPENDENCY_INVALID",
+  "taskId": "task-b",
+  "dependsOn": "task-a",
+  "reason": "producer scheduled after consumer",
+  "repairScope": "affected-tasks"
+}
+
+示例仅说明信息结构。
+
+真实字段必须来自实际错误。
+
+禁止：
+
+在反馈中反复嵌套完整 Plan。
+
+禁止：
+
+把完整 Tool Call 历史重复发送。
+
+禁止：
+
+通过字符串截断破坏 JSON 结构。
+
+==================================================
+十四、建立 Recovery Budget
+==================================================
+
+自主恢复必须有明确上限。
+
+建议初始默认策略：
+
+Deterministic Repair：
+
+有限次数，直到无新变化或达到上限。
+
+LLM Plan Repair：
+
+最多 2 次。
+
+同一执行错误的模型纠正：
+
+最多 2 次。
+
+实际数值应能配置，
+并服从用户设置的 Token / 请求预算。
+
+不能：
+
+无限循环。
+
+不能：
+
+突破用户授权的 API 预算。
+
+不能：
+
+在明确不可恢复时继续消耗模型调用。
+
+同时：
+
+不得因为复杂任务存在多个合法阶段，
+就使用同一个极小预算提前中断。
+
+区分：
+
+Planning Budget
+Execution Budget
+Recovery Budget
+Visual Refinement Budget。
+
+==================================================
+十五、需要用户确认的边界
+==================================================
+
+允许自动修复：
+
+参数格式
+合法依赖顺序
+明确的对象引用
+可验证的局部操作错误。
+
+不得未经授权自动：
+
+删除大量已有图层。
+
+替换整个 Composition。
+
+执行任意系统命令。
+
+修改 Swayframe 核心源码。
+
+安装外部可执行插件。
+
+访问未经授权的文件或网络资源。
+
+突破用户给定的 API 费用预算。
+
+扩大 Agent 原始修改范围。
+
+自动恢复机制必须继续遵守：
+
+Scope Protection
+
+Transaction Safety
+
+Permission Boundaries。
+
+==================================================
+十六、Agent UI 反馈
+==================================================
+
+不要让普通用户看到：
+
+数千行嵌套 JSON。
+
+建议只显示：
+
+任务名称
+
+当前阶段
+
+当前进度
+
+错误恢复状态
+
+恢复结果。
+
+例如：
+
+正在分析参考图。
+
+发现任务依赖问题。
+
+正在自动修复执行计划。
+
+计划验证通过。
+
+继续创建文字与渐变。
+
+用户展开开发者详情后：
+
+才显示：
+
+Error Code
+Affected Task
+Repair Strategy
+Before / After
+Retry Count。
+
+不得因为恢复过程
+增加大量永久 UI 按钮。
+
+遵守 DESIGN.md。
+
+==================================================
+十七、第一项真实 Benchmark
+==================================================
+
+使用本次截图中的原始 Creation Plan
+建立固定回归样例。
+
+必须复现：
+
+creation.tasks.dependencies
+
+producer:
+analyzeTypography
+
+包含：
+
+createText
+
+setFont
+
+Step Result Reference。
+
+目标：
+
+首次 Plan Validation 发现错误。
+
+Recovery Controller 判断是否可修复。
+
+如果依赖图无环且语义允许重排：
+
+自动生成合法顺序。
+
+重新校验通过。
+
+创建标题 Cubic。
+
+设置正确字体。
+
+整个过程无需用户介入。
+
+如果实际 Plan 包含不可满足的约束：
+
+必须正确拒绝，
+不能伪造成功。
+
+==================================================
+十八、第二项 Benchmark
+==================================================
+
+Create Rectangle
+
+→
+Set Radial Gradient
+
+→
+Set Position
+
+→
+Add Keyframe。
+
+故意让其中一次 Tool Call
+出现可恢复的参数错误。
+
+预期：
+
+Agent 修复对应参数。
+
+保留已成功的合法步骤。
+
+没有重复创建 Rectangle。
+
+没有重复添加 Gradient。
+
+整个任务正常完成。
+
+Undo：
+
+一次恢复。
+
+==================================================
+十九、第三项 Benchmark
+==================================================
+
+Create Text
+
+→
+Set Font
+
+→
+Set Position
+
+→
+Animate Opacity。
+
+过程中加入：
+
+READ 操作。
+
+预期：
+
+对象引用始终正确。
+
+任务顺序正确。
+
+不存在：
+
+Invalid UUID。
+
+不存在：
+
+READ 导致后续语义验证被跳过。
+
+==================================================
+二十、第四项 Benchmark
+==================================================
+
+人为构造：
+
+Circular Dependency。
+
+例如：
+
+Task A depends on B。
+
+Task B depends on A。
+
+系统必须：
+
+检测循环。
+
+禁止无限重排。
+
+尝试有限重新规划。
+
+如果无法消除循环：
+
+安全终止。
+
+不得：
+
+执行非法计划。
+
+不得：
+
+修改正式工程。
+
+==================================================
+二十一、第五项 Benchmark
+==================================================
+
+构造：
+
+LLM 两次返回完全相同的错误计划。
+
+系统必须：
+
+检测重复。
+
+停止无效模型调用。
+
+保留诊断。
+
+不再无限浪费 Token。
+
+==================================================
+二十二、第六项 Benchmark
+==================================================
+
+构造：
+
+执行中途失败。
+
+部分操作已在 Draft 中完成。
+
+Recovery Controller：
+
+恢复执行或安全回滚。
+
+验证：
+
+正式 Scene 不存在部分提交。
+
+对象 ID 没有错误绑定。
+
+没有重复创建节点。
+
+没有丢失原始关键帧。
+
+==================================================
+二十三、真实 Provider 验收
+==================================================
+
+离线测试通过后：
+
+使用真实 DeepSeek。
+
+优先测试：
+
+创建 Cubic 标题。
+
+设置字体。
+
+创建渐变背景。
+
+设置渐变参数。
+
+建立简单动画。
+
+修改已有对象。
+
+先执行小规模测试。
+
+真实 API 请求必须遵守授权与预算。
+
+记录：
+
+初始计划是否通过。
+
+是否发生自动修复。
+
+是否调用 LLM 修复。
+
+恢复次数。
+
+最终任务是否成功。
+
+Scene 状态是否正确。
+
+渲染是否正确。
+
+Undo 是否正确。
+
+如果没有实际执行真实 Provider：
+
+不得宣称 LIVE 验收通过。
+
+==================================================
+二十四、质量门禁
+==================================================
+
+必须执行：
+
+Typecheck
+
+Lint
+
+Unit Tests
+
+Integration Tests
+
+Build
+
+Desktop Build。
+
+需要增加：
+
+Dependency Graph Tests
+
+Stable Topological Sort Tests
+
+Step Result Binding Tests
+
+Repair Loop Tests
+
+Repeated Error Detection
+
+Recovery Budget Tests
+
+Transaction Rollback Tests
+
+Provider Recovery Feedback Tests。
+
+禁止：
+
+删除原有安全测试。
+
+放宽 Schema。
+
+绕过 Command System。
+
+通过 Mock 冒充真实创作。
+
+只修复当前截图中的一个任务，
+却没有实现通用恢复逻辑。
+
+==================================================
+二十五、最终报告
+==================================================
+
+输出：
+
+AGENT_AUTONOMOUS_RECOVERY_AUDIT.md
+
+AGENT_AUTONOMOUS_RECOVERY_SPEC.md
+
+AGENT_AUTONOMOUS_RECOVERY_TEST.md
+
+AGENT_AUTONOMOUS_RECOVERY_RESULT.md。
+
+报告必须回答：
+
+为什么原计划依赖顺序错误？
+
+为什么 recoverable 为 false？
+
+为什么 Attempt 0 和 Attempt 1
+仍然没有成功？
+
+实际采用了什么修复方法？
+
+哪些错误支持确定性恢复？
+
+哪些错误需要模型重新规划？
+
+哪些错误必须停止？
+
+恢复是否会破坏正式工程？
+
+重复错误是否能够及时停止？
+
+Token 开销是否得到改善？
+
+真实 DeepSeek 是否通过回归？
+
+对于未验证项目：
+
+明确标记 NOT VERIFIED。
+
+==================================================
+最终验收标准
+==================================================
+
+用户提出正常的创作需求。
+
+Agent 可以：
+
+分析需求。
+
+生成计划。
+
+验证计划。
+
+发现错误。
+
+判断错误类型。
+
+尝试自动修复。
+
+重新验证。
+
+安全执行。
+
+检查结果。
+
+必要时继续局部纠错。
+
+最后提交可编辑作品。
+
+用户不应该因为：
+
+一个可以自动修复的任务顺序错误
+或
+一个可以确定性解析的对象 ID
+
+就被迫重新发送整个创作提示词。
+
+Agent 必须从：
+
+Stop on First Error
+
+升级为：
+
+Diagnose
+→ Repair
+→ Verify
+→ Continue。
+
+但不得：
+
+通过无限重试、
+
+跳过安全检查、
+
+执行未经授权的操作
+
+来实现所谓的自主性。
+
+现在开始执行。
+
+本轮优先解决：
+
+creation.tasks.dependencies
++
+Autonomous Plan Repair
++
+Execution Recovery。
+
+不要继续横向开发新功能。

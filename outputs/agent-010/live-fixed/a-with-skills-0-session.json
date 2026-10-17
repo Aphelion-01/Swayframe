@@ -1,0 +1,1734 @@
+{
+  "sessionId": "dbcae004-aec0-4dc0-84e1-bad63f7f8554",
+  "skillId": "auto",
+  "references": [],
+  "referenceMode": "overall",
+  "activeProjectId": "f3e3bc02-d89d-40b7-bc96-db419dfa95d6",
+  "conversation": [
+    {
+      "role": "user",
+      "content": "创建三个矩形图层，名称分别 Red、Green、Blue，纯色分别红 RGB(1,0,0)、绿 RGB(0,1,0)、蓝 RGB(0,0,1)。位置分别(480,540)、(960,540)、(1440,540)，宽高240。只创建这三个矩形。"
+    },
+    {
+      "role": "assistant",
+      "content": "Completed: 在 1920×1080 合成 0b57a15a 中创建 Red、Green、Blue 三个 240×240 纯色矩形图层，位置分别为 (480,540)、(960,540)、(1440,540)，不加任何额外元素或动画。"
+    }
+  ],
+  "selectedContext": {
+    "nativeSkills": [
+      {
+        "id": "sf.core-execution",
+        "version": "1.0.0",
+        "hash": "60abdf38a1f146e5387dc51e48fcc813b99beafb6dee01e2caabef3e7b08b261",
+        "inputs": {
+          "goal": "nonempty user request",
+          "scope": "existing execution scope"
+        },
+        "outputs": {
+          "result": "validated editable draft and one explicit commit"
+        },
+        "requiredCapabilities": [
+          "createRectangle",
+          "setFill",
+          "setPosition",
+          "addKeyframe"
+        ],
+        "workflow": {
+          "actions": [
+            "createRectangle",
+            "setFill",
+            "setPosition",
+            "addKeyframe"
+          ],
+          "constraints": [
+            "registered-tools",
+            "actual-object-binding",
+            "dependency-validation",
+            "shared-command-transaction",
+            "bounded-recovery",
+            "scene-verification",
+            "render-verification"
+          ],
+          "validationRules": [
+            "valid-plan",
+            "native-scene",
+            "native-render"
+          ],
+          "sequence": [
+            "discover",
+            "plan",
+            "validate",
+            "resolve",
+            "compile",
+            "execute-draft",
+            "verify",
+            "commit"
+          ]
+        },
+        "instructions": "# Swayframe Core Execution V1\n\nUse only capabilities discovered in the current SF runtime. Compile intentions through registered semantic actions or simple native tools. Use actual existing/selection/stepResult references; never invent UUIDs. Validate task dependencies before executing. Defer future outputs until the real producer completes. Every write uses the existing AgentTransaction and Command System. Recover only through the shared bounded controller; never replay completed creation steps or widen scope. Verify commands and draft state, then native rendered output; without vision mark visual comparison NOT VERIFIED. Commit once only after verification and user approval where required.\n"
+      },
+      {
+        "id": "sf.shape-creation",
+        "version": "1.0.0",
+        "hash": "244bbabd8eafddb4e2a06683321ad779e66794e0dfab2f1e13f339b188ee3f22",
+        "inputs": {
+          "goal": "explicit native editing task",
+          "scope": "existing user authorization"
+        },
+        "outputs": {
+          "result": "verified editable draft"
+        },
+        "requiredCapabilities": [
+          "createShape",
+          "createRectangle",
+          "createEllipse",
+          "createPolygon",
+          "createStar"
+        ],
+        "workflow": {
+          "actions": [
+            "createShape",
+            "createRectangle",
+            "createEllipse",
+            "createPolygon",
+            "createStar",
+            "setPosition",
+            "placeAtCompositionCenter"
+          ],
+          "entryActions": [
+            "createShape",
+            "createRectangle",
+            "createEllipse",
+            "createPolygon",
+            "createStar"
+          ],
+          "constraints": [
+            "registered-tools",
+            "actual-object-binding",
+            "dependency-validation",
+            "shared-command-transaction",
+            "bounded-recovery",
+            "scene-verification",
+            "render-verification"
+          ],
+          "validationRules": [
+            "valid-plan",
+            "native-scene"
+          ],
+          "sequence": [
+            "discover",
+            "resolve",
+            "compile",
+            "execute-draft",
+            "verify"
+          ]
+        },
+        "instructions": "# Shape Creation V1\n\nCreate editable native geometry using actual composition bounds. Bind each result independently; preserve names, shape alpha and geometry. Never create graph generators as substitute shapes.\n"
+      }
+    ],
+    "availableTools": [
+      {
+        "name": "createLayer",
+        "permission": "WRITE",
+        "description": "Create a real editable layer; a full-frame background uses kind=solid or rectang"
+      },
+      {
+        "name": "createRectangle",
+        "permission": "WRITE",
+        "description": "Create an editable rectangle layer."
+      },
+      {
+        "name": "createEllipse",
+        "permission": "WRITE",
+        "description": "Create an editable ellipse layer."
+      },
+      {
+        "name": "createPolygon",
+        "permission": "WRITE",
+        "description": "Create an editable polygon layer."
+      },
+      {
+        "name": "createStar",
+        "permission": "WRITE",
+        "description": "Create an editable star layer."
+      },
+      {
+        "name": "createText",
+        "permission": "WRITE",
+        "description": "Create editable text. content is required; position is {x,y} composition pixels."
+      },
+      {
+        "name": "createPath",
+        "permission": "WRITE",
+        "description": "Create a closed editable path. points is a flat array of [x,y,inX,inY,outX,outY]"
+      },
+      {
+        "name": "deleteLayer",
+        "permission": "DESTRUCTIVE",
+        "description": "Delete a layer and detach remaining children; requires confirmation."
+      },
+      {
+        "name": "duplicateLayer",
+        "permission": "WRITE",
+        "description": "Duplicate a layer with fresh entity IDs."
+      },
+      {
+        "name": "renameLayer",
+        "permission": "WRITE",
+        "description": "Rename editable layer."
+      },
+      {
+        "name": "reorderLayer",
+        "permission": "WRITE",
+        "description": "Move layer to a zero-based stack index."
+      },
+      {
+        "name": "setLayerVisibility",
+        "permission": "WRITE",
+        "description": "Set actual visibility."
+      },
+      {
+        "name": "setParent",
+        "permission": "WRITE",
+        "description": "Reuse shared parent transform compensation."
+      },
+      {
+        "name": "createPrecomp",
+        "permission": "WRITE",
+        "description": "Precompose related selected layers through shared commands."
+      },
+      {
+        "name": "setPosition",
+        "permission": "WRITE",
+        "description": "Set position at current/explicit timeline time."
+      },
+      {
+        "name": "setAnchor",
+        "permission": "WRITE",
+        "description": "Set anchor at current/explicit timeline time."
+      },
+      {
+        "name": "setOpacity",
+        "permission": "WRITE",
+        "description": "Set opacity at current/explicit timeline time."
+      },
+      {
+        "name": "setScale",
+        "permission": "WRITE",
+        "description": "Set absolute local scale with shared pivot compensation."
+      },
+      {
+        "name": "setRotation",
+        "permission": "WRITE",
+        "description": "Set absolute rotation with shared pivot compensation."
+      },
+      {
+        "name": "transformSelection",
+        "permission": "WRITE",
+        "description": "Relative group/individual transform. Factor 1.2 means 120%; use selection-center"
+      },
+      {
+        "name": "setTransformPivot",
+        "permission": "WRITE",
+        "description": "Set workspace pivot for subsequent transforms; never modifies layer anchor."
+      },
+      {
+        "name": "setTransformOrientation",
+        "permission": "WRITE",
+        "description": "Set workspace orientation for subsequent transforms."
+      },
+      {
+        "name": "setFill",
+        "permission": "WRITE",
+        "description": "Set native animated shape/solid/text fill. Optional gradient none/linear/radial "
+      },
+      {
+        "name": "setStroke",
+        "permission": "WRITE",
+        "description": "Set actual stroke color and width."
+      },
+      {
+        "name": "setTextContent",
+        "permission": "WRITE",
+        "description": "Replace editable text content."
+      },
+      {
+        "name": "setFont",
+        "permission": "WRITE",
+        "description": "Set font family name; cannot read fonts from disk."
+      },
+      {
+        "name": "setFontSize",
+        "permission": "WRITE",
+        "description": "Set text fontSize through animated property."
+      },
+      {
+        "name": "setTracking",
+        "permission": "WRITE",
+        "description": "Set text tracking through animated property."
+      },
+      {
+        "name": "setLeading",
+        "permission": "WRITE",
+        "description": "Set text lineHeight through animated property."
+      },
+      {
+        "name": "setTextColor",
+        "permission": "WRITE",
+        "description": "Set text fill color."
+      },
+      {
+        "name": "setTextAlignment",
+        "permission": "WRITE",
+        "description": "Set text alignment without changing glyph data."
+      },
+      {
+        "name": "addEffect",
+        "permission": "WRITE",
+        "description": "Insert an existing effect into the actual compositing graph."
+      },
+      {
+        "name": "removeEffect",
+        "permission": "DESTRUCTIVE",
+        "description": "Remove effect node; requires confirmation."
+      },
+      {
+        "name": "setEffectParameter",
+        "permission": "WRITE",
+        "description": "Set animated parameter of an existing effect node."
+      },
+      {
+        "name": "enableEffect",
+        "permission": "WRITE",
+        "description": "Toggle an actual effect node."
+      },
+      {
+        "name": "reorderEffect",
+        "permission": "WRITE",
+        "description": "Reorder a linear effect stack; branched graphs are rejected."
+      },
+      {
+        "name": "addKeyframe",
+        "permission": "WRITE",
+        "description": "Add a real timeline keyframe. Use propertyId, or layerId + property path (positi"
+      },
+      {
+        "name": "deleteKeyframe",
+        "permission": "WRITE",
+        "description": "Delete a timeline keyframe."
+      },
+      {
+        "name": "moveKeyframe",
+        "permission": "WRITE",
+        "description": "Move a timeline keyframe in seconds."
+      },
+      {
+        "name": "setKeyframeValue",
+        "permission": "WRITE",
+        "description": "Change actual keyframe value."
+      },
+      {
+        "name": "setInterpolation",
+        "permission": "WRITE",
+        "description": "Set interpolation and clear stale outgoing handles."
+      },
+      {
+        "name": "applyMotionCurve",
+        "permission": "WRITE",
+        "description": "Apply normalized motion curve to actual adjacent keyframe segments."
+      },
+      {
+        "name": "copyEasing",
+        "permission": "WRITE",
+        "description": "Copy a normalized segment curve to other segments."
+      },
+      {
+        "name": "reverseEasing",
+        "permission": "WRITE",
+        "description": "Reverse timing and progress of normalized curves."
+      },
+      {
+        "name": "compileGraph",
+        "permission": "READ",
+        "description": "调用共享合成图服务：compileGraph"
+      },
+      {
+        "name": "createNode",
+        "permission": "WRITE",
+        "description": "Create a registered graph node. Image processors with in/out ports automatically"
+      },
+      {
+        "name": "deleteNode",
+        "permission": "DESTRUCTIVE",
+        "description": "调用共享合成图服务：deleteNode"
+      },
+      {
+        "name": "connectNodes",
+        "permission": "WRITE",
+        "description": "Connect exact typed ports. Inputs accept only one edge; inspect and disconnect a"
+      },
+      {
+        "name": "disconnectEdge",
+        "permission": "WRITE",
+        "description": "调用共享合成图服务：disconnectEdge"
+      },
+      {
+        "name": "setNodeParameter",
+        "permission": "WRITE",
+        "description": "调用共享合成图服务：setNodeParameter"
+      },
+      {
+        "name": "setNodePosition",
+        "permission": "WRITE",
+        "description": "调用共享合成图服务：setNodePosition"
+      },
+      {
+        "name": "enableNode",
+        "permission": "WRITE",
+        "description": "调用共享合成图服务：enableNode"
+      },
+      {
+        "name": "createMask",
+        "permission": "WRITE",
+        "description": "创建现有可渲染图层遮罩；路径每个点为 x,y,inX,inY,outX,outY"
+      },
+      {
+        "name": "setMaskMode",
+        "permission": "WRITE",
+        "description": "设置遮罩叠加、减去或相交模式"
+      },
+      {
+        "name": "setMaskPath",
+        "permission": "WRITE",
+        "description": "通过共享属性命令修改遮罩 path"
+      },
+      {
+        "name": "setMaskFeather",
+        "permission": "WRITE",
+        "description": "通过共享属性命令修改遮罩 feather"
+      },
+      {
+        "name": "setMaskOpacity",
+        "permission": "WRITE",
+        "description": "通过共享属性命令修改遮罩 opacity"
+      },
+      {
+        "name": "setMaskExpansion",
+        "permission": "WRITE",
+        "description": "通过共享属性命令修改遮罩 expansion"
+      },
+      {
+        "name": "setCompositionSize",
+        "permission": "WRITE",
+        "description": "修改合成尺寸"
+      },
+      {
+        "name": "setDuration",
+        "permission": "WRITE",
+        "description": "修改合成 duration"
+      },
+      {
+        "name": "setFPS",
+        "permission": "WRITE",
+        "description": "修改合成 fps"
+      },
+      {
+        "name": "createLayerFromAsset",
+        "permission": "WRITE",
+        "description": "仅使用已导入图像素材创建图层"
+      },
+      {
+        "name": "replaceAssetReference",
+        "permission": "WRITE",
+        "description": "替换图像图层的已授权素材引用"
+      },
+      {
+        "name": "inspectProject",
+        "permission": "READ",
+        "description": "Read project metadata and composition index; no filesystem or asset bodies."
+      },
+      {
+        "name": "inspectComposition",
+        "permission": "READ",
+        "description": "Read composition dimensions, timing and bounded layer summary."
+      },
+      {
+        "name": "listLayers",
+        "permission": "READ",
+        "description": "List a page of layers with stable IDs."
+      },
+      {
+        "name": "inspectLayer",
+        "permission": "READ",
+        "description": "Read selected layer properties, keyframes, graph summary and bounds."
+      },
+      {
+        "name": "inspectSelection",
+        "permission": "READ",
+        "description": "Read the current selection and active composition."
+      },
+      {
+        "name": "inspectProperty",
+        "permission": "READ",
+        "description": "Read property value and animated state by stable ID."
+      },
+      {
+        "name": "inspectKeyframes",
+        "permission": "READ",
+        "description": "Read a page of actual persisted keyframes."
+      },
+      {
+        "name": "inspectEffects",
+        "permission": "READ",
+        "description": "Read effect node identities and actual parameters."
+      },
+      {
+        "name": "inspectGraph",
+        "permission": "READ",
+        "description": "Read graph nodes, edges and parameters without mutation."
+      },
+      {
+        "name": "inspectAssets",
+        "permission": "READ",
+        "description": "Read imported asset metadata only. Never disk paths or embedded data."
+      },
+      {
+        "name": "getCurrentTime",
+        "permission": "READ",
+        "description": "Read current timeline time in seconds."
+      },
+      {
+        "name": "getCanvasInfo",
+        "permission": "READ",
+        "description": "Read composition canvas size and active camera."
+      },
+      {
+        "name": "createShape",
+        "permission": "WRITE",
+        "description": "Create a native editable shape; default rectangle, composition-center position. "
+      },
+      {
+        "name": "placeAtCompositionCenter",
+        "permission": "WRITE",
+        "description": "Place an existing native layer anchor at the actual current composition center i"
+      },
+      {
+        "name": "setGradientFill",
+        "permission": "WRITE",
+        "description": "Apply native linear/radial fill preserving shape alpha. Colors are normalized {r"
+      },
+      {
+        "name": "animateLayerProperty",
+        "permission": "WRITE",
+        "description": "Create native Property keyframes using the actual target layer property path; ti"
+      },
+      {
+        "name": "inspectToolContract",
+        "permission": "READ",
+        "description": "Load authoritative tool schemas on demand. Catalog discovery never grants permis"
+      },
+      {
+        "name": "effect_list",
+        "permission": "READ",
+        "description": "列出统一内置能力。优先复用，禁止为已支持的基础模糊或径向渐变造新程序。"
+      },
+      {
+        "name": "effect_search",
+        "permission": "READ",
+        "description": "先搜索内置能力，再考虑组合节点，最后才创建程序化草稿。"
+      },
+      {
+        "name": "effect_inspect",
+        "permission": "READ",
+        "description": "检查内置能力的精确版本、端口和参数"
+      },
+      {
+        "name": "effect_createDraft",
+        "permission": "READ",
+        "description": "生成新的受控声明式像素效果草稿；只能使用公开指令，不能含JS/WGSL或系统调用；需要validate compile preview evaluate后才可申"
+      },
+      {
+        "name": "effect_updateDraft",
+        "permission": "READ",
+        "description": "更新草稿并使旧预览和检查失效"
+      },
+      {
+        "name": "effect_validate",
+        "permission": "READ",
+        "description": "验证草稿的源定义、端口、绑定与资源限制"
+      },
+      {
+        "name": "effect_compile",
+        "permission": "READ",
+        "description": "编译已验证草稿，按源内容哈希缓存"
+      },
+      {
+        "name": "effect_preview",
+        "permission": "READ",
+        "description": "真实渲染草稿192×108预览，返回像素统计；隐私许可且有识图能力时可发送图片。统计不代表满足视觉目标。"
+      },
+      {
+        "name": "effect_evaluate",
+        "permission": "READ",
+        "description": "记录真实预览的检查结论；没有视觉证据时必须标明限制，应用后仍由Observer检查"
+      },
+      {
+        "name": "effect_getDiagnostics",
+        "permission": "READ",
+        "description": "读取草稿状态及错误，不返回源代码执行权限"
+      },
+      {
+        "name": "effect_discardDraft",
+        "permission": "READ",
+        "description": "丢弃临时草稿，工程不变"
+      },
+      {
+        "name": "effect_applyDraft",
+        "permission": "WRITE",
+        "description": "把已预览和检查的草稿提交到Agent Transaction；工程内嵌精确版本，不自动保存到正式库"
+      },
+      {
+        "name": "effect_saveReusable",
+        "permission": "READ",
+        "description": "仅发起保存建议。正式效果库只能由用户在效果浏览器检查并显式保存；本工具不会静默安装。"
+      },
+      {
+        "name": "effect_addToLayer",
+        "permission": "WRITE",
+        "description": "添加已注册内置能力到共享Graph；不会创建新的效果实现"
+      },
+      {
+        "name": "effect_addToGraph",
+        "permission": "WRITE",
+        "description": "添加已注册内置能力到共享Graph；不会创建新的效果实现"
+      },
+      {
+        "name": "effect_setParameter",
+        "permission": "WRITE",
+        "description": "通过标准动画Property设置效果参数，已有动画时在指定时间记录关键帧"
+      },
+      {
+        "name": "listAgentPresets",
+        "permission": "READ",
+        "description": "读取用户保存的实际动画属性预设"
+      },
+      {
+        "name": "applyAgentPreset",
+        "permission": "WRITE",
+        "description": "应用保存的实际属性值、关键帧与曲线；保留目标Property ID"
+      },
+      {
+        "name": "renderFrame",
+        "permission": "READ",
+        "description": "真实合成预览，最长边720像素；不会含选择框"
+      },
+      {
+        "name": "analyzeLayout",
+        "permission": "READ",
+        "description": "只返回专业 Proposal，由 Agent 决定是否转换成共享命令"
+      },
+      {
+        "name": "analyzeColor",
+        "permission": "READ",
+        "description": "只返回专业 Proposal，由 Agent 决定是否转换成共享命令"
+      },
+      {
+        "name": "analyzeTypography",
+        "permission": "READ",
+        "description": "只返回专业 Proposal，由 Agent 决定是否转换成共享命令"
+      },
+      {
+        "name": "analyzeMotion",
+        "permission": "READ",
+        "description": "只返回专业 Proposal，由 Agent 决定是否转换成共享命令"
+      },
+      {
+        "name": "analyzeReference",
+        "permission": "READ",
+        "description": "只返回专业 Proposal，由 Agent 决定是否转换成共享命令"
+      },
+      {
+        "name": "discoverCapabilities",
+        "permission": "READ",
+        "description": "查询真实命令、Fill/Generator/Effect/Node、可复用程序包及已接入服务。modify-existing > reuse > compose"
+      },
+      {
+        "name": "inspectGraphNode",
+        "permission": "READ",
+        "description": "读取节点参数、端口连接、语义角色与下游渲染依赖，依赖不授予修改权限"
+      },
+      {
+        "name": "inspectGraphBranch",
+        "permission": "READ",
+        "description": "按选中末端节点查询上游分支；Source/Output不属于可编辑范围"
+      },
+      {
+        "name": "findRelatedNodes",
+        "permission": "READ",
+        "description": "查询实际图内语义名称与类型；返回候选，无法唯一定位时必须让用户选择"
+      },
+      {
+        "name": "getGraphDependencies",
+        "permission": "READ",
+        "description": "读取目标节点的真实下游依赖"
+      },
+      {
+        "name": "renameGraphNode",
+        "permission": "WRITE",
+        "description": "给已有节点设置可理解的语义名称"
+      },
+      {
+        "name": "reuseProgrammableEffect",
+        "permission": "WRITE",
+        "description": "复用已验证的精确程序包版本/哈希；不生成新算法，不保存库。流动纹理用 organicTexture，再通过 merge 合成。"
+      },
+      {
+        "name": "setGraphOutput",
+        "permission": "WRITE",
+        "description": "将已有 Image 输出接入当前图层的真实 Output，保留其他连接；不猜测处理端口"
+      },
+      {
+        "name": "layoutGraph",
+        "permission": "WRITE",
+        "description": "将处理图按左到右拓扑自动排布，不改变连接、参数和 ID"
+      }
+    ],
+    "contextMetrics": {
+      "fullSchemaCharacters": 192240,
+      "selectedSchemaCharacters": 19161,
+      "loadedToolNames": [
+        "createRectangle",
+        "createText",
+        "setFill",
+        "setPosition",
+        "addKeyframe",
+        "inspectToolContract",
+        "inspectComposition",
+        "listLayers",
+        "inspectLayer",
+        "createShape",
+        "placeAtCompositionCenter"
+      ]
+    },
+    "providerProfiles": [
+      {
+        "providerId": "8d9a4e02-cafb-476f-a6ad-49a1dec82d69",
+        "model": "qwen3.8-27b",
+        "protocol": "openai-compatible",
+        "toolCalling": "unknown",
+        "structuredOutput": "unknown",
+        "vision": "configured",
+        "streamingToolCalls": "adapter-supported-provider-unverified",
+        "contextWindow": null,
+        "toolSchemaCompatibility": "JSON Schema; actual endpoint support unverified",
+        "parallelToolCalls": "unknown",
+        "cancellation": "local-abort-supported",
+        "errorSemantics": "typed-host-errors",
+        "adapterTransports": [
+          "tools",
+          "structured-plan"
+        ],
+        "evidence": "configuration-and-adapter; not a live provider certification"
+      },
+      {
+        "providerId": "d8d53de4-7dc4-4517-9682-b2e210686c3b",
+        "model": "deepseek-flash",
+        "protocol": "openai-compatible",
+        "toolCalling": "unknown",
+        "structuredOutput": "unknown",
+        "vision": "configured",
+        "streamingToolCalls": "adapter-supported-provider-unverified",
+        "contextWindow": null,
+        "toolSchemaCompatibility": "JSON Schema; actual endpoint support unverified",
+        "parallelToolCalls": "unknown",
+        "cancellation": "local-abort-supported",
+        "errorSemantics": "typed-host-errors",
+        "adapterTransports": [
+          "tools",
+          "structured-plan"
+        ],
+        "evidence": "configuration-and-adapter; not a live provider certification"
+      }
+    ],
+    "untrustedData": true,
+    "project": {
+      "id": "f3e3bc02-d89d-40b7-bc96-db419dfa95d6",
+      "name": "未命名工程",
+      "compositionCount": 1,
+      "assetCount": 0
+    },
+    "composition": {
+      "id": "0b57a15a-2aaa-4959-b801-3c8979c14eca",
+      "name": "合成 01",
+      "width": 1920,
+      "height": 1080,
+      "duration": 5,
+      "fps": 30,
+      "layerCount": 0,
+      "layers": []
+    },
+    "selection": [],
+    "time": 0,
+    "transform": {
+      "orientation": "local",
+      "pivotMode": "anchor"
+    },
+    "selected": [],
+    "dependencies": [],
+    "assets": [],
+    "recentCommands": [],
+    "truncated": false,
+    "estimatedTokens": 232,
+    "skill": {
+      "id": "builtin-motion",
+      "instructions": "Inspect selection, composition and existing animation. Preserve editability. Prefer a small coherent plan using real Property, Keyframes and MotionCurve tools. Do not invent unsupported effects."
+    },
+    "references": []
+  },
+  "currentPlan": {
+    "id": "create-three-solid-rects",
+    "goal": "在 1920×1080 合成 0b57a15a 中创建 Red、Green、Blue 三个 240×240 纯色矩形图层，位置分别为 (480,540)、(960,540)、(1440,540)，不加任何额外元素或动画。",
+    "steps": [
+      {
+        "id": "rect_red",
+        "label": "创建 Red 矩形",
+        "tool": "createRectangle",
+        "arguments": {
+          "name": "Red",
+          "width": 240,
+          "height": 240,
+          "position": {
+            "x": 480,
+            "y": 540
+          }
+        }
+      },
+      {
+        "id": "fill_red",
+        "label": "Red 填充纯红",
+        "tool": "setFill",
+        "arguments": {
+          "layerId": {
+            "kind": "stepResult",
+            "stepId": "rect_red",
+            "output": "layerId"
+          },
+          "color": {
+            "r": 1,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          }
+        }
+      },
+      {
+        "id": "pos_red",
+        "label": "定位 Red (480,540)",
+        "tool": "setPosition",
+        "arguments": {
+          "layerId": {
+            "kind": "stepResult",
+            "stepId": "rect_red",
+            "output": "layerId"
+          },
+          "value": {
+            "x": 480,
+            "y": 540
+          }
+        }
+      },
+      {
+        "id": "rect_green",
+        "label": "创建 Green 矩形",
+        "tool": "createRectangle",
+        "arguments": {
+          "name": "Green",
+          "width": 240,
+          "height": 240,
+          "position": {
+            "x": 960,
+            "y": 540
+          }
+        }
+      },
+      {
+        "id": "fill_green",
+        "label": "Green 填充纯绿",
+        "tool": "setFill",
+        "arguments": {
+          "layerId": {
+            "kind": "stepResult",
+            "stepId": "rect_green",
+            "output": "layerId"
+          },
+          "color": {
+            "r": 0,
+            "g": 1,
+            "b": 0,
+            "a": 1
+          }
+        }
+      },
+      {
+        "id": "pos_green",
+        "label": "定位 Green (960,540)",
+        "tool": "setPosition",
+        "arguments": {
+          "layerId": {
+            "kind": "stepResult",
+            "stepId": "rect_green",
+            "output": "layerId"
+          },
+          "value": {
+            "x": 960,
+            "y": 540
+          }
+        }
+      },
+      {
+        "id": "rect_blue",
+        "label": "创建 Blue 矩形",
+        "tool": "createRectangle",
+        "arguments": {
+          "name": "Blue",
+          "width": 240,
+          "height": 240,
+          "position": {
+            "x": 1440,
+            "y": 540
+          }
+        }
+      },
+      {
+        "id": "fill_blue",
+        "label": "Blue 填充纯蓝",
+        "tool": "setFill",
+        "arguments": {
+          "layerId": {
+            "kind": "stepResult",
+            "stepId": "rect_blue",
+            "output": "layerId"
+          },
+          "color": {
+            "r": 0,
+            "g": 0,
+            "b": 1,
+            "a": 1
+          }
+        }
+      },
+      {
+        "id": "pos_blue",
+        "label": "定位 Blue (1440,540)",
+        "tool": "setPosition",
+        "arguments": {
+          "layerId": {
+            "kind": "stepResult",
+            "stepId": "rect_blue",
+            "output": "layerId"
+          },
+          "value": {
+            "x": 1440,
+            "y": 540
+          }
+        }
+      }
+    ],
+    "risk": "low",
+    "creation": {
+      "intent": "仅创建三个原生可编辑纯色矩形图层（Red/Green/Blue），保存名称、精确颜色、240×240 尺寸与指定坐标，不添加动画、效果或其他图层。",
+      "tasks": [
+        {
+          "id": "task_red",
+          "description": "创建 Red 矩形（240×240），设置纯红 fill RGB(1,0,0)，并定位到 (480,540)。",
+          "executionDomain": "scene",
+          "strategy": "generate",
+          "capabilityId": "createRectangle",
+          "stepIds": [
+            "rect_red",
+            "fill_red",
+            "pos_red"
+          ],
+          "dependencies": []
+        },
+        {
+          "id": "task_green",
+          "description": "创建 Green 矩形（240×240），设置纯绿 fill RGB(0,1,0)，并定位到 (960,540)。",
+          "executionDomain": "scene",
+          "strategy": "generate",
+          "capabilityId": "createRectangle",
+          "stepIds": [
+            "rect_green",
+            "fill_green",
+            "pos_green"
+          ],
+          "dependencies": []
+        },
+        {
+          "id": "task_blue",
+          "description": "创建 Blue 矩形（240×240），设置纯蓝 fill RGB(0,0,1)，并定位到 (1440,540)。",
+          "executionDomain": "scene",
+          "strategy": "generate",
+          "capabilityId": "createRectangle",
+          "stepIds": [
+            "rect_blue",
+            "fill_blue",
+            "pos_blue"
+          ],
+          "dependencies": []
+        }
+      ],
+      "warnings": [
+        "合成当前为空，故为纯新建，无 modify-existing 或 reuse 路径可用。",
+        "radialGradient 等图节点生成器为分离的全幅图像，不用于形状填充；此处使用原生形状 fill（gradient=none），保持矩形几何与 alpha 正确。",
+        "按用户要求不添加关键帧、效果、遮罩、其他图层或图节点；如需动画请另行指示。",
+        "位置为图层锚点（中心）坐标，矩形 240×240 在 1920×1080 内完整可见，未超出边界。",
+        "视觉外观未做渲染比对，仅按参数写入；未声明视觉验证。"
+      ]
+    }
+  },
+  "toolCalls": [
+    {
+      "id": "call_00_fkbzifeq0AV3LoWzZlYc1550",
+      "tool": "inspectComposition",
+      "label": "inspectComposition",
+      "status": "completed",
+      "result": {
+        "id": "0b57a15a-2aaa-4959-b801-3c8979c14eca",
+        "name": "合成 01",
+        "width": 1920,
+        "height": 1080,
+        "duration": 5,
+        "fps": 30,
+        "layerCount": 0,
+        "layers": []
+      }
+    },
+    {
+      "id": "call_01_Bf7JLe8kx59Uzcuj34ix4481",
+      "tool": "listLayers",
+      "label": "listLayers",
+      "status": "completed",
+      "result": {
+        "total": 0,
+        "offset": 0,
+        "layers": []
+      }
+    },
+    {
+      "id": "rect_red",
+      "stepId": "rect_red",
+      "taskId": "task_red",
+      "phase": "execute",
+      "tool": "createRectangle",
+      "label": "创建 Red 矩形",
+      "status": "completed",
+      "result": {
+        "ok": true,
+        "commandCount": 1,
+        "verification": {
+          "verifiedLayerIds": [
+            "920b78e9-b91a-4f6b-a03d-3f97f0ac11e6"
+          ],
+          "verifiedPropertyIds": [],
+          "verifiedGraphLayerIds": [],
+          "verifiedKeyframeIds": []
+        },
+        "layerId": "920b78e9-b91a-4f6b-a03d-3f97f0ac11e6",
+        "edgeId": "36968e57-a441-4426-ba58-bc759beffafa",
+        "outputs": {
+          "layerId": "920b78e9-b91a-4f6b-a03d-3f97f0ac11e6",
+          "edgeId": "36968e57-a441-4426-ba58-bc759beffafa"
+        },
+        "resolution": {
+          "rawArguments": {
+            "name": "Red",
+            "width": 240,
+            "height": 240,
+            "position": {
+              "x": 480,
+              "y": 540
+            }
+          },
+          "resolvedArguments": {
+            "name": "Red",
+            "position": {
+              "x": 480,
+              "y": 540
+            },
+            "width": 240,
+            "height": 240
+          },
+          "compositionId": "0b57a15a-2aaa-4959-b801-3c8979c14eca",
+          "selection": [],
+          "stepId": "rect_red",
+          "status": "RESOLVED"
+        }
+      }
+    },
+    {
+      "id": "fill_red",
+      "stepId": "fill_red",
+      "taskId": "task_red",
+      "phase": "execute",
+      "tool": "setFill",
+      "label": "Red 填充纯红",
+      "status": "completed",
+      "result": {
+        "ok": true,
+        "commandCount": 1,
+        "verification": {
+          "verifiedLayerIds": [],
+          "verifiedPropertyIds": [
+            "ec44357c-bb64-489e-9b05-ef8efd9f593e"
+          ],
+          "verifiedGraphLayerIds": [],
+          "verifiedKeyframeIds": []
+        },
+        "outputs": {},
+        "resolution": {
+          "rawArguments": {
+            "layerId": {
+              "kind": "stepResult",
+              "stepId": "rect_red",
+              "output": "layerId"
+            },
+            "color": {
+              "r": 1,
+              "g": 0,
+              "b": 0,
+              "a": 1
+            }
+          },
+          "resolvedArguments": {
+            "layerId": "920b78e9-b91a-4f6b-a03d-3f97f0ac11e6",
+            "color": {
+              "r": 1,
+              "g": 0,
+              "b": 0,
+              "a": 1
+            }
+          },
+          "compositionId": "0b57a15a-2aaa-4959-b801-3c8979c14eca",
+          "selection": [],
+          "stepId": "fill_red",
+          "status": "RESOLVED"
+        }
+      }
+    },
+    {
+      "id": "pos_red",
+      "stepId": "pos_red",
+      "taskId": "task_red",
+      "phase": "execute",
+      "tool": "setPosition",
+      "label": "定位 Red (480,540)",
+      "status": "completed",
+      "result": {
+        "ok": true,
+        "commandCount": 1,
+        "verification": {
+          "verifiedLayerIds": [],
+          "verifiedPropertyIds": [
+            "8817c7fb-47d4-4a99-abde-8672aa0a9016"
+          ],
+          "verifiedGraphLayerIds": [],
+          "verifiedKeyframeIds": []
+        },
+        "outputs": {},
+        "resolution": {
+          "rawArguments": {
+            "layerId": {
+              "kind": "stepResult",
+              "stepId": "rect_red",
+              "output": "layerId"
+            },
+            "value": {
+              "x": 480,
+              "y": 540
+            }
+          },
+          "resolvedArguments": {
+            "layerId": "920b78e9-b91a-4f6b-a03d-3f97f0ac11e6",
+            "value": {
+              "x": 480,
+              "y": 540
+            }
+          },
+          "compositionId": "0b57a15a-2aaa-4959-b801-3c8979c14eca",
+          "selection": [],
+          "stepId": "pos_red",
+          "status": "RESOLVED"
+        }
+      }
+    },
+    {
+      "id": "rect_green",
+      "stepId": "rect_green",
+      "taskId": "task_green",
+      "phase": "execute",
+      "tool": "createRectangle",
+      "label": "创建 Green 矩形",
+      "status": "completed",
+      "result": {
+        "ok": true,
+        "commandCount": 1,
+        "verification": {
+          "verifiedLayerIds": [
+            "b360cbef-877a-4bef-81f9-039a8eb491ce"
+          ],
+          "verifiedPropertyIds": [],
+          "verifiedGraphLayerIds": [],
+          "verifiedKeyframeIds": []
+        },
+        "layerId": "b360cbef-877a-4bef-81f9-039a8eb491ce",
+        "edgeId": "0b03856a-0262-432f-be0a-fe5453604957",
+        "outputs": {
+          "layerId": "b360cbef-877a-4bef-81f9-039a8eb491ce",
+          "edgeId": "0b03856a-0262-432f-be0a-fe5453604957"
+        },
+        "resolution": {
+          "rawArguments": {
+            "name": "Green",
+            "width": 240,
+            "height": 240,
+            "position": {
+              "x": 960,
+              "y": 540
+            }
+          },
+          "resolvedArguments": {
+            "name": "Green",
+            "position": {
+              "x": 960,
+              "y": 540
+            },
+            "width": 240,
+            "height": 240
+          },
+          "compositionId": "0b57a15a-2aaa-4959-b801-3c8979c14eca",
+          "selection": [],
+          "stepId": "rect_green",
+          "status": "RESOLVED"
+        }
+      }
+    },
+    {
+      "id": "fill_green",
+      "stepId": "fill_green",
+      "taskId": "task_green",
+      "phase": "execute",
+      "tool": "setFill",
+      "label": "Green 填充纯绿",
+      "status": "completed",
+      "result": {
+        "ok": true,
+        "commandCount": 1,
+        "verification": {
+          "verifiedLayerIds": [],
+          "verifiedPropertyIds": [
+            "fa073f79-3b05-44cc-8ebe-f163b551733b"
+          ],
+          "verifiedGraphLayerIds": [],
+          "verifiedKeyframeIds": []
+        },
+        "outputs": {},
+        "resolution": {
+          "rawArguments": {
+            "layerId": {
+              "kind": "stepResult",
+              "stepId": "rect_green",
+              "output": "layerId"
+            },
+            "color": {
+              "r": 0,
+              "g": 1,
+              "b": 0,
+              "a": 1
+            }
+          },
+          "resolvedArguments": {
+            "layerId": "b360cbef-877a-4bef-81f9-039a8eb491ce",
+            "color": {
+              "r": 0,
+              "g": 1,
+              "b": 0,
+              "a": 1
+            }
+          },
+          "compositionId": "0b57a15a-2aaa-4959-b801-3c8979c14eca",
+          "selection": [],
+          "stepId": "fill_green",
+          "status": "RESOLVED"
+        }
+      }
+    },
+    {
+      "id": "pos_green",
+      "stepId": "pos_green",
+      "taskId": "task_green",
+      "phase": "execute",
+      "tool": "setPosition",
+      "label": "定位 Green (960,540)",
+      "status": "completed",
+      "result": {
+        "ok": true,
+        "commandCount": 1,
+        "verification": {
+          "verifiedLayerIds": [],
+          "verifiedPropertyIds": [
+            "5eed2dba-df90-44ed-a667-30e3ef3d657d"
+          ],
+          "verifiedGraphLayerIds": [],
+          "verifiedKeyframeIds": []
+        },
+        "outputs": {},
+        "resolution": {
+          "rawArguments": {
+            "layerId": {
+              "kind": "stepResult",
+              "stepId": "rect_green",
+              "output": "layerId"
+            },
+            "value": {
+              "x": 960,
+              "y": 540
+            }
+          },
+          "resolvedArguments": {
+            "layerId": "b360cbef-877a-4bef-81f9-039a8eb491ce",
+            "value": {
+              "x": 960,
+              "y": 540
+            }
+          },
+          "compositionId": "0b57a15a-2aaa-4959-b801-3c8979c14eca",
+          "selection": [],
+          "stepId": "pos_green",
+          "status": "RESOLVED"
+        }
+      }
+    },
+    {
+      "id": "rect_blue",
+      "stepId": "rect_blue",
+      "taskId": "task_blue",
+      "phase": "execute",
+      "tool": "createRectangle",
+      "label": "创建 Blue 矩形",
+      "status": "completed",
+      "result": {
+        "ok": true,
+        "commandCount": 1,
+        "verification": {
+          "verifiedLayerIds": [
+            "57720c8a-111b-4eb7-83a0-3890fbd9fdf4"
+          ],
+          "verifiedPropertyIds": [],
+          "verifiedGraphLayerIds": [],
+          "verifiedKeyframeIds": []
+        },
+        "layerId": "57720c8a-111b-4eb7-83a0-3890fbd9fdf4",
+        "edgeId": "2bcbd758-2418-4537-9ad2-f0c97fb9967d",
+        "outputs": {
+          "layerId": "57720c8a-111b-4eb7-83a0-3890fbd9fdf4",
+          "edgeId": "2bcbd758-2418-4537-9ad2-f0c97fb9967d"
+        },
+        "resolution": {
+          "rawArguments": {
+            "name": "Blue",
+            "width": 240,
+            "height": 240,
+            "position": {
+              "x": 1440,
+              "y": 540
+            }
+          },
+          "resolvedArguments": {
+            "name": "Blue",
+            "position": {
+              "x": 1440,
+              "y": 540
+            },
+            "width": 240,
+            "height": 240
+          },
+          "compositionId": "0b57a15a-2aaa-4959-b801-3c8979c14eca",
+          "selection": [],
+          "stepId": "rect_blue",
+          "status": "RESOLVED"
+        }
+      }
+    },
+    {
+      "id": "fill_blue",
+      "stepId": "fill_blue",
+      "taskId": "task_blue",
+      "phase": "execute",
+      "tool": "setFill",
+      "label": "Blue 填充纯蓝",
+      "status": "completed",
+      "result": {
+        "ok": true,
+        "commandCount": 1,
+        "verification": {
+          "verifiedLayerIds": [],
+          "verifiedPropertyIds": [
+            "e2949853-b553-47e6-892e-0e592882611e"
+          ],
+          "verifiedGraphLayerIds": [],
+          "verifiedKeyframeIds": []
+        },
+        "outputs": {},
+        "resolution": {
+          "rawArguments": {
+            "layerId": {
+              "kind": "stepResult",
+              "stepId": "rect_blue",
+              "output": "layerId"
+            },
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 1,
+              "a": 1
+            }
+          },
+          "resolvedArguments": {
+            "layerId": "57720c8a-111b-4eb7-83a0-3890fbd9fdf4",
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 1,
+              "a": 1
+            }
+          },
+          "compositionId": "0b57a15a-2aaa-4959-b801-3c8979c14eca",
+          "selection": [],
+          "stepId": "fill_blue",
+          "status": "RESOLVED"
+        }
+      }
+    },
+    {
+      "id": "pos_blue",
+      "stepId": "pos_blue",
+      "taskId": "task_blue",
+      "phase": "execute",
+      "tool": "setPosition",
+      "label": "定位 Blue (1440,540)",
+      "status": "completed",
+      "result": {
+        "ok": true,
+        "commandCount": 1,
+        "verification": {
+          "verifiedLayerIds": [],
+          "verifiedPropertyIds": [
+            "daef33a8-d40c-4b56-b2ce-a7bb7499fc55"
+          ],
+          "verifiedGraphLayerIds": [],
+          "verifiedKeyframeIds": []
+        },
+        "outputs": {},
+        "resolution": {
+          "rawArguments": {
+            "layerId": {
+              "kind": "stepResult",
+              "stepId": "rect_blue",
+              "output": "layerId"
+            },
+            "value": {
+              "x": 1440,
+              "y": 540
+            }
+          },
+          "resolvedArguments": {
+            "layerId": "57720c8a-111b-4eb7-83a0-3890fbd9fdf4",
+            "value": {
+              "x": 1440,
+              "y": 540
+            }
+          },
+          "compositionId": "0b57a15a-2aaa-4959-b801-3c8979c14eca",
+          "selection": [],
+          "stepId": "pos_blue",
+          "status": "RESOLVED"
+        }
+      }
+    }
+  ],
+  "usage": [
+    {
+      "inputTokens": 12744,
+      "outputTokens": 137,
+      "totalTokens": 12881
+    },
+    {
+      "inputTokens": 12974,
+      "outputTokens": 1487,
+      "totalTokens": 14461
+    }
+  ],
+  "status": "completed",
+  "mode": "AGENT",
+  "pendingConfirmation": false,
+  "changes": {
+    "added": [
+      "Red",
+      "Green",
+      "Blue"
+    ],
+    "modified": [],
+    "deleted": [],
+    "transactionId": "d1c410eb-6a09-4101-89d0-1b4833454440"
+  },
+  "error": null,
+  "response": "已接受修改 · 可一次撤销",
+  "trace": {
+    "sessionId": "dbcae004-aec0-4dc0-84e1-bad63f7f8554",
+    "planId": "create-three-solid-rects",
+    "skillIds": [
+      {
+        "id": "sf.core-execution",
+        "version": "1.0.0",
+        "hash": "60abdf38a1f146e5387dc51e48fcc813b99beafb6dee01e2caabef3e7b08b261"
+      },
+      {
+        "id": "sf.shape-creation",
+        "version": "1.0.0",
+        "hash": "244bbabd8eafddb4e2a06683321ad779e66794e0dfab2f1e13f339b188ee3f22"
+      },
+      {
+        "id": "sf.gradient-fill",
+        "version": "1.0.0",
+        "hash": "3d8c8c4d337636f1f26cfd6187c8f29e878f4bbec541463be611eda0eb9d98f5"
+      }
+    ],
+    "selectedCapabilities": [
+      "createRectangle",
+      "createText",
+      "setFill",
+      "setPosition",
+      "addKeyframe",
+      "inspectToolContract",
+      "inspectComposition",
+      "listLayers",
+      "inspectLayer",
+      "createShape",
+      "placeAtCompositionCenter"
+    ],
+    "modelCalls": [
+      {
+        "stage": "planning",
+        "model": "deepseek-flash",
+        "providerId": "d8d53de4-7dc4-4517-9682-b2e210686c3b",
+        "usage": {
+          "inputTokens": 12744,
+          "outputTokens": 137,
+          "totalTokens": 12881
+        },
+        "durationMs": 723
+      },
+      {
+        "stage": "planning",
+        "model": "deepseek-flash",
+        "providerId": "d8d53de4-7dc4-4517-9682-b2e210686c3b",
+        "usage": {
+          "inputTokens": 12974,
+          "outputTokens": 1487,
+          "totalTokens": 14461
+        },
+        "durationMs": 6076
+      }
+    ],
+    "executedCommands": [
+      {
+        "type": "layer.create",
+        "id": "1b65f349-4e3b-4019-a7da-5c7f6529c934"
+      },
+      {
+        "type": "property.setBase",
+        "id": "fdfb4055-dee1-4de8-ab26-f4b0c70bcde0"
+      },
+      {
+        "type": "property.setBase",
+        "id": "c8dd2c46-a701-4964-9be3-b2400aa5d0fa"
+      },
+      {
+        "type": "layer.create",
+        "id": "1c6137e8-ea7f-4ba3-be52-30fa86a4dbb1"
+      },
+      {
+        "type": "property.setBase",
+        "id": "5ec55d6b-303f-4cd6-b841-425d87c75c70"
+      },
+      {
+        "type": "property.setBase",
+        "id": "0631fa3e-f094-4ce0-934b-cc1cfa94fc26"
+      },
+      {
+        "type": "layer.create",
+        "id": "32eb93dd-d11b-4b2a-ad19-bc6c4d435511"
+      },
+      {
+        "type": "property.setBase",
+        "id": "b2707ef9-cb59-4203-874b-aabd719b5811"
+      },
+      {
+        "type": "property.setBase",
+        "id": "d20c1b9b-c834-419b-a407-95e8b42270a3"
+      }
+    ],
+    "objectBindings": {
+      "rect_red": {
+        "layerId": "920b78e9-b91a-4f6b-a03d-3f97f0ac11e6",
+        "edgeId": "36968e57-a441-4426-ba58-bc759beffafa"
+      },
+      "fill_red": {},
+      "pos_red": {},
+      "rect_green": {
+        "layerId": "b360cbef-877a-4bef-81f9-039a8eb491ce",
+        "edgeId": "0b03856a-0262-432f-be0a-fe5453604957"
+      },
+      "fill_green": {},
+      "pos_green": {},
+      "rect_blue": {
+        "layerId": "57720c8a-111b-4eb7-83a0-3890fbd9fdf4",
+        "edgeId": "2bcbd758-2418-4537-9ad2-f0c97fb9967d"
+      },
+      "fill_blue": {},
+      "pos_blue": {}
+    },
+    "validationResults": {
+      "command": {
+        "status": "PASSED",
+        "count": 9
+      },
+      "scene": {
+        "status": "PASSED",
+        "graphCount": 3,
+        "animationSamples": 0
+      },
+      "render": {
+        "status": "PASSED",
+        "frames": 1
+      },
+      "visual": {
+        "status": "NOT_VERIFIED",
+        "reason": "未执行独立视觉比较"
+      },
+      "skillRules": [
+        "valid-plan",
+        "native-scene",
+        "native-render"
+      ]
+    },
+    "finalResult": "completed",
+    "durationMs": 7000
+  },
+  "workingMemory": {
+    "goal": "在 1920×1080 合成 0b57a15a 中创建 Red、Green、Blue 三个 240×240 纯色矩形图层，位置分别为 (480,540)、(960,540)、(1440,540)，不加任何额外元素或动画。",
+    "compositionId": "0b57a15a-2aaa-4959-b801-3c8979c14eca",
+    "selectedObjects": [],
+    "createdObjectReferences": {
+      "rect_red": {
+        "layerId": "920b78e9-b91a-4f6b-a03d-3f97f0ac11e6",
+        "edgeId": "36968e57-a441-4426-ba58-bc759beffafa"
+      },
+      "fill_red": {},
+      "pos_red": {},
+      "rect_green": {
+        "layerId": "b360cbef-877a-4bef-81f9-039a8eb491ce",
+        "edgeId": "0b03856a-0262-432f-be0a-fe5453604957"
+      },
+      "fill_green": {},
+      "pos_green": {},
+      "rect_blue": {
+        "layerId": "57720c8a-111b-4eb7-83a0-3890fbd9fdf4",
+        "edgeId": "2bcbd758-2418-4537-9ad2-f0c97fb9967d"
+      },
+      "fill_blue": {},
+      "pos_blue": {}
+    },
+    "completedTasks": [
+      "task_red",
+      "task_green",
+      "task_blue"
+    ],
+    "pendingTasks": [],
+    "failedTasks": [],
+    "recoveryAttempts": 0,
+    "activeConstraints": [
+      "original-scope",
+      "baseline-conflict-protection",
+      "shared-transaction",
+      "bounded-budget",
+      "no-replay"
+    ],
+    "draftVersion": "abf25c3e594826dcc02585b6dbce41e45dc51891d0b616c45113024fd6d9ad3d"
+  },
+  "creationProposal": {
+    "scope": {
+      "kind": "FULL_COMPOSITION",
+      "compositionId": "0b57a15a-2aaa-4959-b801-3c8979c14eca"
+    },
+    "labels": {
+      "920b78e9-b91a-4f6b-a03d-3f97f0ac11e6": "Red",
+      "b360cbef-877a-4bef-81f9-039a8eb491ce": "Green",
+      "57720c8a-111b-4eb7-83a0-3890fbd9fdf4": "Blue",
+      "3bba0b17-a0f7-4941-8a15-2fd06b651026": "源图像",
+      "55adf2c8-ef30-45c3-a544-0506ff502a45": "输出",
+      "8e050e5a-e753-4c7e-971e-01f94b189354": "源图像",
+      "bbf53e9a-bed9-41cb-bf52-634010a40966": "输出",
+      "6b6704f5-7d99-4ece-b94a-86ce68cba075": "源图像",
+      "e40b7391-5b18-4d46-803d-5a9be1d112a2": "输出"
+    },
+    "objects": {
+      "created": [
+        "920b78e9-b91a-4f6b-a03d-3f97f0ac11e6",
+        "b360cbef-877a-4bef-81f9-039a8eb491ce",
+        "57720c8a-111b-4eb7-83a0-3890fbd9fdf4"
+      ],
+      "deleted": [],
+      "modified": [],
+      "unchanged": []
+    },
+    "nodes": {
+      "created": [
+        "3bba0b17-a0f7-4941-8a15-2fd06b651026",
+        "55adf2c8-ef30-45c3-a544-0506ff502a45",
+        "8e050e5a-e753-4c7e-971e-01f94b189354",
+        "bbf53e9a-bed9-41cb-bf52-634010a40966",
+        "6b6704f5-7d99-4ece-b94a-86ce68cba075",
+        "e40b7391-5b18-4d46-803d-5a9be1d112a2"
+      ],
+      "deleted": [],
+      "modified": [],
+      "unchanged": []
+    },
+    "connections": {
+      "created": [
+        "36968e57-a441-4426-ba58-bc759beffafa",
+        "0b03856a-0262-432f-be0a-fe5453604957",
+        "2bcbd758-2418-4537-9ad2-f0c97fb9967d"
+      ],
+      "deleted": [],
+      "modified": [],
+      "unchanged": []
+    },
+    "parameters": [],
+    "estimatedCost": {
+      "externalGenerationRequests": 0,
+      "note": "仅本地命令预览；模型规划费用以服务实际用量为准"
+    },
+    "warnings": [
+      "合成当前为空，故为纯新建，无 modify-existing 或 reuse 路径可用。",
+      "radialGradient 等图节点生成器为分离的全幅图像，不用于形状填充；此处使用原生形状 fill（gradient=none），保持矩形几何与 alpha 正确。",
+      "按用户要求不添加关键帧、效果、遮罩、其他图层或图节点；如需动画请另行指示。",
+      "位置为图层锚点（中心）坐标，矩形 240×240 在 1920×1080 内完整可见，未超出边界。",
+      "视觉外观未做渲染比对，仅按参数写入；未声明视觉验证。"
+    ]
+  },
+  "previewSnapshot": "data:image/png;base64,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",
+  "afterSnapshot": "data:image/png;base64,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"
+}

@@ -1,3 +1,6 @@
+import type { ExecutionEvidence } from './execution-verification';
+import { createdOutputs, type StepResultMap } from './object-reference';
+import { AgentExecutionError } from './execution-error';
 import { CommandSystem, transaction } from '../core/command-system';
 import type { Command } from '../core/command-system';
 import { activeComposition } from '../core/project-model';
@@ -15,6 +18,7 @@ export class AgentTransaction implements AgentTransactionPort {
   private readonly sandbox: CommandSystem;
   private readonly pending: Command[] = [];
   private closed = false;
+  private readonly bindings: StepResultMap = new Map();
   private transform: TransformInteractionSettings;
   private workspaceChanged = false;
   constructor(
@@ -24,19 +28,60 @@ export class AgentTransaction implements AgentTransactionPort {
     private readonly context: Omit<AgentToolContext, 'project'>,
     private readonly destructiveConfirmed = false,
     private readonly allowedTools?: readonly string[],
+    private readonly validateMutation?: (base: Project, next: Project) => void,
   ) {
     this.sandbox = new CommandSystem(base);
     this.transform = context.transform ?? defaultTransformSettings;
   }
   getSnapshot = () => this.sandbox.getSnapshot();
+  evidence(): ExecutionEvidence {
+    return {
+      commands: [...this.pending],
+      bindings: Object.fromEntries(
+        [...this.bindings].map(([id, outputs]) => [
+          id,
+          { ...outputs } as Record<string, string>,
+        ]),
+      ),
+    };
+  }
   get commandCount() {
     return this.pending.length;
   }
-  async execute(name: string, args: unknown, signal: AbortSignal) {
+  get isClosed() {
+    return this.closed;
+  }
+  resolveArguments = (name: string, args: unknown) =>
+    this.registry.resolve(
+      name,
+      args,
+      {
+        ...this.context,
+        project: this.getSnapshot(),
+        bindings: this.bindings,
+        transform: this.transform,
+      },
+      this.allowedTools,
+    );
+  async execute(
+    name: string,
+    args: unknown,
+    signal: AbortSignal,
+    stepId?: string,
+  ) {
     signal.throwIfAborted();
     if (this.closed) throw new Error('Agent 事务已结束');
+    if (stepId && this.bindings.has(stepId))
+      throw new AgentExecutionError({
+        code: 'CONTEXT_INVALID',
+        phase: 'execute',
+        recoverable: false,
+        message: 'Completed step cannot be replayed',
+        cause: { reason: 'STALE_OBJECT_REFERENCE', stepId },
+      });
     const context = {
       ...this.context,
+      bindings: this.bindings,
       project: this.sandbox.getSnapshot(),
       time: Math.min(
         this.context.time,
@@ -44,6 +89,8 @@ export class AgentTransaction implements AgentTransactionPort {
       ),
       transform: this.transform,
     };
+    const rawArguments = args;
+    args = this.registry.resolve(name, args, context, this.allowedTools);
     const permission = this.registry.permission(name, args, this.allowedTools);
     if (permission === 'READ')
       return this.registry.read(name, args, context, signal, this.allowedTools);
@@ -64,11 +111,32 @@ export class AgentTransaction implements AgentTransactionPort {
     );
     if (this.pending.length + commands.length > 500)
       throw new Error('Agent 操作超过500条命令，请缩小任务范围');
+    const beforeStep = this.sandbox.getSnapshot();
+    let verification: unknown;
     if (commands.length) {
+      const before = this.sandbox.getSnapshot();
       const result = this.sandbox.executeTransaction(
         transaction('Agent预验证：' + name, 'agent', commands),
       );
-      if (!result.ok) throw new Error(result.error);
+      if (!result.ok)
+        throw new AgentExecutionError({
+          code: 'COMMAND_FAILED',
+          phase: 'execute',
+          toolName: name,
+          recoverable: false,
+          message: result.error,
+        });
+      try {
+        verification = this.registry.verifyResults(
+          commands,
+          this.sandbox.getSnapshot(),
+          before,
+        );
+        this.validateMutation?.(this.base, this.sandbox.getSnapshot());
+      } catch (error) {
+        this.discard();
+        throw error;
+      }
       this.pending.push(...commands);
     }
     if (workspace) {
@@ -76,18 +144,51 @@ export class AgentTransaction implements AgentTransactionPort {
       this.workspaceChanged = true;
     }
     signal.throwIfAborted();
-    return { ok: true, commandCount: commands.length };
+    const outputs = createdOutputs(
+      beforeStep,
+      this.sandbox.getSnapshot(),
+      name,
+      args,
+    );
+    if (stepId) this.bindings.set(stepId, outputs);
+    return {
+      ok: true,
+      commandCount: commands.length,
+      verification,
+      ...outputs,
+      outputs,
+      resolution: {
+        rawArguments,
+        resolvedArguments: args,
+        compositionId: context.project.activeCompositionId,
+        selection: context.selection,
+        stepId,
+        status: 'RESOLVED',
+      },
+    };
   }
   commit(label: string): AgentChangeSet {
     if (this.closed) throw new Error('Agent 事务已结束');
     if (this.host.getSnapshot() !== this.base)
-      throw new Error('工程已修改，Agent 结果未提交');
+      throw new AgentExecutionError({
+        code: 'CONTEXT_INVALID',
+        phase: 'commit',
+        recoverable: false,
+        message: '工程已修改，Agent 结果未提交',
+      });
     const next = this.sandbox.getSnapshot(),
       changes = this.diff(next);
+    this.validateMutation?.(this.base, next);
     let transactionId: string | undefined;
     if (this.pending.length) {
       const result = this.host.executeTransaction(
-        transaction(label.slice(0, 500), 'agent', this.pending),
+        // Command history has a 300 UTF-16 unit limit. Keep the full goal in
+        // task state; truncate only its display label, without splitting emoji.
+        transaction(
+          label.slice(0, 300).replace(/[\uD800-\uDBFF]$/, ''),
+          'agent',
+          this.pending,
+        ),
       );
       if (!result.ok) throw new Error(result.error);
       transactionId = result.transactionId;

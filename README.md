@@ -1,4 +1,8 @@
-# Swayframe 0.9.17
+# Swayframe 1.0.2
+
+当前版本完成 Agent Core V2-6 的离线恢复、长链执行与安全边界；普通工程仍默认 Legacy V1。V2 仅在显式开发 flag `#agent-v2-test` 的独立测试工程启用，未开启正式 Canary。当前结果与真实验证限制见 [V2-6 implementation result](AGENT_V2_6_IMPLEMENTATION_RESULT.md)。
+
+以下保留历史编辑器功能说明。
 
 本轮更新：摄像机实时预览与离焦边缘、稳定 XYZ/旋转操控、文本属性与逐字动画、直接贝塞尔编辑、统一时间标尺与实际帧缓存条、合成预设和 MP4/MOV/WebM 导出。详见 [0.9.17 验收记录](EDITOR_POLISH_RESULT.md)。
 

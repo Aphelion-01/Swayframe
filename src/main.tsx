@@ -1,3 +1,4 @@
+import { attachMCPHost } from './mcp/renderer-host';
 import { DesktopApp } from './desktop/DesktopApp';
 import { z } from 'zod';
 import React from 'react';
@@ -24,6 +25,9 @@ const store = desktopService.api
 const service = desktopService.api
   ? bindProjectService(store, desktopService.api)
   : undefined;
+
+if (desktopService.api?.mcp && service)
+  attachMCPHost(store, desktopService.api.mcp);
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.Fragment>

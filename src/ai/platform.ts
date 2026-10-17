@@ -1,3 +1,4 @@
+import { safeProviderDiagnostic } from './provider-diagnostics';
 import {
   AIError,
   aiSettingsSchema,
@@ -59,6 +60,21 @@ export function createAIPlatform(
               (typeof e === 'object' && e !== null && 'code' in e
                 ? String(e.code)
                 : 'provider');
+            const encoded = bridge?.[2]?.match(/\n\[SF_DETAIL:([^\]]+)\]$/);
+            let details;
+            try {
+              details = encoded
+                ? safeProviderDiagnostic(
+                    JSON.parse(decodeURIComponent(encoded[1]!)),
+                  )
+                : safeProviderDiagnostic(
+                    typeof e === 'object' && e && 'details' in e
+                      ? e.details
+                      : undefined,
+                  );
+            } catch {
+              /* malformed bridge diagnostics are ignored */
+            }
             const allowed = [
               'setup',
               'network',
@@ -72,8 +88,9 @@ export function createAIPlatform(
             ] as const;
             throw new AIError(
               allowed.find((v) => v === code) ?? 'provider',
-              bridge?.[2] ??
+              bridge?.[2]?.replace(/\n\[SF_DETAIL:[^\]]+\]$/, '') ??
                 (e instanceof Error ? e.message : '模型请求未完成'),
+              details,
             );
           } finally {
             if (timer) clearInterval(timer);

@@ -55,3 +55,16 @@ export function cubicBezier(c: BezierCoordinates): (u: number) => number {
   cache.set(key, solve);
   return solve;
 }
+
+/** Analytical dy/dx; avoids subtracting nearly identical sampled values. */
+export function cubicBezierVelocity(c: BezierCoordinates, u: number): number {
+  validateBezier(c);
+  const t = invertBezierX(c.x1, c.x2, Math.max(0, Math.min(1, u)));
+  const slope = (a: number, b: number, v: number) =>
+    3 * ((1 - v) ** 2 * a + 2 * (1 - v) * v * (b - a) + v ** 2 * (1 - b));
+  const x = slope(c.x1, c.x2, t),
+    y = slope(c.y1, c.y2, t);
+  if (Math.abs(x) > 1e-12) return y / x;
+  const near = t < 0.5 ? Math.min(1, t + 1e-7) : Math.max(0, t - 1e-7);
+  return slope(c.y1, c.y2, near) / Math.max(1e-15, slope(c.x1, c.x2, near));
+}

@@ -1,3 +1,4 @@
+import { MCPSettings } from './MCPSettings';
 import { AdvancedAISettings } from './AdvancedAISettings';
 import { SkillSettings } from './SkillSettings';
 import { useEffect, useState, useSyncExternalStore } from 'react';
@@ -254,21 +255,32 @@ export function AISettings({
         className="ai-settings-dialog"
         role="dialog"
         aria-modal="true"
-        aria-label="设置 → AI"
+        aria-label="设置 → AI 与外部工具"
       >
         <header className="panel-heading">
-          <h2>设置 · AI</h2>
-          <button aria-label="关闭 AI 设置" onClick={onClose}>
+          <h2>设置 · AI 与外部工具</h2>
+          <button aria-label="关闭设置" onClick={onClose}>
             关闭
           </button>
         </header>
         <Tabs
-          items={['服务', '模型', '路由', 'Agent', 'Skills', '用量', '隐私']}
+          items={[
+            '服务',
+            '模型',
+            '路由',
+            'Agent',
+            'Skills',
+            '用量',
+            '隐私',
+            'MCP',
+          ]}
           value={tab}
           onChange={setTab}
         />
         <div className="ai-settings-body">
-          {!state.ready ? (
+          {tab === 'MCP' ? (
+            <MCPSettings />
+          ) : !state.ready ? (
             <p role="status">正在读取设置…</p>
           ) : (
             <>
@@ -368,7 +380,7 @@ export function AISettings({
                     ))}
                   </>
                 ))}
-              {['路由', 'Agent', '用量', '隐私'].includes(tab) && (
+              {['路由', 'Agent', '用量', '隐私', 'MCP'].includes(tab) && (
                 <AdvancedAISettings manager={manager} tab={tab} />
               )}
               {tab === 'Skills' && <SkillSettings manager={manager} />}

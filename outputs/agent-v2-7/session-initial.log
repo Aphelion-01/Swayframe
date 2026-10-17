@@ -1,0 +1,100 @@
+
+ RUN  v5.0.3 /Users/aphelion-01/Documents/Codex/2026-10-03/Swayframe_Repairs/1.0.3
+
+ ❯ tests/agent-v2-session-v27.test.ts (18 tests | 5 failed) 318ms
+   × S1: five accepted turns preserve exactly three identities, distinct colors, animation, dimensions, undo and reload 71ms
+   × S3: GUI movement/fill and current selection are refreshed before the next provider request 13ms
+   × does not guess by duplicate names; selection resolves ambiguity, locks and foreign compositions reject 2ms
+   × late response after composition cannot mutate the formal Scene or committed references 8ms
+   × undo intent stops after an unrelated GUI history entry and V1 cannot run while V2 is selected 17ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/agent-v2-session-v27.test.ts > S1: five accepted turns preserve exactly three identities, distinct colors, animation, dimensions, undo and reload
+Error: [{"code":"INVALID_ARGUMENTS","message":"任务意图不符合受支持的动作契约","phase":"planning","actionId":null,"target":null,"field":"actions.0.interpolation","expected":"Typed Task Intent","actual":"invalid_type","recoverable":false,"strategy":"NONE"}]
+ ❯ Object.turn tests/helpers/agent-v2-session-fixture.ts:90:30
+     88|     enqueue(actions);
+     89|     await core.run(request);
+     90|     if (!core.pending) throw Error(JSON.stringify(core.state?.errors));
+       |                              ^
+     91|     core.accept();
+     92|   };
+ ❯ tests/agent-v2-session-v27.test.ts:77:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  tests/agent-v2-session-v27.test.ts > S3: GUI movement/fill and current selection are refreshed before the next provider request
+Error: 没有有效目标，请选择当前工程中的图层
+ ❯ problem src/agent-v2/errors.ts:50:10
+     48|   patch: Partial<Omit<CoreError, 'code' | 'message'>> = {},
+     49| ) {
+     50|   return new CoreV2Error({
+       |          ^
+     51|     code,
+     52|     message,
+ ❯ ConversationSession.resolveRequest src/agent-v2/session.ts:230:13
+ ❯ CoreV2EditorController.run src/ui/core-v2-controller.ts:144:24
+ ❯ Object.turn tests/helpers/agent-v2-session-fixture.ts:89:16
+ ❯ tests/agent-v2-session-v27.test.ts:200:11
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  tests/agent-v2-session-v27.test.ts > does not guess by duplicate names; selection resolves ambiguity, locks and foreign compositions reject
+AssertionError: expected [Function] to throw error including '不存在' but got '目标已删除或已被撤销，请重新选择；不会自动重建'
+
+Expected: "不存在"
+Received: "目标已删除或已被撤销，请重新选择；不会自动重建"
+
+ ❯ tests/agent-v2-session-v27.test.ts:383:5
+    381|       compositions: [...p.compositions, other],
+    382|     }),
+    383|   ).toThrow('不存在');
+       |     ^
+    384| });
+    385| it('duplicate submissions and double accepts cannot create duplicate o…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  tests/agent-v2-session-v27.test.ts > late response after composition cannot mutate the formal Scene or committed references
+AssertionError: expected 'AWAITING_ACCEPTANCE' to be 'CANCELLED' // Object.is equality
+
+Expected: "CANCELLED"
+Received: "AWAITING_ACCEPTANCE"
+
+ ❯ tests/agent-v2-session-v27.test.ts:444:33
+    442|     expect(saveProject(s.store.commands.getSnapshot())).toBe(expected);
+    443|     expect(s.core.session.references).toHaveLength(0);
+    444|     expect(s.core.state?.phase).toBe('CANCELLED');
+       |                                 ^
+    445|   },
+    446| );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  tests/agent-v2-session-v27.test.ts > undo intent stops after an unrelated GUI history entry and V1 cannot run while V2 is selected
+AssertionError: promise resolved "undefined" instead of rejecting
+
+- Expected:
+Error {
+  "message": "rejected promise",
+}
+
++ Received:
+undefined
+
+ ❯ tests/agent-v2-session-v27.test.ts:502:41
+    500|   ]);
+    501|   const before = saveProject(s.store.commands.getSnapshot());
+    502|   await expect(s.core.run('撤销刚才动画，保留渐变')).rejects.toThrow('历史');
+       |                                         ^
+    503|   expect(saveProject(s.store.commands.getSnapshot())).toBe(before);
+    504|   expect(() => s.native.agent.run('create')).toThrow('不会同时');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 13 passed (18)
+   Start at  07:31:24
+   Duration  1.01s (transform 34%, tests 33%, environment 20%, import 12%)
+

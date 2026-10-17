@@ -1,0 +1,76 @@
+{
+  "id": "plan-bg-purple-glow-down",
+  "goal": "仅修改已有背景分支的两个参数：把径向渐变改为紫色（保留节点 ID 与连接），并把既有 glow 的 amount 稍微调低；不增删节点、不动文字动画与摄像机。",
+  "steps": [
+    {
+      "id": "s1",
+      "label": "将已有径向渐变色标改为紫色系（白心→紫），保留节点 ID 与连接",
+      "tool": "setNodeParameter",
+      "arguments": {
+        "nodeId": "2c3d4e5f-6071-4b82-9c03-b4c5d6e7f809",
+        "key": "stops",
+        "value": [
+          0,
+          0.95,
+          0.88,
+          1,
+          1,
+          0.45,
+          0.45,
+          0.2,
+          0.95,
+          1,
+          1,
+          0.12,
+          0.06,
+          0.42,
+          1
+        ]
+      }
+    },
+    {
+      "id": "s2",
+      "label": "把既有 glow 的 amount 由 0.55 稍微调低到 0.4",
+      "tool": "setNodeParameter",
+      "arguments": {
+        "nodeId": "3d4e5f60-7182-4c93-8d14-c5d6e7f8091a",
+        "key": "amount",
+        "value": 0.4
+      }
+    }
+  ],
+  "risk": "low",
+  "creation": {
+    "intent": "对选中背景分支做纯参数修改：径向渐变改紫色，既有 glow 强度略降。",
+    "tasks": [
+      {
+        "id": "t1",
+        "description": "修改已有 radialGradient 节点的 stops 参数为紫色渐变，保留全部节点 ID 与边",
+        "executionDomain": "compositing",
+        "strategy": "modify-existing",
+        "capabilityId": "radialGradient",
+        "stepIds": [
+          "s1"
+        ],
+        "dependencies": []
+      },
+      {
+        "id": "t2",
+        "description": "修改已有 glow 节点的 amount 参数，稍微调低发光强度",
+        "executionDomain": "compositing",
+        "strategy": "modify-existing",
+        "capabilityId": "glow",
+        "stepIds": [
+          "s2"
+        ],
+        "dependencies": []
+      }
+    ],
+    "warnings": [
+      "仅修改参数，不新增/删除节点，不改变 2c3d4e5f→3d4e5f60→output 的既有连接。",
+      "文字层与摄像机不在本次范围内，动画与文字内容保持不变。",
+      "此修改不涉及噪声、图片、Forge 或新合成。",
+      "\"紫色\"为主观色彩目标；实际观感需用户确认后才能声称视觉验证。"
+    ]
+  }
+}

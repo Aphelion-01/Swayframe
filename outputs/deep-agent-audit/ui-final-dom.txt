@@ -1,0 +1,605 @@
+- main:
+  - navigation "应用菜单":
+    - generic "文件":
+      - generic: 文件
+    - generic "编辑":
+      - generic: 编辑
+    - generic "图层":
+      - generic: 图层
+    - generic "动画":
+      - generic: 动画
+    - generic "视图":
+      - generic: 视图
+    - generic "窗口":
+      - generic: 窗口
+    - generic "帮助":
+      - generic: 帮助
+  - button "导出":
+    - text: 导出
+  - button "撤销":
+  - button "重做" [disabled]:
+  - button "搜索命令":
+  - toolbar "绘图工具":
+    - button "选择工具" [pressed]:
+    - button "平移工具":
+    - button "矩形工具":
+    - button "椭圆工具":
+    - button "钢笔工具":
+    - button "文字工具":
+  - region "画布区域":
+    - text: 合成 01
+    - generic "变换轴向：全局 / 对象局部 / 父级 / 视图":
+      - combobox "变换轴向":
+        - option "全局"
+        - option "局部"
+        - option "父级" [selected]
+        - option "视图"
+    - generic "变换支点是临时操作设置，不修改图层锚点":
+      - combobox "变换支点":
+        - option "锚点"
+        - option "几何中心"
+        - option "边界中心"
+        - option "选区中心" [selected]
+        - option "各自中心"
+        - option "自定义"
+        - option "左上"
+        - option "上中"
+        - option "右上"
+        - option "左中"
+        - option "右中"
+        - option "左下"
+        - option "下中"
+        - option "右下"
+        - option "合成原点"
+    - button "锚点":
+      - generic: 锚点
+    - button "画布吸附" [pressed]:
+    - button "三维图层查看工具": 3D 空间
+    - generic "网格 / 参考线 / 标尺"
+    - option "8"
+    - option "16"
+    - option "32"
+    - option "64"
+    - option "100" [selected]
+    - option "200"
+    - option "1"
+    - option "2"
+    - option "4"
+    - option "5" [selected]
+    - option "8"
+    - option "10"
+    - generic "合成画布"
+    - img "画布作图辅助"
+    - img "直接编辑贝塞尔路径"
+    - img "预览运动路径":
+      - slider "路径 K1 出控制点"
+      - slider "路径 K2 入控制点"
+      - slider "路径关键帧 K1"
+      - slider "路径关键帧 K2"
+      - generic: 起点
+      - generic "最终位置":
+        - generic: 结束位置 · 1.00 秒
+    - img "变换控制器":
+      - generic "变换结果轮廓预览"
+      - generic: X
+      - generic: "Y"
+      - generic "固定变换支点"
+    - generic "沿父级 X/Y 轴移动；围绕所选对象中心旋转 / 缩放": 父级选区中心
+    - generic: 1 个图层
+    - button "选区"
+    - text: 缩放
+    - combobox "画布缩放":
+      - option "适合窗口" [selected]
+      - option "25%"
+      - option "50%"
+      - option "100%"
+      - option "200%"
+      - option "400%"
+      - option "25%"
+  - complementary "属性面板":
+    - tablist "属性 / 效果":
+      - tab "属性" [selected]
+      - tab "效果"
+    - generic: 矩形
+    - generic: 图层名称
+    - textbox "图层名称": 矩形
+    - generic "变换"
+    - button "运动路径 已显示" [pressed]
+    - generic "变换参考选择器":
+      - generic "变换轴向：全局 / 对象局部 / 父级 / 视图":
+        - combobox "属性变换轴向":
+          - option "全局"
+          - option "局部"
+          - option "父级" [selected]
+          - option "视图"
+      - generic "变换支点是临时操作设置，不修改图层锚点":
+        - combobox "属性变换支点":
+          - option "锚点"
+          - option "几何中心"
+          - option "边界中心"
+          - option "选区中心" [selected]
+          - option "各自中心"
+          - option "自定义"
+          - option "左上"
+          - option "上中"
+          - option "右上"
+          - option "左中"
+          - option "右中"
+          - option "左下"
+          - option "下中"
+          - option "右下"
+          - option "合成原点"
+      - group "九宫格变换支点":
+        - button "支点：左上":
+        - button "支点：上中":
+        - button "支点：右上":
+        - button "支点：左中":
+        - button "支点：几何中心":
+        - button "支点：右中":
+        - button "支点：左下":
+        - button "支点：下中":
+        - button "支点：右下":
+      - group "支点来源":
+        - button "支点：锚点": 锚点
+        - button "支点：边界中心": 边界中心
+        - button "支点：选区中心" [pressed]: 选区中心
+        - button "支点：各自中心": 各自中心
+        - button "支点：自定义": 自定义
+        - button "支点：合成原点": 合成原点
+    - generic: 位置
+    - button "启用位置 X/Y 链接":
+    - button "关闭位置动画" [pressed]:
+    - button "记录位置关键帧" [disabled]:
+    - generic: 位置 XX
+    - spinbutton "位置 X": "1100"
+    - generic: 位置 YY
+    - spinbutton "位置 Y" [active]: "540"
+    - generic: 缩放%
+    - button "解除缩放 X/Y 链接" [pressed]:
+    - button "开启缩放动画":
+    - button "记录缩放关键帧":
+    - generic: 缩放 X（%）X
+    - spinbutton "缩放 X（%）": "200"
+    - generic: 缩放 Y（%）Y
+    - spinbutton "缩放 Y（%）": "200"
+    - generic: 旋转°
+    - button "开启旋转动画":
+    - button "记录旋转关键帧":
+    - spinbutton "旋转（°）": "45"
+    - generic: 透明度%
+    - button "开启透明度动画":
+    - button "记录透明度关键帧":
+    - spinbutton "透明度（%）": "100"
+    - checkbox "锁定图层"
+    - text: 锁定图层
+    - generic "外观"
+    - text: 填充颜色
+    - textbox "填充颜色": "#2e6bff"
+    - generic: "#2E6BFF"
+    - generic: 填充颜色 HEX
+    - textbox "填充颜色 HEX": "#2e6bff"
+    - generic "几何与样式"
+    - generic: 几何与锚点
+    - generic "拖动调整 · Shift 大步长 · Alt 小步长 · 双击输入": 图层宽度
+    - spinbutton "图层宽度": "400"
+    - generic "拖动调整 · Shift 大步长 · Alt 小步长 · 双击输入": 图层高度
+    - spinbutton "图层高度": "300"
+    - generic: 锚点
+    - button "解除锚点 X/Y 链接" [pressed]:
+    - button "开启锚点动画":
+    - button "记录锚点关键帧":
+    - generic: 锚点 XX
+    - spinbutton "锚点 X": "0"
+    - generic: 锚点 YY
+    - spinbutton "锚点 Y": "0"
+    - generic: 形状样式
+    - generic: 描边颜色
+    - button "开启描边颜色动画":
+    - button "记录描边颜色关键帧":
+    - textbox "描边颜色": "#ffffff"
+    - generic: 描边颜色 HEX
+    - textbox "描边颜色 HEX": "#ffffff"
+    - generic "拖动调整 · Shift 大步长 · Alt 小步长 · 双击输入": 描边颜色 透明度（%）
+    - spinbutton "描边颜色 透明度（%）": "100"
+    - generic: 描边宽度
+    - button "开启描边宽度动画":
+    - button "记录描边宽度关键帧":
+    - spinbutton "描边宽度": "0"
+    - text: 渐变
+    - combobox "填充渐变":
+      - option "纯色"
+      - option "线性渐变"
+      - option "径向渐变" [selected]
+    - generic: 中心
+    - button "启用中心 X/Y 链接":
+    - button "开启中心动画":
+    - button "记录中心关键帧":
+    - generic: 中心 XX
+    - spinbutton "中心 X": "0.5"
+    - generic: 中心 YY
+    - spinbutton "中心 Y": "0.5"
+    - generic: 半径
+    - button "开启半径动画":
+    - button "记录半径关键帧":
+    - spinbutton "半径": "0.8"
+    - generic: 宽高比
+    - button "开启宽高比动画":
+    - button "记录宽高比关键帧":
+    - spinbutton "宽高比": "1"
+    - generic "渐变色标"
+    - button "切换色标动画":
+    - button "记录色标关键帧":
+    - generic: 色标 1
+    - generic: 渐变色标1位置位置
+    - spinbutton "渐变色标1位置": "0"
+    - generic: 渐变色标1红红
+    - spinbutton "渐变色标1红": "0"
+    - generic: 渐变色标1绿绿
+    - spinbutton "渐变色标1绿": "1"
+    - generic: 渐变色标1蓝蓝
+    - spinbutton "渐变色标1蓝": "1"
+    - generic: 渐变色标1透明度透明度
+    - spinbutton "渐变色标1透明度": "1"
+    - button "移除色标" [disabled]
+    - generic: 色标 2
+    - generic: 渐变色标2位置位置
+    - spinbutton "渐变色标2位置": "1"
+    - generic: 渐变色标2红红
+    - spinbutton "渐变色标2红": "0.18"
+    - generic: 渐变色标2绿绿
+    - spinbutton "渐变色标2绿": "0.42"
+    - generic: 渐变色标2蓝蓝
+    - spinbutton "渐变色标2蓝": "1"
+    - generic: 渐变色标2透明度透明度
+    - spinbutton "渐变色标2透明度": "1"
+    - button "移除色标" [disabled]
+    - button "添加色标"
+    - generic: 渐变不透明度
+    - button "开启渐变不透明度动画":
+    - button "记录渐变不透明度关键帧":
+    - spinbutton "渐变不透明度": "1"
+    - generic: 偏移
+    - button "启用偏移 X/Y 链接":
+    - button "开启偏移动画":
+    - button "记录偏移关键帧":
+    - generic: 偏移 XX
+    - spinbutton "偏移 X": "0"
+    - generic: 偏移 YY
+    - spinbutton "偏移 Y": "0"
+    - generic: 渐变缩放
+    - button "启用渐变缩放 X/Y 链接":
+    - button "开启渐变缩放动画":
+    - button "记录渐变缩放关键帧":
+    - generic: 渐变缩放 XX
+    - spinbutton "渐变缩放 X": "1"
+    - generic: 渐变缩放 YY
+    - spinbutton "渐变缩放 Y": "1"
+    - generic: 渐变旋转
+    - button "开启渐变旋转动画":
+    - button "记录渐变旋转关键帧":
+    - spinbutton "渐变旋转": "0"
+    - text: 颜色插值
+    - combobox "颜色插值":
+      - option "sRGB" [selected]
+      - option "线性光"
+    - button "记录颜色插值关键帧"
+    - text: 连接
+    - combobox "描边连接":
+      - option "圆角" [selected]
+      - option "斜角"
+      - option "尖角"
+    - text: 端点
+    - combobox "描边端点":
+      - option "圆角" [selected]
+      - option "平头"
+      - option "方头"
+    - generic "父子级"
+    - text: 父级
+    - combobox "父级图层":
+      - option "无" [selected]
+      - option "文字"
+    - button "选中图层预合成"
+    - generic "图层时间"
+    - generic "效果"
+    - checkbox "启用效果1" [checked]
+    - text: 1. 高斯模糊
+    - button "删除效果1": ×
+    - button "保存效果1预设": 保存预设
+    - button "上移效果1" [disabled]: ↑ 上移
+    - button "下移效果1": ↓ 下移
+    - generic: 效果1半径
+    - button "开启效果1半径动画":
+    - button "记录效果1半径关键帧":
+    - spinbutton "效果1半径": "0"
+    - checkbox "启用效果2" [checked]
+    - text: 2. 高斯模糊
+    - button "删除效果2": ×
+    - button "保存效果2预设": 保存预设
+    - button "上移效果2": ↑ 上移
+    - button "下移效果2" [disabled]: ↓ 下移
+    - generic: 效果2半径
+    - button "开启效果2半径动画":
+    - button "记录效果2半径关键帧":
+    - spinbutton "效果2半径": "0"
+    - generic "合成与遮罩"
+    - generic: 合成
+    - button "打开合成节点"
+    - text: 混合模式
+    - combobox "混合模式":
+      - option "正常" [selected]
+      - option "正片叠底"
+      - option "滤色"
+      - option "叠加"
+      - option "相加"
+      - option "变暗"
+      - option "变亮"
+    - generic "遮罩"
+    - button "添加矩形遮罩"
+    - button "添加椭圆遮罩"
+    - button "添加路径遮罩"
+    - generic "语义信息"
+  - separator "调整时间轴大小"
+  - region "时间轴":
+    - button "回到起点":
+    - button "回到终点":
+    - button "播放":
+    - spinbutton "当前时间（秒）": "1"
+    - button "停止":
+    - button "循环播放" [pressed]:
+    - button "时间轴吸附" [pressed]:
+    - button "1.000 s"
+    - tablist "时间轴 / 曲线编辑器 / 合成节点":
+      - tab "时间轴" [selected]
+      - tab "曲线编辑器"
+      - tab "合成节点"
+    - text: 图层 / 属性
+    - separator "时间轴属性列宽"
+    - slider "播放头":
+      - generic: ▼
+      - generic: 0 秒
+      - generic: 2 秒
+      - generic: 4 秒
+    - generic: 插值
+    - generic "实时渲染预览条":
+      - generic: 已渲染 · 3.8 ms · 1 帧缓存
+    - button "展开 文字 属性": ▸
+    - button "隐藏 文字 图层":
+    - button "锁定 文字 图层":
+    - button "图层色标：灰紫 文字":
+      - img "图层色标：灰紫"
+      - generic: 文字
+    - generic "文字时间范围":
+      - generic "调整入点"
+      - generic "调整出点"
+    - button "展开 矩形 属性" [expanded]: ▾
+    - button "隐藏 矩形 图层":
+    - button "锁定 矩形 图层":
+    - button "图层色标：灰蓝 矩形":
+      - img "图层色标：灰蓝"
+      - generic: 矩形
+    - generic "矩形时间范围":
+      - generic "调整入点"
+      - generic "调整出点"
+    - button "▾ 变换" [expanded]
+    - group "矩形 位置 轨道":
+      - button "关闭 矩形 位置 动画":
+      - generic: 位置
+      - button "添加 矩形 位置 关键帧" [disabled]:
+      - button "删除 矩形 位置 关键帧": −
+      - button "关键帧 矩形 位置 0.000 秒"
+      - button "关键帧 矩形 位置 1.000 秒"
+      - generic "⋯"
+      - option "线性" [selected]
+      - option "保持"
+      - option "贝塞尔曲线"
+      - option "弹簧"
+    - group "矩形 缩放 轨道":
+      - button "开启 矩形 缩放 动画":
+      - generic: 缩放
+      - button "添加 矩形 缩放 关键帧":
+      - button "删除 矩形 缩放 关键帧" [disabled]: −
+      - generic "⋯"
+      - option "线性" [selected]
+      - option "保持"
+      - option "贝塞尔曲线"
+      - option "弹簧"
+    - group "矩形 旋转 轨道":
+      - button "开启 矩形 旋转 动画":
+      - generic: 旋转
+      - button "添加 矩形 旋转 关键帧":
+      - button "删除 矩形 旋转 关键帧" [disabled]: −
+      - generic "⋯"
+      - option "线性" [selected]
+      - option "保持"
+      - option "贝塞尔曲线"
+      - option "弹簧"
+    - group "矩形 透明度 轨道":
+      - button "开启 矩形 透明度 动画":
+      - generic: 透明度
+      - button "添加 矩形 透明度 关键帧":
+      - button "删除 矩形 透明度 关键帧" [disabled]: −
+      - generic "⋯"
+      - option "线性" [selected]
+      - option "保持"
+      - option "贝塞尔曲线"
+      - option "弹簧"
+    - group "矩形 锚点 轨道":
+      - button "开启 矩形 锚点 动画":
+      - generic: 锚点
+      - button "添加 矩形 锚点 关键帧":
+      - button "删除 矩形 锚点 关键帧" [disabled]: −
+      - generic "⋯"
+      - option "线性" [selected]
+      - option "保持"
+      - option "贝塞尔曲线"
+      - option "弹簧"
+    - button "▾ 外观 / 图形" [expanded]
+    - group "矩形 填充 轨道":
+      - button "开启 矩形 填充 动画":
+      - generic: 填充
+      - button "添加 矩形 填充 关键帧":
+      - button "删除 矩形 填充 关键帧" [disabled]: −
+      - generic "⋯"
+      - option "线性" [selected]
+      - option "保持"
+      - option "贝塞尔曲线"
+      - option "弹簧"
+    - group "矩形 描边 轨道":
+      - button "开启 矩形 描边 动画":
+      - generic: 描边
+      - button "添加 矩形 描边 关键帧":
+      - button "删除 矩形 描边 关键帧" [disabled]: −
+      - generic "⋯"
+      - option "线性" [selected]
+      - option "保持"
+      - option "贝塞尔曲线"
+      - option "弹簧"
+    - group "矩形 描边宽度 轨道":
+      - button "开启 矩形 描边宽度 动画":
+      - generic: 描边宽度
+      - button "添加 矩形 描边宽度 关键帧":
+      - button "删除 矩形 描边宽度 关键帧" [disabled]: −
+      - generic "⋯"
+      - option "线性" [selected]
+      - option "保持"
+      - option "贝塞尔曲线"
+      - option "弹簧"
+    - group "矩形 渐变末色 轨道":
+      - button "开启 矩形 渐变末色 动画":
+      - generic: 渐变末色
+      - button "添加 矩形 渐变末色 关键帧":
+      - button "删除 矩形 渐变末色 关键帧" [disabled]: −
+      - generic "⋯"
+      - option "线性" [selected]
+      - option "保持"
+      - option "贝塞尔曲线"
+      - option "弹簧"
+    - group "矩形 径向渐变 · 中心 轨道":
+      - button "开启 矩形 径向渐变 · 中心 动画":
+      - generic: 径向渐变 · 中心
+      - button "添加 矩形 径向渐变 · 中心 关键帧":
+      - button "删除 矩形 径向渐变 · 中心 关键帧" [disabled]: −
+      - generic "⋯"
+      - option "线性" [selected]
+      - option "保持"
+      - option "贝塞尔曲线"
+      - option "弹簧"
+    - group "矩形 径向渐变 · 半径 轨道":
+      - button "开启 矩形 径向渐变 · 半径 动画":
+      - generic: 径向渐变 · 半径
+      - button "添加 矩形 径向渐变 · 半径 关键帧":
+      - button "删除 矩形 径向渐变 · 半径 关键帧" [disabled]: −
+      - generic "⋯"
+      - option "线性" [selected]
+      - option "保持"
+      - option "贝塞尔曲线"
+      - option "弹簧"
+    - group "矩形 径向渐变 · 宽高比 轨道":
+      - button "开启 矩形 径向渐变 · 宽高比 动画":
+      - generic: 径向渐变 · 宽高比
+      - button "添加 矩形 径向渐变 · 宽高比 关键帧":
+      - button "删除 矩形 径向渐变 · 宽高比 关键帧" [disabled]: −
+      - generic "⋯"
+      - option "线性" [selected]
+      - option "保持"
+      - option "贝塞尔曲线"
+      - option "弹簧"
+    - group "矩形 径向渐变 · 渐变色标 轨道":
+      - button "开启 矩形 径向渐变 · 渐变色标 动画":
+      - generic: 径向渐变 · 渐变色标
+      - button "添加 矩形 径向渐变 · 渐变色标 关键帧":
+      - button "删除 矩形 径向渐变 · 渐变色标 关键帧" [disabled]: −
+      - generic "⋯"
+      - option "线性" [selected]
+      - option "保持"
+      - option "贝塞尔曲线"
+      - option "弹簧"
+    - group "矩形 径向渐变 · 渐变不透明度 轨道":
+      - button "开启 矩形 径向渐变 · 渐变不透明度 动画":
+      - generic: 径向渐变 · 渐变不透明度
+      - button "添加 矩形 径向渐变 · 渐变不透明度 关键帧":
+      - button "删除 矩形 径向渐变 · 渐变不透明度 关键帧" [disabled]: −
+      - generic "⋯"
+      - option "线性" [selected]
+      - option "保持"
+      - option "贝塞尔曲线"
+      - option "弹簧"
+    - group "矩形 径向渐变 · 偏移 轨道":
+      - button "开启 矩形 径向渐变 · 偏移 动画":
+      - generic: 径向渐变 · 偏移
+      - button "添加 矩形 径向渐变 · 偏移 关键帧":
+      - button "删除 矩形 径向渐变 · 偏移 关键帧" [disabled]: −
+      - generic "⋯"
+      - option "线性" [selected]
+      - option "保持"
+      - option "贝塞尔曲线"
+      - option "弹簧"
+    - group "矩形 径向渐变 · 渐变缩放 轨道":
+      - button "开启 矩形 径向渐变 · 渐变缩放 动画":
+      - generic: 径向渐变 · 渐变缩放
+      - button "添加 矩形 径向渐变 · 渐变缩放 关键帧":
+      - button "删除 矩形 径向渐变 · 渐变缩放 关键帧" [disabled]: −
+      - generic "⋯"
+      - option "线性" [selected]
+      - option "保持"
+      - option "贝塞尔曲线"
+      - option "弹簧"
+    - group "矩形 径向渐变 · 渐变旋转 轨道":
+      - button "开启 矩形 径向渐变 · 渐变旋转 动画":
+      - generic: 径向渐变 · 渐变旋转
+      - button "添加 矩形 径向渐变 · 渐变旋转 关键帧":
+      - button "删除 矩形 径向渐变 · 渐变旋转 关键帧" [disabled]: −
+      - generic "⋯"
+      - option "线性" [selected]
+      - option "保持"
+      - option "贝塞尔曲线"
+      - option "弹簧"
+    - group "矩形 径向渐变 · 颜色插值 轨道":
+      - button "开启 矩形 径向渐变 · 颜色插值 动画":
+      - generic: 径向渐变 · 颜色插值
+      - button "添加 矩形 径向渐变 · 颜色插值 关键帧":
+      - button "删除 矩形 径向渐变 · 颜色插值 关键帧" [disabled]: −
+      - generic "⋯"
+      - option "线性" [selected]
+      - option "保持"
+      - option "贝塞尔曲线"
+      - option "弹簧"
+    - button "▾ 合成参数" [expanded]
+    - group "矩形 高斯模糊 · 半径 轨道":
+      - button "开启 矩形 高斯模糊 · 半径 动画":
+      - generic: 高斯模糊 · 半径
+      - button "添加 矩形 高斯模糊 · 半径 关键帧":
+      - button "删除 矩形 高斯模糊 · 半径 关键帧" [disabled]: −
+      - generic "⋯"
+      - option "线性" [selected]
+      - option "保持"
+      - option "贝塞尔曲线"
+      - option "弹簧"
+    - group "矩形 高斯模糊 · 半径 轨道":
+      - button "开启 矩形 高斯模糊 · 半径 动画":
+      - generic: 高斯模糊 · 半径
+      - button "添加 矩形 高斯模糊 · 半径 关键帧":
+      - button "删除 矩形 高斯模糊 · 半径 关键帧" [disabled]: −
+      - generic "⋯"
+      - option "线性" [selected]
+      - option "保持"
+      - option "贝塞尔曲线"
+      - option "弹簧"
+    - textbox "搜索时间轴属性":
+      - /placeholder: 搜索图层 / 属性
+    - combobox "时间轴属性筛选":
+      - option "全部" [selected]
+      - option "已有动画"
+      - option "所选属性"
+      - option "位置"
+      - option "缩放"
+      - option "旋转"
+      - option "透明度"
+    - button "适合合成时长": 适合时长
+    - text: 缩放
+    - slider "时间轴缩放": "1"
+  - button "显示左面板":
+  - button "隐藏属性面板" [pressed]:
+  - button "隐藏时间轴" [pressed]:
+  - status: 修改位置
+  - generic: 1 个图层 · 0 个关键帧 · 21 步可撤销

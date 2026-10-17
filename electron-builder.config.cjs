@@ -22,6 +22,9 @@ module.exports = {
     },
   ],
   mac: {
+    extraResources: [
+      { from: 'desktop-dist/sf-segment-image', to: 'sf-segment-image' },
+    ],
     target: ['dir', 'dmg'],
     category: 'public.app-category.graphics-design',
     identity: null,

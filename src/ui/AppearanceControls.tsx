@@ -1,3 +1,9 @@
+import { CapabilityParameters } from './CapabilityParameters';
+import {
+  radialGradientDefinition,
+  gradientPropertyKey,
+} from '../core/radial-gradient';
+import { createProperty } from '../core/project-model';
 import { guidanceFor } from './transform-guidance-controller';
 import { useEffect, useState } from 'react';
 import type { Layer, LayerEditor, Property } from '../core/project-model';
@@ -128,6 +134,19 @@ export function AppearanceControls({
               onChange={(e) =>
                 settings({
                   gradient: e.target.value as LayerEditor['gradient'],
+                  properties:
+                    e.target.value === 'radial'
+                      ? {
+                          ...editor.properties,
+                          ...Object.fromEntries(
+                            radialGradientDefinition.parameters.map((p) => [
+                              gradientPropertyKey(p.id),
+                              editor.properties[gradientPropertyKey(p.id)] ??
+                                createProperty(structuredClone(p.defaultValue)),
+                            ]),
+                          ),
+                        }
+                      : editor.properties,
                 })
               }
             >
@@ -136,12 +155,24 @@ export function AppearanceControls({
               <option value="radial">径向渐变</option>
             </select>
           </label>
-          {editor.gradient !== 'none' && (
+          {editor.gradient !== 'none' && editor.gradient !== 'radial' && (
             <AnimatedField
               store={store}
               property={editor.properties.gradientEnd!}
               label="渐变末色"
               color
+            />
+          )}
+          {editor.gradient === 'radial' && editor.properties.radial_center && (
+            <CapabilityParameters
+              store={store}
+              parameters={radialGradientDefinition.parameters}
+              properties={Object.fromEntries(
+                radialGradientDefinition.parameters.map((p) => [
+                  p.id,
+                  editor.properties[gradientPropertyKey(p.id)]!,
+                ]),
+              )}
             />
           )}
           <div className="field-grid">

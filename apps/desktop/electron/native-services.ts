@@ -1,3 +1,7 @@
+import { LocalImageLayers, ImageLayersError } from './image-layers';
+import { readLayerPack } from './layerpack';
+import { listSystemFonts } from './fonts';
+import { mediaTypes } from '../../../src/shared/media-formats';
 import { NativeAIService } from './ai-service';
 import { Worker } from 'node:worker_threads';
 import { app, dialog } from 'electron';
@@ -10,6 +14,11 @@ import { installMenu } from './menu';
 import { NativeAssets } from './assets';
 import { FileGrants, readProject, writeProject } from './files';
 export class NativeServices {
+  private readonly layerPackJobs = new Map<string, AbortController>();
+  cancelLayerPackImports() {
+    this.imageLayers.cancel();
+    for (const job of this.layerPackJobs.values()) job.abort();
+  }
   allowClose: () => Promise<void> = async () => {};
   readonly grants = new FileGrants();
   startupPath: string | null = null;
@@ -19,6 +28,12 @@ export class NativeServices {
     app.getPath('userData'),
     undefined,
     !app.isPackaged,
+  );
+  readonly imageLayers = new LocalImageLayers(
+    this.grants,
+    app.isPackaged
+      ? path.join(process.resourcesPath, 'sf-segment-image')
+      : path.join(__dirname, 'sf-segment-image'),
   );
   constructor(readonly window: BrowserWindow) {}
   hydrate(data: string): string {
@@ -47,6 +62,25 @@ export class NativeServices {
         request as import('../../../src/ai/desktop-contracts').AIRequest,
       );
     switch (request.method) {
+      case 'imageLayers.status':
+        return this.imageLayers.status();
+      case 'imageLayers.cancel':
+        this.imageLayers.cancel(request.requestId);
+        return;
+      case 'imageLayers.generate':
+        try {
+          return await this.imageLayers.generate(
+            request.input,
+            request.parent,
+            request.requestId,
+          );
+        } catch (error) {
+          throw new ImageLayersError(
+            error instanceof Error ? error.message : '本地图片分层失败。',
+          );
+        }
+      case 'fonts.list':
+        return listSystemFonts();
       case 'window.close':
         await this.allowClose();
         return;
@@ -132,11 +166,11 @@ export class NativeServices {
         let paths = request.paths;
         if (!paths) {
           const result = await dialog.showOpenDialog(this.window, {
-            title: '导入图片',
+            title: '导入媒介',
             filters: [
               {
-                name: '图片',
-                extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif'],
+                name: '图片、音频与视频',
+                extensions: Object.keys(mediaTypes),
               },
             ],
             properties: ['openFile', 'multiSelections'],
@@ -146,6 +180,22 @@ export class NativeServices {
         }
         return Promise.all(paths.map((p) => this.assets.import(p)));
       }
+      case 'assets.layerpack.cancel':
+        this.layerPackJobs.get(request.requestId)?.abort();
+        return;
+      case 'assets.layerpack': {
+        const directory = this.grants.requireRead(request.path);
+        if (this.layerPackJobs.has(request.requestId))
+          throw new Error('Duplicate import request');
+        for (const pending of this.layerPackJobs.values()) pending.abort();
+        const controller = new AbortController();
+        this.layerPackJobs.set(request.requestId, controller);
+        try {
+          return await readLayerPack(directory, controller.signal);
+        } finally {
+          this.layerPackJobs.delete(request.requestId);
+        }
+      }
       case 'assets.metadata':
         return (await this.assets.import(request.path)).metadata;
       case 'assets.exists':
@@ -153,9 +203,7 @@ export class NativeServices {
       case 'assets.relink': {
         const result = await dialog.showOpenDialog(this.window, {
           title: '重新链接素材',
-          filters: [
-            { name: '图片', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif'] },
-          ],
+          filters: [{ name: '图片', extensions: Object.keys(mediaTypes) }],
           properties: ['openFile'],
         });
         if (result.canceled || !result.filePaths[0]) return null;

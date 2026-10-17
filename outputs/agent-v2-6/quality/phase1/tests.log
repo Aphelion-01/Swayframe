@@ -1,0 +1,272 @@
+
+> motion-system@1.0.2 test
+> vitest run --reporter=default --reporter=json --outputFile=outputs/agent-v2-6/quality/phase1/tests.json
+
+
+ RUN  v5.0.3 /Users/aphelion-01/Documents/Codex/2026-10-03/Swayframe_Repairs/1.0.2
+
+ ✓ tests/agent-v2-provider-session.test.ts (8 tests) 51ms
+ ✓ tests/canvas-sprint.test.tsx (6 tests) 1773ms
+   ✓ 画布吸附实际进入共享命令；移动时显示参考线，松手一条 Undo，Ctrl 临时关闭 797ms
+   ✓ 边与角缩放遵循当前锚点支点和属性 X/Y 链接，松手一次提交；取消手柄预览不改工程 619ms
+ ✓ tests/workspace-ux.test.tsx (8 tests) 2148ms
+   ✓ scrub 在松手前只预览，单笔提交；Escape 恢复工程和历史 386ms
+   ✓ 工具快捷键遵循画布/时间轴/文字焦点，并支持命令搜索 390ms
+   ✓ 多关键帧拖动保留选中集合，取消不修改；Graph 替代轨道 356ms
+ ✓ tests/native-agent-panel.test.tsx (8 tests) 2841ms
+   ✓ warns about text-only models when references are present, preserves input and allows text after reference removal 656ms
+   ✓ real panel prompt runs native controller tools and commands, updates scene renderer input and Undo once 613ms
+   ✓ Assist only plans and Shift+Enter retains multiline input 330ms
+   ✓ native planning preserves complete typed contracts below the provider message limit 687ms
+ ✓ tests/motion-ui.test.tsx (2 tests) 2527ms
+   ✓ 面板读取跨属性 Mixed，点击预设即时统一，指定区间模式隔离其他区间 800ms
+   ✓ 真实手柄 200 次 pointermove 实时更新画布求值，窗口释放只提交一次事务 1725ms
+ ✓ tests/transform-interaction.test.tsx (11 tests) 2930ms
+   ✓ A1/A2/A9：属性200%执行真实支点补偿，预览不写Scene，提交一次历史，Undo恢复Anchor 424ms
+   ✓ A3/A4：两层旋转/缩放在Selection Center和Individual Origins下布局不同，整个事务一次Undo 412ms
+   ✓ A5/A6：45°对象的Global/Local X轴拖动真实进入不同方向，100次move只提交一次 748ms
+   ✓ CASE 8: 数值实时缩放时底部支点固定，旋转显示角度和弧线，提交一次Scene Undo 351ms
+ ✓ tests/acceptance.test.tsx (5 tests) 4283ms
+   ✓ A-01～A-09 用户流程集成验收 (5)
+     ✓ A-01 / A-02 / A-05：新建合成、Canvas 拖动、属性面板 编辑和逐步 Undo/Redo 1703ms
+     ✓ A-03 / A-04：手动 Spring 入场淡入，四类图层与文件在关闭重开后保持一致 1332ms
+     ✓ A-06 / A-07：既有Agent Bridge仍保留一项历史、整体撤销、重做后可手改 408ms
+     ✓ A-08：Provider 输出建议时不修改工程；应用后可撤销 552ms
+ ✓ tests/canvas-direct.test.tsx (31 tests) 4610ms
+   ✓ keyboard repeat nudges coalesce within held key; release separates history and Undo/Redo are exact 400ms
+   ✓ A: creation/move/scale/rotation/anchor are five undoable actions and five Redos restore exact Scene 496ms
+ ✓ tests/editor.test.tsx (5 tests) 1967ms
+   ✓ 图层面板 / 属性面板 integration (5)
+     ✓ 创建三类基础图层、重命名、Transform、显隐、排序与删除均可撤销 1126ms
+ ✓ tests/agent-references.test.ts (4 tests) 2715ms
+   ✓ authorized reference image reaches vision planning; layout-only changes position, retains color and never creates an Asset 992ms
+   ✓ layout-only blocks a model color plan and privacy removes all reference pixels from requests 953ms
+   ✓ planner can request professional typography analysis, receive a Proposal, then apply through one shared transaction 768ms
+ ✓ tests/timeline.test.tsx (3 tests) 1943ms
+   ✓ 时间轴 integration (3)
+     ✓ 四个 Transform 可创建关键帧；Spring 和删除操作可撤销 1160ms
+     ✓ Position 与 Opacity 在相同时间由统一引擎求值 782ms
+ ✓ tests/information-architecture.test.tsx (14 tests) 2372ms
+   ✓ Window和效果入口打开隐藏底部工作区，Graph/Motion/Nodes可返回Timeline 315ms
+ ✓ tests/spatial-workflow.test.tsx (16 tests) 2296ms
+   ✓ 空间视角绕转、缩放、聚焦、正顶视切换仅改变UI，持续显示坐标网格和XYZ 841ms
+   ✓ 主预览打开旁侧空间视图不改工程；辅助入口复用关闭行为与可见反馈 538ms
+   ✓ 主预览的操控方式切换同步两视图且不写工程 302ms
+ ✓ tests/agent-stabilization.test.ts (24 tests) 6871ms
+   ✓ planning READ is allowed, then fixed valid plan executes once 486ms
+   ✓ three inspection rounds do not consume separate repair attempts 882ms
+   ✓ bounded READ count rejects only excess call, then requires submitPlan 785ms
+   ✓ a READ after inspection exhaustion reports budget, not permission failure 328ms
+   ✓ CONFIG C/D planner nativeSkills=false shares the same executor and one commit 721ms
+   ✓ CONFIG C/D planner nativeSkills=true shares the same executor and one commit 645ms
+   ✓ live getCanvasInfo declaration failure is fixed without relaxing WRITE protection 735ms
+   ✓ planning argument failure is distinct from permission and budget failures 745ms
+   ✓ observed missing capability repairs only metadata after a bounded model patch, without replay or UUID guessing 899ms
+ ✓ tests/timeline-sprint.test.tsx (5 tests) 1896ms
+   ✓ 多选关键帧100次拖动只提交一次，预览与实际提交均夹到边界并可撤销 908ms
+   ✓ 关键帧吸附播放头；Escape取消，丢失按钮捕获仍由窗口完成；播放头取消恢复时间 315ms
+   ✓ 播放头更新不重建轨道，新增关键帧仍读取实时播放头；命中关键帧时刷新控件 306ms
+ ✓ tests/graph-viewport.test.tsx (7 tests) 2490ms
+   ✓ 缩放后的切线拖动正确换算坐标，100次预览一条事务，Undo恢复真实动画 964ms
+   ✓ capture loss and release outside the curve retain the edited controls and axis domain; edge handles stay selectable 300ms
+   ✓ graph playback and tap Space work without switching panels; holding Space for pan does not start playback 343ms
+   ✓ editing outgoing influence preserves the incoming endpoint including its zero influence 448ms
+ ✓ tests/layer-readability.test.tsx (2 tests) 2263ms
+   ✓ B2/B3/B9：100属性行交替连续；播放头移动保留静态DOM，折叠/筛选重排 2023ms
+ ✓ tests/architecture.test.ts (2 tests) 1660ms
+   ✓ A-10 架构检查 (2)
+     ✓ UI / Agent / Provider 没有对模型对象赋值或集合原地修改 1557ms
+ ✓ tests/timeline-v02.test.tsx (18 tests) 2059ms
+   ✓ A/I：框选0/1/2秒，200次move预览不写Scene，整体移动一步Undo/Redo 746ms
+ ✓ tests/timeline-performance.test.tsx (1 test) 2271ms
+   ✓ 100层/500与1000帧：连续scrub和200次拖动保持关键帧DOM，预览零Scene写入，释放一笔事务 2270ms
+ ✓ tests/editor-bugfix-v0910.test.tsx (5 tests) 1503ms
+   ✓ continuous creation over existing layers keeps the creation tool and distinct outline 654ms
+   ✓ pen drag creates symmetric Bezier handles without a selection rectangle; fill and stroke persist and undo 510ms
+ ✓ tests/workflow-ui.test.tsx (2 tests) 1432ms
+   ✓ 正常菜单新建工程清空旧数据和历史，命名合成自动激活，创建对象同步Selection 667ms
+   ✓ BENCH-A Inspector数值实际完成0→115→100；Scene、Timeline与Undo一致 763ms
+ ✓ tests/agent-v1-acceptance.test.ts (12 tests) 9009ms
+   ✓ A14-0 左侧快速入场 743ms
+   ✓ A14-1 创建中心文字 691ms
+   ✓ A14-2 文字排版与颜色 792ms
+   ✓ A14-3 背景模糊 691ms
+   ✓ A14-4 选区中心缩放120% 799ms
+   ✓ A14-5 仅布局参考 927ms
+   ✓ A14-6 服务限流切换 778ms
+   ✓ A14-9 保存重新打开 1746ms
+   ✓ newly created layer can receive keyframes in the same typed plan and visual refinements retain one Undo 1017ms
+   ✓ composition-scoped creation rejects opening a different composition before mutation 349ms
+ ✓ tests/numeric-preview-ui.test.tsx (7 tests) 981ms
+   ✓ 100 vertical value moves preview linked XY and release creates one animated keyframe transaction 524ms
+ ✓ tests/basic-editor-ui.test.tsx (1 test) 947ms
+   ✓ 动画开关、属性筛选、图层快捷键和输入焦点隔离在真实 UI 中协同工作 945ms
+ ✓ tests/compositing-ui.test.tsx (1 test) 1045ms
+   ✓ GUI 遮罩、羽化动画与效果排序均进入共享命令历史 1044ms
+ ✓ tests/graph-ui.test.tsx (1 test) 1028ms
+   ✓ 曲线面板缓出与速度输入真实修改动画，撤销恢复 1027ms
+ ✓ tests/graph-editor-ux.test.tsx (9 tests) 1520ms
+   ✓ G: 200 handle moves preview same property for Canvas, one transaction on release, Escape cancels, Undo restores 702ms
+ ✓ tests/path-ui.test.tsx (1 test) 994ms
+   ✓ 路径和文字样式有可操作入口，修改经同一历史 987ms
+ ✓ tests/text-sprint.test.tsx (2 tests) 1005ms
+   ✓ 双击直接聚焦多行文字；输入隔离快捷键，提交一次 Undo、保存加载完整保留换行 620ms
+   ✓ 中文选字阶段 Enter/Escape 不提交或退出；结束输入后 Escape 丢弃草稿无历史 382ms
+ ✓ tests/agent-creation.test.ts (7 tests) 703ms
+ ✓ tests/inspector-timeline-navigation.test.tsx (4 tests) 667ms
+ ✓ tests/agent-execution-recovery.test.ts (25 tests) 499ms
+ ✓ tests/ui-redesign.test.tsx (5 tests) 797ms
+   ✓ 切换工作区保留助手草稿和待审建议，生成建议不修改Scene 470ms
+ ✓ tests/agent-skills.test.tsx (3 tests) 461ms
+   ✓ custom skill cannot widen registry permissions even when its instructions request a write 408ms
+ ✓ tests/ai-failover.test.ts (6 tests) 525ms
+   ✓ shared recovery counts permitted fallback as a separate request and respects a one-request stop 407ms
+ ✓ tests/compositing-animation.test.tsx (1 test) 524ms
+   ✓ 节点 Inspector 开启半径动画 0→30，同一轨道/曲线属性，保存恢复且 Undo 有效 522ms
+ ✓ tests/agent-autonomous-recovery.test.ts (18 tests) 324ms
+ ✓ tests/pixel-program.test.ts (28 tests) 385ms
+ ✓ tests/camera-realtime.test.tsx (1 test) 355ms
+   ✓ camera optical drag renders the transient value before release and commits one undoable transaction 351ms
+ ✓ tests/agent-object-reference.test.ts (21 tests) 252ms
+ ✓ tests/axis-link-ui.test.tsx (4 tests) 523ms
+   ✓ 默认链接：缩放保持比例，单笔提交，两轴一起撤销；解除后独立编辑 348ms
+ ✓ tests/agent-provider-protocol-010.test.ts (7 tests) 284ms
+ ✓ tests/compositing-stack.test.tsx (1 test) 406ms
+   ✓ 效果栈双向读取同一节点参数，删除同步；分支不能伪装为线性栈 404ms
+ ✓ tests/preview-quality.test.ts (3 tests) 226ms
+ ✓ tests/camera-motion-path.test.tsx (8 tests) 231ms
+ ✓ tests/compositing-ui-graph.test.tsx (2 tests) 298ms
+ ✓ tests/agent-plan-recovery.test.ts (6 tests) 221ms
+ ✓ tests/agent-core-v2.test.ts (48 tests) 1249ms
+ ✓ tests/node-ai-entry.test.tsx (1 test) 95ms
+stdout | tests/model-import.test.ts > 实际解析 dae 并生成可投影静态网格
+THREE.ColladaLoader: File version 1.4.1
+
+ ✓ tests/ai-settings.test.tsx (4 tests) 239ms
+ ✓ tests/agent-creation-context.test.ts (2 tests) 173ms
+ ✓ tests/agent-execution-evidence-010.test.ts (4 tests) 84ms
+ ✓ tests/effect-forge-ui.test.tsx (1 test) 173ms
+ ✓ tests/agent-v2-lab.test.tsx (4 tests) 224ms
+ ✓ tests/native-creative-skill-flow.test.ts (1 test) 108ms
+ ✓ tests/model-import.test.ts (12 tests) 170ms
+ ✓ tests/workflow-integration.test.ts (11 tests) 140ms
+ ✓ tests/radial-gradient.test.ts (3 tests) 117ms
+ ✓ tests/basic-editing.test.ts (9 tests) 53ms
+ ✓ tests/agent-write-tools.test.ts (3 tests) 98ms
+ ✓ tests/interaction-hardening.test.ts (3 tests) 70ms
+ ✓ tests/agent-text-reliability.test.ts (4 tests) 85ms
+ ✓ tests/agent-compositing-tools.test.ts (3 tests) 54ms
+ ✓ tests/agent-semantic-actions.test.ts (4 tests) 96ms
+ ✓ tests/effect-forge-agent.test.ts (2 tests) 54ms
+ ✓ tests/native-skill-runtime.test.ts (4 tests) 46ms
+ ✓ tests/system-font-field.test.tsx (1 test) 107ms
+ ✓ tests/composition.test.ts (2 tests) 31ms
+ ✓ tests/agent-transaction.test.ts (3 tests) 67ms
+ ✓ tests/parent-pick-whip.test.tsx (1 test) 103ms
+ ✓ tests/shape-direct-edit.test.tsx (2 tests) 90ms
+ ✓ tests/io.test.ts (5 tests) 49ms
+ ✓ tests/canvas-assets.test.ts (1 test) 58ms
+ ✓ tests/motion-commands.test.ts (2 tests) 33ms
+ ✓ tests/effect-library.test.ts (3 tests) 45ms
+ ✓ tests/desktop-assets.test.ts (2 tests) 27ms
+ ✓ tests/extended-animation.test.ts (2 tests) 24ms
+ ✓ tests/agent-library.test.ts (3 tests) 61ms
+ ✓ tests/motion-model.test.ts (4 tests) 45ms
+ ✓ tests/extended-model.test.ts (3 tests) 22ms
+ ✓ tests/agent-fill-reliability.test.ts (3 tests) 41ms
+ ✓ tests/proposal.test.ts (4 tests) 34ms
+ ✓ tests/editor-slice.test.tsx (1 test) 28ms
+ ✓ tests/feature-scalability.test.ts (4 tests) 42ms
+ ✓ tests/media-assets.test.ts (3 tests) 38ms
+ ✓ tests/agent.test.ts (5 tests) 41ms
+ ✓ tests/agent-semantic-plan.test.ts (1 test) 25ms
+ ✓ tests/agent-orchestrator.test.ts (7 tests) 42ms
+ ✓ tests/agent-tool-context-010.test.ts (1 test) 42ms
+ ✓ tests/compositing-agent.test.ts (2 tests) 35ms
+ ✓ tests/compositing-commands.test.ts (1 test) 28ms
+ ✓ tests/commands.test.ts (6 tests) 57ms
+ ✓ tests/hardening.test.ts (4 tests) 24ms
+ ✓ tests/ai-provider.test.ts (7 tests) 51ms
+ ✓ tests/drag.test.ts (2 tests) 21ms
+ ✓ tests/desktop-persistence.test.ts (3 tests) 22ms
+ ✓ tests/programmable-effect.test.ts (6 tests) 29ms
+ ✓ tests/workflow-export.test.ts (1 test) 40ms
+ ✓ tests/curve.test.ts (2 tests) 21ms
+ ✓ tests/ai-desktop.test.ts (2 tests) 16ms
+ ✓ tests/interaction-subscription.test.tsx (1 test) 22ms
+ ✓ tests/renderer-performance.test.ts (5 tests) 28ms
+ ✓ tests/motion-operations.test.ts (2 tests) 25ms
+ ✓ tests/desktop-lifecycle.test.ts (7 tests) 44ms
+ ✓ tests/compositing-io.test.ts (2 tests) 36ms
+ ✓ tests/agent-tools.test.ts (2 tests) 28ms
+ ✓ tests/animation.test.ts (9 tests) 11ms
+ ✓ tests/processing-stack.test.ts (2 tests) 15ms
+ ✓ tests/agent-context.test.ts (2 tests) 25ms
+ ✓ tests/asset-range.test.ts (1 test) 13ms
+ ✓ tests/layer-accent.test.ts (3 tests) 45ms
+ ✓ tests/render-invalidation.test.ts (1 test) 11ms
+ ✓ tests/effects.test.ts (2 tests) 20ms
+ ✓ tests/editor-polish.test.ts (2 tests) 27ms
+ ✓ tests/motion-preview.test.ts (1 test) 30ms
+ ✓ tests/desktop-files.test.ts (3 tests) 22ms
+ ✓ tests/transform-context.test.ts (6 tests) 11ms
+ ✓ tests/transform-guidance.test.ts (5 tests) 18ms
+ ✓ tests/feature-registry.test.ts (3 tests) 13ms
+ ✓ tests/system-fonts.test.ts (2 tests) 8ms
+ ✓ tests/agent-intelligence.test.ts (8 tests) 20ms
+ ✓ tests/timeline-visible-rows.test.ts (1 test) 8ms
+ ✓ tests/agent-vision.test.ts (4 tests) 17ms
+ ✓ tests/compositing-graph.test.ts (2 tests) 6ms
+ ✓ tests/motion-presets.test.ts (3 tests) 9ms
+ ✓ tests/resize-geometry.test.ts (2 tests) 5ms
+ ✓ tests/shape-path.test.ts (2 tests) 8ms
+ ✓ tests/perspective.test.ts (2 tests) 6ms
+ ✓ tests/renderer-direct-graph.test.ts (2 tests) 8ms
+ ✓ tests/effect-presets.test.ts (1 test) 11ms
+ ✓ tests/motion-evaluation.test.ts (2 tests) 5ms
+ ✓ tests/video-export.test.ts (3 tests) 15ms
+ ✓ tests/motion-speed.test.ts (2 tests) 8ms
+ ✓ tests/preview-cache.test.ts (3 tests) 13ms
+ ✓ tests/canvas-coordinates.test.ts (9 tests) 10ms
+ ✓ tests/desktop-image-files.test.ts (1 test) 6ms
+ ✓ tests/image-assets.test.ts (1 test) 6ms
+ ✓ tests/aiff-pcm.test.ts (1 test) 7ms
+ ✓ tests/agent-reference-dependencies.test.ts (1 test) 4ms
+ ✓ tests/compositing-compiler.test.ts (2 tests) 5ms
+ ✓ tests/transform-geometry.test.ts (1 test) 4ms
+ ✓ tests/renderer.test.ts (3 tests) 5ms
+ ✓ tests/compositing-merge.test.ts (2 tests) 7ms
+ ✓ tests/compositing-cache.test.ts (3 tests) 5ms
+ ✓ tests/export-cache.test.ts (2 tests) 9ms
+ ✓ tests/canvas-snapping.test.ts (3 tests) 5ms
+ ✓ tests/motion-bezier.test.ts (3 tests) 2ms
+ ✓ tests/visual-capabilities.test.ts (3 tests) 7ms
+ ✓ tests/camera-speed-stability.test.ts (2 tests) 10ms
+ ✓ tests/model.test.ts (3 tests) 4ms
+ ✓ tests/command-registry.test.ts (1 test) 3ms
+ ✓ tests/agent-repair-target-boundary.test.ts (2 tests) 4ms
+ ✓ tests/timeline-snapping.test.ts (2 tests) 3ms
+ ✓ tests/model-desktop-csp.test.ts (2 tests) 2ms
+ ✓ tests/desktop-contract.test.ts (2 tests) 3ms
+ ✓ tests/desktop-window.test.ts (3 tests) 2ms
+ ✓ tests/skeleton.test.ts (1 test) 1ms
+ ✓ tests/desktop-missing-render.test.ts (1 test) 2ms
+ ✓ tests/desktop-export.test.ts (1 test) 2ms
+ ✓ tests/compositing-render.test.ts (1 test) 4ms
+
+ Test Files  161 passed (161)
+      Tests  747 passed (747)
+   Start at  18:00:09
+   Duration  15.45s (tests 69%, import 15%, environment 9%, transform 7%)
+
+    Isolate  161 workers spawned · ~153ms startup each (spawn + environment, per file)
+             at least ~2.59s faster with isolate: false — reuses workers across files instead of one per file
+
+JSON report written to /Users/aphelion-01/Documents/Codex/2026-10-03/Swayframe_Repairs/1.0.2/outputs/agent-v2-6/quality/phase1/tests.json
+stderr | tests/ai-settings.test.tsx > recovery phase budgets use the existing settings Section, are collapsed and persist independently
+Each child in a list should have a unique "key" prop.
+
+Check the render method of `details`. It was passed a child from AdvancedAISettings. See https://react.dev/link/warning-keys for more information.
+
+stderr | tests/model-import.test.ts > 批量模型中一个解析失败时，不留下部分素材或图层
+THREE.OBJLoader: Unexpected line: "invalid geometry"

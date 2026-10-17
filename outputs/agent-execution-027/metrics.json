@@ -1,0 +1,230 @@
+{
+  "version": "0.9.27",
+  "denominators": "Autonomous task attempts count every run, including budget stops. Controlled execution fault is a separate category, scripted initial plan, genuine DeepSeek correction. Activity validity includes planning/read/write rejections; nested professional proposal calls are included in request/token logs, not activity denominator.",
+  "rawAutonomous": {
+    "Tool Call Validity": {
+      "success": 5,
+      "failure": 6,
+      "attempts": 11,
+      "rate": 0.454545
+    },
+    "Execution Success": {
+      "success": 9,
+      "failure": 2,
+      "attempts": 11,
+      "rate": 0.818182
+    },
+    "Scene State Success": {
+      "success": 9,
+      "failure": 2,
+      "attempts": 11,
+      "rate": 0.818182
+    },
+    "Render Success": {
+      "success": 9,
+      "failure": 2,
+      "attempts": 11,
+      "rate": 0.818182
+    },
+    "Full Task Success": {
+      "success": 9,
+      "failure": 2,
+      "attempts": 11,
+      "rate": 0.818182
+    }
+  },
+  "activityCompletion": {
+    "success": 64,
+    "failure": 9,
+    "attempts": 73,
+    "rate": 0.876712
+  },
+  "completedWithSufficientBudget": {
+    "success": 9,
+    "attempts": 9,
+    "excludedBudgetStops": 2,
+    "qualification": "Descriptive subset, not raw reliability rate"
+  },
+  "controlledExecutionRecovery": {
+    "success": 2,
+    "failure": 1,
+    "attempts": 3,
+    "rate": 0.666667
+  },
+  "deliveredControlledRecovery": {
+    "success": 2,
+    "failure": 0,
+    "attempts": 2,
+    "rate": 1.0
+  },
+  "planningCorrections": {
+    "successfulTasks": [
+      "combo-1",
+      "followup-combo-1",
+      "followup-combo-2",
+      "release-live-combo-1"
+    ],
+    "budgetStoppedTask": "combo-2",
+    "qualification": "Plan rejection followed by eventual valid plan; distinct from execution recovery"
+  },
+  "provider": {
+    "actualRequests": 37,
+    "hardBudgetByBatch": [
+      24,
+      16,
+      8
+    ],
+    "totalMaximumRequests": 48,
+    "usageReportedRequests": 35,
+    "observedInputTokens": 1524233,
+    "observedOutputTokens": 25776,
+    "unreportedUsageRequests": 2,
+    "usageQualification": "Lower bound from returned usage; two malformed JSON responses do not expose billing usage. No invented monetary amount.",
+    "providerErrors": [
+      {
+        "code": "invalid_response",
+        "message": "工具参数不是完整 JSON"
+      },
+      {
+        "code": "invalid_response",
+        "message": "工具参数不是完整 JSON"
+      }
+    ],
+    "imageEgressCount": 0
+  },
+  "tasks": [
+    {
+      "id": "text-1",
+      "completed": true,
+      "scene": true,
+      "render": true,
+      "fullTask": true,
+      "allActivitiesValid": true,
+      "failure": null,
+      "phase": null,
+      "recovery": false
+    },
+    {
+      "id": "fill-1",
+      "completed": true,
+      "scene": true,
+      "render": true,
+      "fullTask": true,
+      "allActivitiesValid": true,
+      "failure": null,
+      "phase": null,
+      "recovery": false
+    },
+    {
+      "id": "radial-1",
+      "completed": true,
+      "scene": true,
+      "render": true,
+      "fullTask": true,
+      "allActivitiesValid": true,
+      "failure": null,
+      "phase": null,
+      "recovery": false
+    },
+    {
+      "id": "keyframe-1",
+      "completed": true,
+      "scene": true,
+      "render": true,
+      "fullTask": true,
+      "allActivitiesValid": true,
+      "failure": null,
+      "phase": null,
+      "recovery": false
+    },
+    {
+      "id": "effect-1",
+      "completed": true,
+      "scene": true,
+      "render": true,
+      "fullTask": true,
+      "allActivitiesValid": true,
+      "failure": null,
+      "phase": null,
+      "recovery": false
+    },
+    {
+      "id": "combo-1",
+      "completed": true,
+      "scene": true,
+      "render": true,
+      "fullTask": true,
+      "allActivitiesValid": false,
+      "failure": null,
+      "phase": null,
+      "recovery": true
+    },
+    {
+      "id": "combo-2",
+      "completed": false,
+      "scene": false,
+      "render": false,
+      "fullTask": false,
+      "allActivitiesValid": false,
+      "failure": {
+        "code": "COMMAND_FAILED",
+        "phase": "execute",
+        "recoverable": false,
+        "message": "Error invoking remote method 'bench:chat': Error: Hard request budget: 24 requests",
+        "cause": {}
+      },
+      "phase": "execute",
+      "recovery": false
+    },
+    {
+      "id": "combo-3",
+      "completed": false,
+      "scene": false,
+      "render": false,
+      "fullTask": false,
+      "allActivitiesValid": false,
+      "failure": {
+        "code": "COMMAND_FAILED",
+        "phase": "execute",
+        "recoverable": false,
+        "message": "Error invoking remote method 'bench:chat': Error: Hard request budget: 24 requests",
+        "cause": {}
+      },
+      "phase": "execute",
+      "recovery": false
+    },
+    {
+      "id": "followup-combo-1",
+      "completed": true,
+      "scene": true,
+      "render": true,
+      "fullTask": true,
+      "allActivitiesValid": false,
+      "failure": null,
+      "phase": null,
+      "recovery": true
+    },
+    {
+      "id": "followup-combo-2",
+      "completed": true,
+      "scene": true,
+      "render": true,
+      "fullTask": true,
+      "allActivitiesValid": false,
+      "failure": null,
+      "phase": null,
+      "recovery": true
+    },
+    {
+      "id": "release-live-combo-1",
+      "completed": true,
+      "scene": true,
+      "render": true,
+      "fullTask": true,
+      "allActivitiesValid": false,
+      "failure": null,
+      "phase": null,
+      "recovery": true
+    }
+  ]
+}

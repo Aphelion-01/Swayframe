@@ -1,8 +1,9 @@
+import { cubicBezierVelocity } from './cubic-bezier';
 import { motionCurveVelocity, segmentMotionCurve } from './motion-curve';
 import { spatialControls, spatialControls3 } from './spatial-path';
 import type { AnimValue, Vec2 } from './core-types';
 import type { Interpolation, Property, Keyframe } from './project-model';
-import { evaluateProperty } from './animation-engine';
+import { evaluateProperty, interpolationProgress } from './animation-engine';
 export const easePresets: Readonly<Record<string, Interpolation>> = {
   linear: { type: 'linear' },
   hold: { type: 'hold' },
@@ -40,9 +41,83 @@ export function propertySpeed(
     frames.length < 2
   )
     return 0;
-  const dt = Math.max(1e-7, (last.time - first.time) * 1e-5),
-    a = Math.max(first.time, time - dt),
-    b = Math.min(last.time, time + dt);
+  const index = Math.min(
+    frames.length - 2,
+    time === last.time
+      ? frames.length - 2
+      : Math.max(0, frames.findIndex((f) => f.time > time) - 1),
+  );
+  const left = frames[index]!,
+    right = frames[index + 1]!;
+  if (left.interpolation.type === 'hold') return 0;
+  if (
+    (left.spatialOutgoing || right.spatialIncoming) &&
+    (left.interpolation.type === 'linear' ||
+      left.interpolation.type === 'bezier')
+  ) {
+    const controls = Array.isArray(left.value)
+      ? spatialControls3(left, right)
+      : spatialControls(left, right);
+    const ctrl = segmentControls(left, right),
+      duration = right.time - left.time;
+    const interpolation =
+      left.interpolation.type === 'bezier'
+        ? { ...left.interpolation, out: ctrl.out, in: ctrl.in }
+        : left.interpolation;
+    const u = interpolationProgress(interpolation, time - left.time, duration);
+    const rate =
+      left.interpolation.type === 'linear'
+        ? 1 / duration
+        : cubicBezierVelocity(
+            { x1: ctrl.out.x, y1: ctrl.out.y, x2: ctrl.in.x, y2: ctrl.in.y },
+            (time - left.time) / duration,
+          ) / duration;
+    const a = components(left.value),
+      b = components(controls.out),
+      d = components(controls.in),
+      e = components(right.value);
+    return (
+      Math.hypot(
+        ...a.map(
+          (v, i) =>
+            3 * (1 - u) ** 2 * (b[i]! - v) +
+            6 * (1 - u) * u * (d[i]! - b[i]!) +
+            3 * u * u * (e[i]! - d[i]!),
+        ),
+      ) * Math.abs(rate)
+    );
+  }
+  // Uniform motion is exact; differencing large world coordinates creates visible noise.
+  if (
+    left.interpolation.type === 'linear' &&
+    !left.spatialOutgoing &&
+    !right.spatialIncoming
+  )
+    return valueDistance(left.value, right.value) / (right.time - left.time);
+  if (
+    left.interpolation.type === 'bezier' &&
+    !left.spatialOutgoing &&
+    !right.spatialIncoming
+  ) {
+    const controls = segmentControls(left, right);
+    return (
+      (valueDistance(left.value, right.value) / (right.time - left.time)) *
+      Math.abs(
+        cubicBezierVelocity(
+          {
+            x1: controls.out.x,
+            y1: controls.out.y,
+            x2: controls.in.x,
+            y2: controls.in.y,
+          },
+          (time - left.time) / (right.time - left.time),
+        ),
+      )
+    );
+  }
+  const dt = Math.max(1e-7, (right.time - left.time) * 1e-3),
+    a = Math.max(left.time, time - dt),
+    b = Math.min(right.time, time + dt);
   return b > a
     ? valueDistance(
         evaluateProperty(property, a),

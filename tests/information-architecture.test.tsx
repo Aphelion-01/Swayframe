@@ -100,12 +100,9 @@ it('Inspector直接呈现父级与Effects；空间和时间归属分离', () => 
   setup(2);
   const parent = screen.getByLabelText('父级图层');
   expect(parent.closest('details')).toHaveAttribute('open');
-  expect(
-    screen
-      .getByRole('button', { name: '添加效果' })
-      .closest('details.feature-details')
-      ?.parentElement?.closest('details'),
-  ).not.toHaveAttribute('open', 'false');
+  fireEvent.click(screen.getByRole('tab', { name: '效果' }));
+  expect(screen.getByRole('button', { name: /^高斯模糊 / })).toBeVisible();
+  expect(screen.queryByRole('button', { name: '添加效果' })).toBeNull();
   const scene = layerActions(
     new EditorStore(createDefaultProject()),
     () => {},

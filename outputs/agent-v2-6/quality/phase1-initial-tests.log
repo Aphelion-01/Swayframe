@@ -1,0 +1,29 @@
+
+ RUN  v5.0.3 /Users/aphelion-01/Documents/Codex/2026-10-03/Swayframe_Repairs/1.0.2
+
+ ❯ tests/agent-v2-provider-session.test.ts (8 tests | 1 failed) 45ms
+   × a network failure never triggers hidden failover or protocol unsupported classification 5ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/agent-v2-provider-session.test.ts > a network failure never triggers hidden failover or protocol unsupported classification
+AssertionError: expected 'PROVIDER_TRANSIENT_FAILURE' to be 'PROVIDER_RESPONSE' // Object.is equality
+
+Expected: "PROVIDER_RESPONSE"
+Received: "PROVIDER_TRANSIENT_FAILURE"
+
+ ❯ tests/agent-v2-provider-session.test.ts:126:34
+    124|   const result = await runtime.planAndRun('title', planner);
+    125|   expect(chat).toHaveBeenCalledTimes(1);
+    126|   expect(result.errors[0]?.code).toBe('PROVIDER_RESPONSE');
+       |                                  ^
+    127|   expect(host.undoStack).toHaveLength(0);
+    128| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 2 passed (3)
+      Tests  1 failed | 62 passed (63)
+   Start at  17:57:00
+   Duration  837ms (tests 51%, transform 37%, import 12%)

@@ -1,3 +1,4 @@
+import { ParentPickWhip } from './ParentPickWhip';
 import { toggleLayer3D } from './workspace/layer-3d';
 import { useLayerMarquee } from './workspace/layer-marquee';
 import { CreateLayerMenu } from './workspace/CreateLayerMenu';
@@ -11,7 +12,6 @@ import { command } from '../core/command-system';
 import { activeComposition } from '../core/project-model';
 import type { EditorStore } from './editor-store';
 import { AgentPanel } from './AgentPanel';
-import { ProposalPanel } from './ProposalPanel';
 import { IconButton, Tabs } from './workspace/primitives';
 import { layerActions } from './workspace/layer-actions';
 export function LayerPanel({ store }: { store: EditorStore }) {
@@ -224,7 +224,7 @@ export function LayerPanel({ store }: { store: EditorStore }) {
                     event.preventDefault();
                     event.stopPropagation();
                     if (!view.selection.includes(layer.id))
-                      store.select(layer.id);
+                      store.selectLayerFromPanel(layer.id);
                     store.selectFrames([]);
                     store.selectProperties([]);
                     setOperations(true);
@@ -299,13 +299,13 @@ export function LayerPanel({ store }: { store: EditorStore }) {
                       aria-label={`选择 ${displayName(layer.name)}`}
                       aria-pressed={view.selection.includes(layer.id)}
                       onClick={(event) =>
-                        store.select(
+                        store.selectLayerFromPanel(
                           layer.id,
                           event.shiftKey || event.metaKey || event.ctrlKey,
                         )
                       }
                       onDoubleClick={() => {
-                        store.select(layer.id);
+                        store.selectLayerFromPanel(layer.id);
                         setRenaming(layer.id);
                         setName(layer.name);
                       }}
@@ -318,18 +318,22 @@ export function LayerPanel({ store }: { store: EditorStore }) {
                               ? 'text'
                               : layer.type === 'model'
                                 ? 'cube'
-                                : layer.type === 'image'
-                                  ? 'image'
-                                  : layer.type === 'precomp'
-                                    ? 'comp'
-                                    : layer.type === 'null'
-                                      ? 'null'
-                                      : layer.type === 'camera'
-                                        ? 'camera'
-                                        : layer.type === 'shape' &&
-                                            layer.shapeKind === 'ellipse'
-                                          ? 'ellipse'
-                                          : 'rectangle'
+                                : layer.type === 'audio'
+                                  ? 'audio'
+                                  : layer.type === 'video'
+                                    ? 'video'
+                                    : layer.type === 'image'
+                                      ? 'image'
+                                      : layer.type === 'precomp'
+                                        ? 'comp'
+                                        : layer.type === 'null'
+                                          ? 'null'
+                                          : layer.type === 'camera'
+                                            ? 'camera'
+                                            : layer.type === 'shape' &&
+                                                layer.shapeKind === 'ellipse'
+                                              ? 'ellipse'
+                                              : 'rectangle'
                           }
                         />
                       </span>
@@ -339,7 +343,7 @@ export function LayerPanel({ store }: { store: EditorStore }) {
                           className="parent-identity"
                           title={`父级：${c.layers.find((l) => l.id === layer.editor?.parentId)?.name ?? ''}`}
                         >
-                          ↳{' '}
+                          <Icon name="parent" />
                           {
                             c.layers.find(
                               (l) => l.id === layer.editor?.parentId,
@@ -349,6 +353,35 @@ export function LayerPanel({ store }: { store: EditorStore }) {
                       )}
                     </button>
                   )}
+                  <button
+                    className="layer-motion-blur"
+                    title="动态模糊：按运动采样曝光，关闭可提高预览速度"
+                    aria-label={`动态模糊 ${displayName(layer.name)}`}
+                    aria-pressed={!!layer.editor?.motionBlur}
+                    disabled={layer.locked || layer.type === 'camera'}
+                    onClick={() =>
+                      store.run('切换动态模糊', [
+                        command({
+                          type: 'layer.replace',
+                          compositionId: c.id,
+                          layer: {
+                            ...layer,
+                            editor: {
+                              ...layer.editor!,
+                              motionBlur: !layer.editor?.motionBlur,
+                            },
+                          },
+                        }),
+                      ])
+                    }
+                  >
+                    <Icon name="motion-blur" />
+                  </button>
+                  <ParentPickWhip
+                    store={store}
+                    layerId={layer.id}
+                    disabled={layer.locked}
+                  />
                 </div>
               ))}
             </div>
@@ -359,8 +392,7 @@ export function LayerPanel({ store }: { store: EditorStore }) {
             <h2>创作助手</h2>
             <span className="metadata">当前工程</span>
           </div>
-          <AgentPanel store={store} />
-          <ProposalPanel store={store} />
+          <AgentPanel store={store} visible={tab === '助手'} />
         </div>
       </div>
       {layerMarquee.overlay}

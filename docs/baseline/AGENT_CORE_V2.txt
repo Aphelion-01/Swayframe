@@ -1,0 +1,1796 @@
+# ============================================================
+# SWAYFRAME AGENT CORE V2
+# CONTROLLED RECONSTRUCTION PROJECT
+# ============================================================
+
+项目：
+
+Swayframe（SF）
+
+任务：
+
+重新构建 Swayframe AI Agent 的核心架构。
+
+项目代号：
+
+AGENT CORE V2
+
+开发目标：
+
+建立一套简洁、可靠、可扩展、
+与具体 LLM Provider 尽量解耦的
+原生 AI Agent 执行系统。
+
+本轮采用：
+
+PARALLEL REPLACEMENT
+
+而不是：
+
+IN-PLACE PATCHING。
+
+核心原则：
+
+RELIABILITY FIRST.
+
+ONE EXECUTION STATE OWNER.
+
+INCREMENTAL PLANNING.
+
+DETERMINISTIC EXECUTION.
+
+SAFE RECOVERY.
+
+MEASURABLE QUALITY.
+
+============================================================
+第一部分：为什么需要重建
+============================================================
+
+Swayframe 自 0.9.0 起，
+已经多次修复 AI Agent。
+
+但真实使用中，
+基础任务仍然频繁失败。
+
+已出现过：
+
+createText 参数无效
+
+setFill 参数无效
+
+layerId 无效 UUID
+
+creation.tasks.dependencies
+与执行顺序冲突
+
+shape.rectangle 未注册
+
+规划阶段工具调用越权
+或超过次数限制
+
+Completed step cannot be replayed
+
+STALE_OBJECT_REFERENCE
+
+等问题。
+
+这些问题涉及：
+
+工具契约
+能力注册
+规划
+对象引用
+状态管理
+恢复
+事务
+验证。
+
+旧 Agent 在多轮修复后
+仍未达到预期可靠性。
+
+因此决定：
+
+保留现有编辑器基础设施。
+
+冻结旧 Agent 执行架构。
+
+建立全新的 Agent Core V2。
+
+重要：
+
+不要因为历史上发生过这些错误，
+就直接假设所有问题仍存在于当前版本。
+
+先记录当前仓库状态与可复现基线。
+
+新架构的价值必须通过
+相同任务的前后对照证明。
+
+============================================================
+第二部分：重建范围
+============================================================
+
+需要重建的主要系统：
+
+Agent Planning
+
+Agent Execution Runtime
+
+Task State Management
+
+Object Reference Binding
+
+Action Validation
+
+Execution Recovery
+
+Provider Response Normalization
+
+Result Verification
+
+需要保留并复用：
+
+Scene Model
+
+Command System
+
+Property<T>
+
+Animation Engine
+
+Effect Engine
+
+Compositing Graph
+
+Renderer
+
+Project Serialization
+
+Undo / Redo
+
+Transaction
+
+Asset Management。
+
+上述模块若存在独立缺陷，
+可以进行有证据支持的最小修复。
+
+但禁止无依据的大规模重写。
+
+============================================================
+第三部分：冻结旧 Agent
+============================================================
+
+首先：
+
+检查 Git Status。
+
+记录当前 Commit。
+
+保存未提交修改。
+
+建立独立开发分支或工作树。
+
+不要删除用户已有修改。
+
+不要删除旧 Agent。
+
+旧 Agent 作为：
+
+Legacy Agent V1。
+
+保持：
+
+可构建
+可测试
+可回退。
+
+禁止继续为 V1 增加新功能。
+
+只允许修复阻塞对照测试的
+必要安全问题。
+
+建立：
+
+Agent Runtime Selection。
+
+例如：
+
+Legacy V1
+
+Core V2
+
+默认仍使用当前正式稳定路径，
+直到 V2 通过验收。
+
+不要在普通用户界面中
+同时启用两个写入执行器。
+
+============================================================
+第四部分：新架构设计
+============================================================
+
+V2 最小核心包括：
+
+1. Provider Bridge
+
+2. Agent Planner
+
+3. Task Runtime
+
+4. Editor Adapter
+
+5. Result Verifier
+
+6. Recovery Policy
+
+不要一开始就重新创建：
+
+Skill Router
+
+复杂 Creation Planner
+
+第二套 Capability Registry
+
+第二套 Tool Registry
+
+独立 Scene Model
+
+独立 Command System。
+
+不要求每一个逻辑职责
+都成为新的大型框架。
+
+优先使用：
+
+简单、类型安全、可测试的模块。
+
+============================================================
+第五部分：Provider Bridge
+============================================================
+
+优先复用现有可工作的：
+
+Provider Configuration
+
+Credential Management
+
+HTTP Transport
+
+Streaming
+
+Cancellation
+
+Token Accounting。
+
+不要为了 V2
+重写所有 API 网络代码。
+
+V2 需要获得统一结构的：
+
+Normalized Model Response。
+
+Provider Bridge 应隔离：
+
+DeepSeek
+
+OpenAI-compatible APIs
+
+Claude
+
+OpenRouter
+
+SiliconFlow
+
+以及当前真实支持的其他服务。
+
+但不得假设所有 Provider
+都支持同样的 Tool Calling 能力。
+
+必须识别：
+
+Structured Output
+
+Function Calling
+
+Vision
+
+Streaming
+
+Cancellation
+
+Context Limits。
+
+对于不存在的能力：
+
+明确报告。
+
+不能虚构支持。
+
+所有 Provider
+最终进入同一个 V2 Runtime。
+
+============================================================
+第六部分：Agent Planner V2
+============================================================
+
+重新设计 Planner。
+
+核心原则：
+
+LLM 负责：
+
+理解用户目标。
+
+选择创作策略。
+
+决定需要哪些能力。
+
+生成高层任务计划。
+
+但不应该：
+
+一次性构造大量依赖未来状态的
+底层 Command 参数。
+
+Planner 应优先输出：
+
+Structured Task Intent。
+
+例如：
+
+Create Rectangle
+
+Apply Gradient
+
+Create Text
+
+Animate Opacity。
+
+具体实现时：
+
+根据真实运行状态，
+逐步生成合法 Action。
+
+对于复杂创作：
+
+允许拥有完整高层规划。
+
+但执行层不能依赖
+所有未来对象 ID 已经存在。
+
+============================================================
+第七部分：Incremental Execution
+============================================================
+
+这是 V2 最重要的改变之一。
+
+采用：
+
+PLAN
+→
+EXECUTE SMALL BATCH
+→
+OBSERVE STATE
+→
+CONTINUE。
+
+每批操作必须：
+
+目标明确。
+
+依赖可解析。
+
+参数可验证。
+
+作用域合法。
+
+执行后状态可检查。
+
+不要：
+
+要求模型提前生成
+几十个不可修改的 Tool Calls。
+
+但也不要：
+
+每执行一个简单属性修改
+就重新请求 LLM。
+
+同一个确定性子任务中的连续命令，
+应尽量由 Runtime 直接执行。
+
+============================================================
+第八部分：Task Runtime
+============================================================
+
+建立唯一：
+
+Task Runtime。
+
+它是 V2 执行状态的唯一权威来源。
+
+至少管理：
+
+Task ID
+
+Task Goal
+
+Current Phase
+
+Current Draft
+
+Current Scene Version
+
+Current Targets
+
+Step States
+
+Step Results
+
+Object References
+
+Completed Actions
+
+Pending Actions
+
+Errors
+
+Recovery Attempts
+
+Execution Budget。
+
+每个步骤明确状态：
+
+PENDING
+
+READY
+
+RUNNING
+
+SUCCEEDED
+
+FAILED
+
+CANCELLED。
+
+如有需要：
+
+增加等待用户确认、
+等待外部能力等状态。
+
+不得：
+
+一个 Planner 维护执行状态，
+另一个 Recovery Controller
+维护另一套执行状态。
+
+============================================================
+第九部分：Object Identity
+============================================================
+
+模型不应自行生成 Layer UUID。
+
+Runtime 应支持：
+
+Existing Object
+
+Selected Object
+
+Step Result Object。
+
+例如：
+
+Step A：
+
+Create Rectangle。
+
+Editor 返回：
+
+真实 Layer ID。
+
+Runtime：
+
+记录 Step Result。
+
+Step B：
+
+Apply Fill。
+
+Runtime：
+
+从 Step A 获取真实 ID。
+
+执行前：
+
+检查目标存在。
+
+检查目标类型。
+
+检查目标属于当前 Composition。
+
+检查目标位于允许修改范围。
+
+然后：
+
+调用正式 Command。
+
+不得：
+
+将 Task ID 当作 Layer ID。
+
+不得：
+
+将 Graph Node ID 当作 Layer ID。
+
+不得：
+
+根据对象名称随意猜测 ID。
+
+============================================================
+第十部分：Capability Discovery
+============================================================
+
+不要为 V2
+重新创建一份独立的能力数据库。
+
+复用当前实际执行系统中
+权威的 Capability / Command / Effect 定义。
+
+Planner 需要知道：
+
+真实可用的操作。
+
+真实操作参数。
+
+适用对象类型。
+
+参数范围。
+
+执行约束。
+
+输出类型。
+
+Capability ID
+
+Tool Name
+
+Command ID
+
+可以不同。
+
+但必须有明确、可验证的映射。
+
+例如：
+
+Create Rectangle
+
+最终一定要映射到
+真实存在的创建命令。
+
+禁止：
+
+Planner 使用未注册能力。
+
+禁止：
+
+依赖 LLM 自行猜测工具名称。
+
+============================================================
+第十一部分：Typed Actions
+============================================================
+
+建立一组少量、稳定的：
+
+Typed Semantic Actions。
+
+第一阶段只支持：
+
+Create Shape
+
+Create Text
+
+Set Property
+
+Set Fill
+
+Add Effect
+
+Add Keyframe
+
+Modify Keyframe。
+
+不要一次性开放所有工具。
+
+每个 Action：
+
+必须有明确 Schema。
+
+明确输入和输出。
+
+明确是否需要对象目标。
+
+明确能否参与事务。
+
+明确成功条件。
+
+禁止：
+
+使用任意 Record<string, unknown>
+承载所有复杂业务参数，
+然后在执行深处才检查。
+
+复杂参数应来自正式能力定义。
+
+============================================================
+第十二部分：Editor Adapter
+============================================================
+
+V2 通过：
+
+Editor Adapter
+
+访问现有编辑器。
+
+Editor Adapter 提供：
+
+Read Scene
+
+Read Selection
+
+Read Composition
+
+Query Capabilities
+
+Execute Command
+
+Inspect Result
+
+Render Frame。
+
+但 Adapter 不应：
+
+独立修改 Scene。
+
+独立维护工程状态。
+
+重新实现 Effect Engine。
+
+绕过 Transaction。
+
+V2 所有正式修改
+最终仍必须进入：
+
+共享 Command System。
+
+============================================================
+第十三部分：事务与草稿
+============================================================
+
+复用现有：
+
+Agent Draft Transaction。
+
+如果现有事务系统已可靠，
+不得重新实现。
+
+V2 的所有操作：
+
+先执行在隔离 Draft。
+
+不直接改变正式工程。
+
+在任务结束时：
+
+验证目标状态。
+
+检查 Scope。
+
+检查 Base Version。
+
+生成 Proposed Changes。
+
+得到适用的提交授权后：
+
+一次 Commit。
+
+对于用户已有内容的重大修改，
+不得未经授权提交。
+
+Undo：
+
+一次撤销本次 Agent 提交。
+
+============================================================
+第十四部分：不重放已完成步骤
+============================================================
+
+这是本轮重点。
+
+禁止：
+
+简单地从步骤一重新执行
+已经完成的非幂等命令。
+
+例如：
+
+Create Layer 成功。
+
+后续 Add Effect 失败。
+
+恢复时：
+
+不得再次创建相同 Layer。
+
+正确做法：
+
+从当前有效 Draft
+继续处理失败步骤。
+
+如果 Draft 无法安全继续：
+
+必须使用明确的 Checkpoint。
+
+从可信状态重建。
+
+重新绑定新的真实对象 ID。
+
+不得：
+
+机械复用旧 Draft 的对象 ID。
+
+不得：
+
+用重复执行整个 Plan
+作为默认恢复策略。
+
+对于步骤状态：
+
+SUCCEEDED
+
+只能在合法的状态恢复流程中转换。
+
+不得：
+
+因为 LLM 返回了同名步骤
+就自动重新执行。
+
+============================================================
+第十五部分：Recovery V2
+============================================================
+
+建立简单、受限的恢复策略。
+
+先支持：
+
+Invalid Arguments
+
+Invalid Object Reference
+
+Missing Capability
+
+Dependency Error
+
+Command Rejection
+
+Verification Failure。
+
+优先：
+
+Deterministic Recovery。
+
+例如：
+
+缺少合法默认参数：
+
+从 Schema 获取。
+
+已创建对象引用：
+
+从 Step Result 获取。
+
+任务依赖顺序错误：
+
+在语义允许时确定性重排。
+
+如果需要模型判断：
+
+只发送失败步骤、
+必要上下文及结构化错误。
+
+不得：
+
+将整个巨大 Plan 和所有日志
+反复发送给模型。
+
+不得：
+
+无限调用 LLM。
+
+不得：
+
+为了恢复突破用户授权。
+
+============================================================
+第十六部分：错误协议
+============================================================
+
+所有错误使用统一结构。
+
+至少包含：
+
+Error Code
+
+Phase
+
+Action ID
+
+Target Reference
+
+Relevant Field
+
+Expected Value
+
+Actual Value
+
+Recoverable
+
+Recovery Strategy
+
+Message。
+
+禁止：
+
+只返回参数无效。
+
+禁止：
+
+将完整嵌套错误对象
+重复塞入模型上下文。
+
+禁止：
+
+错误字符串决定全部恢复策略。
+
+禁止：
+
+截断 JSON 导致无法解析。
+
+普通用户看到：
+
+简洁错误说明。
+
+开发者看到：
+
+完整脱敏诊断。
+
+============================================================
+第十七部分：Result Verification
+============================================================
+
+每次正式执行后：
+
+必须检查真实结果。
+
+例如：
+
+Create Shape：
+
+Shape Layer 存在。
+
+Set Fill：
+
+填充定义正确。
+
+Create Text：
+
+文字内容正确。
+
+Add Keyframe：
+
+关键帧存在。
+
+Add Effect：
+
+效果实例存在。
+
+必要时：
+
+调用真实 Renderer。
+
+不能：
+
+Command 返回 success
+就直接宣布用户任务完成。
+
+但不必每执行一个简单命令
+都进行昂贵的视觉模型分析。
+
+验证策略应按操作风险和任务类型分级。
+
+============================================================
+第十八部分：Core V2 最小功能集
+============================================================
+
+第一阶段仅实现：
+
+Create Rectangle
+
+Create Text
+
+Set Position
+
+Set Fill
+
+Add Gaussian Blur
+
+Add Keyframe
+
+Inspect Layer
+
+Render Preview。
+
+这些能力必须真实执行。
+
+不得：
+
+只实现假接口。
+
+不得：
+
+创建一个演示画面
+冒充 Agent 执行成功。
+
+不得：
+
+用 Mock Scene
+代替正式编辑器核心。
+
+============================================================
+第十九部分：第一轮 Benchmark
+============================================================
+
+BENCHMARK 1：
+
+创建三个矩形。
+
+分别设置：
+
+Red
+
+Green
+
+Blue。
+
+然后：
+
+将第二个矩形改成 Purple。
+
+验收：
+
+三个矩形真实存在。
+
+颜色正确。
+
+第二次修改目标正确。
+
+不存在多余图层。
+
+Undo 正确。
+
+------------------------------------------------------------
+
+BENCHMARK 2：
+
+创建文字：
+
+Cubic。
+
+设置：
+
+Font Family
+
+Font Size
+
+Position
+
+Color。
+
+验收：
+
+真实 Text Layer。
+
+文字正确。
+
+属性正确。
+
+Renderer 显示正确。
+
+------------------------------------------------------------
+
+BENCHMARK 3：
+
+创建矩形。
+
+设置：
+
+Radial Gradient。
+
+调整：
+
+Center
+
+Radius
+
+Color Stops。
+
+验收：
+
+参数合法。
+
+Scene 正确。
+
+实际渲染正确。
+
+------------------------------------------------------------
+
+BENCHMARK 4：
+
+创建图层。
+
+添加：
+
+Position Keyframes。
+
+修改：
+
+Motion Curve。
+
+验收：
+
+关键帧数据正确。
+
+动画求值正确。
+
+无无关对象修改。
+
+------------------------------------------------------------
+
+BENCHMARK 5：
+
+创建矩形成功。
+
+添加 Gaussian Blur 时：
+
+注入一次可恢复错误。
+
+Agent 必须：
+
+保留已有合法步骤。
+
+修复错误。
+
+继续执行。
+
+最终只创建一个矩形。
+
+只有一个 Blur 实例。
+
+Undo 一次恢复。
+
+============================================================
+第二十部分：测试旧版与 V2
+============================================================
+
+建立：
+
+V1 vs V2 Benchmark。
+
+使用：
+
+相同任务。
+
+相同 Provider。
+
+相同模型。
+
+尽可能一致的采样设置。
+
+独立测试工程。
+
+相同验收标准。
+
+记录：
+
+Valid Actions
+
+Object Reference Errors
+
+Command Errors
+
+Task Completion
+
+Unexpected Changes
+
+Recovery Success
+
+Token Usage
+
+Duration。
+
+旧版测试：
+
+必须通过旧版正式执行路径。
+
+V2 测试：
+
+必须通过新 Runtime。
+
+不得：
+
+只拿 V1 的历史失败截图
+与 V2 的 Mock 成功进行比较。
+
+必须让两者接受实际可比的测试。
+
+============================================================
+第二十一部分：测试门禁
+============================================================
+
+开发过程中：
+
+每一阶段必须运行：
+
+Typecheck
+
+Lint
+
+Unit Tests
+
+Integration Tests
+
+Build。
+
+并补充：
+
+Object Reference Tests
+
+Command Integration Tests
+
+Task State Tests
+
+Recovery Tests
+
+Transaction Tests
+
+Undo Tests
+
+Cancellation Tests
+
+Repeated Error Tests。
+
+所有核心离线测试必须通过。
+
+涉及真实 API 的测试：
+
+使用现有授权和预算。
+
+不得未经授权发起大量付费调用。
+
+无法执行时：
+
+明确记录 LIVE NOT VERIFIED。
+
+不能将离线测试通过
+当成真实模型验收通过。
+
+============================================================
+第二十二部分：可靠性验收
+============================================================
+
+首轮目标：
+
+核心基础任务完整成功率
+达到至少 95%。
+
+这是工程目标，
+不是能够由少量样本证明的保证。
+
+首先进行少量真实 Smoke Tests。
+
+随后在获得预算授权后，
+使用足够的独立重复样本开展验收。
+
+建议：
+
+5 个基础 Benchmark。
+
+每项 20 次。
+
+总计：
+
+100 次完整任务。
+
+分别统计：
+
+V1
+
+V2。
+
+并保存所有失败记录。
+
+严禁：
+
+只挑选成功样本。
+
+除了成功率，
+必须重点检查：
+
+Unexpected Mutation。
+
+不得出现：
+
+错误修改无关图层。
+
+丢失正式工程数据。
+
+绕过授权提交。
+
+恢复时重复创建对象。
+
+如果存在上述严重问题：
+
+不得启用 V2 正式替换。
+
+============================================================
+第二十三部分：恢复高级创作能力
+============================================================
+
+基础执行门禁通过后，
+才开始逐步接入：
+
+Compositing Graph
+
+Graph Node Commands
+
+Capability Discovery
+
+Creative Skills
+
+Reference Analysis
+
+Effect Forge。
+
+每接入一个能力领域：
+
+先写端到端测试。
+
+然后接入 Runtime。
+
+最后使用真实 Provider 验证。
+
+不要：
+
+一次性开放旧 Agent 的全部工具。
+
+============================================================
+第二十四部分：Skill Runtime 的处理
+============================================================
+
+旧版 Skill Runtime：
+
+暂时保留。
+
+但 V2 第一阶段：
+
+不依赖它。
+
+基础 Agent 应当在没有 Skill 的情况下
+稳定完成核心工具调用。
+
+随后逐步接入：
+
+Core Execution Skill
+
+Typography Skill
+
+Gradient Skill
+
+Animation Skill
+
+Compositing Skill。
+
+Skill 只负责：
+
+专业工作流指导。
+
+不得：
+
+接管 Task State。
+
+重新管理 Object References。
+
+创建第二套 Recovery。
+
+绕过 Command System。
+
+如果 Skill 层加入后
+降低可靠性：
+
+必须能够禁用该层。
+
+============================================================
+第二十五部分：视觉 Agent
+============================================================
+
+只有在 V2 基础执行稳定后，
+才恢复：
+
+Reference Reconstruction。
+
+例如：
+
+Cubic Gradient。
+
+届时 Agent 应支持：
+
+Reference Analysis
+
+Scene Decomposition
+
+Geometry Planning
+
+Capability Selection
+
+Scene Construction
+
+Render
+
+Visual Comparison
+
+Local Refinement。
+
+但是：
+
+视觉质量验证
+与执行可靠性验收
+必须分开。
+
+不能因为基础命令成功，
+就认为视觉复刻达标。
+
+也不能因为视觉相似度不高，
+就否定已经通过验证的基础执行系统。
+
+============================================================
+第二十六部分：开发优先顺序
+============================================================
+
+严格按以下阶段推进：
+
+V2-0
+
+冻结旧 Agent。
+
+建立独立模块。
+
+建立对照基线。
+
+
+V2-1
+
+Provider Bridge。
+
+Task Runtime。
+
+Editor Adapter。
+
+基础 Typed Actions。
+
+
+V2-2
+
+Object References。
+
+Incremental Execution。
+
+Command Integration。
+
+Draft Transaction。
+
+
+V2-3
+
+Result Verification。
+
+Structured Errors。
+
+Bounded Recovery。
+
+
+V2-4
+
+五个基础 Benchmark。
+
+V1 / V2 对照。
+
+修复剩余问题。
+
+
+V2-5
+
+真实 Provider 验收。
+
+满足门禁后，
+接入 Compositing Graph。
+
+
+V2-6
+
+恢复 Creative Skills。
+
+恢复 Reference Analysis。
+
+恢复 Effect Forge。
+
+注意：
+
+V2-5 和 V2-6
+均属于后续扩展阶段。
+
+不得为了实现全部阶段，
+牺牲前面核心阶段的正确性。
+
+============================================================
+第二十七部分：文件组织
+============================================================
+
+可以采用类似结构：
+
+src/agent-v2/
+
+    provider/
+
+    planner/
+
+    runtime/
+
+    actions/
+
+    editor-adapter/
+
+    verification/
+
+    recovery/
+
+    testing/
+
+这只是建议。
+
+实际文件结构：
+
+根据现有仓库决定。
+
+优先保持：
+
+模块清晰。
+
+依赖单向。
+
+类型安全。
+
+避免：
+
+循环依赖。
+
+避免：
+
+新增巨大的通用框架。
+
+避免：
+
+大量无法追踪的 Adapter。
+
+============================================================
+第二十八部分：防止新架构再次失控
+============================================================
+
+为 V2 制定明确架构限制。
+
+规则一：
+
+只有一个任务状态管理者。
+
+规则二：
+
+只有一个正式 Command 执行入口。
+
+规则三：
+
+对象引用必须由 Runtime 解析。
+
+规则四：
+
+Capability 必须来自真实 Registry。
+
+规则五：
+
+Provider 不包含 Scene 编辑逻辑。
+
+规则六：
+
+Recovery 不拥有独立 Scene。
+
+规则七：
+
+Skill 不拥有独立执行器。
+
+规则八：
+
+Planner 不能绕过 Validator。
+
+规则九：
+
+完成的非幂等步骤不能直接重放。
+
+规则十：
+
+未经验证不能标记任务完成。
+
+以后新增 Agent 能力：
+
+必须遵守以上规则。
+
+如果新增一个模块
+需要违反这些限制：
+
+先重新审查设计。
+
+不能随意增加新的并行状态系统。
+
+============================================================
+第二十九部分：正式迁移策略
+============================================================
+
+V2 必须能够独立测试。
+
+在正式切换前：
+
+Legacy V1 保持可用。
+
+V2 仅在隔离工程中执行。
+
+如需进行 Shadow Test：
+
+只能作用于独立 Draft / Snapshot。
+
+不能让 V1 和 V2
+同时修改同一正式工程。
+
+当 V2 满足：
+
+基础任务可靠性门禁
+
+事务安全门禁
+
+完整回归测试
+
+真实 Provider 验收
+
+后：
+
+才允许将 V2 设为默认 Agent。
+
+保留 V1 回退开关，
+直到迁移窗口结束。
+
+不得：
+
+测试尚未完成
+就删除 V1。
+
+============================================================
+第三十部分：文档与报告
+============================================================
+
+本轮重点交付：
+
+AGENT_V2_ARCHITECTURE.md
+
+AGENT_V2_TEST_MATRIX.md
+
+AGENT_V2_IMPLEMENTATION_REPORT.md
+
+AGENT_V2_MIGRATION_PLAN.md
+
+报告必须明确：
+
+哪些能力真实完成。
+
+哪些仍未实现。
+
+哪些复用了旧系统。
+
+哪些进行了重新设计。
+
+哪些问题已经解决。
+
+哪些测试属于离线测试。
+
+哪些测试属于真实 Provider。
+
+当前任务成功率是多少。
+
+是否发生意外工程修改。
+
+V2 是否已经具备正式替换条件。
+
+不要：
+
+用大量架构文档
+代替真实代码。
+
+============================================================
+第三十一部分：自主执行要求
+============================================================
+
+从当前仓库审计开始。
+
+自主完成：
+
+V2-0
+
+V2-1
+
+V2-2
+
+V2-3
+
+V2-4。
+
+过程中：
+
+不要为了普通技术决策
+频繁停下来询问用户。
+
+但不得：
+
+绕过安全权限。
+
+未经授权发送用户素材。
+
+未经授权产生大量付费 API 请求。
+
+未经确认覆盖用户未提交代码。
+
+在阶段质量门禁失败后
+直接跳过并宣布完成。
+
+对于外部授权阻塞：
+
+明确报告，
+继续不依赖该授权的开发工作。
+
+如果 V2-0 至 V2-4
+尚未稳定：
+
+不要继续 V2-5、V2-6。
+
+============================================================
+第三十二部分：最终输出
+============================================================
+
+最终汇报：
+
+1. LEGACY BASELINE
+
+旧 Agent 当前状态。
+
+
+2. V2 ARCHITECTURE
+
+新 Agent 实际架构。
+
+
+3. IMPLEMENTED
+
+已经完成的 V2 功能。
+
+
+4. REUSED
+
+复用的 Swayframe 核心模块。
+
+
+5. TESTS
+
+所有实际测试结果。
+
+
+6. RELIABILITY
+
+任务成功率与失败类型。
+
+
+7. RECOVERY
+
+自动恢复能力。
+
+
+8. SAFETY
+
+事务、Undo、作用域验证。
+
+
+9. PROVIDERS
+
+已经验证的模型。
+
+
+10. LIMITATIONS
+
+未解决的问题。
+
+
+11. NEXT STAGE
+
+接下来需要迁移的高级能力。
+
+
+12. MIGRATION STATUS
+
+NOT READY
+
+READY FOR CANARY
+
+READY FOR DEFAULT
+
+只能根据实际证据选择状态。
+
+============================================================
+FINAL ACCEPTANCE
+============================================================
+
+本次重建是否成功，
+不取决于 Agent 新增了多少功能。
+
+而取决于：
+
+能不能稳定完成基础创作。
+
+能不能准确管理对象引用。
+
+能不能使用真实的编辑命令。
+
+能不能正确处理失败。
+
+能不能在错误恢复时
+保护已经完成的工作。
+
+能不能保持事务一致性。
+
+能不能验证真实结果。
+
+能不能减少无意义模型调用。
+
+能不能为高级创作能力
+提供长期稳定的执行基础。
+
+最终目标：
+
+一个比旧 Agent 更简单、
+更可靠、
+更易测试、
+更容易扩展的 Agent Core。
+
+现在开始构建：
+
+SWAYFRAME AGENT CORE V2。
+
+先证明最小执行闭环可靠。
+
+再逐步恢复高级能力。
+
+不要重复旧 Agent
+不断增加适配层与恢复层的开发方式。

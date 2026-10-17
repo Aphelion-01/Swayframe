@@ -1,0 +1,288 @@
+{
+  "id": "blue-radial-bg-glow-text-swayframe",
+  "goal": "在合成 eade5e0d-a392-4c0d-b985-757f41792971 中：新建 solid 全画布背景（1920×1080，位置 960,540），同一 Graph 内串联原生 radialGradient（蓝色径向渐变）→ glow（柔和发光，作用于背景）→ Output；另建原生可编辑文字图层 SWAYFRAME，位置 0→1s 从下方移动到画面中心，不透明度 0→0.4s 淡入；节点语义命名并自动布局；不修改已有摄像机图层。",
+  "steps": [
+    {
+      "id": "bg-create-layer",
+      "label": "创建 solid 背景图层（1920×1080 @ 960,540）",
+      "tool": "createLayer",
+      "arguments": {
+        "kind": "solid",
+        "name": "背景-蓝色径向渐变",
+        "layerId": "7d1b6f42-9a3c-4e58-8b21-5c0f7a6d2e91",
+        "width": 1920,
+        "height": 1080,
+        "position": {
+          "x": 960,
+          "y": 540
+        }
+      }
+    },
+    {
+      "id": "bg-create-gradient-node",
+      "label": "创建径向渐变节点",
+      "tool": "createNode",
+      "arguments": {
+        "layerId": "7d1b6f42-9a3c-4e58-8b21-5c0f7a6d2e91",
+        "type": "radialGradient",
+        "nodeId": "1f0c9d28-4b7a-4c63-9e02-3a5d8b1c6f74"
+      }
+    },
+    {
+      "id": "bg-rename-gradient",
+      "label": "渐变节点语义命名",
+      "tool": "renameGraphNode",
+      "arguments": {
+        "nodeId": "1f0c9d28-4b7a-4c63-9e02-3a5d8b1c6f74",
+        "name": "背景径向渐变"
+      }
+    },
+    {
+      "id": "bg-set-center-radius",
+      "label": "设置渐变中心与半径",
+      "tool": "setNodeParameter",
+      "arguments": {
+        "nodeId": "1f0c9d28-4b7a-4c63-9e02-3a5d8b1c6f74",
+        "key": "center",
+        "value": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      }
+    },
+    {
+      "id": "bg-set-stops",
+      "label": "设置蓝色渐变色标（中心亮蓝→外围深蓝）",
+      "tool": "setNodeParameter",
+      "arguments": {
+        "nodeId": "1f0c9d28-4b7a-4c63-9e02-3a5d8b1c6f74",
+        "key": "stops",
+        "value": [
+          0,
+          0.62,
+          0.86,
+          1,
+          1,
+          0.45,
+          0.18,
+          0.5,
+          1,
+          1,
+          1,
+          0.03,
+          0.09,
+          0.32,
+          1
+        ]
+      }
+    },
+    {
+      "id": "bg-set-gradient-node",
+      "label": "渐变节点接入背景图层 Output",
+      "tool": "setGraphOutput",
+      "arguments": {
+        "layerId": "7d1b6f42-9a3c-4e58-8b21-5c0f7a6d2e91",
+        "nodeId": "1f0c9d28-4b7a-4c63-9e02-3a5d8b1c6f74",
+        "portId": "out"
+      }
+    },
+    {
+      "id": "bg-create-glow-node",
+      "label": "在背景 Graph 内创建 Glow 节点",
+      "tool": "createNode",
+      "arguments": {
+        "layerId": "7d1b6f42-9a3c-4e58-8b21-5c0f7a6d2e91",
+        "type": "glow",
+        "nodeId": "6b3e51a7-2c94-4d18-a7f0-8e2b4d9c3a55"
+      }
+    },
+    {
+      "id": "bg-rename-glow",
+      "label": "Glow 节点语义命名",
+      "tool": "renameGraphNode",
+      "arguments": {
+        "nodeId": "6b3e51a7-2c94-4d18-a7f0-8e2b4d9c3a55",
+        "name": "背景柔和发光"
+      }
+    },
+    {
+      "id": "bg-set-glow-params",
+      "label": "设置柔和发光参数",
+      "tool": "setNodeParameter",
+      "arguments": {
+        "nodeId": "6b3e51a7-2c94-4d18-a7f0-8e2b4d9c3a55",
+        "key": "radius",
+        "value": 60
+      }
+    },
+    {
+      "id": "bg-set-glow-node",
+      "label": "Glow 输出接入背景图层 Output",
+      "tool": "setGraphOutput",
+      "arguments": {
+        "layerId": "7d1b6f42-9a3c-4e58-8b21-5c0f7a6d2e91",
+        "nodeId": "6b3e51a7-2c94-4d18-a7f0-8e2b4d9c3a55",
+        "portId": "out"
+      }
+    },
+    {
+      "id": "bg-layout-graph",
+      "label": "背景图自动布局",
+      "tool": "layoutGraph",
+      "arguments": {
+        "layerId": "7d1b6f42-9a3c-4e58-8b21-5c0f7a6d2e91"
+      }
+    },
+    {
+      "id": "txt-create-layer",
+      "label": "创建可编辑文字图层 SWAYFRAME",
+      "tool": "createText",
+      "arguments": {
+        "content": "SWAYFRAME",
+        "layerId": "c4a8e270-5d61-4b39-9f27-1b3c8e6a0d42",
+        "name": "文字-SWAYFRAME",
+        "position": {
+          "x": 960,
+          "y": 1180
+        },
+        "width": 1200,
+        "height": 200
+      }
+    },
+    {
+      "id": "txt-keyframe-position-0",
+      "label": "位置关键帧 0s：画面下方",
+      "tool": "addKeyframe",
+      "arguments": {
+        "layerId": "c4a8e270-5d61-4b39-9f27-1b3c8e6a0d42",
+        "property": "position",
+        "time": 0,
+        "value": {
+          "x": 960,
+          "y": 1180
+        },
+        "interpolation": {
+          "type": "bezier",
+          "out": {
+            "x": 0.33,
+            "y": 0
+          },
+          "in": {
+            "x": 0.67,
+            "y": 1
+          }
+        }
+      }
+    },
+    {
+      "id": "txt-keyframe-position-1",
+      "label": "位置关键帧 1s：画面中心",
+      "tool": "addKeyframe",
+      "arguments": {
+        "layerId": "c4a8e270-5d61-4b39-9f27-1b3c8e6a0d42",
+        "property": "position",
+        "time": 1,
+        "value": {
+          "x": 960,
+          "y": 540
+        }
+      }
+    },
+    {
+      "id": "txt-keyframe-opacity-0",
+      "label": "不透明度关键帧 0s：0",
+      "tool": "addKeyframe",
+      "arguments": {
+        "layerId": "c4a8e270-5d61-4b39-9f27-1b3c8e6a0d42",
+        "property": "opacity",
+        "time": 0,
+        "value": 0
+      }
+    },
+    {
+      "id": "txt-keyframe-opacity-fade-in",
+      "label": "不透明度关键帧 0.4s：1",
+      "tool": "addKeyframe",
+      "arguments": {
+        "layerId": "c4a8e270-5d61-4b39-9f27-1b3c8e6a0d42",
+        "property": "opacity",
+        "time": 0.4,
+        "value": 1
+      }
+    }
+  ],
+  "risk": "low",
+  "creation": {
+    "intent": "为合成创建蓝色径向渐变背景（solid 全画布图层 + radialGradient + 柔和 glow，均在同一 Graph 内）与可编辑文字 SWAYFRAME，文字从下方移入画面中心并在 0-0.4s 淡入。仅使用现有原生能力，不新建合成、不使用噪声/图片/Forge，不修改摄像机。",
+    "tasks": [
+      {
+        "id": "Task-BG-Layer",
+        "description": "创建 1920×1080、位置 (960,540) 的 solid 全画布背景图层作为渐变容器",
+        "executionDomain": "scene",
+        "strategy": "compose",
+        "capabilityId": "createLayer",
+        "stepIds": [
+          "bg-create-layer"
+        ],
+        "dependencies": []
+      },
+      {
+        "id": "Task-BG-Graph",
+        "description": "在背景图层 Graph 内创建 native radialGradient 生成器与 glow 滤镜，按 radialGradient → glow → Output 连接，并设置蓝色色标、半径与柔和发光强度",
+        "executionDomain": "compositing",
+        "strategy": "compose",
+        "capabilityId": "radialGradient",
+        "stepIds": [
+          "bg-create-gradient-node",
+          "bg-rename-gradient",
+          "bg-set-stops",
+          "bg-set-center-radius",
+          "bg-set-gradient-node",
+          "bg-create-glow-node",
+          "bg-rename-glow",
+          "bg-set-glow-params",
+          "bg-set-glow-node",
+          "bg-layout-graph"
+        ],
+        "dependencies": [
+          "Task-BG-Layer"
+        ]
+      },
+      {
+        "id": "Task-TXT-Layer",
+        "description": "创建原生可编辑文字图层 SWAYFRAME，并将位置关键帧设为 0s 画面下方 (960,1180) → 1s 画面中心 (960,540)",
+        "executionDomain": "animation",
+        "strategy": "generate",
+        "capabilityId": "createText",
+        "stepIds": [
+          "txt-create-layer",
+          "txt-keyframe-position-0",
+          "txt-keyframe-position-1"
+        ],
+        "dependencies": []
+      },
+      {
+        "id": "Task-TXT-Fade",
+        "description": "为文字图层设置不透明度关键帧：0s=0 → 0.4s=1，实现淡入",
+        "executionDomain": "animation",
+        "strategy": "modify-existing",
+        "capabilityId": "setOpacity",
+        "stepIds": [
+          "txt-keyframe-opacity-0",
+          "txt-keyframe-opacity-fade-in"
+        ],
+        "dependencies": [
+          "Task-TXT-Layer"
+        ]
+      }
+    ],
+    "warnings": [
+      "背景采用 solid 图层承载 radialGradient：渐变由 Graph 内的 radialGradient 生成器提供，图层本身不设置填充色，因此背景观感由渐变节点完全决定。",
+      "glow 仅作用于背景图层的 radialGradient 分支（非文字图层），文字按需求不带 Glow。",
+      "文字图层的字重/字号沿用合成默认属性，未做额外排版改动；文字保持原生可编辑。",
+      "'从下方移动到画面中心' 采用位置关键帧近似：0s y=1180（画布下缘外）→ 1s y=540（画布中心），水平保持 960。",
+      "计划中所有关键帧均为默认线性插值，未额外指定缓动；如需缓入缓出可后续单独调整插值。",
+      "未使用任何噪声/图片/Forge/新建合成；摄像机和已存在的 Graph 未修改。"
+    ]
+  }
+}

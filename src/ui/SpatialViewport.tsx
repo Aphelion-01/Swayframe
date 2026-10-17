@@ -89,6 +89,7 @@ export function SpatialViewport({
     const camera = spatialCamera(view, size.width, size.height);
     return {
       ...snapshot,
+      viewportCamera: true,
       camera,
       width: size.width,
       height: size.height,
@@ -128,6 +129,7 @@ export function SpatialViewport({
     let cancelled = false;
     void renderer
       .syncAssets(project.assets)
+      .then(() => renderer.prepareMedia(latestFrame.current))
       .then(() => {
         if (!cancelled && image.current)
           renderer.render(latestFrame.current, image.current, 1, false);
@@ -138,7 +140,7 @@ export function SpatialViewport({
     return () => {
       cancelled = true;
     };
-  }, [renderer, project.assets]);
+  }, [renderer, project.assets, spatialFrame]);
   const projectPoint = (p: Point3) =>
     spatialProject(p, view, size.width, size.height);
   const cancel = () => {
@@ -197,23 +199,47 @@ export function SpatialViewport({
     color: string,
     major = false,
   ) => {
-    const segment = spatialSegment(a, b, view, size.width, size.height);
-    if (!segment) return null;
-    const [p, q] = segment;
     return (
-      <line
-        key={key}
-        x1={p.x}
-        y1={p.y}
-        x2={q.x}
-        y2={q.y}
-        stroke={color}
-        strokeWidth={major ? 1.2 : 0.6}
-      />
+      <g key={key}>
+        {Array.from({ length: 40 }, (_, i) => {
+          const point = (t: number) =>
+            a.map((v, axis) => v + (b[axis]! - v) * t) as unknown as Point3;
+          const from = point(i / 40),
+            to = point((i + 1) / 40),
+            mid = point((i + 0.5) / 40);
+          const segment = spatialSegment(
+            from,
+            to,
+            view,
+            size.width,
+            size.height,
+          );
+          if (!segment) return null;
+          const fade = Math.exp(
+            -Math.hypot(mid[0] - view.target[0], mid[2] - view.target[2]) /
+              Math.max(1, view.distance * 2),
+          );
+          const [p, q] = segment;
+          return (
+            <line
+              key={i}
+              x1={p.x}
+              y1={p.y}
+              x2={q.x}
+              y2={q.y}
+              stroke={color}
+              strokeOpacity={fade}
+              strokeWidth={major ? 1.2 : 0.6}
+            />
+          );
+        })}
+      </g>
     );
   };
-  const span = 5000,
-    step = 100;
+  const step = 10 ** Math.floor(Math.log10(Math.max(10, view.distance / 20))),
+    span = step * 200,
+    gridX = Math.round(view.target[0] / step) * step,
+    gridZ = Math.round(view.target[2] / step) * step;
   return (
     <section className="spatial-viewport" aria-label="三维空间预览">
       <header>
@@ -296,19 +322,19 @@ export function SpatialViewport({
           className="spatial-grid"
         >
           {Array.from({ length: 101 }, (_, i) => {
-            const n = (i - 50) * step;
+            const n = (i - 50) * step * 4;
             return (
               <g key={i}>
                 {line(
-                  [n, 0, -span],
-                  [n, 0, span],
+                  [n + gridX, 0, gridZ - span],
+                  [n + gridX, 0, gridZ + span],
                   `x${i}`,
                   'var(--border-subtle)',
                   i % 5 === 0,
                 )}
                 {line(
-                  [-span, 0, n],
-                  [span, 0, n],
+                  [gridX - span, 0, n + gridZ],
+                  [gridX + span, 0, n + gridZ],
                   `z${i}`,
                   'var(--border-subtle)',
                   i % 5 === 0,

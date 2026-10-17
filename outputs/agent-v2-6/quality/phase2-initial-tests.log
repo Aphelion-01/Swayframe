@@ -1,0 +1,55 @@
+
+ RUN  v5.0.3 /Users/aphelion-01/Documents/Codex/2026-10-03/Swayframe_Repairs/1.0.2
+
+ ❯ tests/agent-v2-recovery-v26.test.ts (26 tests | 3 failed) 316ms
+   × R5 repeated invalid repair is dry-validated and stopped, not executed or re-requested 8ms
+   × R7 actual formal project change while repair waits stops without overwriting user work 57ms
+   × invalid repair then valid local repair consumes only two repairs, never resets creation 6ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/agent-v2-recovery-v26.test.ts > R5 repeated invalid repair is dry-validated and stopped, not executed or re-requested
+AssertionError: expected "vi.fn()" to be called 1 times, but got 2 times
+ ❯ tests/agent-v2-recovery-v26.test.ts:272:18
+    270|   });
+    271|   expect(state.phase).toBe('FAILED');
+    272|   expect(repair).toHaveBeenCalledTimes(1);
+       |                  ^
+    273|   expect(state.steps[0]!.attempts).toBe(1);
+    274|   expect(s.faults.executed).toEqual(['shape']);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  tests/agent-v2-recovery-v26.test.ts > R7 actual formal project change while repair waits stops without overwriting user work
+TypeError: s.host.execute is not a function
+ ❯ tests/agent-v2-recovery-v26.test.ts:323:10
+    321|   const pending = runtime.run({ goal: 'stale base', actions: [shape, f…
+    322|   await vi.waitFor(() => expect(entered).toHaveBeenCalled());
+    323|   s.host.execute(command({ type: 'project.rename', name: 'USER CHANGE'…
+       |          ^
+    324|   const changed = s.host.getSnapshot();
+    325|   release();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  tests/agent-v2-recovery-v26.test.ts > invalid repair then valid local repair consumes only two repairs, never resets creation
+AssertionError: expected 'FAILED' to be 'AWAITING_ACCEPTANCE' // Object.is equality
+
+Expected: "AWAITING_ACCEPTANCE"
+Received: "FAILED"
+
+ ❯ tests/agent-v2-recovery-v26.test.ts:394:23
+    392|     actions: [shape, bad],
+    393|   });
+    394|   expect(state.phase).toBe('AWAITING_ACCEPTANCE');
+       |                       ^
+    395|   expect(state.recoveryAttempts).toBe(2);
+    396|   expect(state.steps[0]!.attempts).toBe(1);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 23 passed (26)
+   Start at  18:04:02
+   Duration  590ms (tests 59%, transform 32%, import 9%)

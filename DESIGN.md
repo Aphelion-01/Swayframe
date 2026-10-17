@@ -174,3 +174,32 @@ UI command registry 绑定现有业务 Command/Transaction；FeatureDefinition �
 ### 实例与贡献边界
 
 `motion.segmentContext` 专用于当前曲线区间，不能用全局选帧替代精确区间。`timeline.header` 注册 transport 组件，内部的时间/循环/吸附共享已有时钟与 UI 状态。`commandScope` 在工作区挂载时提供目标绑定，关闭/换目标后必须重新解析；不可执行的搜索结果保留位置和选择提示。属性 Section 使用带参数的共享 Command，不将每个动态字段注册成无参数全局操作。Effect 类别从实际 Registry 派生，空类别不显示。
+
+## V0.3 Effect Engine placement review
+
+Effect Instance 的高频参数编辑归 INSPECTOR（对象/属性、F2、选择上下文）；唯一主入口是现有“效果与遮罩 → 添加效果”。浏览器复用 Modal，提供内置/我的效果/AI草稿，不新建侧栏或全局工具按钮。Fill 的径向渐变归已有 Appearance Section；独立 Generator 创建归 SCENE 的“创建对象”；处理连接归 COMPOSITING_GRAPH。导入、草稿编译、像素预览与显式保存为 F4 上下文流程，位于同一浏览器。
+
+注册 `effect-browser`、`effect-forge`、`create-radial-generator` 并复用 Command 与 typed contribution。参数表单由统一 Schema 驱动。生成器链首不可被重排到滤镜后；分支图不显示可重排线性栈。程序化效果明确标识 CPU 限制、版本与缺失包诊断。创建、参数提交、Graph 应用全部走共享 Command/Transaction。
+
+UX 检查：状态可见（草稿阶段、错误、真实像素预览）；一致性（与节点同参数同渲染）；用户控制（应用、保存分开，Undo与丢弃）；防错（错误包、超限、缺失效果阻止导出）；发现性（生成器进入现有创建菜单）。窗口继续使用既有面板收缩与滚动，浏览器限制高度并保留关闭/焦点返回。
+
+## 0.9.22 属性与效果页签
+
+根据用户要求，Inspector 顶部复用 Tabs 常驻“属性 / 效果与调色”。效果与调色仍归 INSPECTOR、canonical 为 panel.inspector.effects；效果参数和添加入口移到该页签。混合模式与遮罩保留属性页的“合成与遮罩”Section。没有新增全局工具栏按钮。页签、展开与定位请求属于 UI；添加效果与参数编辑继续使用共享 Command/Transaction。
+
+Scene 面板选择图层时，定位请求使底部切到时间轴、清除遮挡属性的筛选并展开目标图层与属性组，在可见区域外时沿纵轴滚动到目标；不改变当前时间或工程，不增加 Undo。时间轴中手动选择仍保留原折叠控制。
+
+
+## 0.9.23 Agent 可靠性与媒介扩展
+
+媒体格式扩展复用 Project 的导入入口。音频容器识别、WebCodecs 和 Web Audio 解码能力分别验证；AIFF PCM 预览代理不替换原素材，不写入工程。助手失败工具优先展开字段错误；成功的例行读取仍简洁。视觉迭代归现有预览区，实际渲染与参考图明确区分，不新增永久按钮。
+
+## 0.9.25 Effect discovery and instance editing
+
+Inspector 顶部“效果”页直接显示效果目录、搜索及分类；不再经过“添加效果”按钮或弹窗。已应用效果与可动画参数归属“属性”页的注册 effect-instances Section。目录应用继续使用 Graph Command/Transaction；切页与滚动位置仅为UI状态。
+
+## 0.10 Agent configuration and diagnostics
+
+对象：Agent 会话/应用配置；任务：配置指导与计划传输、诊断失败；频率 F5；上下文 AssistantMode。九域归属 ASSISTANT，规范入口 assistant.actions。AI → Agent 既有参数 Section 增加原生 Skill 总开关/五技能开关及 tools/structured-plan，布局状态不进 Scene。agent-export-diagnostic 注册 Feature 与 assistant scoped Command；在既有助手开发者 details 使用 typed contributionItems，元数据不含业务回调。导出包含版本/对象绑定/用量/分层验证，省略用户文字、Scene 内容与图片。
+
+Feature Placement Review：复用已有低频折叠入口；永久工具栏增量 0；无新功能域或全局按钮。UX heuristic：状态可见、可停止、错误保留、开发日志按需展开、导出隐私说明可见，关闭 Skill 不关闭底层编辑能力。注册与预算由 feature-registry 回归检查。

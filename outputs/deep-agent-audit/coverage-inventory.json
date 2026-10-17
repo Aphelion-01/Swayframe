@@ -1,0 +1,2747 @@
+{
+  "total": 566,
+  "passed": 566,
+  "files": 144,
+  "primary_categories": {
+    "Editor/core/IO/runtime": 464,
+    "Agent": 86,
+    "Provider and AI infrastructure": 16
+  },
+  "overlapping_file_level_candidates": {
+    "ui_jsdom": 264,
+    "snapshot_assertions": 393,
+    "real_command_import": 170,
+    "mock_provider": 52,
+    "multistep_fixture": 26,
+    "pixel_assertion_candidate": 7
+  },
+  "real_provider_tests_in_vitest": 0,
+  "rows": [
+    {
+      "file": "tests/acceptance.test.tsx",
+      "tests": 5,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "A-01～A-09 用户流程集成验收 A-01 / A-02 / A-05：新建合成、Canvas 拖动、属性面板 编辑和逐步 Undo/Redo",
+        "A-01～A-09 用户流程集成验收 A-03 / A-04：手动 Spring 入场淡入，四类图层与文件在关闭重开后保持一致",
+        "A-01～A-09 用户流程集成验收 A-06 / A-07：既有Agent Bridge仍保留一项历史、整体撤销、重做后可手改",
+        "A-01～A-09 用户流程集成验收 A-08：Provider 输出建议时不修改工程；应用后可撤销",
+        "A-01～A-09 用户流程集成验收 A-09：真实文件输入拒绝非法 JSON 和未知版本，当前工程不部分变化"
+      ]
+    },
+    {
+      "file": "tests/agent-compositing-tools.test.ts",
+      "tests": 3,
+      "category": "Agent",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "graph blur and editable mask compile, persist and Undo in a single transaction",
+        "graph cycles, unknown disk assets and destructive node deletion are refused",
+        "new composition uses shared commands and opens before creating content"
+      ]
+    },
+    {
+      "file": "tests/agent-context.test.ts",
+      "tests": 2,
+      "category": "Agent",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "budgets selected context, preserves exact selection/time and excludes asset bodies/paths and whole Project",
+        "caches frozen summaries and invalidates after actual command/Undo, while following selected parents"
+      ]
+    },
+    {
+      "file": "tests/agent-creation-context.test.ts",
+      "tests": 2,
+      "category": "Agent",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "bounds planning context and prioritizes the authorized layer without changing the project",
+        "keeps exact package references but omits package source, large arrays and keyframe lists"
+      ]
+    },
+    {
+      "file": "tests/agent-creation.test.ts",
+      "tests": 7,
+      "category": "Agent",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": true,
+        "multistep_fixture": true,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "A/B/C: discovers real capabilities and creates an editable gradient/noise/glow/title composition",
+        "E: branch proposal preserves noise, title/keyframes/curve, camera, unrelated graph and IDs; one Undo and round-trip",
+        "scope: parameter-only cannot edit another node, add layers, move a node or alter topology; branch cannot alter boundary",
+        "planner schema validates task dependencies, exact coverage and real capability IDs",
+        "orchestrator previews, rejects, accepts and refuses stale proposals without touching formal Scene",
+        "D: blur radius 20→35 reuses one node, rejects preserve formal state and single Undo restores 20",
+        "F: rectangle→position→keyframes→spring edits preserve layer, graph and keyframe IDs"
+      ]
+    },
+    {
+      "file": "tests/agent-fill-reliability.test.ts",
+      "tests": 3,
+      "category": "Agent",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "fills an editable perspective polygon through the native radial fill, persists parameters and atomic Undo",
+        "rejects unsupported radial parameters before any host mutation",
+        "postflight rejects incorrect position and graph parameters even when the layer exists"
+      ]
+    },
+    {
+      "file": "tests/agent-intelligence.test.ts",
+      "tests": 8,
+      "category": "Agent",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": true,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "professional analysis returns a typed Proposal with pixels, never changes Scene or executes its suggested command",
+        "analysis cannot suggest arbitrary execution or bypass its supplied tool scope",
+        "advertises the real 12-step limit and exact tool arguments; repairs an oversized proposal once",
+        "unknown tools remain rejected after one correction, with actionable names and no execution",
+        "cancel during invalid proposal response never starts correction",
+        "reference analysis requires actual pixels and validated element observations, never a fixed substitute",
+        "returns concrete missing fields to the model so it can repair a malformed proposal",
+        "recovers one invalid JSON provider response but never retries a credentials failure"
+      ]
+    },
+    {
+      "file": "tests/agent-library.test.ts",
+      "tests": 3,
+      "category": "Agent",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "history remains project-bound application data, excludes context/images and reopens independently",
+        "preset saves actual animation values/curves and applies with fresh key IDs through shared Undo",
+        "Agent commit triggers existing desktop dirty state and recovery; sandbox writes do not"
+      ]
+    },
+    {
+      "file": "tests/agent-orchestrator.test.ts",
+      "tests": 7,
+      "category": "Agent",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": true,
+        "multistep_fixture": true,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "executes a structured plan, verifies before one commit and preserves refinement context",
+        "ASSIST stays read-only; destructive and large plans require explicit runtime confirmation",
+        "Stop aborts in-flight tool work, discards uncommitted draft and prevents following tools",
+        "invalid plans, tool failures, verification exhaustion and concurrent edits leave real project unchanged",
+        "keeps two plan repair attempts available after three inspection rounds",
+        "rejects excess reads without executing them and still asks for a complete plan",
+        "does not confuse changed capability metadata with an identical invalid plan"
+      ]
+    },
+    {
+      "file": "tests/agent-plan-recovery.test.ts",
+      "tests": 6,
+      "category": "Agent",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": true,
+        "multistep_fixture": true,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "requests one fresh complete plan after malformed JSON without executing writes",
+        "stops after a second malformed response and never retries transport failures",
+        "ends repeated inspection with a forced plan at the last allowed round",
+        "asks for one corrected invalid plan and retains validation before any execution",
+        "recovers prose-only thinking with a forced plan without executing prose",
+        "bounds repeated prose-only responses and reports tool compatibility"
+      ]
+    },
+    {
+      "file": "tests/agent-reference-dependencies.test.ts",
+      "tests": 1,
+      "category": "Agent",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "accepts a dependency chain and rejects cycles before reconstruction"
+      ]
+    },
+    {
+      "file": "tests/agent-references.test.ts",
+      "tests": 4,
+      "category": "Agent",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "authorized reference image reaches vision planning; layout-only changes position, retains color and never creates an Asset",
+        "layout-only blocks a model color plan and privacy removes all reference pixels from requests",
+        "unsupported disk-like files and oversize references are rejected before any decoding",
+        "planner can request professional typography analysis, receive a Proposal, then apply through one shared transaction"
+      ]
+    },
+    {
+      "file": "tests/agent-semantic-plan.test.ts",
+      "tests": 1,
+      "category": "Agent",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "rejects malformed gradient stops before preview without changing the real scene or history"
+      ]
+    },
+    {
+      "file": "tests/agent-skills.test.tsx",
+      "tests": 3,
+      "category": "Agent",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "ships eight useful builtin skills and persists user CRUD, disable, duplicate, import/export without executing instructions",
+        "settings creates and edits a real user skill",
+        "custom skill cannot widen registry permissions even when its instructions request a write"
+      ]
+    },
+    {
+      "file": "tests/agent-text-reliability.test.ts",
+      "tests": 4,
+      "category": "Agent",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": true,
+        "multistep_fixture": true,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "creates styled Unicode text through the real adapter, preserves atomic Undo/Redo and roundtrip",
+        "returns exact failing fields, original arguments and model schema without silent coercion",
+        "postflight rejects a missing created layer instead of reporting a successful tool",
+        "repairs an invalid createText plan with structured field feedback through the same real adapter"
+      ]
+    },
+    {
+      "file": "tests/agent-tools.test.ts",
+      "tests": 2,
+      "category": "Agent",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": true,
+        "multistep_fixture": true,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "12 typed read tools inspect real scene without modifying history and reject unknown/invalid/scoped calls",
+        "planner consumes structured read tool results before producing a read-only ASSIST plan"
+      ]
+    },
+    {
+      "file": "tests/agent-transaction.test.ts",
+      "tests": 3,
+      "category": "Agent",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "one full entrance action gives one Undo, retains curves on save/load and works after Undo",
+        "failure/discard, Stop and concurrent human edits do not publish partial changes",
+        "workspace pivot affects subsequent tools, commits only after success and stays outside Project"
+      ]
+    },
+    {
+      "file": "tests/agent-v1-acceptance.test.ts",
+      "tests": 12,
+      "category": "Agent",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "A14-0 左侧快速入场",
+        "A14-1 创建中心文字",
+        "A14-2 文字排版与颜色",
+        "A14-3 背景模糊",
+        "A14-4 选区中心缩放120%",
+        "A14-5 仅布局参考",
+        "A14-6 服务限流切换",
+        "A14-7 未配置服务",
+        "A14-8 停止任务",
+        "A14-9 保存重新打开",
+        "newly created layer can receive keyframes in the same typed plan and visual refinements retain one Undo",
+        "composition-scoped creation rejects opening a different composition before mutation"
+      ]
+    },
+    {
+      "file": "tests/agent-vision.test.ts",
+      "tests": 4,
+      "category": "Agent",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": true,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "actual shared renderer produces bounded snapshot without handles and cleans resources",
+        "vision service receives real image and returns only validated Proposal, never mutates project",
+        "offscreen entrance is a warning, not a fake successful vision result",
+        "repairs a visual refinement rejected by real capability preflight once before any execution"
+      ]
+    },
+    {
+      "file": "tests/agent-write-tools.test.ts",
+      "tests": 3,
+      "category": "Agent",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "real animation/curve/text/effect commands mutate persisted state and undo cleanly",
+        "shared selection-center scaling doubles spacing without moving center, and respects lock and destructive permissions",
+        "creation IDs, path control points and workspace pivot remain structured and validated"
+      ]
+    },
+    {
+      "file": "tests/agent.test.ts",
+      "tests": 5,
+      "category": "Agent",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "Agent Tool Bridge 蓝色方块 Demo 创建可编辑动画，只有一个 agent Transaction",
+        "Agent Tool Bridge 工具读取/preview 不改变工程，结果使用相同 Renderer 输入",
+        "Agent Tool Bridge 结构化工具 batch 可解析前面创建的图层，失败时无残留",
+        "Agent Tool Bridge 未知工具、额外参数、未知图层与错误提示拒绝执行",
+        "Agent Tool Bridge set_interpolation 与 undo 工具也走共享历史"
+      ]
+    },
+    {
+      "file": "tests/ai-desktop.test.ts",
+      "tests": 2,
+      "category": "Provider and AI infrastructure",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "persists encrypted credentials separately, restores on reopen and does not return plaintext through settings",
+        "fails closed in production, uses only transient development secrets, and rejects arbitrary IPC paths/settings secrets"
+      ]
+    },
+    {
+      "file": "tests/ai-failover.test.ts",
+      "tests": 4,
+      "category": "Provider and AI infrastructure",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": true,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "rate limit switches provider once, shows fallback and records only returned usage",
+        "invalid keys never fail over; Stop cancels bounded backoff and does not call fallback",
+        "budget warns at 80%, blocks the next call at 100% and respects vision capability routes",
+        "native bridge serialized error keeps rate_limit classification; credential newline injection is rejected"
+      ]
+    },
+    {
+      "file": "tests/ai-provider.test.ts",
+      "tests": 7,
+      "category": "Provider and AI infrastructure",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": true,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "uses DeepSeek non-thinking mode for named Agent tools and leaves other services unchanged",
+        "accepts large compatible model catalogues while retaining the configured model within the 200-entry limit",
+        "sends typed tools and authorized images, reports actual usage and withholds keys from errors",
+        "aggregates split SSE arguments and rejects interrupted streams without returning executable calls",
+        "bounds time, response size and rejects text-only vision, unsafe URLs and malformed calls",
+        "accepts pasted full API endpoints without duplicating chat/completions or models",
+        "keeps an active tool stream alive while enforcing an idle timeout"
+      ]
+    },
+    {
+      "file": "tests/ai-settings.test.tsx",
+      "tests": 3,
+      "category": "Provider and AI infrastructure",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": true,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "supports provider CRUD/default/connection/model capabilities and does not persist secrets in browser storage",
+        "production web rejects credential saving and model registry requires explicit vision capabilities",
+        "saves a DeepSeek preset and requires a new key when changing supplier"
+      ]
+    },
+    {
+      "file": "tests/aiff-pcm.test.ts",
+      "tests": 1,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "decodes a real AIFF PCM fixture with its sample rate and nonzero samples, rejects truncated chunks"
+      ]
+    },
+    {
+      "file": "tests/animation.test.ts",
+      "tests": 9,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "Animation Engine 无关键帧返回 baseValue；单帧与区间外延使用最近端点",
+        "Animation Engine 线性标量与 Vec2 中点正确",
+        "Animation Engine 乱序关键帧不改变求值、不修改输入",
+        "Animation Engine Bezier 反解 x，端点精确、连续且 ease-in 中点慢于 linear",
+        "Animation Engine Spring damping=18 有限且端点收敛",
+        "Animation Engine Spring damping=26.076809620810597 有限且端点收敛",
+        "Animation Engine Spring damping=45 有限且端点收敛",
+        "Animation Engine 欠阻尼 spring 可产生轻微过冲",
+        "Animation Engine 拒绝异常参数及无效时间，极短区间仍有限"
+      ]
+    },
+    {
+      "file": "tests/architecture.test.ts",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "A-10 架构检查 核心无 React / DOM / 具体 Renderer 反向依赖，未禁用类型检查",
+        "A-10 架构检查 UI / Agent / Provider 没有对模型对象赋值或集合原地修改"
+      ]
+    },
+    {
+      "file": "tests/axis-link-ui.test.tsx",
+      "tests": 4,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "默认链接：缩放保持比例，单笔提交，两轴一起撤销；解除后独立编辑",
+        "位置联动保留轴间差值，动画只提交当前时间一个向量关键帧",
+        "联动 scrub 只预览两轴，Escape 取消不写工程，链接偏好不串到另一个属性",
+        "零缩放可编辑，3D 联动只影响 XY，Z 和解链数值保持独立"
+      ]
+    },
+    {
+      "file": "tests/basic-editing.test.ts",
+      "tests": 9,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "基础编辑与自动关键帧 第一次在后续时间拖动保留零秒起点，重复拖动更新同一帧，整体撤销",
+        "基础编辑与自动关键帧 关闭自动记录保持静态编辑；属性秒表开关保留当前求值且可撤销",
+        "基础编辑与自动关键帧 多图层拖动预览不写 Scene，松手一笔事务，锁定图层保持",
+        "基础编辑与自动关键帧 复制图层重新生成所有实体 ID 并保留关键帧与 Undo",
+        "基础编辑与自动关键帧 关键帧批量移动吸附时间，冲突或越界均不改工程与历史",
+        "基础编辑与自动关键帧 复制多帧保留相对间隔和插值，粘贴覆盖同一时间并可撤销",
+        "基础编辑与自动关键帧 图层多选对齐分布一笔历史，旋转边界和锁定限制有效",
+        "基础编辑与自动关键帧 删除选中关键帧优先于图层，前后关键帧导航不修改工程",
+        "复制图片到新工程同时带入素材；整个粘贴可以一次撤销"
+      ]
+    },
+    {
+      "file": "tests/basic-editor-ui.test.tsx",
+      "tests": 1,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "动画开关、属性筛选、图层快捷键和输入焦点隔离在真实 UI 中协同工作"
+      ]
+    },
+    {
+      "file": "tests/camera-motion-path.test.tsx",
+      "tests": 8,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "摄像机范围随姿态、焦距和对焦距离变化，景深在焦平面为零且光圈有实际作用",
+        "旧工程补齐摄像机参数；非法光圈、维度和素材数据被拒绝",
+        "摄像机位置可选择；范围开关仅更改视图，参数通过命令支持撤销",
+        "二维/三维路径实时预览、窗口松手提交最终坐标、撤销与 Escape 不反弹（3D=false）",
+        "二维/三维路径实时预览、窗口松手提交最终坐标、撤销与 Escape 不反弹（3D=true）",
+        "三维贝塞尔插值保持端点；屏幕逆映射与父级旋转一致",
+        "父级摄像机的实际拍摄位置和空间标记使用同一个世界变换",
+        "透视预览中的三维控制点长距离拖动仍跟随指针，键盘微调走相同命令"
+      ]
+    },
+    {
+      "file": "tests/camera-realtime.test.tsx",
+      "tests": 1,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "camera optical drag renders the transient value before release and commits one undoable transaction"
+      ]
+    },
+    {
+      "file": "tests/camera-speed-stability.test.ts",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "camera velocity stays exact for a distant uniform position including endpoints",
+        "diagonal temporal Bezier has constant speed without finite difference noise"
+      ]
+    },
+    {
+      "file": "tests/canvas-assets.test.ts",
+      "tests": 1,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "移除资源或卸载时，尚未解码完成的图片不会遗留缓存"
+      ]
+    },
+    {
+      "file": "tests/canvas-coordinates.test.ts",
+      "tests": 9,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "CSS coordinates roundtrip at 0.25 zoom independently of physical DPI",
+        "CSS coordinates roundtrip at 0.5 zoom independently of physical DPI",
+        "CSS coordinates roundtrip at 1 zoom independently of physical DPI",
+        "CSS coordinates roundtrip at 2 zoom independently of physical DPI",
+        "CSS coordinates roundtrip at 4 zoom independently of physical DPI",
+        "incremental rotation crosses branch cut without reversing and directional cursor follows basis",
+        "matrix conversion includes rotated scaled parent; locked/hidden/top ordering share hit rules",
+        "mask add/subtract/intersect rejects invisible areas rather than whole image bounds",
+        "parent matrix and rotated/scaled child roundtrip do not use viewport or device pixels"
+      ]
+    },
+    {
+      "file": "tests/canvas-direct.test.tsx",
+      "tests": 31,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "Shift direction remains stable despite later dominant Y movement; Esc restores snapshot",
+        "side handle is single axis even with linked Inspector; live Inspector and one undo",
+        "corner scales proportionally by default; Shift unlocks ratio",
+        "rotation accumulates through 180 and 360 degrees, then one Undo restores all",
+        "Alt starts duplicate preview without Scene writes; release creates and moves copy in one transaction",
+        "duplicate cancel leaves no copy/history; next gesture remains usable",
+        "reverse marquee on viewport margin selects only visible unlocked objects; cancel restores original selection",
+        "hover targets editable topmost object under locked layer; selection/timeline remain unified",
+        "multi selection shows Mixed rather than first layer values, still scales/rotates with shared transaction",
+        "keyboard repeat nudges coalesce within held key; release separates history and Undo/Redo are exact",
+        "Space-pan preserves selection and prior tool; typing Space in an input never starts pan",
+        "screen coordinates at 0.25 scale remain correct for direct dragging",
+        "screen coordinates at 0.5 scale remain correct for direct dragging",
+        "screen coordinates at 1 scale remain correct for direct dragging",
+        "screen coordinates at 2 scale remain correct for direct dragging",
+        "screen coordinates at 4 scale remain correct for direct dragging",
+        "A: creation/move/scale/rotation/anchor are five undoable actions and five Redos restore exact Scene",
+        "B: Shift-click Rectangle/Ellipse/Text and transform the group; each Undo restores all objects",
+        "D: handles and 6-screen-pixel snapping remain correct at 0.25 zoom",
+        "D: handles and 6-screen-pixel snapping remain correct at 0.5 zoom",
+        "D: handles and 6-screen-pixel snapping remain correct at 1 zoom",
+        "D: handles and 6-screen-pixel snapping remain correct at 2 zoom",
+        "D: handles and 6-screen-pixel snapping remain correct at 4 zoom",
+        "negative scale from side crossing pivot is preserved and one Undo restores original",
+        "viewport pointer cancellation restores selection and clears exclusive interaction state",
+        "E: cursor zoom keeps composition point anchored at 80/90",
+        "E: cursor zoom keeps composition point anchored at 1700/950",
+        "manual zoom preserves actual pixel scale on resize while Fit adapts",
+        "moving preview reaches Inspector before mouse release without changing Scene",
+        "anchor move preserves visual matrix under rotated scaled 2D parent and Undo restores properties",
+        "equal spacing is visible during drag, commits once and Ctrl bypasses it"
+      ]
+    },
+    {
+      "file": "tests/canvas-snapping.test.ts",
+      "tests": 3,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "最近的边缘/中心吸附，屏幕容差由调用方换算；Shift 只锁定主轴",
+        "旋转后的世界包围框、多选整体边界，排除随选中父级移动的子层和不可见层",
+        "equal spacing snaps between neighbors with paired distances; unrelated rows do not attract"
+      ]
+    },
+    {
+      "file": "tests/canvas-sprint.test.tsx",
+      "tests": 6,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "画布吸附实际进入共享命令；移动时显示参考线，松手一条 Undo，Ctrl 临时关闭",
+        "Shift 锁方向；窗口失焦取消连续交互与参考线，工程和历史不变",
+        "边与角缩放遵循当前锚点支点和属性 X/Y 链接，松手一次提交；取消手柄预览不改工程",
+        "快速手柄拖动在同一事件批次松手也提交最后坐标，而非初始预览",
+        "关键帧/节点选择及状态更新不调用 Canvas Renderer，图层属性变化仍渲染",
+        "节点布局提交与撤销不调用 Renderer，节点参数修改及撤销仍更新画面"
+      ]
+    },
+    {
+      "file": "tests/command-registry.test.ts",
+      "tests": 1,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "executes current bindings, refuses disabled/unknown/group commands and detects duplicates"
+      ]
+    },
+    {
+      "file": "tests/commands.test.ts",
+      "tests": 6,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "Command / Transaction / History 创建、属性修改、关键帧增改删可精确撤销与重做",
+        "Command / Transaction / History 失败 Transaction 不部分写入、不增加历史",
+        "Command / Transaction / History 多命令作为一项撤销；新提交清空 redo；输入不能越权修改",
+        "Command / Transaction / History 删除恢复原顺序，排序和 Layer patch 保持精确历史",
+        "Command / Transaction / History 重复 ID / keyframe time、错误值类型与不存在的目标均被拒绝",
+        "Command / Transaction / History 取消临时编辑不入历史；提交拖拽只有一个事务"
+      ]
+    },
+    {
+      "file": "tests/compositing-agent.test.ts",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "Agent 服务批量建图、参数与坐标提交一条历史，非法最后一步整体拒绝",
+        "AgentBridge 的结构化工具与原有 batch 共用命令，并可解析先创建的节点编号"
+      ]
+    },
+    {
+      "file": "tests/compositing-animation.test.tsx",
+      "tests": 1,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "节点 Inspector 开启半径动画 0→30，同一轨道/曲线属性，保存恢复且 Undo 有效"
+      ]
+    },
+    {
+      "file": "tests/compositing-cache.test.ts",
+      "tests": 3,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "移动节点/改名不计算像素；参数仅使自身及下游失效，源变化全部失效",
+        "缓存共享表面只计一次容量，删除节点清理，超限逐出且保留渲染版本",
+        "evaluator 故障恢复后下游重新求值，不读取失败回退的缓存"
+      ]
+    },
+    {
+      "file": "tests/compositing-commands.test.ts",
+      "tests": 1,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "插入、重连、删除、复制与连续坐标编辑共用事务，单次撤销恢复"
+      ]
+    },
+    {
+      "file": "tests/compositing-compiler.test.ts",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "编译只遍历输出依赖，拓扑不依赖节点数组排列；参数统一按时间求值",
+        "无效图与节点 evaluator 失败可回退，断线形成诊断不会崩溃"
+      ]
+    },
+    {
+      "file": "tests/compositing-graph.test.ts",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "连接校验方向、类型、容量、自连、环与必需输入",
+        "注册表提供所有可执行节点、标准属性与受保护起点终点"
+      ]
+    },
+    {
+      "file": "tests/compositing-io.test.ts",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "0.4 效果迁移保留节点/属性/关键帧 ID 与顺序，工程只保存图，复制重建引用",
+        "旧色相效果自动补齐明度，原参数 ID 与像素保持不变"
+      ]
+    },
+    {
+      "file": "tests/compositing-merge.test.ts",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "A 在 B 上，Mask 仅限制前景；覆盖/叠底/滤色/相加真实 RGBA 正确",
+        "Source+Solid 多输入拓扑、遮罩与禁用 Merge 走背景旁路"
+      ]
+    },
+    {
+      "file": "tests/compositing-render.test.ts",
+      "tests": 1,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": true
+      },
+      "test_names": [
+        "节点使用实际颜色像素处理，模糊传入 Canvas filter，变换复用局部矩阵"
+      ]
+    },
+    {
+      "file": "tests/compositing-stack.test.tsx",
+      "tests": 1,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "效果栈双向读取同一节点参数，删除同步；分支不能伪装为线性栈"
+      ]
+    },
+    {
+      "file": "tests/compositing-ui-graph.test.tsx",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "搜索插入、拖动 50 次一个 Undo；Escape/平移/缩放不修改工程",
+        "端口自连原子拒绝；复制/删除节点与固定节点保护"
+      ]
+    },
+    {
+      "file": "tests/compositing-ui.test.tsx",
+      "tests": 1,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "GUI 遮罩、羽化动画与效果排序均进入共享命令历史"
+      ]
+    },
+    {
+      "file": "tests/composition.test.ts",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "Null 继承旋转/缩放，设置父级保留当前位置，循环被拒绝",
+        "预合成保持实体和动画，嵌套保存，拆分与移动时间可整体撤销"
+      ]
+    },
+    {
+      "file": "tests/curve.test.ts",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "真实缓出改变求值，Position 速度曲线显示非匀速而非分量值",
+        "速度与影响比例往返可编辑，入出切线保持一笔精确 Undo"
+      ]
+    },
+    {
+      "file": "tests/desktop-assets.test.ts",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "migrates 0.3 without changing IDs or embedded assets and rejects newer version",
+        "linked references round-trip without binaries, relink keeps shared layer IDs and undoes once"
+      ]
+    },
+    {
+      "file": "tests/desktop-contract.test.ts",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "Desktop contract rejects unknown, oversized and filesystem injection requests",
+        "Desktop contract keeps browser development independent of native services"
+      ]
+    },
+    {
+      "file": "tests/desktop-export.test.ts",
+      "tests": 1,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "accepts current sequence format and rejects traversal, checksum damage and unknown entries"
+      ]
+    },
+    {
+      "file": "tests/desktop-files.test.ts",
+      "tests": 3,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "Native project IO round-trips validated projects at Unicode paths and preserves valid file on failure",
+        "Native project IO normalizes Windows and macOS paths without filesystem access",
+        "Native project IO restricts IO to approved capabilities"
+      ]
+    },
+    {
+      "file": "tests/desktop-image-files.test.ts",
+      "tests": 1,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "rejects renamed text and symlinks to non-image content"
+      ]
+    },
+    {
+      "file": "tests/desktop-lifecycle.test.ts",
+      "tests": 7,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "Project lifecycle opens the existing editor after new project",
+        "Project lifecycle tracks committed edits, undo to saved snapshot, and save failures",
+        "Project lifecycle cancels destructive new and close, preserves dirty state",
+        "Project lifecycle consolidates concurrent saves into one native write",
+        "Project lifecycle does not clear dirty when editing while a save is pending",
+        "另存为使用当前工程路径作为对话框默认路径，成功后更新路径，取消保留原路径",
+        "相同冻结工程只序列化一次，预览不进入保存，提交/Undo后输出正确内容"
+      ]
+    },
+    {
+      "file": "tests/desktop-missing-render.test.ts",
+      "tests": 1,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "missing linked media preserves other images and relink retries without failing the frame"
+      ]
+    },
+    {
+      "file": "tests/desktop-persistence.test.ts",
+      "tests": 3,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "retains missing recents, bounds history, deduplicates and removes entries",
+        "recovery snapshots survive a new session, cannot corrupt formal files, and serialize clear after writes",
+        "debounces only completed commits and cancels pending autosaves after save"
+      ]
+    },
+    {
+      "file": "tests/desktop-window.test.ts",
+      "tests": 3,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "moves restored windows on removed monitors back into visible work area",
+        "supports negative monitor coordinates and rejects nonfinite bounds",
+        "maps primary modifiers centrally"
+      ]
+    },
+    {
+      "file": "tests/drag.test.ts",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "Canvas drag controller 连续拖动只有临时预览，松手一个 Transaction，一次 Undo 恢复",
+        "Canvas drag controller 取消或原地松手不增加历史；锁定图层不拖动"
+      ]
+    },
+    {
+      "file": "tests/editor-bugfix-v0910.test.tsx",
+      "tests": 5,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "continuous creation over existing layers keeps the creation tool and distinct outline",
+        "pen drag creates symmetric Bezier handles without a selection rectangle; fill and stroke persist and undo",
+        ".layer-list boxes multiple layers without Scene or history writes",
+        ".timeline-scroll boxes multiple layers without Scene or history writes",
+        "right click opens icon creation list on layers and timeline, file menu contains only project actions"
+      ]
+    },
+    {
+      "file": "tests/editor-polish.test.ts",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "common composition presets and independent export sizing preserve aspect ratio",
+        "text range animation changes glyphs without changing the layer and survives project IO"
+      ]
+    },
+    {
+      "file": "tests/editor-slice.test.tsx",
+      "tests": 1,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "只显示工程和选择的面板不响应播放头/预览/状态，Scene和选区更新仍同步"
+      ]
+    },
+    {
+      "file": "tests/editor.test.tsx",
+      "tests": 5,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "图层面板 / 属性面板 integration 创建三类基础图层、重命名、Transform、显隐、排序与删除均可撤销",
+        "图层面板 / 属性面板 integration 非法 属性面板 输入保留工程值并显示错误",
+        "图层面板 / 属性面板 integration Escape 放弃尚未提交的数值且不增加历史",
+        "图层面板 / 属性面板 integration 语义元数据编辑也经过可撤销 Command",
+        "图层面板 / 属性面板 integration 本地持久化从同一个 Command 快照恢复，错误文件不污染现有数据"
+      ]
+    },
+    {
+      "file": "tests/effect-forge-agent.test.ts",
+      "tests": 2,
+      "category": "Agent",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "searches native blur and radial gradient and adds native nodes through transaction without creating custom packages",
+        "generates a new declarative draft and applies only a previewed evaluated package through one undoable transaction"
+      ]
+    },
+    {
+      "file": "tests/effect-forge-ui.test.tsx",
+      "tests": 1,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "requires preview and explicit acceptance before saving user package"
+      ]
+    },
+    {
+      "file": "tests/effect-library.test.ts",
+      "tests": 3,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": true
+      },
+      "test_names": [
+        "persists exact versions without modifying embedded project packages",
+        "enforces draft validate compile preview evaluate accept and resets state after edits",
+        "never overwrites corrupt user libraries"
+      ]
+    },
+    {
+      "file": "tests/effect-presets.test.ts",
+      "tests": 1,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "pins saved native preset version and values separately from Scene instances"
+      ]
+    },
+    {
+      "file": "tests/effects.test.ts",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "曝光与色相真正处理像素，透明通道不变；效果顺序影响结果",
+        "遮罩动画、效果栈和排序保存后恢复；非法参数原子拒绝"
+      ]
+    },
+    {
+      "file": "tests/export-cache.test.ts",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "PNG 序列帧数与秒时间一致，ZIP 保存原始字节和 CRC",
+        "冻结工程相同时间复用快照，选择与时间变化使快照失效"
+      ]
+    },
+    {
+      "file": "tests/extended-animation.test.ts",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "Hold、同拓扑路径和不同拓扑路径有确定性时间边界",
+        "新增颜色属性支持导航、批量复制、删除和一次撤销"
+      ]
+    },
+    {
+      "file": "tests/extended-model.test.ts",
+      "tests": 3,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "扩展颜色、路径和三维属性共用命令、原子历史与序列化",
+        "父级和预合成循环不允许进入历史；合成命令精确恢复",
+        "旧版严格验证后迁移，保留实体身份与曲线"
+      ]
+    },
+    {
+      "file": "tests/feature-registry.test.ts",
+      "tests": 3,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "feature placement contract rejects duplicate IDs, unknown placement, missing metadata, classification and low-frequency permanent UI",
+        "feature placement contract derives contexts from real selection and hides irrelevant keyframe contributions",
+        "feature placement contract all actionable features bind to commands and aliases search by task/domain/object"
+      ]
+    },
+    {
+      "file": "tests/feature-scalability.test.ts",
+      "tests": 4,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "205 future capabilities stay searchable/contextual without adding permanent controls; registry contributions execute without Shell edits",
+        "100 effects and 50 nodes register parameters/renderers/search without extending menus",
+        "fresh menu entries and palette command share one transaction and undo; stale selection cannot edit a removed target",
+        "single keyframe easing copy/paste uses its adjacent interval and remains undoable"
+      ]
+    },
+    {
+      "file": "tests/graph-editor-ux.test.tsx",
+      "tests": 9,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "A/C: animated property auto-fits; ease requires selection, uses original data, mode preserves frame selection",
+        "B: middle-key incoming edits previous segment, outgoing edits next; preview changes no project, commit and Undo restore",
+        "D: one key is a selectable diamond with editable key inspector; zero keys and no animated selection give honest hints",
+        "E/F: inspector collapse/resize persists outside scene, cursor zoom, horizontal pan and all/selected/reset are view-only",
+        "G: 200 handle moves preview same property for Canvas, one transaction on release, Escape cancels, Undo restores",
+        "key time/value edits use Command System; key/segment context menus operate on same selection",
+        "RGBA component edits keep array topology and other channels; linear preset clears Bezier handles",
+        "segment context opens the exact Motion Curve segment; curve modes hide timeline filters",
+        "auto-fit expands small fractional ranges instead of flattening opacity/scale curves"
+      ]
+    },
+    {
+      "file": "tests/graph-ui.test.tsx",
+      "tests": 1,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "曲线面板缓出与速度输入真实修改动画，撤销恢复"
+      ]
+    },
+    {
+      "file": "tests/graph-viewport.test.tsx",
+      "tests": 7,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "camera speed graph does not magnify uniform motion noise (distance 663.929249728)",
+        "camera speed graph does not magnify uniform motion noise (distance 0)",
+        "值/速度曲线滚轮以鼠标为中心缩放，Space/中键平移和取消只改变视口",
+        "缩放后的切线拖动正确换算坐标，100次预览一条事务，Undo恢复真实动画",
+        "capture loss and release outside the curve retain the edited controls and axis domain; edge handles stay selectable",
+        "graph playback and tap Space work without switching panels; holding Space for pan does not start playback",
+        "editing outgoing influence preserves the incoming endpoint including its zero influence"
+      ]
+    },
+    {
+      "file": "tests/hardening.test.ts",
+      "tests": 4,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "集成边界回归 无效事务身份、来源和额外命令参数被拒绝",
+        "集成边界回归 视图订阅错误不影响提交结果和其他订阅者",
+        "集成边界回归 极大有限标量的线性中点不溢出",
+        "集成边界回归 缓存失败保留可读错误，工程仍可导出"
+      ]
+    },
+    {
+      "file": "tests/image-assets.test.ts",
+      "tests": 1,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "内嵌图片无需 fetch 即可解码，适用于桌面严格 CSP；位图随资源销毁"
+      ]
+    },
+    {
+      "file": "tests/information-architecture.test.tsx",
+      "tests": 14,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "七类应用菜单覆盖真实操作，图层类型可见创建且File没有对象类型",
+        "对象右键直接结构菜单，空白右键与显式创建共享饼菜单",
+        "Inspector直接呈现父级与Effects；空间和时间归属分离",
+        "Cmd/Ctrl+K可搜索全部对象类型和效果，菜单与搜索修改同一命令历史",
+        "选中Opacity/Scale跨属性记录一笔Transaction，锁定对象不能被批量记录",
+        "中间关键帧Ease仅修改出侧区间，Undo保留入侧原数据",
+        "Parent与Precompose分别一笔历史，预合成可从全局导航返回且保存重开兼容",
+        "原生新增入口进入同一操作，三维/Camera可撤销，无第二套业务实现",
+        "Window和效果入口打开隐藏底部工作区，Graph/Motion/Nodes可返回Timeline",
+        "Help任务路径、快捷键真实可用，菜单Esc关闭并返回焦点，导出经File入口",
+        "无选择时上下文操作禁用，不伪造缺失功能或更改Scene",
+        "节点模式中的编辑菜单只修改节点，受保护节点不能删除，撤销恢复图层",
+        "应用菜单左右导航与子菜单返回保持焦点，并且不修改工程",
+        "空节点选择的编辑命令不能退回删除整个图层，全选仍只选择节点"
+      ]
+    },
+    {
+      "file": "tests/inspector-timeline-navigation.test.tsx",
+      "tests": 4,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "separates color/effects from properties and retains the existing mask controls and keyboard tabs",
+        "an existing effect-browser command reveals the new tab and its browser",
+        "effects catalog applies through shared history while instance parameters live only in Properties",
+        "panel selection reveals and expands the corresponding timeline row without changing time, project or Undo"
+      ]
+    },
+    {
+      "file": "tests/interaction-hardening.test.ts",
+      "tests": 3,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "100 次移动仅提交一次；播放头或工程变化取消过期手势，不在其他时间写关键帧",
+        "旋转父级下的拖动使用逆变换；父子多选不产生双重位移，复制重连父级",
+        "父级删除保持子级及动画，撤销恢复全部；三维手柄预览参与真实投影"
+      ]
+    },
+    {
+      "file": "tests/interaction-subscription.test.tsx",
+      "tests": 1,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "取消监听器只注册一次，重渲染使用最新回调，卸载后不再响应"
+      ]
+    },
+    {
+      "file": "tests/io.test.ts",
+      "tests": 5,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "Project IO save/load/save 保留 ID、顺序、属性与 Spring 关键帧",
+        "Project IO 无效 JSON、未知版本、重复 ID、非法属性、损坏 asset 都给明确错误",
+        "Project IO 非法工程替换不污染已有项目或 History",
+        "Project IO 真实内嵌 Image asset 可往返且不保存 Canvas 对象",
+        "Project IO 核心命令边界拒绝未知字段、非法颜色与无效时间"
+      ]
+    },
+    {
+      "file": "tests/layer-accent.test.ts",
+      "tests": 3,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "新图层循环分配六种身份；旧0.5迁移不改变Transform/实体id",
+        "None及所有色标严格保存/重开，非法颜色与未知metadata拒绝",
+        "色标与嵌套Precomp像素缓存隔离；未知ui字段或真实属性变化仍失效"
+      ]
+    },
+    {
+      "file": "tests/layer-readability.test.tsx",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "B4/B5/B6：两个面板共用色标，颜色菜单勾选/Undo/保存/重开保持",
+        "B2/B3/B9：100属性行交替连续；播放头移动保留静态DOM，折叠/筛选重排"
+      ]
+    },
+    {
+      "file": "tests/media-assets.test.ts",
+      "tests": 3,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "decodes a real PCM WAV and saves an audio layer through an undoable transaction",
+        "accepts common media MIME types but rejects external and mismatched inline references",
+        "rejects corrupted media before inserting an asset"
+      ]
+    },
+    {
+      "file": "tests/model-desktop-csp.test.ts",
+      "tests": 1,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "桌面模型加载允许本地内嵌 glTF / blob 依赖，不允许远端或任意脚本"
+      ]
+    },
+    {
+      "file": "tests/model-import.test.ts",
+      "tests": 12,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "实际解析 obj 并生成可投影静态网格",
+        "实际解析 stl 并生成可投影静态网格",
+        "实际解析 ply 并生成可投影静态网格",
+        "实际解析 dae 并生成可投影静态网格",
+        "实际解析 3ds 并生成可投影静态网格",
+        "实际解析 glb 并生成可投影静态网格",
+        "实际解析 gltf 并生成可投影静态网格",
+        "实际解析 fbx 并生成可投影静态网格",
+        "导入事务可撤销，模型保存重开保留几何；类型错误和缺失依赖明确拒绝",
+        "几何数量和空几何的边界在写入工程前拒绝",
+        "glTF 的远端依赖在网络请求前拒绝",
+        "批量模型中一个解析失败时，不留下部分素材或图层"
+      ]
+    },
+    {
+      "file": "tests/model.test.ts",
+      "tests": 3,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "Project Model 创建任务书规定的合成并持久化稳定 ID",
+        "Project Model 四类图层具有统一 Transform 与不同的稳定 Property ID",
+        "Project Model 拒绝无效合成及没有 assetId 的 Image"
+      ]
+    },
+    {
+      "file": "tests/motion-bezier.test.ts",
+      "tests": 3,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "真正反解非对称 X，而不是直接 By(u)，支持退化导数",
+        "Linear、缓入、缓出与对称缓入缓出端点正确",
+        "非单调 progress 真正产生预备和过冲并返回终点，拒绝非法输入"
+      ]
+    },
+    {
+      "file": "tests/motion-commands.test.ts",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "多属性多区间一笔事务、时间数值保留、Undo/Redo 精确恢复",
+        "只应用目标相邻区间，In/Out 保留另一侧；失效区间原子拒绝"
+      ]
+    },
+    {
+      "file": "tests/motion-evaluation.test.ts",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "Number Vec2 Vec3 Color 使用同一时间曲线，Scale 过冲回落",
+        "空间曲线路径与时间曲线独立，修改 timing 不改几何控制点"
+      ]
+    },
+    {
+      "file": "tests/motion-model.test.ts",
+      "tests": 4,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "区间曲线兼容既有入出模型，多个区间可保存不同节奏",
+        "曲线可序列化，拒绝未知生成器与不合法坐标",
+        "0.2 工程迁移保留全部 ID 和旧入出控制，0.3 空间字段保存重开一致",
+        "非 Position 属性的空间切线在命令提交边界拒绝，工程不发生部分修改"
+      ]
+    },
+    {
+      "file": "tests/motion-operations.test.ts",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "Reverse 为真正函数反转，Mirror 保留指定一侧并对称，不混同",
+        "Agent API 与人类命令共用事务，Copy/Paste 只复制曲线，空间几何与时间数值保留"
+      ]
+    },
+    {
+      "file": "tests/motion-presets.test.ts",
+      "tests": 3,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "内置完整曲线族各有名称，Back Out 真正超过终值再回落",
+        "自定义曲线库跨实例持久化；改名、复制、收藏、最近、删除完整且不包含工程",
+        "存储失败不假称保存成功、不覆盖内存中的旧库"
+      ]
+    },
+    {
+      "file": "tests/motion-preview.test.ts",
+      "tests": 1,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "拖动预览影响真实渲染输入，未提交不写工程/历史，保留无关图层引用"
+      ]
+    },
+    {
+      "file": "tests/motion-speed.test.ts",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "Ease Out 退化起点导数不错误显示为零，下降 Number 的速度为正",
+        "曲线路径速度依据空间导数，不以端点直线距离冒充路径速度"
+      ]
+    },
+    {
+      "file": "tests/motion-ui.test.tsx",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "面板读取跨属性 Mixed，点击预设即时统一，指定区间模式隔离其他区间",
+        "真实手柄 200 次 pointermove 实时更新画布求值，窗口释放只提交一次事务"
+      ]
+    },
+    {
+      "file": "tests/native-agent-panel.test.tsx",
+      "tests": 6,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "keeps failed input and lets the user retry instead of clearing it before execution",
+        "warns about text-only models when references are present, preserves input and allows text after reference removal",
+        "imports dropped and pasted images through the same reference path without adding Scene assets",
+        "no-provider state opens application settings and keeps prompt execution disabled",
+        "real panel prompt runs native controller tools and commands, updates scene renderer input and Undo once",
+        "Assist only plans and Shift+Enter retains multiline input"
+      ]
+    },
+    {
+      "file": "tests/node-ai-entry.test.tsx",
+      "tests": 1,
+      "category": "Agent",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "canonical Inspector entry works without mounted Graph workspace and defaults to parameter-only"
+      ]
+    },
+    {
+      "file": "tests/numeric-preview-ui.test.tsx",
+      "tests": 7,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "typing and repeated arrow adjustments preview immediately, Enter commits one undo without a blur duplicate",
+        "100 vertical value moves preview linked XY and release creates one animated keyframe transaction",
+        "downward drag decreases with modifiers and explicit cancellation never writes the project",
+        "invalid intermediate input and stale playback time cancel previews rather than commit to another time",
+        "geometry and font size preview without touching persisted data, cancellation and commit use shared history",
+        "link buttons exist only for XY vectors, never scalar, color or four component bounds",
+        "lost capture followed by window release commits once instead of rebounding"
+      ]
+    },
+    {
+      "file": "tests/parent-pick-whip.test.tsx",
+      "tests": 1,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "binds by dropping anywhere on the target row, preserves one Undo and cancels without edits"
+      ]
+    },
+    {
+      "file": "tests/path-ui.test.tsx",
+      "tests": 1,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "路径和文字样式有可操作入口，修改经同一历史"
+      ]
+    },
+    {
+      "file": "tests/perspective.test.ts",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "真实平面透视使近处放大、Y 旋转产生不同边深度，网格保持透视顶点",
+        "三张不同 Z 的平面按深度排列，摄像机动画与命中测试共享投影"
+      ]
+    },
+    {
+      "file": "tests/pixel-program.test.ts",
+      "tests": 28,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "keeps exact scalar semantics for constant across dependency schedules",
+        "keeps exact scalar semantics for parameter across dependency schedules",
+        "keeps exact scalar semantics for u across dependency schedules",
+        "keeps exact scalar semantics for v across dependency schedules",
+        "keeps exact scalar semantics for time across dependency schedules",
+        "keeps exact scalar semantics for frame across dependency schedules",
+        "keeps exact scalar semantics for width across dependency schedules",
+        "keeps exact scalar semantics for height across dependency schedules",
+        "keeps exact scalar semantics for aspect across dependency schedules",
+        "keeps exact scalar semantics for input across dependency schedules",
+        "keeps exact scalar semantics for add across dependency schedules",
+        "keeps exact scalar semantics for subtract across dependency schedules",
+        "keeps exact scalar semantics for multiply across dependency schedules",
+        "keeps exact scalar semantics for divide across dependency schedules",
+        "keeps exact scalar semantics for sin across dependency schedules",
+        "keeps exact scalar semantics for cos across dependency schedules",
+        "keeps exact scalar semantics for abs across dependency schedules",
+        "keeps exact scalar semantics for sqrt across dependency schedules",
+        "keeps exact scalar semantics for floor across dependency schedules",
+        "keeps exact scalar semantics for min across dependency schedules",
+        "keeps exact scalar semantics for max across dependency schedules",
+        "keeps exact scalar semantics for clamp across dependency schedules",
+        "keeps exact scalar semantics for mix across dependency schedules",
+        "keeps exact scalar semantics for smoothstep across dependency schedules",
+        "keeps exact scalar semantics for noise across dependency schedules",
+        "matches the frozen scalar interpreter for seeded mixed programs, non-finite intermediates and unused code",
+        "keeps pixels exact when column reuse exceeds its bounded allocation budget",
+        "rebinds uniforms and rows on every render without leaking previous frame values"
+      ]
+    },
+    {
+      "file": "tests/preview-cache.test.ts",
+      "tests": 3,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "bitmap cache retains real rendered frames only, evicts by recency and invalidates on scene changes",
+        "memory budget rejects an oversized frame and missing canvas context never reports a cached frame",
+        "keeps more than sixteen small rendered frames until the byte budget is reached"
+      ]
+    },
+    {
+      "file": "tests/preview-quality.test.ts",
+      "tests": 3,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "bounds interactive work, restores full quality when stopped, leaves ordinary scenes full quality",
+        "keeps logical width/height/aspect uniforms stable under sampling",
+        "isolates reduced samples from full graph cache, and retains full-size budget checks"
+      ]
+    },
+    {
+      "file": "tests/processing-stack.test.ts",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "projects generator and filter chains without detaching generators during reorder",
+        "removes custom generator and reconnects source to remaining filters"
+      ]
+    },
+    {
+      "file": "tests/programmable-effect.test.ts",
+      "tests": 6,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "rejects oversized Canvas effect execution before allocating or reading any pixels",
+        "uses standard SHA256 canonical content hashing",
+        "validates compiles and deterministically renders parameterized animated texture without recompilation",
+        "rejects malformed code, forward references, unknown bindings, modified hashes and executable JS",
+        "keeps procedural time in graph cache keys and falls back on missing package",
+        "returns actionable instruction diagnostics for model repair instead of accepting unsafe references"
+      ]
+    },
+    {
+      "file": "tests/proposal.test.ts",
+      "tests": 4,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "Intelligence Proposal pipeline 三个 Mock Provider 只输出可预测建议，不修改冻结的 Scene",
+        "Intelligence Proposal pipeline 校验失败不会部分修改；未知 operation、越界值与未知 Layer 被拒绝",
+        "Intelligence Proposal pipeline Proposal 修改已动画属性时在指定时间更新关键帧；一次 Undo 恢复",
+        "Intelligence Proposal pipeline 空选择且空场景不返回候选，锁定图层不自动修改"
+      ]
+    },
+    {
+      "file": "tests/radial-gradient.test.ts",
+      "tests": 3,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": true
+      },
+      "test_names": [
+        "shared radial gradient renders white center blue edge deterministically and transforms center",
+        "shared radial gradient uses premultiplied interpolation and validates variable stops",
+        "shared radial gradient connects generator output without input image and compiles one graph"
+      ]
+    },
+    {
+      "file": "tests/render-invalidation.test.ts",
+      "tests": 1,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "节点布局/名称只改持久化布局；参数、连接、开关、素材和嵌套合成必须失效"
+      ]
+    },
+    {
+      "file": "tests/renderer-direct-graph.test.ts",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "默认 Source→Output 不分配离屏表面；不透明普通图层直接绘制",
+        "半透明与混合模式保留离屏组语义；错误图不能伪装成直通"
+      ]
+    },
+    {
+      "file": "tests/renderer-performance.test.ts",
+      "tests": 5,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "二维快照保留真实父级矩阵和动画，只有三维图层及其祖先计算 world3D",
+        "父级循环仍明确拒绝，三维依赖闭包不会死循环",
+        "选择变化复用冻结场景的求值层数组，仍返回正确的选区",
+        "选区从空变为图层后，重复的等值选区仍保持整个帧快照引用",
+        "单层移动预览复用其他层局部矩阵，父级变化仍传播到子级世界矩阵"
+      ]
+    },
+    {
+      "file": "tests/renderer.test.ts",
+      "tests": 3,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "Renderer input / hit test 相同工程和时间生成相同快照；按动画求值",
+        "Renderer input / hit test 选择最上方可见图层，逆变换包含旋转与缩放",
+        "Renderer input / hit test 零 Scale 安全，拖动 preview 不修改 Composition"
+      ]
+    },
+    {
+      "file": "tests/resize-geometry.test.ts",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "八个角/边手柄；相对边固定，单轴、链接比例与 Alt 锚点缩放正确",
+        "旋转、负缩放和父级下固定角不漂移，临时预览走现有局部/世界坐标转换"
+      ]
+    },
+    {
+      "file": "tests/shape-direct-edit.test.tsx",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "direct path handles preview only, commit one command, support undo and cancel",
+        "near point-on Z projection remains continuous instead of flipping to a fixed diagonal"
+      ]
+    },
+    {
+      "file": "tests/shape-path.test.ts",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "多边形、星形、路径编辑保留切线；点操作可组合",
+        "文字 tracking、weight、lineHeight 与可动画颜色用于实际画字"
+      ]
+    },
+    {
+      "file": "tests/skeleton.test.ts",
+      "tests": 1,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "工程启动契约 提供所有必需质量门禁和启动命令"
+      ]
+    },
+    {
+      "file": "tests/spatial-workflow.test.tsx",
+      "tests": 16,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "时间轴、曲线、节点始终保留刻度和单一播放控件；缓动归属曲线功能",
+        "常驻时间标尺窗口松手采用最后坐标；取消恢复起点且不写工程",
+        "图层面板标题、列表空白及下半空白反复右键均能创建，菜单每项有图标",
+        "图层菜单父子级直接选择父级，操作进入同一撤销历史",
+        "快速 3D 开关可撤销，2D/3D位置默认链接各自符合维度",
+        "XYZ 拖动只预览，窗口最终松手写一次事务，取消和卸载清理预览",
+        "空间视角绕转、缩放、聚焦、正顶视切换仅改变UI，持续显示坐标网格和XYZ",
+        "标尺拖出参考线使用合成像素坐标，窗口释放保留最后位置，移出删除",
+        "自由视图投影方向、轴向拖动换算和像素标尺步进稳定",
+        "空间视图网格、手柄与真实图层渲染使用一致的透视和正交投影",
+        "主预览打开旁侧空间视图不改工程；辅助入口复用关闭行为与可见反馈",
+        "触控板双指绕转、Shift双指屏幕等距平移、捏合高响应缩放，均不混淆",
+        "平移后双指仍围绕原点，指向的原点屏幕位置保持稳定",
+        "旋转环连续预览、松手重采样一次提交，取消不残留，支持跨越正负180度",
+        "旋转环支持Shift十五度吸附、键盘独立改轴，切回移动不残留预览",
+        "主预览的操控方式切换同步两视图且不写工程"
+      ]
+    },
+    {
+      "file": "tests/text-sprint.test.tsx",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "双击直接聚焦多行文字；输入隔离快捷键，提交一次 Undo、保存加载完整保留换行",
+        "中文选字阶段 Enter/Escape 不提交或退出；结束输入后 Escape 丢弃草稿无历史"
+      ]
+    },
+    {
+      "file": "tests/timeline-performance.test.tsx",
+      "tests": 1,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "100层/500与1000帧：连续scrub和200次拖动保持关键帧DOM，预览零Scene写入，释放一笔事务"
+      ]
+    },
+    {
+      "file": "tests/timeline-snapping.test.ts",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "关键帧批量移动保持间距、帧网格与合成边界，最近目标吸附可临时关闭",
+        "图层时间条预览先夹到范围；移动保持时长，入出点不能翻转且至少一帧"
+      ]
+    },
+    {
+      "file": "tests/timeline-sprint.test.tsx",
+      "tests": 5,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "多选关键帧100次拖动只提交一次，预览与实际提交均夹到边界并可撤销",
+        "关键帧吸附播放头；Escape取消，丢失按钮捕获仍由窗口完成；播放头取消恢复时间",
+        "首次选择关键帧并在窗口释放，使用最终坐标而非缺失的中间移动，一次Undo",
+        "图层时间条越界拖动保持有效范围；右键不会启动移动",
+        "播放头更新不重建轨道，新增关键帧仍读取实时播放头；命中关键帧时刷新控件"
+      ]
+    },
+    {
+      "file": "tests/timeline-v02.test.tsx",
+      "tests": 18,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "帧时间往返、时间码进位和缩放刻度密度保持一致",
+        "多图层排序保留内部顺序，一次撤销/重做，不改输入工程",
+        "跨属性粘贴保持相对时间与插值，并拒绝不兼容、超时长或锁定目标",
+        "A/I：框选0/1/2秒，200次move预览不写Scene，整体移动一步Undo/Redo",
+        "Shift点击移除关键帧不拖动剩余帧；空白点击清空关键帧但保留图层",
+        "Alt拖动预览不写Scene，复制后选中新帧，一步撤销",
+        "D：快速拖动播放头实时求值且不写工程或历史，DOM关键帧保持身份",
+        "F/G：上下文EaseOut只作用实际选中段，Graph返回共享插值、Undo恢复",
+        "H/J：独立裁入1秒裁出4秒，关键帧不变；保存重开仅持久化Scene",
+        "所选属性归属正确，Graph不误编辑多选中的首个图层",
+        "Timeline搜索输入屏蔽P/S/R/T/Delete，快捷过滤只在Timeline焦点内触发",
+        "列宽工作区持久化，Cursor zoom保持鼠标处时间，Fit复原且不写历史",
+        "B：Rectangle/Text/Image都有位置缩放透明度动画，切换Animated Only恢复全部属性",
+        "Inspector/Timeline共用记录命令，非整帧播放时间不会生成重复帧；删除最后一帧恢复baseValue",
+        "Graph返回后滚轮仍保持时间锚点，中键平移不跳时间，预览取消恢复",
+        "键盘前后关键帧优先所选属性，未指定时只跳可见轨道",
+        "图层排序使用Pointer捕获，保留多选顺序，200次预览无写入，释放一笔事务",
+        "Pointer捕获后双击label仍重命名，Enter一笔提交，Esc不提交；预合成双击与Canvas面包屑同步"
+      ]
+    },
+    {
+      "file": "tests/timeline-visible-rows.test.ts",
+      "tests": 1,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "collapsed defaults and groups use continuous visible row indices after filtering"
+      ]
+    },
+    {
+      "file": "tests/timeline.test.tsx",
+      "tests": 3,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "时间轴 integration 四个 Transform 可创建关键帧；Spring 和删除操作可撤销",
+        "时间轴 integration Position 与 Opacity 在相同时间由统一引擎求值",
+        "时间轴 integration 播放时钟按秒循环，帧率不影响求值"
+      ]
+    },
+    {
+      "file": "tests/transform-context.test.ts",
+      "tests": 6,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "A1/A2：左上锚点缩放固定锚点，几何中心缩放固定中心且不修改anchor",
+        "A3/A4：Selection Bounds union而非position平均，多选布局缩放与各自中心缩放不同",
+        "A5/A6/A7：Global/Local X不同，嵌套Parent basis含祖先旋转缩放；无Parent fallback",
+        "A8：自定义支点旋转使位置绕共同世界支点移动，Anchor不变",
+        "选中父子时共同世界变换只执行一次，负scale符号保留；不支持的剪切明确拒绝",
+        "Text测量、Path曲线极值、Image/Precomp外部Bounds共用世界矩阵，View保持屏幕轴并预留相机3D基"
+      ]
+    },
+    {
+      "file": "tests/transform-geometry.test.ts",
+      "tests": 1,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "锚点、旋转和负缩放变换可逆，手柄使用同一世界坐标"
+      ]
+    },
+    {
+      "file": "tests/transform-guidance.test.ts",
+      "tests": 5,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "CASE 1/2: center expands symmetrically, bottom stays fixed in actual engine and ghost",
+        "CASE 3/4/5: arc center and coordinate basis match the real transform; external pivot has connection",
+        "CASE 7/8: X-only has no Y expansion; active scale keeps initial fixed pivot while bounds change",
+        "reference commands share Scene undo order while keeping Project and animation data untouched",
+        "workspace reference and Scene commands Undo/Redo in one chronological stack"
+      ]
+    },
+    {
+      "file": "tests/transform-interaction.test.tsx",
+      "tests": 11,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "A1/A2/A9：属性200%执行真实支点补偿，预览不写Scene，提交一次历史，Undo恢复Anchor",
+        "A3/A4：两层旋转/缩放在Selection Center和Individual Origins下布局不同，整个事务一次Undo",
+        "A5/A6：45°对象的Global/Local X轴拖动真实进入不同方向，100次move只提交一次",
+        "A8/A10：Custom Pivot拖动/键盘/Escape仅改变偏好，保存重开不污染Scene",
+        "手势期间修改轴向/时间会取消，旋转父级非等比缩放下可表示的90°变换提交全部必要通道",
+        "键盘nudge也共享Local/Global轴向；数值取消不留预览",
+        "模式切换显示真实控制轴和支点，多选各自中心保留独立标记且不写工程",
+        "CASE 6: 悬停九宫格预览真实右下支点和Ghost，离开恢复且不写Project或Undo",
+        "CASE 8: 数值实时缩放时底部支点固定，旋转显示角度和弧线，提交一次Scene Undo",
+        "Custom Pivot: 100次移动仅更新引导预览，松开一次可撤销，Scene与原关键帧不变",
+        "Custom Pivot: 播放时间改变时丢弃未提交拖动"
+      ]
+    },
+    {
+      "file": "tests/ui-redesign.test.tsx",
+      "tests": 5,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "页签支持方向键/Home/End，只有选中页签进入Tab顺序",
+        "对话框限制Tab焦点，Escape关闭并返回入口；不改工程",
+        "同批移动/松手保存最新面板宽度，窗口缩小不让时间轴压掉画布",
+        "助手入口显示已折叠左面板，选区和Scene保持，面板尺寸只改变UI",
+        "切换工作区保留助手草稿和待审建议，生成建议不修改Scene"
+      ]
+    },
+    {
+      "file": "tests/video-export.test.ts",
+      "tests": 3,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "offline video renders every requested source time with zero-based monotonic output timestamps",
+        "unsupported devices and invalid settings fail clearly before allocating a renderer",
+        "cancellation stops encoding, releases resources and never returns a partial media file"
+      ]
+    },
+    {
+      "file": "tests/visual-capabilities.test.ts",
+      "tests": 3,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": false,
+        "snapshot_assertions": false,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "Unified capability metadata preserves native generator and multi-input compositor contracts in the unified registry",
+        "Unified capability metadata adapts the same native Gaussian Blur definition into Inspector and Graph",
+        "Unified capability metadata rejects duplicate versions and invalid typed defaults"
+      ]
+    },
+    {
+      "file": "tests/workflow-export.test.ts",
+      "tests": 1,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "FLOW-06 Export Frame与Preview共用真实Renderer：起始/中间/结束同时间绘制调用一致"
+      ]
+    },
+    {
+      "file": "tests/workflow-integration.test.ts",
+      "tests": 11,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": false,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "FLOW-01 新工程→命名合成→Shape→Save→Load，完整清理旧编辑状态",
+        "FLOW-02 静态移动不写关键帧；秒表→Canvas连续拖动→0/0.5/1秒正确求值，一次撤销",
+        "FLOW-03 Motion Curve改变求值，Undo/Redo精确恢复曲线与结果",
+        "FLOW-04 图片/Mask/Exposure/Blur动画、父级、预合成与3D数据完整往返",
+        "FLOW-05 Parent动画影响Child；位置/旋转/缩放继承与Undo准确",
+        "BENCH-A Scale 0→115→100从Inspector变换命令记录，不产生额外Position动画",
+        "零缩放恢复保留底部支点、单轴塌缩和负缩放；预览不写Scene，一次Undo恢复",
+        "损坏文件、非法时间、缺失引用与循环不会替换当前工程或损坏历史",
+        "零缩放时旋转仍可编辑，恢复尺寸后保留角度并精确撤销",
+        "BENCH-C 三张图片 Z=0/-500/-1000 与摄像机推进，投影和工程往返一致",
+        "整条创作历史逐步Undo/Redo恢复：变换、关键帧、曲线、效果、遮罩、父级、预合成和删除"
+      ]
+    },
+    {
+      "file": "tests/workflow-ui.test.tsx",
+      "tests": 2,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": false,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "正常菜单新建工程清空旧数据和历史，命名合成自动激活，创建对象同步Selection",
+        "BENCH-A Inspector数值实际完成0→115→100；Scene、Timeline与Undo一致"
+      ]
+    },
+    {
+      "file": "tests/workspace-ux.test.tsx",
+      "tests": 8,
+      "category": "Editor/core/IO/runtime",
+      "tags": {
+        "ui_jsdom": true,
+        "real_command_import": true,
+        "snapshot_assertions": true,
+        "mock_provider": false,
+        "multistep_fixture": false,
+        "pixel_assertion_candidate": false
+      },
+      "test_names": [
+        "scrub 在松手前只预览，单笔提交；Escape 恢复工程和历史",
+        "scrub 时间变化取消过期编辑，动画修改只记录当前时间的一个关键帧",
+        "工具快捷键遵循画布/时间轴/文字焦点，并支持命令搜索",
+        "画布拖动创建与取消均不产生过程中的正式工程修改",
+        "多关键帧拖动保留选中集合，取消不修改；Graph 替代轨道",
+        "面板分隔线只修改独立布局，取消恢复且可持久化",
+        "钢笔多点路径只在确认时提交，并提供可见描边",
+        "从末尾关键帧打开 Graph 时定位前一区间，保留可编辑速度输入"
+      ]
+    }
+  ]
+}

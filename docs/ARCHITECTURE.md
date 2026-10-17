@@ -254,6 +254,8 @@ Graph 与 Timeline 共用 EditorView 的 selectedProperties、frames、time、pl
 
 两个曲线视图采用字段选择订阅，临时 Property 预览不重建静态 Timeline 树、不保存或序列化 Scene。手柄窗口释放复用 `usePointerRelease`，丢失捕获不隐式取消；Esc / 失焦 / PointerCancel 清空预览。曲线算法、Project schema、渲染引擎、AI Proposal 边界保持。验收与延后事项见 `GRAPH_EDITOR_UX_RESULT.md`。
 
+2026-10-10 摄像机速度曲线修复：速度纵轴自动适配保留零基线和顶部余量，数值纵轴余量设置相对与绝对下限，避免有限差分的舍入误差被放大成锯齿。手柄拖动仍冻结当前纵轴范围；不改变动画求值、关键帧或事务。摄像机三维匀速与静止回归测试、521 项全量测试及独立 Mac 应用实际打开验证通过。
+
 ### 0.9.12 · Global Information Architecture
 
 根 DESIGN.md 与 FEATURE_LOCATION_MATRIX.md 约束功能归属和入口预算。shared/application-menu 维护 Web/Electron 分类与动作ID；workspace/editor-actions 将应用菜单、Palette、Registry与原生适配接入现有Command/Transaction，object-actions复用图层创建。Scene/Canvas/Timeline按上下文过滤layerActions；属性、关键帧、节点、素材各自拥有相关菜单。跨入口读取当前snapshot，节点Edit保留工作区上下文并保护空选择/Source/Output，输入框保留文本编辑。UI菜单/模式/布局不写Scene；Intelligence只输出Proposal不变。文件持久化继续ProjectService与原IPC。
@@ -307,3 +309,123 @@ Text Section 负责内容、字体与样式，Text Animator Section 负责范围
 Timeline 三种工作区复用同一 rulerHeader，曲线页复用同一 layerRows；节点内容面板不变。PreviewFrameCache 仅存实际已绘制位图，16 帧/64 MiB 上限，视觉工程或素材变化失效；UI 渲染条显示真实缓存位置与本帧耗时，不假装完成后台预渲染。
 
 output-settings 提供合成与导出共用的尺寸/帧率预设、适配矩形和预算校验。OutputFrameRenderer 用同一动画引擎与 Canvas2DRenderer 逐帧绘制，再适配输出分辨率；输出不含选择、网格、标尺或手柄。video-export 按需加载 Mediabunny，先检查设备编码能力，再通过 WebCodecs 离线生成 H.264/H.265 MP4/MOV 或 VP9 WebM；时间戳从零开始，读取完整目标帧率，不依赖实时播放速度。PNG 序列共用输出设置并保留透明背景。取消中止编码并释放资源，文件沿用既有受限 IPC 写入，未新增文件系统或网络权限。视频当前为 SDR 8-bit、无音轨，透明通道使用 PNG；编码支持因平台而异。
+
+## V0.3 Unified Effect Engine
+
+统一能力注册表为内置滤镜、径向渐变和声明式效果定义端口与参数。Graph 继续作为实例唯一来源；Inspector 和 Timeline 复用标准 Property。自定义效果包内嵌于节点，使用精确版本和 SHA256，受限指令运行时不执行任意脚本。缓存区分参数、时间、尺寸、fps 和输入。效果草稿/库/信任通过平台适配器保存，不进入 Scene。应用走 Command/AgentTransaction，保存到正式库需要用户明确操作；导出遇到效果错误立即停止。细节见根目录 EFFECT_ENGINE_ARCHITECTURE.md 与 PROGRAMMABLE_EFFECT_SPEC.md。
+
+## 0.9.18 交互渲染与外部生成边界
+
+preview-quality 是纯 UI 渲染策略：播放、参数预览和时间拖动按声明式效果总运算量选择 1、1/2、1/4 到 1/16 采样，目标约四百万指令像素积。停止时间变化 120ms 后恢复完整采样。CanvasGraphBackend 在原尺寸预算验证后生成缩小像素、放大合成；width/height/aspect 保留逻辑尺寸，u/v 使用采样位置。Graph 与 Canvas 缓存均包含采样倍率，低采样帧不标记为完整缓存。嵌套合成继续保留原透明度/背景语义。导出从不调用交互策略，默认完整采样；未放宽执行预算、信任或错误阻止导出的约束。这是有损的交互预览，不承诺任意程序实时运行，也不是 GPU 实现。
+
+OpenAICompatibleProvider 接受 API 根地址或完整 chat/completions、models 地址，避免重复路径。桌面服务的外部请求上限为 120 秒，取消仍立即中止；现有凭据始终通过安全存储读取。effect_createDraft 的 DSL 说明明确 arity、索引、颜色与 mix 语义；校验错误返回具体指令和可修复原因，不替模型执行脚本或自动改源码。scripts/effect-forge-live.ts 为显式运行的真实服务验收，只发送合成请求，在临时 CommandSystem 中验证 AgentTransaction，不保存用户工程或正式效果库。
+
+## V0.4 Agent-Guided Creation（0.9.19）
+
+CreationContracts 扩展既有 AgentPlan 的任务/依赖/策略，CreationPlanner 汇总真实能力而不创建另一套注册表实现。GraphInspection 从实际 Graph 读取节点和连接；ExecutionScope 从 UI 解析，不能由模型扩大。每次 sandbox 写入及 commit 前验证真实数据；越界令 AgentTransaction 永久失效。Branch 是选中处理节点的上游集合，跨边界连接与外部节点固定，渲染依赖不授予修改权限。
+
+原生 Agent 的计划→草稿预览→接受/拒绝复用同一 Orchestrator、SnapshotRenderer、CommandSystem。视觉验证/修正若启用先在草稿完成，最终 Proposal 再计算真实 diff。预览不修改正式 Project，接受只一次 Transaction；停止/换模式/Skill/参考丢弃草稿，工程过期不能提交。节点 Inspector 与既有 context.node 菜单通过 typed Feature Command 打开同一 CreationPrompt，任务/范围/预览不进 Scene。
+
+图构建复用 typed ports 和现有 compileGraph；layoutGraph 提供基础 DAG 排布，reuseProgrammableEffect 只实例化精确哈希/版本的已验证包。未实现真正流体噪声、Node Groups 或外部图像/视频生成节点。真实 Provider 本轮两次请求分别连接失败/超时；不把固定响应的工程安全测试当成开放规划能力证据。详情见 AGENT_CREATION_RESULT.md。
+
+## V0.4 规划可靠性补充（0.9.20）
+
+creationGraphContext 按16,000字符限制提供节点摘要，优先当前授权图层/节点；不嵌入效果包源码、大数组或关键帧列表，保留精确包引用与截断标识，详情仍由现有 READ 工具取得。正式 Project 和 Scope 校验不使用摘要。能力查询支持空格分隔的多个关键词，参数发现明确 gradientStops 的五元组编码。工具定义说明实际坐标和 Graph 自动插入行为，不修改核心算法。
+
+规划最多四轮、十二次只读检查，最后一轮要求提交完整计划。残缺 JSON 或计划结构校验失败各最多请求一次重新生成，并共用原有轮数预算；拒绝内容不执行、不自动改写、不放宽权限，网络失败不自动重试。真实测试使用应用实际 planning/general/default 路由，避免误选列表首个启用供应商。
+
+## 0.9.21 Agent 与媒介边界
+
+Agent 在隔离 CommandSystem 中预检普通写入的语义与授权范围，无效计划最多纠正两次，纯文字响应要求一次 submitPlan，总规划仍限制四轮。Forge/读取阶段依赖真实运行时，不伪造其产物。视觉修正以当前事务草稿作为校验基线。Provider 持续接收流式数据时更新空闲期限，同时保留总请求上限与用户取消。
+
+Asset.media 保存音视频轨道类型、时长和尺寸。Mediabunny 检测解码能力；素材导入与添加图层通过共享事务。视频按统一 startTime 时钟取样，音频预览跟随编辑器时钟；导出独立解码并混音。桌面链接媒介上限 256 MB，Web 内嵌上限 10 MB。解码器、音频元素和位图缓存属于运行时，不进入 Scene。
+
+模型线框、材质乘色、原色显示、背面剔除和 motionBlur 经 layer.replace 保存并撤销。动态模糊采用五次变换时间采样；空间查看使用其自身摄像机投影。父级拖线在有效图层落点时生成 parentCommands。渲染准备状态仅来自实际位图缓存，默认预算 256 MiB；工程修改失效，按内存预算淘汰。
+
+## 0.9.23 Tool Preflight 与参考反馈
+
+AgentToolRegistry 的 Zod 契约同时生成模型声明和执行校验。参数错误包含工具名、原参数、schema 与字段诊断；Orchestrator 有界修复、拒绝相同无效参数和空操作迭代。AgentTransaction 在隔离工程执行原 Command，并做图层/文本/属性结果检查，再统一提交。ReferenceAnalysis 是视觉模型生成的结构化观察，不包含修改 Scene 的能力。视觉检查接收授权参考帧与实际共享 Renderer 帧，并明确帧序；检查记录仅留在 Session。音频导入先验证原解码器，Web Audio 补足 FLAC 解码覆盖，PCM AIFF 由受限解析器解码；预览代理为可释放的 UI 资源，混音用原数据。库保存仍需用户明确决定。
+
+## 0.9.24 真实模型恢复边界
+
+查询最多三轮；第四轮起仅提供 submitPlan。总请求上限八轮用于独立容纳查询、一次缺计划恢复、一次不完整响应恢复和两次计划预检纠错，重复相同无效计划立即停止。IntelligenceService 参数问题反馈具体字段；不完整 JSON 最多恢复一次。VisualIntelligenceService 输出仍为 Proposal，局部修改先按当前事务草稿预检，拒绝后反馈具体原因并最多纠正一次，仍由 Orchestrator 再次检查及 AgentTransaction 执行。视觉相似性与代码测试分开记录，模型返回计划或生成图像不代表参考重建通过。
+
+## 0.9.25 效果目录与实例分工
+
+Inspector的注册color-effects Section在效果页以EffectBrowser内嵌模式展示效果目录；注册effect-instances Section在属性页显示同一Graph实例及Property参数。目录应用继续走现有Graph Command/Transaction，参数使用原AnimatedField/CapabilityParameters；不复制效果数据或算法。页签、搜索与滚动复位不进入Scene。
+
+### Agent 原生形状填充（0.9.26）
+
+现有 `setFill` 可设置原生渐变模式及径向注册参数；复用 `radialGradientDefinition`、`parameterError` 和 `Property`，返回共享 Command，不新增平行渲染器或算法。`createPath` 手柄使用中心原点的绝对层内坐标。独立生成节点保持原有 detached 与 Output 规则，不能隐式替代路径填充。结果校验包含位置、尺寸、模式、Graph 和关键帧；参考依赖必须无环。
+
+## 0.9.27 Agent Execution Core Recovery
+
+动态 Fill 契约从正式 ParameterDefinition 派生，声明/校验/编译复用原能力。AgentExecutionError 保留 code/phase/field/target/recoverable；反馈先限制数据再序列化，禁止截断 JSON。validatePlan 使用独立共享 CommandSystem 预演确定操作，READ/Forge外部产物明确 DEFERRED，依赖和范围仍检查，实际执行再对最新 Draft验证。执行恢复总预算2，局部原 step/tool 参数纠正，不重放已成功创建，不放宽scope/基线；取消/非恢复性失败直接丢弃。verifyResults 按命令顺序通过正式 CommandSystem归约最终状态，正式事务一次提交/一次Undo。运行与恢复状态不进入Scene。验收边界和真实请求/画布证据见 AGENT_EXECUTION_REPAIR_RESULT.md。
+
+## 0.9.28 Agent Object Reference Recovery
+
+AgentObjectRef lives at the existing AgentToolRegistry boundary. Native UUID inputs also accept typed existing/selection/stepResult/graphNode references; native Command schemas remain unchanged. AgentTransaction owns a private StepResultMap populated only from unique objects actually created in its shared draft. Preflight validates dependency order and simulates deterministic commands; dependent references remain DEFERRED and resolve again against actual execution results. READ does not erase prior bindings. New drafts rebind from new actual results; completed step IDs cannot be replayed. Existing scope, baseline, single commit and Undo/Redo protections remain authoritative. Intelligence still only returns Proposal; tool validation now participates in its bounded correction loop. Diagnostic history is optional, redacted and bounded, with actual tool/step/phase attribution. No new permanent UI or Scene field. Full evidence and unresolved historical/provider boundaries are in AGENT_OBJECT_REFERENCE_AUDIT.md and AGENT_OBJECT_REFERENCE_TEST_REPORT.md.
+
+## 0.9.29 Audio Playback and System Fonts
+
+Desktop CSP explicitly permits only self, data, blob and swayframe-asset media sources. The privileged local asset scheme enables streaming and returns bounded byte ranges with 206 / Content-Range / Accept-Ranges (invalid requests return 416) so Chromium can load and seek linked MP3/FLAC media; fetch/decode success alone is not playback verification. Original assets remain linked, and the existing AIFF PCM preview proxy remains outside Scene. Import still commits asset.add / layer.create through the shared Transaction. Runtime errors identify access/playback failure instead of assuming an unsupported codec.
+
+The strict fonts.list IPC has no renderer arguments. Native services execute fixed, bounded OS font queries (macOS NSFontManager, Windows InstalledFontCollection, Linux fontconfig), validate/deduplicate names and cache them for one minute. Only family names return to the renderer; no font binaries or arbitrary paths/scripts are accepted. The existing registered text Section uses SystemFontField / TextField to filter installed fonts and preserve preview, cancellation, layer.patch and Undo/Redo. Font lists and loading state never enter Scene.
+
+## 0.9.30 Autonomous Agent Recovery
+
+RecoveryController 为 Orchestrator、Intelligence Proposal 与视觉评估共享有限预算及结构化错误分类。dependency-graph 是任务与 stepResult 依赖的唯一校验器；稳定拓扑排序只调整安全元数据或同一 Scene 快照中的独立读取，保留修改操作顺序。模型只提交局部 repairPlan，不能增删操作、改工具、扩展权限或更换任务能力；修复后仍走完整注册表、Creation 与原生命令预检。执行恢复保留当前 AgentTransaction 和实际 StepResultMap，只重试失败步骤，最终单次提交与单次 Undo。Scene 不存储恢复策略、诊断或 UI 状态。模型反馈与完整开发者 trace 分离；摘要指纹使用 SHA-256。网络重试不重放命令，取消/权限/不安全操作停止自动恢复。
+
+## Swayframe 0.10 Reliable Agent
+
+执行基线 docs/baseline/RELIABLE_AGENT_010.txt。语义动作仅组合已有正式 Command 编译器；NativeSkillRuntime 是可信机器契约/指导层，不是执行器。工具、引用、恢复、Command/Transaction 与 Scene 沿用原链。ToolContextLoader 按需发布权威 schema，权限以 Registry/Scope 为准。每个真实任务维护工作记忆、技能版本/哈希、实际对象绑定、模型调用与分层验证。只有正式接受一次提交；诊断、技能开关、上下文和预算均在 Scene 外。详见 AGENT_EXECUTION_CONTRACT_SPEC.md、SWAYFRAME_SKILL_RUNTIME_SPEC.md、AGENT_010_RESULT.md。
+
+## Agent stabilization 0.10.1
+
+已有 creationCapabilities 是 Available Capability Catalogue 的动态投影；Tool/Skill/Planner 引用同一 AgentToolRegistry，capabilityId→executionTools 可验证，不注册猜测别名。基本 creation 元数据由 host 从实际步骤推导。查询轮次、次数与共享模型恢复预算分开记录；规划只能直接调用本轮已声明 READ，WRITE 仅进入 draft plan。常用上下文 READ 明确声明，其余契约按需加载。Skill prerequisite 与指导保留，重复工具/依赖验证交由正式 Registry。空合成复用 createText完整参数，不预加载无关修改工具；Scope/UUID/Transaction/最终验证均保持。失败导出保留 module/capability/task/field 和限长 expected/received。详见 AGENT_EXECUTION_PATH_AUDIT.md、AGENT_STABILIZATION_RESULT.md。
+
+## 1.0 Agent Core V2
+
+V1保留于99586fd，不继续扩功能。src/agent-v2只重建Provider规范化、语义Planner、TaskRuntime、Adapter、Verification和无状态Recovery。Scene/Command/动画/Graph/序列化与AgentTransaction复用，TaskRuntime唯一管理动作状态和真实引用。草稿逐批执行、逐步观察与验证；成功创建不得重放；恢复只改失败动作参数，不能更换目标、动作、依赖或突破预算。正式接受时验证base与范围，一次共享事务/一次Undo。Vite保留独立agentCoreV2模块且共享核心编译依赖；普通助手仍默认V1，V2只在独立测试工程执行。LIVE NOT VERIFIED，迁移NOT READY，不开放高级Skill/Graph/视觉/Forge。规范和证据见根目录AGENT_V2_*报告。
+
+## 1.0.1 / V2-5 Provider validation boundary
+
+Existing TaskRuntime/Planner/Recovery/Command architecture remains. createProviderCoreV2 binds the existing AIProviderManager and Native transport using explicit responseMode and one attempt per call, with pinned route and normal token accounting. Developer flag #agent-v2-test exposes an assistant scoped, typed contribution. AgentV2Lab owns an empty nonpersisted EditorStore, never receives the user's store and never attaches a V1 executor. Preview uses existing AgentSnapshotRenderer; only explicit acceptance commits via AgentTransaction. UI state stays outside Scene. Ordinary runtime remains legacy-v1. Authorized 2026-10-12 live Smoke verifies five V2 tools tasks and one structured JSON-text task through the actual DeepSeek provider, Renderer and shared Transaction; all attempts and V1 permission-catalog rechecks retain a cumulative16-call ledger. Production Canary and replacement gates remain NOT READY pending independently repeated samples and real user Canary; no statistical superiority claim. No Skill/Forge/reference reconstruction migration.
+
+## 1.0.2 / V2-6 recovery boundaries
+
+TaskRuntime remains the only state owner. Each action records resolved Registry arguments, real output IDs, attempts, failure, completion and draft hash. Existing EditorAdapter.prepare validates the real tool contract before a retry. A retry is allowed only while AgentTransaction is open and both draft hash and transaction evidence equal their pre-attempt values. Any uncertain post-write failure is terminal REPLAY_FORBIDDEN; successful non-idempotent actions are never replayed. No new Planner, Registry, Recovery Manager or Scene mutation path was introduced.
+
+Stateless Recovery first refreshes stale draft context, resolves an already verified result ID, or retries an explicitly recoverable pre-write rejection. Model repair receives only the failed action schema, bounded diagnostic and current goal/draft/target/completed-step summary; it cannot change ID/type/target/dependencies. Runtime limits request count, repairs, deterministic retries, deadline and reserved/reported token usage. Provider retries are opt-in and default to zero. Cancellation prevents late model replies from writing Scene. A user base change stops the draft and preserves the new official state.
+
+AgentV2Lab remains a developer-only isolated EditorStore. Recovery status, completed-step count, input preservation and read-only failed-prefix inspection reuse its existing workflow. Unsafe drafts cannot be accepted or presented as completed. Diagnostic export projects only approved fields, excluding goals, text, argument values, raw model bodies, Scene, images and credentials. setFontSize reuses its existing Command, bringing the isolated subset to ten existing WRITE tools. Authorized V2-6 live smoke verified one deterministic and one model repair; all first-run failures remain recorded. Shared AgentTransaction now bounds history labels to the existing 300 UTF-16 unit Command limit without splitting surrogate pairs; complete goals stay in TaskState. V1 stays default; formal Canary and replacement remain NOT READY.
+
+## 1.0.3 / Agent Core V2-7
+
+AgentPanel now explicitly selects Legacy V1 (default) or Core V2 Beta in the same editor. CoreV2EditorController binds the existing TaskRuntime/Planner/ProviderBridge/Registry and current EditorStore CommandSystem. ConversationSession holds committed UUID metadata only; each turn reads authoritative current Scene properties and revalidates project/composition/type/lock/scope. No draft stepResult becomes cross-turn authority. Each turn uses one independent AgentTransaction and explicit acceptance. GUI changes and cancellation invalidate pending drafts; V1/V2 writes are mutually exclusive. Session/runtime/layout state stays outside Scene. Three minimal WRITE mappings bring the subset to13; dimensions reuse layer.replace, font/delete-keyframe reuse existing tools. Real App offline S1–S8, Renderer, disk reload and second-process continuation pass; paid V2-7 validation is pending and Canary remains NOT READY. See AGENT_V2_7_IMPLEMENTATION_RESULT.md.
+
+1.0.3真实服务配置错误边界：兼容Provider只对已知model_not_found/invalid_model/model_not_supported编码判为模型配置错误，认证401/403优先，普通503仍按暂态服务规则处理。V2将明确配置错误转换为不可恢复PROVIDER_RESPONSE，不切换模型或反复重试；UI沿用既有助手状态及设置入口，保留输入，不回显原始服务正文。测试宿主沿用实际桌面main.ts与正常IPC，未新增执行系统或产品凭据读取通道。7次聊天配置拒绝、1次目录成功未证明连续模型可靠性，默认V1和Canary NOT READY不变。
+
+1.0.3最终规划文档与范围同步：语义动作参数由原actionSchema定义一次，能力上下文只投影真实注册表名称/说明/权限/可用性，低层参数仍在Registry严格校验。格式示例通过同intentSchema验证，永不代替用户目标或执行。context.scope.allowCreate=false时，用同动作定义构造不含createShape/createText的传输契约，禁用对应创建能力、省略创建示例；主机范围/类型/UUID检查仍独立存在，未知或恶意返回不能取得更大权限。模型不直接写Scene，没有新的命令、执行路径或Scene/UI状态字段。最新单项实测通过，完整连续会话和公平对照未完成，默认V1、Canary NOT READY。
+
+## Minimal real acceptance boundary repair
+
+`CommandSystem` validates the candidate with the existing `saveProject` before
+publishing Scene/history. It retains one canonical serialized snapshot per
+instance; `EditorStore.save()` reads it. Undo/Redo update the same snapshot. This
+prevents a valid-but-unsaveable Scene and avoids duplicate serialization during
+unchanged preview frames. No second Scene, schema, Command registry or Renderer
+is introduced.
+
+`ProjectService` tracks document replacement generations. A completed save cannot
+assign its old path to a replacement document. Open/new/close also recheck the
+captured Scene after asynchronous IO, preserving GUI edits made while waiting.
+Existing asset import/relink/add-layer paths capture the Project snapshot and
+check it, plus an optional AbortSignal, before submitting shared Commands. The
+native batch advances its snapshot only after its own successful commit.
+
+The minimal Electron runner lives in `work/minimal-qa`. Its IO gates defer actual
+NativeServices results for race testing; they do not fabricate responses or
+replace product IO. It uses production main/preload/IPC and Canvas2DRenderer,
+forbids model requests, and records explicit Scene/history/pixel assertions.
+See `docs/qa/SF_MINIMAL_ACCEPTANCE_BASELINE.md` for coverage and limits.

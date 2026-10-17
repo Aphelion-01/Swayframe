@@ -1,3 +1,4 @@
+import type { ProviderDiagnostic } from './provider-diagnostics';
 import { z } from 'zod';
 
 export const capabilitySchema = z.enum([
@@ -101,6 +102,25 @@ export const aiSettingsSchema = z
     agent: z
       .object({
         mode: z.enum(['ASSIST', 'AGENT']),
+        nativeSkills: z.boolean().optional(),
+        disabledNativeSkills: z
+          .array(z.string().regex(/^sf\.[a-z-]+$/))
+          .max(6)
+          .optional(),
+        planTransport: z.enum(['tools', 'structured-plan']).optional(),
+        recovery: z
+          .object({
+            deterministicRepairs: z.number().int().min(0).max(8).optional(),
+            planModelRepairs: z.number().int().min(0).max(2).optional(),
+            stepModelRepairs: z.number().int().min(0).max(2).optional(),
+            executionModelRepairs: z.number().int().min(0).max(20).optional(),
+            planningRequests: z.number().int().min(0).max(20).optional(),
+            proposalRequests: z.number().int().min(0).max(20).optional(),
+            visualRequests: z.number().int().min(0).max(8).optional(),
+            providerRetries: z.number().int().min(0).max(2).optional(),
+          })
+          .strict()
+          .optional(),
         autoApplySafe: z.boolean(),
         confirmDestructive: z.boolean(),
         maxRefinements: z.number().int().min(0).max(2),
@@ -186,14 +206,17 @@ export type ToolDefinition = z.infer<typeof toolDefinitionSchema>;
 export const chatRequestSchema = z
   .object({
     model: z.string().min(1).max(200),
+    responseMode: z.enum(['tools', 'structured-plan']).optional(),
     messages: z.array(chatMessageSchema).min(1).max(80),
     tools: z.array(toolDefinitionSchema).max(120).optional(),
     toolChoice: z.string().max(64).optional(),
     stream: z.boolean().optional(),
+    maxOutputTokens: z.number().int().min(1).max(8192).optional(),
   })
   .strict();
 export type ChatRequest = z.infer<typeof chatRequestSchema>;
 export interface ChatResponse {
+  providerId?: string;
   text: string;
   toolCalls: { id: string; name: string; arguments: unknown }[];
   usage?: {
@@ -234,6 +257,7 @@ export class AIError extends Error {
   constructor(
     readonly code: AIErrorCode,
     message: string,
+    readonly details?: ProviderDiagnostic,
   ) {
     super(message);
     this.name = 'AIError';

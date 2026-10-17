@@ -2,6 +2,7 @@ import type { CompositingGraph } from './compositing-graph';
 import { deepFreeze, isAnimValue, newId } from './core-types';
 import type { AnimValue, Color, ID, Vec2 } from './core-types';
 import { projectSchema } from './project-schema';
+import { saveProject } from './project-io';
 import { transactionSchema } from './command-schema';
 import { findProperty, replaceProperty } from './project-model';
 import type {
@@ -634,14 +635,18 @@ export function editPropertyCommand(
 
 export class CommandSystem {
   #project: Project;
+  #serialized: string;
   #undo: HistoryEntry[] = [];
   #redo: HistoryEntry[] = [];
   #listeners = new Set<() => void>();
   constructor(project: Project) {
     assertProjectState(project);
-    this.#project = deepFreeze(structuredClone(project));
+    const owned = deepFreeze(structuredClone(project));
+    this.#serialized = saveProject(owned);
+    this.#project = owned;
   }
   getSnapshot = (): Project => this.#project;
+  getSerializedSnapshot = (): string => this.#serialized;
   get undoStack(): readonly HistoryEntry[] {
     return [...this.#undo];
   }
@@ -690,7 +695,11 @@ export class CommandSystem {
         applied.push({ command: c, inverse: result.inverse });
       }
       assertProjectState(project);
-      this.#project = deepFreeze(project);
+      // Reject a structurally valid but unsaveable candidate before publishing Scene/history.
+      const ownedProject = deepFreeze(project);
+      const serialized = saveProject(ownedProject);
+      this.#project = ownedProject;
+      this.#serialized = serialized;
       this.#undo.push(deepFreeze({ transaction: owned, applied }));
       this.#redo = [];
       this.#emit();
@@ -758,7 +767,9 @@ export class CommandSystem {
     for (const item of [...entry.applied].reverse())
       project = applyCommand(project, item.inverse).project;
     assertProjectState(project);
+    const serialized = saveProject(project);
     this.#project = deepFreeze(project);
+    this.#serialized = serialized;
     this.#undo.pop();
     this.#redo.push(entry);
     this.#emit();
@@ -772,7 +783,9 @@ export class CommandSystem {
     for (const item of entry.applied)
       project = applyCommand(project, item.command).project;
     assertProjectState(project);
+    const serialized = saveProject(project);
     this.#project = deepFreeze(project);
+    this.#serialized = serialized;
     this.#redo.pop();
     this.#undo.push(entry);
     this.#emit();

@@ -2,7 +2,11 @@ import { newId } from './core-types';
 import type { Vec2 } from './core-types';
 import { assertGraph, connectGraph } from './compositing-graph';
 import type { CompositingGraph, GraphNode, PortRef } from './compositing-graph';
-import { createNode, nodeDefinition } from './compositing-registry';
+import {
+  createNode,
+  createProgrammableNode,
+  nodeDefinition,
+} from './compositing-registry';
 function editable(g: CompositingGraph, id: string): GraphNode {
   const n = g.nodes.find((n) => n.id === id);
   if (!n) throw new Error('节点不存在');
@@ -20,11 +24,14 @@ export function addGraphNode(
 }
 export function insertGraphNode(
   g: CompositingGraph,
-  type: string,
+  type: string | GraphNode,
   edgeId?: string,
   position?: Vec2,
 ): { graph: CompositingGraph; node: GraphNode } {
-  let node = createNode(type, position ?? { x: 180, y: 50 });
+  let node =
+    typeof type === 'string'
+      ? createNode(type, position ?? { x: 180, y: 50 })
+      : { ...type, position: position ?? type.position };
   const edge = edgeId
     ? g.edges.find((e) => e.id === edgeId)
     : g.edges.find((e) => e.to.nodeId === g.outputNodeId);
@@ -76,6 +83,21 @@ export function insertGraphNode(
       to: edge.to,
     });
   }
+  if (
+    !node.inputs.length &&
+    node.outputs.some((p) => p.id === 'out') &&
+    !position
+  ) {
+    graph = {
+      ...graph,
+      edges: graph.edges.filter((e) => e.to.nodeId !== graph.outputNodeId),
+    };
+    graph = connectGraph(graph, {
+      id: newId(),
+      from: { nodeId: node.id, portId: 'out' },
+      to: { nodeId: graph.outputNodeId, portId: 'in' },
+    });
+  }
   return { graph, node };
 }
 export function deleteGraphNodes(
@@ -89,6 +111,25 @@ export function deleteGraphNodes(
     const incoming = edges.filter((e) => e.to.nodeId === id),
       outgoing = edges.filter((e) => e.from.nodeId === id);
     edges = edges.filter((e) => e.to.nodeId !== id && e.from.nodeId !== id);
+    const removed = g.nodes.find((n) => n.id === id)!;
+    if (
+      !removed.inputs.length &&
+      removed.outputs.some((p) => p.id === 'out' && p.type === 'Image')
+    )
+      for (const e of outgoing) {
+        const target = g.nodes
+          .find((n) => n.id === e.to.nodeId)
+          ?.inputs.find((p) => p.id === e.to.portId);
+        if (target?.type === 'Image')
+          edges.push({
+            id: newId(),
+            from: {
+              nodeId: g.nodes.find((n) => n.type === 'source')!.id,
+              portId: 'out',
+            },
+            to: e.to,
+          });
+      }
     if (incoming.length === 1 && incoming[0]!.to.portId === 'in')
       for (const e of outgoing)
         edges.push({ id: newId(), from: incoming[0]!.from, to: e.to });
@@ -120,10 +161,15 @@ export function duplicateGraphNodes(
   const remap = new Map<string, string>(),
     copies = ids.map((id) => {
       const n = editable(g, id),
-        copy = createNode(n.type, {
-          x: n.position.x + 40,
-          y: n.position.y + 50,
-        });
+        copy = n.effectPackage
+          ? {
+              ...createProgrammableNode(n.effectPackage),
+              position: { x: n.position.x + 40, y: n.position.y + 50 },
+            }
+          : createNode(n.type, {
+              x: n.position.x + 40,
+              y: n.position.y + 50,
+            });
       remap.set(id, copy.id);
       return {
         ...copy,

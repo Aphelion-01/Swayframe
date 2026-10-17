@@ -21,7 +21,12 @@ export function CreateLayerMenu({
   const commands = editorCommands(store);
   const choices = features
     .all()
-    .filter((f) => f.parentId === 'create-object')
+    .filter(
+      (f) =>
+        (f.parentId === 'create-object' &&
+          f.id !== 'create-radial-generator') ||
+        f.id === 'import-model',
+    )
     .map((feature) => ({
       label: feature.title,
       icon: <Icon name={feature.icon as IconName} />,

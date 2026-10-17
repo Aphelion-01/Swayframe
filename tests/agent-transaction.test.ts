@@ -38,6 +38,23 @@ function setup() {
     signal: new AbortController().signal,
   };
 }
+it('long multilingual history labels commit once without splitting a surrogate pair', async () => {
+  const s = setup();
+  await s.draft.execute(
+    'setPosition',
+    { layerId: s.layer.id, value: { x: 100, y: 200 } },
+    s.signal,
+  );
+  s.draft.commit('A'.repeat(299) + '🎬' + '任务'.repeat(200));
+  expect(s.commands.undoStack).toHaveLength(1);
+  expect(s.commands.undoStack[0]!.transaction.label).toBe('A'.repeat(299));
+  const saved = saveProject(s.commands.getSnapshot());
+  expect(saveProject(loadProject(saved))).toBe(saved);
+  s.commands.undo();
+  expect(s.commands.getSnapshot()).toEqual(s.initial);
+  s.commands.redo();
+  expect(saveProject(s.commands.getSnapshot())).toBe(saved);
+});
 it('one full entrance action gives one Undo, retains curves on save/load and works after Undo', async () => {
   const s = setup(),
     p = s.layer.transform.position;

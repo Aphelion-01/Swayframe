@@ -1,3 +1,4 @@
+import { mediaAccept } from '../shared/media-formats';
 import { importModelFiles, isModelFile } from '../importers/model-import';
 import { editorCommands } from './workspace/feature-contributions';
 import { Icon } from './workspace/icons';
@@ -120,7 +121,7 @@ export function AssetsPanel({ store }: { store: EditorStore }) {
         hidden
         multiple
         aria-label="素材库导入文件"
-        accept="image/png,image/jpeg,image/webp,image/gif"
+        accept={mediaAccept}
         onChange={async (e) => {
           const files = Array.from(e.target.files ?? []);
           e.target.value = '';
@@ -136,7 +137,7 @@ export function AssetsPanel({ store }: { store: EditorStore }) {
       />
       {!view.project.assets.length && (
         <p className="asset-empty">
-          导入图片 / 三维模型或拖入此处，可在多个图层中复用。
+          导入图片、音视频或三维模型，也可拖入此处，可在多个图层中复用。
         </p>
       )}
       <div className="asset-list">
@@ -173,6 +174,8 @@ export function AssetsPanel({ store }: { store: EditorStore }) {
               >
                 <Icon name="cube" />
               </span>
+            ) : asset.media ? (
+              <Icon name={asset.media.kind === 'audio' ? 'audio' : 'video'} />
             ) : (
               <img src={asset.dataUrl} alt="" />
             )}

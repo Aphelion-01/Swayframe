@@ -86,6 +86,11 @@ it('authorized reference image reaches vision planning; layout-only changes posi
   const s = await setup();
   const fill = s.layer.editor!.properties.fill!.baseValue;
   await s.agent.run('参考图片的布局');
+  if (s.agent.getSnapshot().pendingConfirmation) {
+    await s.agent.preview(s.agent.getSnapshot().currentPlan!.id);
+    if (s.agent.getSnapshot().pendingConfirmation)
+      await s.agent.apply(s.agent.getSnapshot().currentPlan!.id);
+  }
   expect(s.agent.getSnapshot().status).toBe('completed');
   expect(s.requests[0]!.messages.some((m) => m.images?.length)).toBe(true);
   const p = s.store.commands.getSnapshot();
@@ -105,6 +110,11 @@ it('layout-only blocks a model color plan and privacy removes all reference pixe
     color: { r: 1, g: 0, b: 0, a: 1 },
   });
   await s.agent.run('布局');
+  if (s.agent.getSnapshot().pendingConfirmation) {
+    await s.agent.preview(s.agent.getSnapshot().currentPlan!.id);
+    if (s.agent.getSnapshot().pendingConfirmation)
+      await s.agent.apply(s.agent.getSnapshot().currentPlan!.id);
+  }
   expect(s.agent.getSnapshot().status).toBe('failed');
   expect(s.store.commands.undoStack).toHaveLength(0);
   await s.manager.update((a) => ({
@@ -112,6 +122,11 @@ it('layout-only blocks a model color plan and privacy removes all reference pixe
     privacy: { ...a.privacy, sendReferences: false },
   }));
   await s.agent.run('普通任务');
+  if (s.agent.getSnapshot().pendingConfirmation) {
+    await s.agent.preview(s.agent.getSnapshot().currentPlan!.id);
+    if (s.agent.getSnapshot().pendingConfirmation)
+      await s.agent.apply(s.agent.getSnapshot().currentPlan!.id);
+  }
   expect(s.requests.at(-1)!.messages.some((m) => m.images?.length)).toBe(false);
 });
 it('unsupported disk-like files and oversize references are rejected before any decoding', async () => {
@@ -205,6 +220,11 @@ it('planner can request professional typography analysis, receive a Proposal, th
     }),
   );
   await s.agent.run('分析布局再应用');
+  if (s.agent.getSnapshot().pendingConfirmation) {
+    await s.agent.preview(s.agent.getSnapshot().currentPlan!.id);
+    if (s.agent.getSnapshot().pendingConfirmation)
+      await s.agent.apply(s.agent.getSnapshot().currentPlan!.id);
+  }
   expect(s.agent.getSnapshot().status).toBe('completed');
   expect(analysisWasReadOnly).toBe(true);
   expect(s.store.commands.undoStack).toHaveLength(1);

@@ -18,6 +18,7 @@ import { compileGraph } from '../core/compositing-compiler';
 import { migrateLayerGraph } from '../core/compositing-migration';
 import {
   nodeDefinition,
+  nodeDefinitionFor,
   graphNodeRegistry,
 } from '../core/compositing-registry';
 import {
@@ -29,7 +30,9 @@ import {
   patchGraphNode,
 } from '../core/compositing-operations';
 import { evaluateProperty } from '../core/animation-engine';
-import { ContextMenu } from './workspace/primitives';
+import { ContextMenu, Modal } from './workspace/primitives';
+import { CreationPrompt } from './CreationPrompt';
+import type { ExecutionScope } from '../agent/creation-contracts';
 import { dispatchShortcut } from './workspace/shortcuts';
 import type { Shortcut } from './workspace/shortcuts';
 import { useInteractionCancel } from './workspace/interaction';
@@ -156,6 +159,7 @@ function GraphWorkspace({
     readonly { nodeId?: string; message: string }[]
   >([]);
   const [rename, setRename] = useState<{ id: string; name: string }>();
+  const [aiScope, setAiScope] = useState<ExecutionScope>();
   const status = (error: unknown) =>
     store.setStatus(
       error instanceof Error ? error.message : '节点操作失败',
@@ -461,6 +465,25 @@ function GraphWorkspace({
     }
   };
   useCommandScope(store, [
+    ...(['branch.ai', 'graph.ai'] as const).map((id) => ({
+      id,
+      label: id === 'branch.ai' ? '用 AI 修改上游分支' : '从需求生成合成',
+      disabled: layer.locked || (id !== 'graph.ai' && !editableIds.length),
+      action: () =>
+        setAiScope(
+          id === 'graph.ai'
+            ? {
+                kind: 'FULL_COMPOSITION',
+                compositionId: view.project.activeCompositionId,
+              }
+            : {
+                kind: 'SELECTED_BRANCH',
+                compositionId: view.project.activeCompositionId,
+                layerId: layer.id,
+                nodeIds: [...editableIds],
+              },
+        ),
+    })),
     {
       id: 'node.rename',
       label: '重命名节点',
@@ -519,6 +542,24 @@ function GraphWorkspace({
         if (dispatchShortcut(e.nativeEvent, registry)) e.preventDefault();
       }}
     >
+      {aiScope && (
+        <Modal onClose={() => setAiScope(undefined)}>
+          <section
+            className="creation-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label="AI 创作与局部修改"
+          >
+            <h2>
+              {aiScope.kind === 'FULL_COMPOSITION'
+                ? '从需求生成合成'
+                : '用 AI 修改节点 / 分支'}
+            </h2>
+            <CreationPrompt store={store} initialScope={aiScope} />
+            <button onClick={() => setAiScope(undefined)}>关闭</button>
+          </section>
+        </Modal>
+      )}
       <div className="cg-toolbar">
         <span>{layer.name} · 图层合成</span>
         <button onClick={() => openSearch()}>＋ 添加节点</button>
@@ -645,7 +686,7 @@ function GraphWorkspace({
             )}
           </svg>
           {display.nodes.map((node) => {
-            const def = nodeDefinition(node.type),
+            const def = nodeDefinitionFor(node),
               errors = [...diagnostics, ...runtimeErrors].filter(
                 (e) => e.nodeId === node.id,
               ),

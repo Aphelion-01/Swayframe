@@ -1,4 +1,4 @@
-import { effectDefinitions } from './effect-definitions';
+import { visualCapabilities, nativeEffectKind } from './visual-capabilities';
 import type { EffectKind } from './project-model';
 import type { AnimValue } from './core-types';
 export interface EffectBackend<T> {
@@ -65,25 +65,29 @@ export class EffectRegistry {
   }
 }
 export const effectRegistry = new EffectRegistry();
-for (const [kind, def] of Object.entries(effectDefinitions))
+// Compatibility view; canonical metadata lives in VisualCapabilityRegistry.
+for (const def of visualCapabilities
+  .all()
+  .filter((d) => !!nativeEffectKind(d.id))) {
+  const kind = nativeEffectKind(def.id)!;
   effectRegistry.register({
-    id: kind,
-    name: def.label,
-    parameters: def.parameters,
-    category:
-      kind === 'gaussianBlur'
-        ? 'Blur'
-        : ['glow', 'dropShadow'].includes(kind)
-          ? 'Stylize'
-          : 'Color',
+    id: def.id,
+    name: def.name,
+    category: def.group,
+    parameters: Object.fromEntries(
+      def.parameters.map((p) => [
+        p.id,
+        {
+          label: p.name,
+          value: Number(p.defaultValue),
+          min: p.min ?? -10000,
+          max: p.max ?? 10000,
+        },
+      ]),
+    ),
     supportedLayerTypes: ['shape', 'text', 'image', 'solid', 'precomp'],
-    keywords: [
-      kind,
-      def.label,
-      'effect',
-      ...(kind === 'gaussianBlur' ? ['blur', '模糊'] : []),
-    ],
+    keywords: [...def.keywords, 'effect'],
     icon: kind === 'gaussianBlur' ? 'blur' : 'node',
-    render: (backend, input, params) =>
-      backend.effect(input, kind as EffectKind, params),
+    render: (backend, input, params) => backend.effect(input, kind, params),
   });
+}

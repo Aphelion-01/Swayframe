@@ -1,0 +1,225 @@
+{
+  "V0.1": {
+    "archive": "/Users/aphelion-01/Documents/Codex/2026-10-03/referenced-chatgpt-conversation-this-is-an/outputs/Motion_System_V0.1_Source.zip",
+    "sha256": "7790837043b21c7a5ceea54fe77ef8745174011e96cf92262429881c751ae3c7",
+    "source_excerpt": "import { z } from 'zod';\nimport { command, CommandSystem, transaction } from './command-system';\nimport type { Command, Transaction, TransactionResult } from './command-system';\nimport { newId } from './core-types';\nimport type { ID, Seconds } from './core-types';\nimport { activeComposition, createLayer } from './project-model';\nimport type { Project } from './project-model';\nimport { idSchema, vec2Schema } from './project-schema';\nimport { interpolationSchema } from './animation-engine';\nimport { createRenderSnapshot } from './renderer-core';\n\nconst property = z.enum(['position', 'scale', 'rotation', 'opacity']);\nconst value = z.union([z.number().finite(), vec2Schema]);\nexport const toolCallSchema = z.discriminatedUnion('name', [\n  z.object({ name: z.literal('inspect_scene') }).strict(),\n  z\n    .object({\n      name: z.literal('create_layer'),\n      kind: z.enum(['rectangle', 'ellipse', 'text', 'image']),\n      layerId: idSchema.optional(),\n      layerName: z.string().min(1).max(200).optional(),\n      position: vec2Schema.optional(),\n      assetId: idSchema.optional(),\n    })\n    .strict(),\n  z\n    .object({\n      name: z.literal('set_property'),\n      layerId: idSchema,\n      property,\n      value,\n    })\n    .strict(),\n  z\n    .object({\n      name: z.literal('add_keyframe'),\n      layerId: idSchema,\n      property,\n      keyframeId: idSchema.optional(),\n      time: z.number().nonnegative(),\n      value,\n      interpolation: interpolationSchema.optional(),\n    })\n    .strict(),\n  z\n    .object({\n      name: z.literal('set_interpolation'),\n      layerId: idSchema,\n      property,\n      keyframeId: idSchema,\n      interpolation: interpolationSchema,\n    })\n    .strict(),\n  z\n    .object({\n      name: z.literal('preview_frame'),\n      time: z.number().nonnegative().optional(),\n    })\n    .strict(),\n  z.object({ name: z.literal('undo_last_transaction') }).strict(),\n]);\nexport type ToolCall = z.infer<typeof toolCallSchema>;\nexport interface AgentToolContext {\n  getProjectSnapshot(): Project;\n  executeTransaction(tx: Transaction): TransactionResult;\n  getCurrentTime(): Seconds;\n  getSelection(): readonly ID[];\n  undoLastTransaction(): TransactionResult;\n}\nexport type ToolResult =\n  | { readonly ok: true; readonly data: unknown }\n  | { readonly ok: false; readonly error: string };\nexport const DEMO_PROMPT =\n  '创建蓝色方块，从左侧进入，1 秒到中心，轻微过冲并淡入';\nconst failure = (error: unknown): { ok: false; error: string } => ({\n  ok: false,\n  error: error instanceof Error ? error.message : '工具调用失败',\n});\nfunction compileTool(call: ToolCall, project: Project): readonly Command[] {\n  const c = activeComposition(project);\n  if (call.name === 'create_layer') {\n    const factory = createLayer(call.kind, {\n      name: call.layerName,\n      position: call.position ?? { x: c.width / 2, y: c.height / 2 },\n      assetId: call.assetId,\n    });\n    const layer = call.layerId ? { ...factory, id: call.layerId } : factory;\n    return [command({ type: 'layer.create', compositionId: c.id, layer })];\n  }\n  if (\n    call.name === 'set_property' ||\n    call.name === 'add_keyframe' ||\n    call.name === 'set_interpolation'\n  ) {\n    const layer = c.layers.find((item) => item.id === call.layerId);\n    if (!layer) throw new Error('工具目标 图层不存在');\n    const propertyId = layer.transform[call.property].id;\n    if (call.name === 'set_property')\n      return [\n        command({ type: 'property.setBase', propertyId, value: call.value }),\n      ];\n    if (call.name === 'add_keyframe')\n      return [\n        command({\n          type: 'keyframe.add',\n          propertyId,\n          keyframe: {\n            id: call.keyframeId ?? newId(),\n            time: call.time,\n            value: call.value,\n            interpolation: call.interpolation ?? { type: 'linear' },\n          },\n        }),\n      ];\n    return [\n      command({\n        type: 'keyframe.update',\n        propertyId,\n        keyframeId: call.keyframeId,\n        patch: { interpolation: call.interpolation },\n      }),\n    ];\n  }\n  throw new Error('该工具不是写入操作');\n}\nexport class AgentBridge {\n  constructor(private readonly context: AgentToolContext) {}\n  executeTool(raw: unknown): ToolResult {\n    try {\n      const call = toolCallSchema.parse(raw);\n      const project = this.context.getProjectSnapshot();\n      if (call.name === 'inspect_scene')\n        return {\n          ok: true,\n          data: {\n            project,\n            selection: this.context.getSelection(),\n            time: this.context.getCurrentTime(),\n          },\n        };\n      if (call.name === 'preview_frame') {\n        const c = activeComposition(project);\n        const time = call.time ?? this.context.getCurrentTime();\n        if (time > c.duration) throw new Error('预览时间超出合成时长');\n        return {\n          ok: true,\n          data: createRenderSnapshot(c, time, this.context.getSelection()),\n        };\n      }\n      if (call.name === 'undo_last_transaction') {\n        const result = this.context.undoLastTransaction();\n        return result.ok ? { ok: true, data: result } : result;\n      }\n      const commands = compileTool(call, project);\n      const result = this.context.executeTransaction(\n        transaction(`Agent：${call.name}`, 'agent', commands),\n      );\n      return result.ok\n        ? { ok: true, data: { transactionId: result.transactionId, commands } }\n        : result;\n    } catch (error) {\n      return failure(error);\n    }\n  }\n  executeBatch(label: string, rawCalls: readonly unknown[]): TransactionResult {\n    try {\n      if (rawCalls.length === 0 || rawCalls.length > 500)\n        throw new Error('工具调用数量必须为 1～500');\n      const calls = rawCalls.map((raw) => toolCallSchema.parse(raw));\n      // Validate dependent calls on an isolated CommandSystem; real Scene is committed once.\n      const planner = new CommandSystem(this.context.getProjectSnapshot());\n      const commands: Command[] = [];\n      for (const call of calls) {\n        const next = compileTool(call, planner.getSnapshot());\n        const result = planner.executeTransaction(\n          transaction('Validate tool', 'agent', next),\n        );\n        if (!result.ok) throw new Error(result.error);\n        commands.push(...next);\n      }\n      return this.context.executeTransaction(\n        transaction(label, 'agent', commands),\n      );\n    } catch (error) {\n      return failure(error);\n    }\n  }\n  runDemo(prompt: string): TransactionResult & { readonly layerId?: ID } {\n    if (prompt.trim().replace(/[。！!]$/, '') !== DEMO_PROMPT)\n      return {\n        ok: false,\n        error: 'V0.1 使用固定 Mock Agent，请使用上方演示提示词',\n      };\n    const c = activeComposition(this.context.getProjectSnapshot());\n    if (c.duration < 1) return { ok: false, error: '演示需要至少 1 秒的合成' };\n    const layerId = newId();\n    const start = { x: -120, y: c.height / 2 };\n    const end = { x: c.width / 2, y: c.height / 2 };\n    const result = this.executeBatch('Agent：蓝色方块入场', [\n      {\n        name: 'create_layer',\n        kind: 'rectangle',\n        layerId,\n        layerName: '蓝色方块入场',\n        position: start,\n      },\n      {\n        name: 'add_keyframe',\n        layerId,\n        property: 'position',\n        time: 0,\n        value: start,\n        interpolation: { type: 'spring', stiffness: 170, damping: 18, mass: 1 },\n      },\n      {\n        name: 'add_keyframe',\n        layerId,\n        property: 'position',\n        time: 1,\n        value: end,\n      },\n      { name: 'add_keyframe', layerId, property: 'opacity', time: 0, value: 0 },\n      { name: 'add_keyframe', layerId, property: 'opacity', time: 1, value: 1 },\n    ]);\n    return result.ok ? { ...result, layerId } : result;\n  }\n}\n"
+  },
+  "c967b61": {
+    "package": {
+      "name": "motion-system",
+      "private": true,
+      "version": "0.9.0",
+      "type": "module",
+      "scripts": {
+        "dev": "vite --host 127.0.0.1",
+        "build": "tsc --noEmit && vite build",
+        "preview": "vite preview --host 127.0.0.1",
+        "typecheck": "tsc --noEmit",
+        "lint": "eslint . && prettier --check src tests scripts apps *.json *.ts *.html *.cjs build/*.json docs/ARCHITECTURE.md",
+        "format": "prettier --write src tests scripts apps *.json *.ts *.html *.cjs build/*.json docs/ARCHITECTURE.md",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "desktop:dev": "node scripts/desktop/dev.mjs",
+        "desktop:build": "npm run build && node scripts/desktop/build.mjs",
+        "package:mac": "npm run desktop:build && electron-builder --config electron-builder.config.cjs --mac --arm64",
+        "package:win": "npm run desktop:build && electron-builder --config electron-builder.config.cjs --win --x64",
+        "benchmark": "node scripts/performance.mjs"
+      },
+      "dependencies": {
+        "react": "^19.3.0",
+        "react-dom": "^19.3.0",
+        "zod": "^4.6.5"
+      },
+      "devDependencies": {
+        "@eslint/js": "^9.39.5",
+        "@testing-library/jest-dom": "^6.9.1",
+        "@testing-library/react": "^16.3.3",
+        "@testing-library/user-event": "^14.6.7",
+        "@types/node": "^24.19.1",
+        "@types/react": "^19.3.0",
+        "@types/react-dom": "^19.3.0",
+        "@vitejs/plugin-react": "^5.2.0",
+        "electron": "^44.5.1",
+        "electron-builder": "^26.15.3",
+        "esbuild": "^0.28.2",
+        "eslint": "^9.39.5",
+        "globals": "^16.5.0",
+        "jsdom": "^26.1.0",
+        "prettier": "^3.9.9",
+        "typescript": "^5.9.3",
+        "typescript-eslint": "^8.71.0",
+        "vite": "^7.3.6",
+        "vitest": "^5.0.3"
+      },
+      "main": "desktop-dist/main.cjs",
+      "description": "Swayframe desktop motion design editor",
+      "author": "Swayframe"
+    },
+    "commit": "c967b616f585f565bf2035f76caa22e5c91c2404 2026-10-05T08:09:56+08:00 feat(agent): finish v1 acceptance professional proposals and desktop release"
+  },
+  "1f1a06f": {
+    "package": {
+      "name": "motion-system",
+      "private": true,
+      "version": "0.9.7",
+      "type": "module",
+      "scripts": {
+        "dev": "vite --host 127.0.0.1",
+        "build": "tsc --noEmit && vite build",
+        "preview": "vite preview --host 127.0.0.1",
+        "typecheck": "tsc --noEmit",
+        "lint": "eslint . && prettier --check src tests scripts apps *.json *.ts *.html *.cjs build/*.json docs/ARCHITECTURE.md",
+        "format": "prettier --write src tests scripts apps *.json *.ts *.html *.cjs build/*.json docs/ARCHITECTURE.md",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "desktop:dev": "node scripts/desktop/dev.mjs",
+        "desktop:build": "npm run build && node scripts/desktop/build.mjs",
+        "package:mac": "npm run desktop:build && electron-builder --config electron-builder.config.cjs --mac --arm64",
+        "package:win": "npm run desktop:build && electron-builder --config electron-builder.config.cjs --win --x64",
+        "benchmark": "node scripts/performance.mjs"
+      },
+      "dependencies": {
+        "react": "^19.3.0",
+        "react-dom": "^19.3.0",
+        "zod": "^4.6.5"
+      },
+      "devDependencies": {
+        "@eslint/js": "^9.39.5",
+        "@testing-library/jest-dom": "^6.9.1",
+        "@testing-library/react": "^16.3.3",
+        "@testing-library/user-event": "^14.6.7",
+        "@types/node": "^24.19.1",
+        "@types/react": "^19.3.0",
+        "@types/react-dom": "^19.3.0",
+        "@vitejs/plugin-react": "^5.2.0",
+        "electron": "^44.5.1",
+        "electron-builder": "^26.15.3",
+        "esbuild": "^0.28.2",
+        "eslint": "^9.39.5",
+        "globals": "^16.5.0",
+        "jsdom": "^26.1.0",
+        "prettier": "^3.9.9",
+        "typescript": "^5.9.3",
+        "typescript-eslint": "^8.71.0",
+        "vite": "^7.3.6",
+        "vitest": "^5.0.3"
+      },
+      "main": "desktop-dist/main.cjs",
+      "description": "Swayframe desktop motion design editor",
+      "author": "Swayframe"
+    },
+    "commit": "1f1a06ff4d7242bfc845d9860bd64af4d42e9139 2026-10-07T11:54:13+08:00 fix: constrain and repair professional AI proposals"
+  },
+  "b026780": {
+    "package": {
+      "name": "motion-system",
+      "private": true,
+      "version": "0.9.19",
+      "type": "module",
+      "scripts": {
+        "dev": "vite --host 127.0.0.1",
+        "build": "tsc --noEmit && vite build",
+        "preview": "vite preview --host 127.0.0.1",
+        "typecheck": "tsc --noEmit",
+        "lint": "eslint . && prettier --check src tests scripts apps *.json *.ts *.html *.cjs build/*.json docs/ARCHITECTURE.md",
+        "format": "prettier --write src tests scripts apps *.json *.ts *.html *.cjs build/*.json docs/ARCHITECTURE.md",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "desktop:dev": "node scripts/desktop/dev.mjs",
+        "desktop:build": "npm run build && node scripts/desktop/build.mjs",
+        "package:mac": "npm run desktop:build && electron-builder --config electron-builder.config.cjs --mac --arm64",
+        "package:win": "npm run desktop:build && electron-builder --config electron-builder.config.cjs --win --x64",
+        "benchmark": "node scripts/performance.mjs"
+      },
+      "dependencies": {
+        "mediabunny": "^1.61.3",
+        "react": "^19.3.0",
+        "react-dom": "^19.3.0",
+        "three": "^0.186.1",
+        "zod": "^4.6.5"
+      },
+      "devDependencies": {
+        "@eslint/js": "^9.39.5",
+        "@testing-library/jest-dom": "^6.9.1",
+        "@testing-library/react": "^16.3.3",
+        "@testing-library/user-event": "^14.6.7",
+        "@types/node": "^24.19.1",
+        "@types/react": "^19.3.0",
+        "@types/react-dom": "^19.3.0",
+        "@types/three": "^0.186.0",
+        "@vitejs/plugin-react": "^5.2.0",
+        "electron": "^44.5.1",
+        "electron-builder": "^26.15.3",
+        "esbuild": "^0.28.2",
+        "eslint": "^9.39.5",
+        "globals": "^16.5.0",
+        "jsdom": "^26.1.0",
+        "prettier": "^3.9.9",
+        "typescript": "^5.9.3",
+        "typescript-eslint": "^8.71.0",
+        "vite": "^7.3.6",
+        "vitest": "^5.0.3"
+      },
+      "main": "desktop-dist/main.cjs",
+      "description": "Swayframe desktop motion design editor",
+      "author": "Swayframe"
+    },
+    "commit": "b0267803ac6a61894d48fa74a88c76ccfcad988a 2026-10-10T12:55:51+08:00 feat(agent): add scoped creation proposals and graph planning"
+  },
+  "6de3dc4": {
+    "package": {
+      "name": "motion-system",
+      "private": true,
+      "version": "0.9.20",
+      "type": "module",
+      "scripts": {
+        "dev": "vite --host 127.0.0.1",
+        "build": "tsc --noEmit && vite build",
+        "preview": "vite preview --host 127.0.0.1",
+        "typecheck": "tsc --noEmit",
+        "lint": "eslint . && prettier --check src tests scripts apps *.json *.ts *.html *.cjs build/*.json docs/ARCHITECTURE.md",
+        "format": "prettier --write src tests scripts apps *.json *.ts *.html *.cjs build/*.json docs/ARCHITECTURE.md",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "desktop:dev": "node scripts/desktop/dev.mjs",
+        "desktop:build": "npm run build && node scripts/desktop/build.mjs",
+        "package:mac": "npm run desktop:build && electron-builder --config electron-builder.config.cjs --mac --arm64",
+        "package:win": "npm run desktop:build && electron-builder --config electron-builder.config.cjs --win --x64",
+        "benchmark": "node scripts/performance.mjs"
+      },
+      "dependencies": {
+        "mediabunny": "^1.61.3",
+        "react": "^19.3.0",
+        "react-dom": "^19.3.0",
+        "three": "^0.186.1",
+        "zod": "^4.6.5"
+      },
+      "devDependencies": {
+        "@eslint/js": "^9.39.5",
+        "@testing-library/jest-dom": "^6.9.1",
+        "@testing-library/react": "^16.3.3",
+        "@testing-library/user-event": "^14.6.7",
+        "@types/node": "^24.19.1",
+        "@types/react": "^19.3.0",
+        "@types/react-dom": "^19.3.0",
+        "@types/three": "^0.186.0",
+        "@vitejs/plugin-react": "^5.2.0",
+        "electron": "^44.5.1",
+        "electron-builder": "^26.15.3",
+        "esbuild": "^0.28.2",
+        "eslint": "^9.39.5",
+        "globals": "^16.5.0",
+        "jsdom": "^26.1.0",
+        "prettier": "^3.9.9",
+        "typescript": "^5.9.3",
+        "typescript-eslint": "^8.71.0",
+        "vite": "^7.3.6",
+        "vitest": "^5.0.3"
+      },
+      "main": "desktop-dist/main.cjs",
+      "description": "Swayframe desktop motion design editor",
+      "author": "Swayframe"
+    },
+    "commit": "6de3dc41bb2d753651908054cecbc5dd84230b86 2026-10-10T16:18:48+08:00 fix(agent): bound planning context and validate real provider creation"
+  }
+}

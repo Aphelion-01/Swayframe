@@ -17,7 +17,11 @@ export const compositingToolSchemas = [
       type: z.string().min(1).max(80),
       nodeId: idSchema.optional(),
       position: vec2Schema.optional(),
-      edgeId: idSchema.optional(),
+      edgeId: idSchema
+        .describe(
+          'Optional EXISTING edge ID read from this graph. Omit to insert before the current Output; never generate or guess an edgeId.',
+        )
+        .optional(),
     })
     .strict(),
   z.object({ name: z.literal('deleteNode'), nodeId: idSchema }).strict(),

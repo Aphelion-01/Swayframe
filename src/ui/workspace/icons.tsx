@@ -1,5 +1,13 @@
 import type { SVGProps } from 'react';
 export type IconName =
+  | 'send'
+  | 'attachment'
+  | 'brain'
+  | 'new-chat'
+  | 'audio'
+  | 'video'
+  | 'motion-blur'
+  | 'parent'
   | 'fit'
   | 'polygon'
   | 'star'
@@ -43,6 +51,17 @@ export type IconName =
   | 'save'
   | 'export';
 const paths: Record<IconName, string> = {
+  send: 'M8 13V3 M3.5 7.5 8 3l4.5 4.5',
+  attachment:
+    'M6 9.5l4.5-4.5a2 2 0 0 1 3 3L7 14a3.5 3.5 0 0 1-5-5l7-7 M5 10l6-6',
+  brain:
+    'M7 3a2 2 0 0 0-4 1 3 3 0 0 0-1 5 3 3 0 0 0 5 4V3 M9 3a2 2 0 0 1 4 1 3 3 0 0 1 1 5 3 3 0 0 1-5 4V3 M4 6l3 1 M9 9l3 1',
+  'new-chat': 'M6 2H2v12h12v-4 M7 9l1-3 5-5 2 2-5 5Z',
+  audio: 'M2 6v4 M5 3v10 M8 1v14 M11 4v8 M14 6v4',
+  video: 'M2 3h12v10H2Z M2 6h12 M2 10h12 M5 3v10 M11 3v10',
+  'motion-blur': 'M8 3a5 5 0 1 1 0 10 M8 3v10 M1 5h3 M1 8h3 M1 11h3',
+  parent:
+    'M8 2v4 M3 10V6h10v4 M1.5 10h3v3h-3Z M6.5 10h3v3h-3Z M11.5 10h3v3h-3Z',
   fit: 'M6 2H2v4 M10 2h4v4 M2 10v4h4 M14 10v4h-4 M5 5h6v6H5Z',
   polygon: 'M8 2l6 4v6l-6 3-6-3V6Z',
   star: 'M8 1l2 4 4.5.6-3.3 3.2.8 4.5L8 11.2l-4 2.1.8-4.5L1.5 5.6 6 5Z',

@@ -1,6 +1,7 @@
 import type { Project } from '../core/project-model';
 /** UI-only bitmap cache. Never claims that an unrendered frame is ready. */
 export class PreviewFrameCache {
+  constructor(private readonly budget = 256 * 1024 * 1024) {}
   private project?: Project;
   private entries = new Map<
     string,
@@ -27,7 +28,7 @@ export class PreviewFrameCache {
   }
   put(key: string, time: number, source: HTMLCanvasElement) {
     const size = source.width * source.height * 4;
-    if (size > 64 * 1024 * 1024) return;
+    if (size > Math.min(this.budget, 64 * 1024 * 1024)) return;
     const canvas = document.createElement('canvas');
     canvas.width = source.width;
     canvas.height = source.height;
@@ -38,7 +39,7 @@ export class PreviewFrameCache {
     if (old) this.bytes -= old.canvas.width * old.canvas.height * 4;
     this.entries.set(key, { canvas, time });
     this.bytes += size;
-    while (this.entries.size > 16 || this.bytes > 64 * 1024 * 1024) {
+    while (this.bytes > this.budget) {
       const first = this.entries.keys().next().value!;
       const v = this.entries.get(first)!;
       this.bytes -= v.canvas.width * v.canvas.height * 4;
@@ -46,6 +47,6 @@ export class PreviewFrameCache {
     }
   }
   times() {
-    return [...this.entries.values()].map((e) => e.time);
+    return [...new Set([...this.entries.values()].map((e) => e.time))];
   }
 }

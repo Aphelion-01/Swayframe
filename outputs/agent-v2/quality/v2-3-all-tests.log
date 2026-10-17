@@ -1,0 +1,37 @@
+
+> motion-system@1.0.0 test
+> vitest run
+
+
+ RUN  v5.0.3 /Users/aphelion-01/Documents/Codex/2026-10-03/Swayframe_Repairs/1.0
+
+ ❯ tests/agent-core-v2.test.ts (47 tests | 1 failed) 1011ms
+   × locked layer remains immutable even within allowed scope 18ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/agent-core-v2.test.ts > locked layer remains immutable even within allowed scope
+AssertionError: expected 'AWAITING_ACCEPTANCE' to be 'FAILED' // Object.is equality
+
+Expected: "FAILED"
+Received: "AWAITING_ACCEPTANCE"
+
+ ❯ tests/agent-core-v2.test.ts:881:23
+    879|     ],
+    880|   });
+    881|   expect(state.phase).toBe('FAILED');
+       |                       ^
+    882|   expect(
+    883|     activeComposition(s.host.getSnapshot()).layers[0]!.transform.posit…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 158 passed (159)
+      Tests  1 failed | 733 passed (734)
+   Start at  10:46:51
+   Duration  20.33s (tests 71%, import 13%, environment 8%, transform 7%)
+
+    Isolate  159 workers spawned · ~174ms startup each (spawn + environment, per file)
+             at least ~2.91s faster with isolate: false — reuses workers across files instead of one per file
+

@@ -124,7 +124,7 @@ describe('A-01～A-09 用户流程集成验收', () => {
       ),
       (ch) => ch.charCodeAt(0),
     );
-    fireEvent.change(screen.getByLabelText('导入图片文件'), {
+    fireEvent.change(screen.getByLabelText('导入图片、音频或视频文件'), {
       target: {
         files: [new File([bytes], 'pixel.png', { type: 'image/png' })],
       },
@@ -182,6 +182,8 @@ describe('A-01～A-09 用户流程集成验收', () => {
     edit('位置 X', '100');
     const before = store.commands.getSnapshot();
     fireEvent.click(screen.getByRole('tab', { name: '助手' }));
+    fireEvent.click(screen.getByLabelText('助手设置'));
+    fireEvent.click(screen.getByText('快速建议（离线示例）'));
     fireEvent.click(screen.getByRole('button', { name: '布局建议' }));
     await screen.findByRole('button', { name: '应用建议' });
     expect(store.commands.getSnapshot()).toBe(before);

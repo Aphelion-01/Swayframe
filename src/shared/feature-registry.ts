@@ -115,7 +115,7 @@ export const conditionKeys = [
 ] as const;
 export type ConditionKey = (typeof conditionKeys)[number];
 export interface FeatureDefinition {
-  commandScope?: 'asset' | 'node' | 'motion';
+  commandScope?: 'asset' | 'node' | 'motion' | 'assistant';
   id: string;
   title: string;
   description: string;

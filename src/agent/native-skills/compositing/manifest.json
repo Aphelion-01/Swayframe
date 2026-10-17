@@ -1,0 +1,34 @@
+{
+  "id": "sf.compositing",
+  "name": "Compositing Graph",
+  "version": "1.0.0",
+  "description": "Inspect real graph and typed ports. Generators stay detached until connected to Output; image processors insert into current Output edge. Inputs accept one connection. Preserve Source/Output invariants, reject cycles, compile and verify actual output. Never invent a Glow node name: query exact available capability.",
+  "supportedTasks": ["compositing"],
+  "requiredCapabilities": [
+    "createNode",
+    "connectNodes",
+    "setGraphOutput",
+    "setNodeParameter"
+  ],
+  "optionalCapabilities": [
+    "inspectGraph",
+    "compileGraph",
+    "discoverCapabilities",
+    "layoutGraph"
+  ],
+  "supportedObjectTypes": ["Layer", "Property", "GraphNode"],
+  "inputs": {
+    "goal": "explicit native editing task",
+    "scope": "existing user authorization"
+  },
+  "outputs": {
+    "result": "verified editable draft"
+  },
+  "prerequisites": ["active-composition", "valid-object-references"],
+  "permissionRequirements": ["existing-user-scope"],
+  "compatibility": {
+    "runtime": 1
+  },
+  "recoveryPolicy": "shared-bounded-controller",
+  "keywords": ["节点", "合成图", "发光", "glow", "graph", "compositing", "node"]
+}

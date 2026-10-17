@@ -1,0 +1,21 @@
+file:///Users/aphelion-01/Documents/Codex/2026-10-03/Swayframe_Repairs/ai2comp-layerpack-v0/work/ai2comp-qa/fixtures.mjs:21
+ await fs.writeFile(path.join(root,'expected.png'),png(64,48,(x,y)=>{let color=[0,0,0,0];for(const r of rects){if(!inside(x,y,r.bounds))continue;const rgba=color(r,x,y);const a=rgba[3]/255,b=color[3]/255,out=a+b*(1-a);color=[...rgba.slice(0,3).map((v,i)=>Math.round((v*a+color[i]*b*(1-a))/out)),Math.round(out*255)];}return color;}));
+                                                                                                                                                            ^
+
+TypeError: color is not a function
+    at file:///Users/aphelion-01/Documents/Codex/2026-10-03/Swayframe_Repairs/ai2comp-layerpack-v0/work/ai2comp-qa/fixtures.mjs:21:157
+    at png (file:///Users/aphelion-01/Documents/Codex/2026-10-03/Swayframe_Repairs/ai2comp-layerpack-v0/work/ai2comp-qa/fixtures.mjs:6:210)
+    at fixtures (file:///Users/aphelion-01/Documents/Codex/2026-10-03/Swayframe_Repairs/ai2comp-layerpack-v0/work/ai2comp-qa/fixtures.mjs:21:52)
+    at async file:///Users/aphelion-01/Documents/Codex/2026-10-03/Swayframe_Repairs/ai2comp-layerpack-v0/work/ai2comp-qa/fixtures.mjs:24:46
+
+Node.js v26.7.0
+file:///Users/aphelion-01/Documents/Codex/2026-10-03/Swayframe_Repairs/ai2comp-layerpack-v0/work/ai2comp-qa/run.mjs:4
+const exec=(cmd,args,env=process.env)=>new Promise((resolve,reject)=>{const p=spawn(cmd,args,{stdio:'inherit',env});p.on('error',reject);p.on('exit',c=>c===0?resolve():reject(Error(`${cmd} exited ${c}`)));});
+                                                                                                                                                                               ^
+
+Error: /opt/homebrew/Cellar/node/26.7.0/bin/node exited 1
+    at ChildProcess.<anonymous> (file:///Users/aphelion-01/Documents/Codex/2026-10-03/Swayframe_Repairs/ai2comp-layerpack-v0/work/ai2comp-qa/run.mjs:4:176)
+    at ChildProcess.emit (node:events:514:20)
+    at ChildProcess._handle.onexit (node:internal/child_process:294:12)
+
+Node.js v26.7.0

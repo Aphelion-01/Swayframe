@@ -247,12 +247,21 @@ export function GraphEditor({
     vals = samples.map((v) => v.value),
     rawMin = Math.min(...vals),
     rawMax = Math.max(...vals),
-    padding =
-      rawMax > rawMin
-        ? (rawMax - rawMin) * 0.15
-        : Math.max(0.001, Math.abs(rawMin) * 0.001),
-    min = fixedDomain?.min ?? rawMin - padding,
-    max = fixedDomain?.max ?? rawMax + padding;
+    // Finite-difference speeds have rounding noise even during uniform motion.
+    // A nonnegative speed graph needs a zero baseline, not a magnified noise band.
+    padding = Math.max(
+      (rawMax - rawMin) * 0.15,
+      Math.abs(rawMin) * 0.001,
+      0.001,
+    ),
+    min = fixedDomain?.min ?? (mode === 'speed' ? 0 : rawMin - padding),
+    max =
+      fixedDomain?.max ??
+      (mode === 'speed'
+        ? rawMax > 0
+          ? rawMax + Math.max(rawMax * 0.15, 0.001)
+          : 1
+        : rawMax + padding);
   const tickPrecision = Math.max(
     1,
     Math.min(6, Math.ceil(-Math.log10((max - min) / 4))),

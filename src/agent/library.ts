@@ -1,3 +1,4 @@
+import { diagnosticData } from './execution-error';
 import { z } from 'zod';
 import type { AIStorage } from '../ai/contracts';
 import type { AgentSession } from './session';
@@ -35,6 +36,7 @@ export const agentHistorySchema = z
     status: z.enum(['completed', 'failed', 'cancelled']),
     conversation: conversationSchema,
     summary: z.string().max(2000),
+    diagnostics: z.record(z.string(), z.unknown()).optional(),
   })
   .strict();
 export type AgentHistory = z.infer<typeof agentHistorySchema>;
@@ -135,6 +137,29 @@ export class AgentLibrary {
         .map((m) => ({ ...m, content: m.content.slice(0, 2000) }))
         .slice(-20),
       summary: (session.error ?? session.response).slice(0, 2000),
+      diagnostics: {
+        ...diagnosticData({
+          sessionId: session.sessionId,
+          projectId: project.id,
+          compositionId: project.activeCompositionId,
+          selectedContext: session.selectedContext,
+          plan: session.currentPlan,
+          toolCalls: session.toolCalls,
+          executionError: session.executionError,
+          recoveries: session.recoveries,
+          trace: session.trace,
+          workingMemory: session.workingMemory,
+          committed: !!session.changes?.transactionId,
+          sceneIndex: project.compositions.map((c) => ({
+            id: c.id,
+            layers: c.layers.map((l) => ({ id: l.id, type: l.type })),
+          })),
+        }),
+        recoveryTrace: diagnosticData(
+          { records: session.recoveryTrace },
+          1000000,
+        ),
+      },
     });
     return this.write('history', () =>
       [...this.state.history.filter((h) => h.id !== value.id), value].slice(

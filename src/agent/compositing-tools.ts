@@ -52,7 +52,11 @@ export function registerCompositingTools(registry: AgentToolRegistry) {
     };
     registry.register(
       name === 'connectPorts' ? 'connectNodes' : name,
-      '调用共享合成图服务：' + name,
+      name === 'createNode'
+        ? 'Create a registered graph node. Image processors with in/out ports automatically insert into the current Output edge. Generators without an input remain detached. For generator -> effect -> Output, call setGraphOutput on the generator BEFORE creating the effect; do not connect an already occupied effect input again. Position changes layout, not insertion behavior.'
+        : name === 'connectPorts'
+          ? 'Connect exact typed ports. Inputs accept only one edge; inspect and disconnect any existing edge first. Never add duplicate connections.'
+          : '调用共享合成图服务：' + name,
       args,
       read ? 'READ' : name === 'deleteNode' ? 'DESTRUCTIVE' : 'WRITE',
       read

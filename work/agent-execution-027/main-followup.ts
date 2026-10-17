@@ -1,0 +1,22 @@
+import {app,BrowserWindow,ipcMain} from 'electron';
+import fs from 'node:fs/promises';import path from 'node:path';import {randomUUID} from 'node:crypto';
+import {NativeAIService} from '../../apps/desktop/electron/ai-service';
+async function main(){
+app.setName('Swayframe');app.setPath('userData',path.resolve('outputs/agent-execution-027/userdata'));
+await app.whenReady();const out=path.resolve('outputs/agent-execution-027');
+const service=new NativeAIService(path.join(app.getPath('appData'),'Swayframe'));
+const calls:any[]=[];let done=false;
+ipcMain.handle('bench:settings',()=>service.settings());
+ipcMain.handle('bench:has',(_,id)=>service.dispatch({method:'ai.credentials.has',providerId:id}));
+ipcMain.handle('bench:chat',async(_,providerId,request)=>{const start=Date.now();
+if(calls.length>=16)throw Error('Hard request budget: 16 requests');if(calls.reduce((sum,c)=>sum+(c.response?.usage?.inputTokens??0),0)>=800000)throw Error('Observed input token budget reached');if(request.messages.some(m=>m.images?.length))throw Error('Audit image egress prohibited');
+const record:any={index:calls.length,model:request.model,stream:request.stream,request,startedAt:new Date().toISOString()};calls.push(record);
+await fs.writeFile(path.join(out,'followup-calls.json'),JSON.stringify(calls,null,2));
+try{const response=await service.dispatch({method:'ai.chat',providerId,requestId:randomUUID(),request});record.response=response;record.elapsedMs=Date.now()-start;await fs.writeFile(path.join(out,'followup-calls.json'),JSON.stringify(calls,null,2));return response;}catch(e){record.error={code:(e as any).code,message:(e as Error).message};record.elapsedMs=Date.now()-start;await fs.writeFile(path.join(out,'followup-calls.json'),JSON.stringify(calls,null,2));return {benchError:record.error};}});
+for(const method of ['save','saveImage'])ipcMain.handle('bench:'+method,async(_,name,data)=>{if(!/^[a-z0-9.-]+$/.test(name))throw Error('invalid filename');await fs.writeFile(path.join(out,name),method==='saveImage'?Buffer.from(data.split(',')[1],'base64'):data);});
+ipcMain.handle('bench:progress',(_,message)=>{console.log(message);});
+ipcMain.handle('bench:done',async(_,report)=>{done=true;await fs.writeFile(path.join(out,'followup-report.json'),JSON.stringify(report,null,2));app.exit(0);});
+const win=new BrowserWindow({width:1280,height:720,show:false,webPreferences:{preload:path.resolve('work/agent-execution-027/preload.cjs'),contextIsolation:true,nodeIntegration:false}});
+await win.loadFile(path.resolve('work/agent-execution-027/index-followup.html'));
+setTimeout(async()=>{if(!done){await fs.writeFile(path.join(out,'timeout.json'),JSON.stringify({reason:'20 minute audit deadline',calls:calls.length}));app.exit(1);}},1200000);
+}void main();

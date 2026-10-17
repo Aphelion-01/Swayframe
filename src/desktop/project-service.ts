@@ -16,6 +16,10 @@ export class ProjectService {
   #loading = false;
   #busy = false;
   #saving: Promise<boolean> | undefined;
+  #generation = 0;
+  #savingGeneration = 0;
+  #projectId: string;
+  #lastReplacementId: string | undefined;
   #listeners = new Set<() => void>();
   #platform = '';
   #cleanup: (() => void)[] = [];
@@ -24,6 +28,7 @@ export class ProjectService {
     readonly api: DesktopAPI,
   ) {
     this.#saved = store.save();
+    this.#projectId = store.commands.getSnapshot().id;
     this.recovery = new RecoveryScheduler(
       api,
       () => ({ data: store.save(), path: this.path }),
@@ -31,6 +36,18 @@ export class ProjectService {
     );
     this.#cleanup.push(
       store.commands.subscribe(() => {
+        const project = store.commands.getSnapshot();
+        const entry = store.commands.undoStack.at(-1)?.transaction;
+        const replacement = entry?.commands.some(
+          (c) => c.type === 'project.replace',
+        );
+        if (
+          project.id !== this.#projectId ||
+          (replacement && entry?.id !== this.#lastReplacementId)
+        )
+          this.#generation++;
+        this.#projectId = project.id;
+        if (replacement) this.#lastReplacementId = entry?.id;
         if (!this.#loading) {
           this.dirty = store.save() !== this.#saved;
           if (this.dirty) this.recovery.schedule();
@@ -129,8 +146,10 @@ export class ProjectService {
     this.#busy = true;
     try {
       if (!(await this.protect())) return;
+      const owner = this.store.commands.getSnapshot();
       await this.recovery.clear();
       await this.api.project.newProject();
+      if (this.store.commands.getSnapshot() !== owner) return;
       this.replace(saveProject(createDefaultProject()), null);
     } catch {
       this.store.setStatus('无法新建工程，请重试。', true);
@@ -143,9 +162,18 @@ export class ProjectService {
     this.#busy = true;
     try {
       if (!(await this.protect())) return;
+      const owner = this.store.commands.getSnapshot();
       const result = await this.api.project.open(path);
       if (result) {
+        if (this.store.commands.getSnapshot() !== owner) {
+          this.store.setStatus(
+            '打开期间工程已修改，已保留当前修改，请重新打开。',
+            true,
+          );
+          return;
+        }
         await this.recovery.clear();
+        if (this.store.commands.getSnapshot() !== owner) return;
         this.replace(result.data, result.path);
       }
     } catch (error) {
@@ -160,7 +188,11 @@ export class ProjectService {
     }
   }
   save(saveAs = false): Promise<boolean> {
-    if (this.#saving) return this.#saving;
+    if (this.#saving) {
+      if (this.#savingGeneration === this.#generation) return this.#saving;
+      return this.#saving.then(() => this.save(saveAs));
+    }
+    this.#savingGeneration = this.#generation;
     this.#saving = this.saveSnapshot(saveAs).finally(() => {
       this.#saving = undefined;
     });
@@ -168,11 +200,12 @@ export class ProjectService {
   }
   private async saveSnapshot(saveAs = false): Promise<boolean> {
     try {
+      const generation = this.#generation;
       const data = this.store.save();
       const result = await (saveAs
         ? this.api.project.saveAs(data, this.path)
         : this.api.project.save(data, this.path));
-      if (!result?.saved) return false;
+      if (!result?.saved || generation !== this.#generation) return false;
       this.path = result.path;
       this.#saved = data;
       this.dirty = this.store.save() !== data;
@@ -191,7 +224,9 @@ export class ProjectService {
     this.#busy = true;
     try {
       if (await this.protect()) {
+        const owner = this.store.commands.getSnapshot();
         await this.recovery.clear();
+        if (this.store.commands.getSnapshot() !== owner) return;
         this.replace(saveProject(createDefaultProject()), null);
         this.active = false;
         this.update();
@@ -205,7 +240,9 @@ export class ProjectService {
     this.#busy = true;
     try {
       if (await this.protect()) {
+        const owner = this.store.commands.getSnapshot();
         await this.recovery.clear();
+        if (this.store.commands.getSnapshot() !== owner) return;
         await this.api.window.close();
       }
     } catch {

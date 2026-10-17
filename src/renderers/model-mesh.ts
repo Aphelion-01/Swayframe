@@ -11,6 +11,8 @@ export function projectedModel(
   mesh: ModelGeometry,
   world: Matrix4,
   camera: CameraSnapshot,
+  unlit = false,
+  cull = false,
 ) {
   const faces: {
     points: { x: number; y: number; z: number }[];
@@ -32,13 +34,22 @@ export function projectedModel(
         a[0]! * b[1]! - a[1]! * b[0]!,
       ],
       length = Math.hypot(...normal);
-    const shade =
-      0.4 +
-      0.6 *
-        Math.abs(
-          (normal[0]! * 0.3 - normal[1]! * 0.6 - normal[2]! * 0.74) /
-            Math.max(1e-12, length),
-        );
+    if (
+      cull &&
+      normal.reduce(
+        (v, n, k) => v + n * (camera.position[k]! - p[0]![k]!),
+        0,
+      ) <= 0
+    )
+      continue;
+    const shade = unlit
+      ? 1
+      : 0.4 +
+        0.6 *
+          Math.abs(
+            (normal[0]! * 0.3 - normal[1]! * 0.6 - normal[2]! * 0.74) /
+              Math.max(1e-12, length),
+          );
     const rgb = mesh.colors
       .slice(i / 3, i / 3 + 3)
       .map((n) => Math.round(255 * n * shade));
@@ -55,14 +66,26 @@ export function drawModelMesh(
   mesh: ModelGeometry,
   world: Matrix4,
   camera: CameraSnapshot,
+  wireframe = false,
+  tint: readonly number[] = [1, 1, 1],
+  unlit = false,
+  cull = false,
 ) {
-  for (const face of projectedModel(mesh, world, camera)) {
+  const tinted = {
+    ...mesh,
+    colors: mesh.colors.map((v, i) => v * (tint[i % 3] ?? 1)),
+  };
+  for (const face of projectedModel(tinted, world, camera, unlit, cull)) {
     ctx.beginPath();
     face.points.forEach((p, i) =>
       i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y),
     );
     ctx.closePath();
     ctx.fillStyle = face.color;
-    ctx.fill();
+    if (wireframe) {
+      ctx.strokeStyle = face.color;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    } else ctx.fill();
   }
 }

@@ -1,3 +1,5 @@
+import { NativeSkillRegistry } from '../../agent/native-skill-runtime';
+import { defaultRecoveryPolicy } from '../../agent/recovery-controller';
 import { useState, useSyncExternalStore } from 'react';
 import type { AIProviderManager } from '../../ai/provider-manager';
 import type { AISettings } from '../../ai/contracts';
@@ -169,6 +171,103 @@ export function AdvancedAISettings({
               {[0, 1, 2].map((v) => (
                 <option key={v}>{v}</option>
               ))}
+            </select>
+          </label>
+          <details>
+            <summary>自动恢复预算</summary>
+            <p>
+              各阶段单独计数；网络重试也占用该阶段请求额度，取消和权限错误不会自动重试。
+            </p>
+            {(
+              [
+                ['deterministicRepairs', '确定性修复次数', 8],
+                ['planModelRepairs', '计划局部纠错次数', 2],
+                ['stepModelRepairs', '每个失败步骤纠错次数', 2],
+                ['executionModelRepairs', '执行阶段纠错总次数', 20],
+                ['planningRequests', '规划请求上限', 20],
+                ['proposalRequests', '专业建议请求上限', 20],
+                ['visualRequests', '视觉检查请求上限', 8],
+                ['providerRetries', '每次请求网络重试次数', 2],
+              ] as const
+            ).map(([key, label, max]) => (
+              <label className="ai-option" key={key}>
+                {label}
+                <select
+                  aria-label={label}
+                  value={s.agent.recovery?.[key] ?? defaultRecoveryPolicy[key]}
+                  onChange={(e) => {
+                    const value = Number(e.currentTarget.value);
+                    save((a) => ({
+                      ...a,
+                      agent: {
+                        ...a.agent,
+                        recovery: { ...a.agent.recovery, [key]: value },
+                      },
+                    }));
+                  }}
+                >
+                  {Array.from({ length: max + 1 }, (_, n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ))}
+          </details>
+          <details>
+            <summary>原生执行技能</summary>
+            <p>
+              内置流程按需加载；开关只影响流程指导，参数、作用域和事务校验始终有效。
+            </p>
+            {toggle('启用原生 Skill', s.agent.nativeSkills !== false, (v) =>
+              save((a) => ({ ...a, agent: { ...a.agent, nativeSkills: v } })),
+            )}
+            {new NativeSkillRegistry()
+              .all()
+              .filter((k) => k.manifest.id !== 'sf.core-execution')
+              .map((k) =>
+                toggle(
+                  k.manifest.name,
+                  !(s.agent.disabledNativeSkills ?? []).includes(k.manifest.id),
+                  (v) =>
+                    save((a) => ({
+                      ...a,
+                      agent: {
+                        ...a.agent,
+                        disabledNativeSkills: v
+                          ? (a.agent.disabledNativeSkills ?? []).filter(
+                              (id) => id !== k.manifest.id,
+                            )
+                          : [
+                              ...new Set([
+                                ...(a.agent.disabledNativeSkills ?? []),
+                                k.manifest.id,
+                              ]),
+                            ],
+                      },
+                    })),
+                ),
+              )}
+          </details>
+          <label className="ai-option">
+            计划传输方式
+            <select
+              aria-label="计划传输方式"
+              value={s.agent.planTransport ?? 'tools'}
+              onChange={(e) => {
+                const value = e.currentTarget.value as
+                  'tools' | 'structured-plan';
+                save((a) => ({
+                  ...a,
+                  agent: { ...a.agent, planTransport: value },
+                }));
+              }}
+            >
+              <option value="tools">原生工具调用</option>
+              <option value="structured-plan">
+                完整 JSON 结构计划（不支持工具调用时）
+              </option>
             </select>
           </label>
           <label className="ai-option">

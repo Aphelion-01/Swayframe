@@ -62,6 +62,96 @@ export function ThreeDControls({
           三维图层
         </label>
       )}
+      {layer.type === 'model' && (
+        <fieldset className="model-material-controls">
+          <legend>模型显示与材质</legend>
+          {(
+            [
+              ['modelUnlit', '无光照原色'],
+              ['modelBackfaceCulling', '背面剔除'],
+            ] as const
+          ).map(([key, label]) => (
+            <label className="checkbox-field" key={key}>
+              <input
+                type="checkbox"
+                aria-label={label}
+                checked={!!editor[key]}
+                onChange={(e) =>
+                  store.run('修改模型显示', [
+                    command({
+                      type: 'layer.replace',
+                      compositionId: c.id,
+                      layer: {
+                        ...layer,
+                        editor: { ...editor, [key]: e.target.checked },
+                      },
+                    }),
+                  ])
+                }
+              />
+              {label}
+            </label>
+          ))}
+
+          <label className="checkbox-field">
+            <input
+              type="checkbox"
+              aria-label="模型线框"
+              checked={!!editor.modelWireframe}
+              onChange={(e) =>
+                store.run('修改模型显示', [
+                  command({
+                    type: 'layer.replace',
+                    compositionId: c.id,
+                    layer: {
+                      ...layer,
+                      editor: { ...editor, modelWireframe: e.target.checked },
+                    },
+                  }),
+                ])
+              }
+            />
+            线框显示
+          </label>
+          <label className="field">
+            材质乘色
+            <input
+              type="color"
+              aria-label="模型材质乘色"
+              value={
+                '#' +
+                (editor.modelTint ?? [1, 1, 1])
+                  .map((v) =>
+                    Math.round(v * 255)
+                      .toString(16)
+                      .padStart(2, '0'),
+                  )
+                  .join('')
+              }
+              onChange={(e) => {
+                const hex = e.target.value;
+                store.run('修改模型材质乘色', [
+                  command({
+                    type: 'layer.replace',
+                    compositionId: c.id,
+                    layer: {
+                      ...layer,
+                      editor: {
+                        ...editor,
+                        modelTint: [
+                          parseInt(hex.slice(1, 3), 16) / 255,
+                          parseInt(hex.slice(3, 5), 16) / 255,
+                          parseInt(hex.slice(5, 7), 16) / 255,
+                        ],
+                      },
+                    },
+                  }),
+                ]);
+              }}
+            />
+          </label>
+        </fieldset>
+      )}
       {layer.type === 'camera' ? (
         <>
           <AnimatedField

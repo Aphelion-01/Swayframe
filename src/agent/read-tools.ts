@@ -1,3 +1,4 @@
+import { AgentExecutionError } from './execution-error';
 import { z } from 'zod';
 import { idSchema } from '../core/project-schema';
 import { activeComposition, findProperty } from '../core/project-model';
@@ -18,6 +19,7 @@ const brief = (l: Layer) => ({
   id: l.id,
   name: l.name,
   type: l.type,
+  ...(l.type === 'shape' ? { shapeKind: l.shapeKind } : {}),
   visible: l.visible,
   locked: l.locked,
   parentId: l.editor?.parentId ?? null,
@@ -31,7 +33,17 @@ function getComposition(context: AgentToolContext, id?: string): Composition {
 }
 function getLayer(context: AgentToolContext, id: string): Layer {
   const l = activeComposition(context.project).layers.find((l) => l.id === id);
-  if (!l) throw new AgentToolError('tool_failed', '当前合成中不存在该图层');
+  if (!l)
+    throw new AgentExecutionError({
+      code: 'CONTEXT_INVALID',
+      phase: 'read',
+      field: 'layerId',
+      targetId: id,
+      received: id,
+      expected: 'existing layer in active composition',
+      recoverable: true,
+      message: '当前合成中不存在该图层',
+    });
   return l;
 }
 export function registerReadTools(

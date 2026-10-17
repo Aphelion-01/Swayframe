@@ -9,6 +9,8 @@ export const layerKindLabels: Record<LayerKind, string> = {
   ellipse: '椭圆',
   text: '文字',
   image: '图片',
+  audio: '音频',
+  video: '视频',
   model: '三维模型',
   polygon: '多边形',
   star: '星形',

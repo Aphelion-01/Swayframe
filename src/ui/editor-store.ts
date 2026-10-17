@@ -47,7 +47,7 @@ import { evaluateProperty } from '../core/animation-engine';
 import { activeComposition } from '../core/project-model';
 import type { Project, Property } from '../core/project-model';
 import type { PositionPreview } from '../core/renderer-core';
-import { loadProject, saveProject } from '../core/project-io';
+import { loadProject } from '../core/project-io';
 
 export interface EditorView {
   readonly spatialGizmoMode?: 'translate' | 'rotate';
@@ -64,6 +64,7 @@ export interface EditorView {
   readonly frames: readonly FrameRef[];
   readonly selectedProperties: readonly ID[];
   readonly timelineZoom: number;
+  readonly timelineReveal?: { readonly layerId: ID; readonly revision: number };
   readonly propertyFilter:
     | 'all'
     | 'animated'
@@ -91,8 +92,6 @@ export class EditorStore {
   readonly motionCurveClipboard = new MotionCurveClipboard();
   #view: EditorView;
   #renderPreview?: Project;
-  #serializedProject?: Project;
-  #serializedData = '';
   #listeners = new Set<() => void>();
   #layerClipboard: readonly Layer[] = [];
   #assetClipboard: readonly Asset[] = [];
@@ -240,6 +239,9 @@ export class EditorStore {
       renderRevision: (this.#view.renderRevision ?? 0) + 1,
     });
   }
+  invalidateRender(): void {
+    this.#set({ renderRevision: (this.#view.renderRevision ?? 0) + 1 });
+  }
   getRenderProject(): Project {
     const base = this.#renderPreview ?? this.#view.project;
     const copies = this.#drag?.duplicates;
@@ -284,6 +286,17 @@ export class EditorStore {
         : [],
       frames: [],
     });
+  }
+  selectLayerFromPanel(id: ID, additive = false): void {
+    this.select(id, additive);
+    if (!this.#view.selection.includes(id)) return;
+    this.#set({
+      timelineReveal: {
+        layerId: id,
+        revision: (this.#view.timelineReveal?.revision ?? 0) + 1,
+      },
+    });
+    window.dispatchEvent(new Event('motion:timeline'));
   }
   selectFrames(frames: readonly FrameRef[]): void {
     const owners = frames.map(
@@ -741,12 +754,7 @@ export class EditorStore {
     }
   }
   save(): string {
-    const project = this.commands.getSnapshot();
-    if (this.#serializedProject !== project) {
-      this.#serializedData = saveProject(project);
-      this.#serializedProject = project;
-    }
-    return this.#serializedData;
+    return this.commands.getSerializedSnapshot();
   }
   valueCommand(propertyId: ID, value: unknown): Command {
     return editPropertyCommand(

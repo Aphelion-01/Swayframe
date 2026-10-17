@@ -9,11 +9,13 @@ import {
 } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { App } from '../src/ui/App';
+import { GraphEditor } from '../src/ui/GraphEditor';
 import { EditorStore } from '../src/ui/editor-store';
 import {
   createDefaultProject,
   createLayer,
   activeComposition,
+  createLayerEditor,
 } from '../src/core/project-model';
 import { newId } from '../src/core/core-types';
 beforeAll(() => {
@@ -25,6 +27,63 @@ afterEach(() => {
   cleanup();
   localStorage.clear();
 });
+it.each([663.929249728, 0])(
+  'camera speed graph does not magnify uniform motion noise (distance %s)',
+  (distance) => {
+    const project = createDefaultProject(),
+      camera = createLayer('camera'),
+      editor = createLayerEditor(camera),
+      position = editor.properties.cameraPosition!,
+      frames = [0, 29 / 30].map((time, i) => ({
+        id: newId(),
+        time,
+        value: [0, 0, -1000 + i * distance],
+        // Non-default influences on a diagonal timing curve still mean uniform speed.
+        interpolation: {
+          type: 'bezier' as const,
+          out: { x: 0.25684, y: 0.25684 },
+          in: { x: 0.667, y: 0.667 },
+        },
+      })),
+      store = new EditorStore({
+        ...project,
+        compositions: project.compositions.map((c) => ({
+          ...c,
+          layers: [
+            {
+              ...camera,
+              editor: {
+                ...editor,
+                properties: {
+                  ...editor.properties,
+                  cameraPosition: { ...position, keyframes: frames },
+                },
+              },
+            },
+          ],
+        })),
+      });
+    store.select(camera.id);
+    const before = store.getSnapshot().project;
+    render(<GraphEditor store={store} onClose={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: '速度曲线' }));
+    const svg = screen.getByRole('img', { name: '动画速度曲线' }),
+      path = svg.querySelector('path')!.getAttribute('d')!,
+      ys = [...path.matchAll(/[ML][\d.-]+,([\d.-]+)/g)].map((m) =>
+        Number(m[1]),
+      );
+    expect(ys).toHaveLength(201);
+    expect(Math.max(...ys) - Math.min(...ys)).toBeLessThan(0.01);
+    expect(ys.every((y) => y >= 30 && y <= 235)).toBe(true);
+    expect(
+      [...svg.querySelectorAll('text')].some(
+        (n) => !!n.textContent && /^0\.0+$/.test(n.textContent),
+      ),
+    ).toBe(true);
+    expect(store.getSnapshot().project).toBe(before);
+    expect(store.commands.undoStack).toHaveLength(0);
+  },
+);
 function setup() {
   const p = createDefaultProject(),
     raw = createLayer('rectangle');

@@ -1,0 +1,37 @@
+{
+  "id": "plan-blur-radius-20-to-35",
+  "goal": "将「矩形」图层合成图中已有高斯模糊节点（2871106d-4df9-402b-8da0-ab0f43c0ad84）的 radius 参数由 20 改为 35，复用现有节点，不新增或修改其他内容。",
+  "steps": [
+    {
+      "id": "step-1",
+      "label": "设置高斯模糊节点 radius = 35",
+      "tool": "setNodeParameter",
+      "arguments": {
+        "nodeId": "2871106d-4df9-402b-8da0-ab0f43c0ad84",
+        "key": "radius",
+        "value": 35
+      }
+    }
+  ],
+  "risk": "low",
+  "creation": {
+    "intent": "参数级修改：仅把现有 Gaussian Blur 节点的半径从 20 改为 35，复用已有节点与连接，不改变图层结构、关键帧或其他参数。",
+    "tasks": [
+      {
+        "id": "task-1",
+        "description": "在图层「矩形」（b924ce1c-5800-40ba-b0db-73555aae9035）的合成图 5fa2259a-9def-43fc-88af-c56f633074a0 中，复用现有 gaussianBlur 节点 2871106d-4df9-402b-8da0-ab0f43c0ad84，将其 radius 基础值更新为 35。",
+        "executionDomain": "compositing",
+        "strategy": "modify-existing",
+        "capabilityId": "gaussianBlur",
+        "stepIds": [
+          "step-1"
+        ],
+        "dependencies": []
+      }
+    ],
+    "warnings": [
+      "该节点当前无关键帧（keyframeCount = 0），本次仅修改基础值，不涉及动画曲线。",
+      "未请求任何视觉校验；参数写入成功不代表对最终画面效果的确认。"
+    ]
+  }
+}

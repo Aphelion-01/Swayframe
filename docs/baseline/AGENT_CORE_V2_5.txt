@@ -1,0 +1,595 @@
+# Swayframe Agent Core V2
+# V2-5 — Real Provider Validation & Controlled Canary
+
+你现在开始 Agent Core V2 的下一阶段开发。
+
+当前项目已完成：
+
+V2-0 至 V2-4。
+
+现有报告：
+
+AGENT_V2_IMPLEMENTATION_REPORT.md
+AGENT_V2_TEST_MATRIX.md
+AGENT_V2_ARCHITECTURE.md
+AGENT_V2_MIGRATION_PLAN.md
+
+实际文件以仓库为准。
+
+本轮的最高优先级：
+
+让 Agent Core V2 真正接受真实 LLM 输入，
+在实际 Swayframe 编辑器中完成创作任务，
+并通过可复现的测试证明其可靠性。
+
+==================================================
+一、不要再次重建 Agent
+==================================================
+
+V2 当前已经具备：
+
+单一 TaskRuntime
+增量执行
+对象引用绑定
+真实 Command 执行
+Draft Transaction
+有限故障恢复
+结果验证
+Undo / Redo
+
+目前不允许：
+
+重新设计 Planner
+
+新增一套 Recovery Controller
+
+新增 Skill Runtime
+
+重建 Capability Registry
+
+重写 Command System
+
+新增大型 Agent 功能。
+
+如果存在问题：
+
+必须通过实际 Trace 定位，
+再进行最小必要修复。
+
+==================================================
+二、首先确认 V2 真实运行状态
+==================================================
+
+检查：
+
+当前 V2 是否实际连接真实 Provider。
+
+ProviderBridge 是否能够调用当前配置的 DeepSeek。
+
+模型响应能否被正确转换成 V2 Task Intent。
+
+Function Calling 是否在当前端点实际可用。
+
+Structured Plan 是否在当前端点实际可用。
+
+当前哪些能力仍然只能使用 Fixture。
+
+必须区分：
+
+OFFLINE VERIFIED
+
+LIVE VERIFIED
+
+NOT IMPLEMENTED
+
+NOT VERIFIED。
+
+不允许将离线 Fixture 测试
+冒充真实模型验证。
+
+==================================================
+三、建立受控 V2 测试入口
+==================================================
+
+目前普通 Agent UI 仍然使用 V1。
+
+为开发者提供一个最小的 V2 测试入口。
+
+可以采用：
+
+Development Feature Flag
+
+或者：
+
+Developer Settings
+
+或者：
+
+独立 Agent V2 Test Panel。
+
+以最符合现有架构的方式实现。
+
+要求：
+
+明确显示当前运行：
+
+Legacy V1
+
+或：
+
+Agent Core V2。
+
+默认仍然为 V1。
+
+V2 只能在明确启用后执行。
+
+禁止：
+
+V1 和 V2 同时写入正式工程。
+
+V2 测试必须支持：
+
+隔离测试工程
+任务执行
+实际画布预览
+接受或拒绝
+Undo
+查看脱敏执行 Trace。
+
+不要求开发完整的新 Agent 聊天界面。
+
+==================================================
+四、真实 Provider 集成
+==================================================
+
+优先使用当前已经配置的：
+
+DeepSeek deepseek-flash。
+
+复用现有：
+
+Provider Configuration
+Credential Management
+HTTP Transport
+Token Accounting
+Cancellation。
+
+不要创建第二套 API 配置界面。
+
+如果 Provider 不支持某种响应模式：
+
+必须根据真实端点能力选择兼容路径。
+
+不能凭猜测判定支持。
+
+不能将网络失败误判为：
+
+Provider 不支持 Tool Calling。
+
+所有模型输出必须经过：
+
+V2 Schema Validation
+Object Resolution
+Action Validation
+Scope Validation。
+
+禁止模型直接修改 Scene JSON。
+
+==================================================
+五、真实 API 使用限制
+==================================================
+
+正式运行付费 API 测试前：
+
+检查当前用户授权与预算。
+
+如果没有明确的本轮测试授权：
+
+先完成离线实现与测试。
+
+报告所需请求数量和预估成本。
+
+等待授权。
+
+不得自行发起大量付费请求。
+
+不得上传用户私人参考图片。
+
+不得输出或记录 API Key。
+
+==================================================
+六、第一轮真实 Smoke Tests
+==================================================
+
+获得授权后，先进行少量真实测试。
+
+TASK A：
+
+创建三个矩形。
+
+分别设置：
+
+红色
+绿色
+蓝色。
+
+随后将第二个矩形改为紫色。
+
+验收：
+
+对象引用正确。
+
+只有三个新增矩形。
+
+最终颜色正确。
+
+其他对象未被修改。
+
+TASK B：
+
+创建 Cubic 文字。
+
+设置字体、字号、位置、颜色。
+
+验收：
+
+真实 Text Layer 存在。
+
+参数正确。
+
+实际 Renderer 显示文字。
+
+TASK C：
+
+创建径向渐变矩形。
+
+设置渐变中心、半径和色标。
+
+验收：
+
+使用原生 Radial Gradient。
+
+参数合法。
+
+实际渲染出现渐变。
+
+TASK D：
+
+创建矩形。
+
+添加位置关键帧。
+
+使它在两秒内移动。
+
+验收：
+
+Keyframe 正确。
+
+中间帧求值正确。
+
+TASK E：
+
+创建矩形并添加 Gaussian Blur。
+
+如果 V2 尚不支持设置 Blur Radius：
+
+必须明确记录该能力缺口。
+
+不要使用 radius=0 的实例
+证明非零模糊视觉效果。
+
+测试全部使用真实 Provider。
+
+不得使用固定响应替代。
+
+==================================================
+七、失败时不要重新开发架构
+==================================================
+
+任何测试失败：
+
+必须记录：
+
+Provider
+
+Model
+
+User Request
+
+Model Response
+
+Parsed Intent
+
+Validation Result
+
+Resolved Objects
+
+Command Execution
+
+Recovery Attempts
+
+Scene State
+
+Render Result
+
+Failure Stage。
+
+针对具体失败定位根因。
+
+如果属于：
+
+Model Planning Failure
+
+则检查模型生成的意图。
+
+如果属于：
+
+Schema Failure
+
+则检查真实参数契约。
+
+如果属于：
+
+Reference Failure
+
+则检查 Runtime 对象引用。
+
+如果属于：
+
+Command Failure
+
+则检查 Editor Adapter。
+
+如果属于：
+
+Renderer Failure
+
+则检查实际渲染。
+
+禁止：
+
+每发现一个错误
+就增加一套新管理系统。
+
+==================================================
+八、真实 V1 / V2 对照
+==================================================
+
+使用相同：
+
+Provider
+
+Model
+
+Task
+
+Composition
+
+可用权限
+
+预算
+
+进行 V1 / V2 对照。
+
+注意：
+
+必须分别使用真实的 V1 和 V2 执行路径。
+
+不得：
+
+拿历史 V1 失败截图
+与当前 V2 固定响应测试对比。
+
+统计：
+
+Full Task Completion
+
+Tool Validation Failures
+
+Object Reference Failures
+
+Plan Failures
+
+Automatic Recovery
+
+Unexpected Mutations
+
+Token Usage
+
+Duration。
+
+记录全部成功和失败样本。
+
+不要选择性展示。
+
+==================================================
+九、测试通过后的扩展验收
+==================================================
+
+第一轮 Smoke Tests 通过之后：
+
+不要立即宣布 V2 可以正式替代 V1。
+
+先提交真实测试结果。
+
+在用户批准进一步测试预算后：
+
+扩大独立重复样本。
+
+建议最终覆盖：
+
+至少五类基础创作任务。
+
+每类20次。
+
+目标：
+
+基础任务完整成功率 >=95%。
+
+但不能将该目标
+表述为所有模型的成功保证。
+
+更重要的安全门禁：
+
+不得发生未经授权的正式工程修改。
+
+不得破坏已有用户内容。
+
+不得出现重复的非幂等创建。
+
+失败时不得错误提交。
+
+==================================================
+十、V2 Canary 阶段
+==================================================
+
+真实模型测试证明基础执行稳定后：
+
+允许进入受控 Canary。
+
+Canary 要求：
+
+用户明确选择 V2。
+
+保留 V1 回退。
+
+允许查看执行计划。
+
+允许拒绝结果。
+
+允许 Undo。
+
+任务失败保留输入。
+
+提供脱敏诊断导出。
+
+暂不恢复：
+
+复杂 Skill
+
+Effect Forge
+
+参考图重建
+
+高级生成式节点。
+
+只有基础创作稳定后，
+才能逐步接入。
+
+==================================================
+十一、回归测试
+==================================================
+
+继续保留全部 V2-0 至 V2-4 测试。
+
+新增：
+
+真实 Provider Response Parsing
+
+Structured Intent Validation
+
+Tool Calling Normalization
+
+Live Object Resolution
+
+Real Scene Verification
+
+Canary Runtime Selection
+
+V1 / V2 Isolation
+
+Failed Task Rollback
+
+Result Accept / Reject
+
+Undo / Redo。
+
+完成：
+
+Typecheck
+
+Lint
+
+Tests
+
+Build
+
+Desktop Build。
+
+==================================================
+十二、最终交付
+==================================================
+
+生成：
+
+AGENT_V2_LIVE_VALIDATION_REPORT.md
+
+AGENT_V2_PROVIDER_COMPATIBILITY.md
+
+AGENT_V2_CANARY_RESULT.md
+
+报告必须包含：
+
+1. 真实 Provider 是否已连接。
+
+2. 是否执行了真实 API 请求。
+
+3. 实际请求次数。
+
+4. 实际 Token 消耗。
+
+5. 各项任务成功率。
+
+6. 失败发生在哪一层。
+
+7. V1 / V2 真实对照结果。
+
+8. V2 是否存在意外工程修改。
+
+9. V2 是否可以进入 Canary。
+
+10. V2 是否具备正式替换条件。
+
+不得根据：
+
+安装包生成成功
+
+或：
+
+固定响应测试100%通过
+
+就宣布 Agent Core V2 已经完成。
+
+==================================================
+最终目标
+==================================================
+
+这次不需要开发更多 Agent 功能。
+
+只需要回答一个决定 Swayframe
+未来开发方向的问题：
+
+Agent Core V2
+
+能否在真实 DeepSeek 模型下，
+
+稳定完成已有基础创作任务，
+
+并且明显减少旧 Agent
+长期存在的执行失败？
+
+只有真实结果能够回答这个问题。
+
+现在开始 V2-5。
+
+优先完成：
+
+真实 Provider 接入
++
+受控 V2 测试入口
++
+真实 Smoke Tests
++
+可靠性对照。
+
+暂时不要进入高级功能迁移。

@@ -1,0 +1,389 @@
+{
+  "id": "radial-bg-glow-text-swayframe",
+  "goal": "创建蓝色径向渐变实色背景层（1920×1080，位置 960,540），在同一 Graph 中径向渐变后接柔和 glow；另建可编辑文字层 SWAYFRAME，0–1 秒从下方移动到画面中心，0–0.4 秒淡入。仅用原生 radialGradient 与 glow，不修改摄像机。",
+  "steps": [
+    {
+      "id": "s1",
+      "label": "创建背景 solid 图层（1920×1080，位置 960,540）",
+      "tool": "createLayer",
+      "arguments": {
+        "layerId": "1b2c3d4e-5f60-4a71-8b92-a3b4c5d6e7f8",
+        "name": "径向渐变背景",
+        "kind": "solid",
+        "width": 1920,
+        "height": 1080,
+        "position": {
+          "x": 960,
+          "y": 540
+        }
+      }
+    },
+    {
+      "id": "s2",
+      "label": "创建径向渐变节点并命名为「径向渐变_背景」",
+      "tool": "createNode",
+      "arguments": {
+        "layerId": "1b2c3d4e-5f60-4a71-8b92-a3b4c5d6e7f8",
+        "nodeId": "2c3d4e5f-6071-4b82-9c03-b4c5d6e7f809",
+        "type": "radialGradient",
+        "position": {
+          "x": 60,
+          "y": 160
+        }
+      }
+    },
+    {
+      "id": "s3",
+      "label": "重命名径向渐变节点",
+      "tool": "renameGraphNode",
+      "arguments": {
+        "nodeId": "2c3d4e5f-6071-4b82-9c03-b4c5d6e7f809",
+        "name": "径向渐变_背景"
+      }
+    },
+    {
+      "id": "s4",
+      "label": "设置渐变中心为画面中心",
+      "tool": "setNodeParameter",
+      "arguments": {
+        "nodeId": "2c3d4e5f-6071-4b82-9c03-b4c5d6e7f809",
+        "key": "center",
+        "value": {
+          "x": 0.5,
+          "y": 0.5
+        }
+      }
+    },
+    {
+      "id": "s5",
+      "label": "设置渐变半径",
+      "tool": "setNodeParameter",
+      "arguments": {
+        "nodeId": "2c3d4e5f-6071-4b82-9c03-b4c5d6e7f809",
+        "key": "radius",
+        "value": 0.62
+      }
+    },
+    {
+      "id": "s6",
+      "label": "设置蓝色渐变色标（中心亮蓝→外围深蓝 →透明外缘）",
+      "tool": "setNodeParameter",
+      "arguments": {
+        "nodeId": "2c3d4e5f-6071-4b82-9c03-b4c5d6e7f809",
+        "key": "stops",
+        "value": [
+          0,
+          0.62,
+          0.85,
+          1,
+          1,
+          0.45,
+          0.24,
+          0.65,
+          1,
+          1,
+          1,
+          0.06,
+          0.14,
+          0.42,
+          1
+        ]
+      }
+    },
+    {
+      "id": "s7",
+      "label": "径向渐变输出接入图层 Output",
+      "tool": "setGraphOutput",
+      "arguments": {
+        "layerId": "1b2c3d4e-5f60-4a71-8b92-a3b4c5d6e7f8",
+        "nodeId": "2c3d4e5f-6071-4b82-9c03-b4c5d6e7f809",
+        "portId": "out"
+      }
+    },
+    {
+      "id": "s8",
+      "label": "创建 glow 节点（自动串入当前 Output 链路）",
+      "tool": "createNode",
+      "arguments": {
+        "layerId": "1b2c3d4e-5f60-4a71-8b92-a3b4c5d6e7f8",
+        "nodeId": "3d4e5f60-7182-4c93-8d14-c5d6e7f8091a",
+        "type": "glow",
+        "position": {
+          "x": 340,
+          "y": 160
+        }
+      }
+    },
+    {
+      "id": "s9",
+      "label": "重命名 glow 节点为「柔和发光_背景」",
+      "tool": "renameGraphNode",
+      "arguments": {
+        "nodeId": "3d4e5f60-7182-4c93-8d14-c5d6e7f8091a",
+        "name": "柔和发光_背景"
+      }
+    },
+    {
+      "id": "s10",
+      "label": "设置柔和发光半径",
+      "tool": "setNodeParameter",
+      "arguments": {
+        "nodeId": "3d4e5f60-7182-4c93-8d14-c5d6e7f8091a",
+        "key": "radius",
+        "value": 60
+      }
+    },
+    {
+      "id": "s11",
+      "label": "设置柔和发光强度",
+      "tool": "setNodeParameter",
+      "arguments": {
+        "nodeId": "3d4e5f60-7182-4c93-8d14-c5d6e7f8091a",
+        "key": "amount",
+        "value": 0.55
+      }
+    },
+    {
+      "id": "s12",
+      "label": "创建可编辑文字层 SWAYFRAME",
+      "tool": "createText",
+      "arguments": {
+        "layerId": "4e5f6071-8293-4da4-9e25-d6e7f8091a2b",
+        "name": "标题文本 SWAYFRAME",
+        "content": "SWAYFRAME",
+        "position": {
+          "x": 960,
+          "y": 880
+        },
+        "width": 900,
+        "height": 200
+      }
+    },
+    {
+      "id": "s13",
+      "label": "文字起点位置（下方）@0s",
+      "tool": "setPosition",
+      "arguments": {
+        "layerId": "4e5f6071-8293-4da4-9e25-d6e7f8091a2b",
+        "value": {
+          "x": 960,
+          "y": 880
+        },
+        "time": 0
+      }
+    },
+    {
+      "id": "s14",
+      "label": "文字终点位置（画面中心）@1s",
+      "tool": "setPosition",
+      "arguments": {
+        "layerId": "4e5f6071-8293-4da4-9e25-d6e7f8091a2b",
+        "value": {
+          "x": 960,
+          "y": 540
+        },
+        "time": 1
+      }
+    },
+    {
+      "id": "s15",
+      "label": "位移关键帧：0s 下方",
+      "tool": "addKeyframe",
+      "arguments": {
+        "layerId": "4e5f6071-8293-4da4-9e25-d6e7f8091a2b",
+        "property": "position",
+        "time": 0,
+        "value": {
+          "x": 960,
+          "y": 880
+        },
+        "interpolation": {
+          "type": "bezier",
+          "out": {
+            "x": 0.25,
+            "y": 0.1
+          },
+          "in": {
+            "x": 0.25,
+            "y": 0.1
+          }
+        }
+      }
+    },
+    {
+      "id": "s16",
+      "label": "位移关键帧：1s 画面中心",
+      "tool": "addKeyframe",
+      "arguments": {
+        "layerId": "4e5f6071-8293-4da4-9e25-d6e7f8091a2b",
+        "property": "position",
+        "time": 1,
+        "value": {
+          "x": 960,
+          "y": 540
+        },
+        "interpolation": {
+          "type": "bezier",
+          "out": {
+            "x": 0.25,
+            "y": 0.1
+          },
+          "in": {
+            "x": 0.25,
+            "y": 0.1
+          }
+        }
+      }
+    },
+    {
+      "id": "s17",
+      "label": "透明度关键帧：0s 完全透明",
+      "tool": "addKeyframe",
+      "arguments": {
+        "layerId": "4e5f6071-8293-4da4-9e25-d6e7f8091a2b",
+        "property": "opacity",
+        "time": 0,
+        "value": 0,
+        "interpolation": {
+          "type": "linear"
+        }
+      }
+    },
+    {
+      "id": "s18",
+      "label": "透明度关键帧：0.4s 完全不透明",
+      "tool": "addKeyframe",
+      "arguments": {
+        "layerId": "4e5f6071-8293-4da4-9e25-d6e7f8091a2b",
+        "property": "opacity",
+        "time": 0.4,
+        "value": 1,
+        "interpolation": {
+          "type": "linear"
+        }
+      }
+    },
+    {
+      "id": "s19",
+      "label": "自动布局背景图层 Graph",
+      "tool": "layoutGraph",
+      "arguments": {
+        "layerId": "1b2c3d4e-5f60-4a71-8b92-a3b4c5d6e7f8"
+      }
+    }
+  ],
+  "risk": "low",
+  "creation": {
+    "intent": "在当前合成中添加蓝色径向渐变实色背景层（1920×1080，居中 960,540），并在同一 Graph 中为背景接入柔和原生 glow；再创建原生可编辑文字层 SWAYFRAME，0–1 秒从下方上移到画面中心，0–0.4 秒淡入。全部使用原生 radialGradient 与 glow，无噪声、图片、Forge 或新建合成，且不改动摄像机层。",
+    "tasks": [
+      {
+        "id": "t1",
+        "description": "创建 1920×1080 实色背景图层「径向渐变背景」，位置 960,540 以覆盖全画布",
+        "executionDomain": "scene",
+        "strategy": "compose",
+        "capabilityId": "createLayer",
+        "stepIds": [
+          "s1"
+        ],
+        "dependencies": []
+      },
+      {
+        "id": "t2",
+        "description": "在背景层 Graph 内创建并命名原生 radialGradient 节点「径向渐变_背景」，设置中心/半径/蓝色渐变色标，并将输出接入图层 Output",
+        "executionDomain": "compositing",
+        "strategy": "compose",
+        "capabilityId": "radialGradient",
+        "stepIds": [
+          "s2",
+          "s3",
+          "s4",
+          "s5",
+          "s6",
+          "s7"
+        ],
+        "dependencies": [
+          "t1"
+        ]
+      },
+      {
+        "id": "t3",
+        "description": "在背景层同一 Graph 中串接原生 glow 节点「柔和发光_背景」，设置柔和半径与强度，作用于背景渐变而非文字",
+        "executionDomain": "compositing",
+        "strategy": "compose",
+        "capabilityId": "glow",
+        "stepIds": [
+          "s8",
+          "s9",
+          "s10",
+          "s11"
+        ],
+        "dependencies": [
+          "t2"
+        ]
+      },
+      {
+        "id": "t4",
+        "description": "创建原生可编辑文字层「标题文本 SWAYFRAME」，内容 SWAYFRAME，初始位于下方 y=880",
+        "executionDomain": "scene",
+        "strategy": "generate",
+        "capabilityId": "createText",
+        "stepIds": [
+          "s12",
+          "s13"
+        ],
+        "dependencies": [
+          "t1"
+        ]
+      },
+      {
+        "id": "t5",
+        "description": "为文字层添加位置动画：0s 位于下方 y=880，1s 到达画面中心 y=540，使用平滑贝塞尔插值",
+        "executionDomain": "animation",
+        "strategy": "generate",
+        "capabilityId": "addKeyframe",
+        "stepIds": [
+          "s14",
+          "s15",
+          "s16"
+        ],
+        "dependencies": [
+          "t4"
+        ]
+      },
+      {
+        "id": "t6",
+        "description": "为文字层添加透明度动画：0s opacity=0，0.4s opacity=1（0–0.4 秒淡入）",
+        "executionDomain": "animation",
+        "strategy": "generate",
+        "capabilityId": "addKeyframe",
+        "stepIds": [
+          "s17",
+          "s18"
+        ],
+        "dependencies": [
+          "t4"
+        ]
+      },
+      {
+        "id": "t7",
+        "description": "对背景层 Graph 执行左到右自动布局",
+        "executionDomain": "compositing",
+        "strategy": "compose",
+        "capabilityId": "layoutGraph",
+        "stepIds": [
+          "s19"
+        ],
+        "dependencies": [
+          "t3"
+        ]
+      }
+    ],
+    "warnings": [
+      "glow 只接入背景渐变层 Graph（径向渐变 → 发光 → 输出），未对文字层添加任何发光。",
+      "文字层保持原生可编辑 Text 图层，动画为原生关键帧（position/opacity）。",
+      "未创建噪声、图片或 Forge 效果，也未新建合成；摄像机层未被修改。",
+      "渐变具体观感（蓝调亮度层次）需在预览中人工确认，编译成功不代表视觉已核验。",
+      "文字预设落点为合成中心 y=540；如需精确垂直居中可按渲染结果微调 y。"
+    ]
+  }
+}

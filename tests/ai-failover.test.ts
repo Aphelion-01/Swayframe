@@ -129,3 +129,46 @@ it('native bridge serialized error keeps rate_limit classification; credential n
     }).success,
   ).toBe(false);
 });
+it('Agent counted chatOnce does not hide retries or provider switches inside one recovery request', async () => {
+  const s = await setup();
+  const a = vi.fn(async () => {
+    throw new AIError('network', 'network');
+  });
+  const b = vi.fn(async () => ({ text: 'OK', model: 'mock', toolCalls: [] }));
+  s.m.register(new MockAIProvider(s.ids[0]!, 'A', a));
+  s.m.register(new MockAIProvider(s.ids[1]!, 'B', b));
+  await expect(s.m.chatOnce('planning', request)).rejects.toMatchObject({
+    code: 'network',
+  });
+  expect(a).toHaveBeenCalledTimes(1);
+  expect(b).not.toHaveBeenCalled();
+});
+import { RecoveryController } from '../src/agent/recovery-controller';
+it('shared recovery counts permitted fallback as a separate request and respects a one-request stop', async () => {
+  const s = await setup();
+  const a = vi.fn(async () => {
+    throw new AIError('rate_limit', '限流');
+  });
+  const b = vi.fn(async () => ({ text: 'OK', model: 'mock', toolCalls: [] }));
+  s.m.register(new MockAIProvider(s.ids[0]!, 'A', a));
+  s.m.register(new MockAIProvider(s.ids[1]!, 'B', b));
+  await expect(
+    new RecoveryController({ planningRequests: 1 }).chat(
+      s.m,
+      'planning',
+      'planning',
+      { ...request },
+    ),
+  ).rejects.toThrow('预算');
+  expect(a).toHaveBeenCalledTimes(1);
+  expect(b).not.toHaveBeenCalled();
+  const response = await new RecoveryController({ planningRequests: 2 }).chat(
+    s.m,
+    'planning',
+    'planning',
+    { ...request },
+  );
+  expect(response.text).toBe('OK');
+  expect(a).toHaveBeenCalledTimes(2);
+  expect(b).toHaveBeenCalledTimes(1);
+});

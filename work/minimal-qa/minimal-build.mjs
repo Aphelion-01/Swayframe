@@ -1,0 +1,8 @@
+import {build} from 'esbuild';import fs from 'node:fs/promises';import path from 'node:path';
+const source=path.resolve(process.env.SF_QA_SOURCE??'.'),scripts=path.resolve('work/minimal-qa'),stage='work/minimal-qa/.compiled/desktop-dist';await fs.mkdir(stage,{recursive:true});
+const plugin={name:'audited-product-source',setup(b){b.onResolve({filter:/^\.\.\/\.\.\/(src|apps)\//},args=>args.importer.startsWith(scripts+path.sep)?{path:path.resolve(source,args.path.slice(6)+(path.extname(args.path)?'':'.ts'))}:undefined);}};
+await build({entryPoints:['work/minimal-qa/minimal-main.ts'],outfile:path.join(stage,'main.cjs'),bundle:true,platform:'node',format:'cjs',external:['electron'],target:'node22',plugins:[plugin]});
+await build({entryPoints:[path.join(source,'apps/desktop/electron/preload.ts')],outfile:path.join(stage,'preload.cjs'),bundle:true,platform:'node',format:'cjs',external:['electron'],target:'node22'});
+await fs.appendFile(path.join(stage,'preload.cjs'),`\nrequire('electron').contextBridge.exposeInMainWorld('sfQA',Object.fromEntries(['init','file','pixels','arm','ready','release','choose','read','done'].map(m=>[m,(...a)=>require('electron').ipcRenderer.invoke('sf-qa:'+m,...a)])));\n`);
+await build({entryPoints:[path.join(source,'apps/desktop/electron/export-worker.ts')],outfile:path.join(stage,'export-worker.cjs'),bundle:true,platform:'node',format:'cjs',external:['electron'],target:'node22'});
+await build({entryPoints:['work/minimal-qa/minimal-renderer.tsx'],outfile:'work/minimal-qa/minimal-renderer.js',bundle:true,platform:'browser',format:'iife',loader:{'.md':'text'},jsx:'automatic',define:{'import.meta.env.DEV':'false'},plugins:[plugin]});

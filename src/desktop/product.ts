@@ -8,7 +8,7 @@ export const ProductMetadata = Object.freeze({
   website: null,
   applicationId: 'com.swayframe.editor',
   fileExtension: 'swayframe',
-  build: 'native-ai-agent-v1',
+  build: 'unified-effect-engine-v03',
   icons: {
     png: 'build/icons/icon.png',
     mac: 'build/icons/icon.icns',

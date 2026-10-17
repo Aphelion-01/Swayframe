@@ -1,0 +1,3965 @@
+{
+  "row": {
+    "id": "L1-V2",
+    "variant": "V2",
+    "task": "L1",
+    "label": "REAL PROVIDER",
+    "fault": null,
+    "pass": true,
+    "error": null,
+    "failureStage": null,
+    "goalCorrect": true,
+    "requests": 1,
+    "completedActions": 12,
+    "deterministicRecoveries": 0,
+    "fixtureOrLiveModelRepairs": 0,
+    "faultEvents": [],
+    "commits": 1,
+    "undo": true,
+    "redo": true,
+    "roundTrip": true,
+    "unexpectedMutation": false,
+    "frames": [
+      {
+        "time": 0,
+        "width": 720,
+        "height": 405,
+        "foregroundPixels": 17841
+      },
+      {
+        "time": 1,
+        "width": 720,
+        "height": 405,
+        "foregroundPixels": 16041
+      },
+      {
+        "time": 2,
+        "width": 720,
+        "height": 405,
+        "foregroundPixels": 12966
+      }
+    ],
+    "durationMs": 4145.799999982119,
+    "usage": [
+      {
+        "at": 1791815084450,
+        "providerId": "d8d53de4-7dc4-4517-9682-b2e210686c3b",
+        "model": "deepseek-flash",
+        "task": "planning",
+        "inputTokens": 12300,
+        "outputTokens": 1034,
+        "totalTokens": 13334
+      }
+    ]
+  },
+  "userRequest": "新建Red、Green、Blue三个200×200矩形。填充红绿蓝并分别放在(650,540)、(960,540)、(1270,540)。创建Title文字Cubic，serif，初始字号48、白色；创建后改字号96并移到(960,300)。Green位置0秒(960,540)、2秒(1300,540)，线性插值。最后将Red改紫色(0.5,0,0.5)。不改已有对象。",
+  "transportRecords": [
+    {
+      "request": {
+        "stream": false,
+        "maxOutputTokens": 2000,
+        "messages": [
+          {
+            "role": "system",
+            "content": "Return one high-level Task Intent. No UUID generation, raw commands, skills or executable code. Reference newly created objects by action result; existing targets only from supplied context. Defaults come from the editor. Supported semantic actions map only to supplied registered capabilities. All actions execute incrementally in an isolated draft. Do not claim success before host verification.\n{\"context\":{\"composition\":{\"id\":\"3b881efb-b94b-4b96-a166-1bbd1d6815fa\",\"width\":1920,\"height\":1080,\"duration\":5},\"selection\":[],\"targets\":[],\"scope\":{\"compositionId\":\"3b881efb-b94b-4b96-a166-1bbd1d6815fa\",\"existingLayerIds\":[],\"allowCreate\":true}},\"capabilities\":[{\"name\":\"createRectangle\",\"description\":\"Create an editable rectangle layer.\",\"parameters\":{\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"type\":\"object\",\"properties\":{\"layerId\":{\"type\":\"string\",\"format\":\"uuid\",\"pattern\":\"^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$\"},\"name\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":200},\"position\":{\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"number\"},\"y\":{\"type\":\"number\"}},\"required\":[\"x\",\"y\"],\"additionalProperties\":false,\"description\":\"Layer transform position in composition pixels, at the layer anchor/center, not its top-left corner. Default is composition center.\"},\"width\":{\"type\":\"number\",\"exclusiveMinimum\":0,\"maximum\":16384},\"height\":{\"type\":\"number\",\"exclusiveMinimum\":0,\"maximum\":16384}},\"additionalProperties\":false},\"permission\":\"WRITE\",\"sideEffects\":\"shared Command / Transaction\",\"outputSchema\":{\"type\":\"object\",\"properties\":{\"layerId\":{\"type\":\"string\",\"format\":\"uuid\"}}},\"referenceRules\":\"Actual draft identities; active composition, object type and scope are checked at runtime.\",\"available\":true},{\"name\":\"createEllipse\",\"description\":\"Create an editable ellipse layer.\",\"parameters\":{\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"type\":\"object\",\"properties\":{\"layerId\":{\"type\":\"string\",\"format\":\"uuid\",\"pattern\":\"^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$\"},\"name\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":200},\"position\":{\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"number\"},\"y\":{\"type\":\"number\"}},\"required\":[\"x\",\"y\"],\"additionalProperties\":false,\"description\":\"Layer transform position in composition pixels, at the layer anchor/center, not its top-left corner. Default is composition center.\"},\"width\":{\"type\":\"number\",\"exclusiveMinimum\":0,\"maximum\":16384},\"height\":{\"type\":\"number\",\"exclusiveMinimum\":0,\"maximum\":16384}},\"additionalProperties\":false},\"permission\":\"WRITE\",\"sideEffects\":\"shared Command / Transaction\",\"outputSchema\":{\"type\":\"object\",\"properties\":{\"layerId\":{\"type\":\"string\",\"format\":\"uuid\"}}},\"referenceRules\":\"Actual draft identities; active composition, object type and scope are checked at runtime.\",\"available\":true},{\"name\":\"createText\",\"description\":\"Create editable text. content is required; position is {x,y} composition pixels. Optional fontSize, fontFamily, color {r,g,b,a} in 0..1, alignment left/center/right. Defaults to canvas center. Never use text/font_size aliases.\",\"parameters\":{\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"type\":\"object\",\"properties\":{\"layerId\":{\"type\":\"string\",\"format\":\"uuid\",\"pattern\":\"^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$\"},\"name\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":200},\"position\":{\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"number\"},\"y\":{\"type\":\"number\"}},\"required\":[\"x\",\"y\"],\"additionalProperties\":false,\"description\":\"Layer transform position in composition pixels, at the layer anchor/center, not its top-left corner. Default is composition center.\"},\"width\":{\"type\":\"number\",\"exclusiveMinimum\":0,\"maximum\":16384},\"height\":{\"type\":\"number\",\"exclusiveMinimum\":0,\"maximum\":16384},\"content\":{\"type\":\"string\",\"maxLength\":10000},\"fontSize\":{\"type\":\"number\",\"minimum\":1,\"maximum\":2000},\"fontFamily\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":200},\"color\":{\"type\":\"object\",\"properties\":{\"r\":{\"type\":\"number\",\"minimum\":0,\"maximum\":1},\"g\":{\"type\":\"number\",\"minimum\":0,\"maximum\":1},\"b\":{\"type\":\"number\",\"minimum\":0,\"maximum\":1},\"a\":{\"type\":\"number\",\"minimum\":0,\"maximum\":1}},\"required\":[\"r\",\"g\",\"b\",\"a\"],\"additionalProperties\":false},\"alignment\":{\"type\":\"string\",\"enum\":[\"left\",\"center\",\"right\"]}},\"required\":[\"content\"],\"additionalProperties\":false},\"permission\":\"WRITE\",\"sideEffects\":\"shared Command / Transaction\",\"outputSchema\":{\"type\":\"object\",\"properties\":{\"layerId\":{\"type\":\"string\",\"format\":\"uuid\"}}},\"referenceRules\":\"Actual draft identities; active composition, object type and scope are checked at runtime.\",\"available\":true},{\"name\":\"setPosition\",\"description\":\"Set position at current/explicit timeline time.\",\"parameters\":{\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"type\":\"object\",\"properties\":{\"layerId\":{\"anyOf\":[{\"type\":\"string\",\"format\":\"uuid\",\"pattern\":\"^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$\"},{\"oneOf\":[{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"existing\"},\"id\":{\"type\":\"string\",\"format\":\"uuid\"}},\"required\":[\"kind\",\"id\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"selection\"},\"objectType\":{\"type\":\"string\",\"const\":\"layer\"}},\"required\":[\"kind\",\"objectType\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"stepResult\"},\"stepId\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":100},\"output\":{\"type\":\"string\",\"enum\":[\"layerId\",\"nodeId\",\"propertyId\",\"maskId\",\"effectId\",\"edgeId\",\"compositionId\",\"keyframeId\",\"assetId\"]}},\"required\":[\"kind\",\"stepId\",\"output\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"graphNode\"},\"nodeId\":{\"type\":\"string\",\"format\":\"uuid\"}},\"required\":[\"kind\",\"nodeId\"],\"additionalProperties\":false}]}],\"description\":\"Existing UUID or semantic reference. Never invent IDs.\"},\"value\":{\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"number\"},\"y\":{\"type\":\"number\"}},\"required\":[\"x\",\"y\"],\"additionalProperties\":false},\"time\":{\"type\":\"number\",\"minimum\":0}},\"required\":[\"layerId\",\"value\"],\"additionalProperties\":false},\"permission\":\"WRITE\",\"sideEffects\":\"shared Command / Transaction\",\"outputSchema\":{\"type\":\"object\",\"properties\":{}},\"referenceRules\":\"Actual draft identities; active composition, object type and scope are checked at runtime.\",\"available\":true},{\"name\":\"setOpacity\",\"description\":\"Set opacity at current/explicit timeline time.\",\"parameters\":{\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"type\":\"object\",\"properties\":{\"layerId\":{\"anyOf\":[{\"type\":\"string\",\"format\":\"uuid\",\"pattern\":\"^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$\"},{\"oneOf\":[{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"existing\"},\"id\":{\"type\":\"string\",\"format\":\"uuid\"}},\"required\":[\"kind\",\"id\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"selection\"},\"objectType\":{\"type\":\"string\",\"const\":\"layer\"}},\"required\":[\"kind\",\"objectType\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"stepResult\"},\"stepId\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":100},\"output\":{\"type\":\"string\",\"enum\":[\"layerId\",\"nodeId\",\"propertyId\",\"maskId\",\"effectId\",\"edgeId\",\"compositionId\",\"keyframeId\",\"assetId\"]}},\"required\":[\"kind\",\"stepId\",\"output\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"graphNode\"},\"nodeId\":{\"type\":\"string\",\"format\":\"uuid\"}},\"required\":[\"kind\",\"nodeId\"],\"additionalProperties\":false}]}],\"description\":\"Existing UUID or semantic reference. Never invent IDs.\"},\"value\":{\"type\":\"number\",\"minimum\":0,\"maximum\":1},\"time\":{\"type\":\"number\",\"minimum\":0}},\"required\":[\"layerId\",\"value\"],\"additionalProperties\":false},\"permission\":\"WRITE\",\"sideEffects\":\"shared Command / Transaction\",\"outputSchema\":{\"type\":\"object\",\"properties\":{}},\"referenceRules\":\"Actual draft identities; active composition, object type and scope are checked at runtime.\",\"available\":true},{\"name\":\"setFill\",\"description\":\"Set native animated shape/solid/text fill. Optional gradient none/linear/radial changes the existing fill mode, preserving shape alpha and geometry. linear uses color and endColor. radial uses radialParameters with exact registered radialGradient parameter IDs (normalized center, radius, flat stops). Native fill does NOT require createNode or graph wiring; existing downstream blur processes it.\",\"parameters\":{\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"type\":\"object\",\"properties\":{\"layerId\":{\"anyOf\":[{\"type\":\"string\",\"format\":\"uuid\",\"pattern\":\"^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$\"},{\"oneOf\":[{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"existing\"},\"id\":{\"type\":\"string\",\"format\":\"uuid\"}},\"required\":[\"kind\",\"id\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"selection\"},\"objectType\":{\"type\":\"string\",\"const\":\"layer\"}},\"required\":[\"kind\",\"objectType\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"stepResult\"},\"stepId\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":100},\"output\":{\"type\":\"string\",\"enum\":[\"layerId\",\"nodeId\",\"propertyId\",\"maskId\",\"effectId\",\"edgeId\",\"compositionId\",\"keyframeId\",\"assetId\"]}},\"required\":[\"kind\",\"stepId\",\"output\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"graphNode\"},\"nodeId\":{\"type\":\"string\",\"format\":\"uuid\"}},\"required\":[\"kind\",\"nodeId\"],\"additionalProperties\":false}]}],\"description\":\"Existing UUID or semantic reference. Never invent IDs.\"},\"color\":{\"type\":\"object\",\"properties\":{\"r\":{\"type\":\"number\",\"minimum\":0,\"maximum\":1},\"g\":{\"type\":\"number\",\"minimum\":0,\"maximum\":1},\"b\":{\"type\":\"number\",\"minimum\":0,\"maximum\":1},\"a\":{\"type\":\"number\",\"minimum\":0,\"maximum\":1}},\"required\":[\"r\",\"g\",\"b\",\"a\"],\"additionalProperties\":false},\"gradient\":{\"type\":\"string\",\"enum\":[\"none\",\"linear\",\"radial\"]},\"endColor\":{\"type\":\"object\",\"properties\":{\"r\":{\"type\":\"number\",\"minimum\":0,\"maximum\":1},\"g\":{\"type\":\"number\",\"minimum\":0,\"maximum\":1},\"b\":{\"type\":\"number\",\"minimum\":0,\"maximum\":1},\"a\":{\"type\":\"number\",\"minimum\":0,\"maximum\":1}},\"required\":[\"r\",\"g\",\"b\",\"a\"],\"additionalProperties\":false},\"radialParameters\":{\"type\":\"object\",\"properties\":{\"center\":{\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"number\"},\"y\":{\"type\":\"number\"}},\"required\":[\"x\",\"y\"],\"additionalProperties\":false,\"description\":\"中心\"},\"radius\":{\"type\":\"number\",\"minimum\":0.001,\"maximum\":10,\"description\":\"半径\"},\"aspect\":{\"type\":\"number\",\"minimum\":0.01,\"maximum\":100,\"description\":\"宽高比\"},\"stops\":{\"minItems\":10,\"maxItems\":160,\"type\":\"array\",\"items\":{\"type\":\"number\",\"minimum\":0,\"maximum\":1},\"description\":\"渐变色标; flat ordered [position,r,g,b,a] groups, 2..32 stops\"},\"opacity\":{\"type\":\"number\",\"minimum\":0,\"maximum\":1,\"description\":\"渐变不透明度\"},\"offset\":{\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"number\"},\"y\":{\"type\":\"number\"}},\"required\":[\"x\",\"y\"],\"additionalProperties\":false,\"description\":\"偏移\"},\"scale\":{\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"number\",\"minimum\":0.001,\"maximum\":100},\"y\":{\"type\":\"number\",\"minimum\":0.001,\"maximum\":100}},\"required\":[\"x\",\"y\"],\"additionalProperties\":false,\"description\":\"渐变缩放\"},\"rotation\":{\"type\":\"number\",\"description\":\"渐变旋转\"},\"interpolation\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":1,\"description\":\"颜色插值\"}},\"additionalProperties\":false},\"time\":{\"type\":\"number\",\"minimum\":0}},\"required\":[\"layerId\",\"color\"],\"additionalProperties\":false},\"permission\":\"WRITE\",\"sideEffects\":\"shared Command / Transaction\",\"outputSchema\":{\"type\":\"object\",\"properties\":{}},\"referenceRules\":\"Actual draft identities; active composition, object type and scope are checked at runtime.\",\"available\":true},{\"name\":\"addEffect\",\"description\":\"Insert an existing effect into the actual compositing graph.\",\"parameters\":{\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"type\":\"object\",\"properties\":{\"layerId\":{\"anyOf\":[{\"type\":\"string\",\"format\":\"uuid\",\"pattern\":\"^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$\"},{\"oneOf\":[{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"existing\"},\"id\":{\"type\":\"string\",\"format\":\"uuid\"}},\"required\":[\"kind\",\"id\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"selection\"},\"objectType\":{\"type\":\"string\",\"const\":\"layer\"}},\"required\":[\"kind\",\"objectType\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"stepResult\"},\"stepId\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":100},\"output\":{\"type\":\"string\",\"enum\":[\"layerId\",\"nodeId\",\"propertyId\",\"maskId\",\"effectId\",\"edgeId\",\"compositionId\",\"keyframeId\",\"assetId\"]}},\"required\":[\"kind\",\"stepId\",\"output\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"graphNode\"},\"nodeId\":{\"type\":\"string\",\"format\":\"uuid\"}},\"required\":[\"kind\",\"nodeId\"],\"additionalProperties\":false}]}],\"description\":\"Existing UUID or semantic reference. Never invent IDs.\"},\"kind\":{\"type\":\"string\",\"enum\":[\"brightnessContrast\",\"exposure\",\"hueSaturation\",\"temperature\",\"tint\",\"levels\",\"gaussianBlur\",\"dropShadow\",\"glow\",\"tintFill\"]},\"effectId\":{\"type\":\"string\",\"format\":\"uuid\",\"pattern\":\"^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$\"}},\"required\":[\"layerId\",\"kind\"],\"additionalProperties\":false},\"permission\":\"WRITE\",\"sideEffects\":\"shared Command / Transaction\",\"outputSchema\":{\"type\":\"object\",\"properties\":{\"effectId\":{\"type\":\"string\",\"format\":\"uuid\"}}},\"referenceRules\":\"Actual draft identities; active composition, object type and scope are checked at runtime.\",\"available\":true},{\"name\":\"addKeyframe\",\"description\":\"Add a real timeline keyframe. Use propertyId, or layerId + property path (position/scale/rotation/opacity or editor.properties key), including layers created earlier in the same plan.\",\"parameters\":{\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"type\":\"object\",\"properties\":{\"propertyId\":{\"anyOf\":[{\"type\":\"string\",\"format\":\"uuid\",\"pattern\":\"^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$\"},{\"oneOf\":[{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"existing\"},\"id\":{\"type\":\"string\",\"format\":\"uuid\"}},\"required\":[\"kind\",\"id\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"selection\"},\"objectType\":{\"type\":\"string\",\"const\":\"layer\"}},\"required\":[\"kind\",\"objectType\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"stepResult\"},\"stepId\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":100},\"output\":{\"type\":\"string\",\"enum\":[\"layerId\",\"nodeId\",\"propertyId\",\"maskId\",\"effectId\",\"edgeId\",\"compositionId\",\"keyframeId\",\"assetId\"]}},\"required\":[\"kind\",\"stepId\",\"output\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"graphNode\"},\"nodeId\":{\"type\":\"string\",\"format\":\"uuid\"}},\"required\":[\"kind\",\"nodeId\"],\"additionalProperties\":false}]}],\"description\":\"Existing UUID or semantic reference. Never invent IDs.\"},\"layerId\":{\"anyOf\":[{\"type\":\"string\",\"format\":\"uuid\",\"pattern\":\"^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$\"},{\"oneOf\":[{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"existing\"},\"id\":{\"type\":\"string\",\"format\":\"uuid\"}},\"required\":[\"kind\",\"id\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"selection\"},\"objectType\":{\"type\":\"string\",\"const\":\"layer\"}},\"required\":[\"kind\",\"objectType\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"stepResult\"},\"stepId\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":100},\"output\":{\"type\":\"string\",\"enum\":[\"layerId\",\"nodeId\",\"propertyId\",\"maskId\",\"effectId\",\"edgeId\",\"compositionId\",\"keyframeId\",\"assetId\"]}},\"required\":[\"kind\",\"stepId\",\"output\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"graphNode\"},\"nodeId\":{\"type\":\"string\",\"format\":\"uuid\"}},\"required\":[\"kind\",\"nodeId\"],\"additionalProperties\":false}]}],\"description\":\"Existing UUID or semantic reference. Never invent IDs.\"},\"property\":{\"type\":\"string\",\"maxLength\":100},\"keyframeId\":{\"type\":\"string\",\"format\":\"uuid\",\"pattern\":\"^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$\"},\"time\":{\"type\":\"number\",\"minimum\":0},\"value\":{\"anyOf\":[{\"type\":\"number\"},{\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"number\"},\"y\":{\"type\":\"number\"}},\"required\":[\"x\",\"y\"],\"additionalProperties\":false},{\"maxItems\":12000,\"type\":\"array\",\"items\":{\"type\":\"number\"}}]},\"interpolation\":{\"oneOf\":[{\"type\":\"object\",\"properties\":{\"type\":{\"type\":\"string\",\"const\":\"linear\"}},\"required\":[\"type\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"type\":{\"type\":\"string\",\"const\":\"hold\"}},\"required\":[\"type\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"type\":{\"type\":\"string\",\"const\":\"bezier\"},\"out\":{\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"number\",\"minimum\":0,\"maximum\":1},\"y\":{\"type\":\"number\",\"minimum\":-10,\"maximum\":10}},\"required\":[\"x\",\"y\"],\"additionalProperties\":false},\"in\":{\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"number\",\"minimum\":0,\"maximum\":1},\"y\":{\"type\":\"number\",\"minimum\":-10,\"maximum\":10}},\"required\":[\"x\",\"y\"],\"additionalProperties\":false}},\"required\":[\"type\",\"out\",\"in\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"type\":{\"type\":\"string\",\"const\":\"spring\"},\"stiffness\":{\"type\":\"number\",\"minimum\":0.001,\"maximum\":10000},\"damping\":{\"type\":\"number\",\"minimum\":0.001,\"maximum\":10000},\"mass\":{\"type\":\"number\",\"minimum\":0.001,\"maximum\":10000}},\"required\":[\"type\",\"stiffness\",\"damping\",\"mass\"],\"additionalProperties\":false}]}},\"required\":[\"time\",\"value\"],\"additionalProperties\":false},\"permission\":\"WRITE\",\"sideEffects\":\"shared Command / Transaction\",\"outputSchema\":{\"type\":\"object\",\"properties\":{\"keyframeId\":{\"type\":\"string\",\"format\":\"uuid\"}}},\"referenceRules\":\"Actual draft identities; active composition, object type and scope are checked at runtime.\",\"available\":true},{\"name\":\"setInterpolation\",\"description\":\"Set interpolation and clear stale outgoing handles.\",\"parameters\":{\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"type\":\"object\",\"properties\":{\"propertyId\":{\"anyOf\":[{\"type\":\"string\",\"format\":\"uuid\",\"pattern\":\"^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$\"},{\"oneOf\":[{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"existing\"},\"id\":{\"type\":\"string\",\"format\":\"uuid\"}},\"required\":[\"kind\",\"id\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"selection\"},\"objectType\":{\"type\":\"string\",\"const\":\"layer\"}},\"required\":[\"kind\",\"objectType\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"stepResult\"},\"stepId\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":100},\"output\":{\"type\":\"string\",\"enum\":[\"layerId\",\"nodeId\",\"propertyId\",\"maskId\",\"effectId\",\"edgeId\",\"compositionId\",\"keyframeId\",\"assetId\"]}},\"required\":[\"kind\",\"stepId\",\"output\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"graphNode\"},\"nodeId\":{\"type\":\"string\",\"format\":\"uuid\"}},\"required\":[\"kind\",\"nodeId\"],\"additionalProperties\":false}]}],\"description\":\"Existing UUID or semantic reference. Never invent IDs.\"},\"keyframeId\":{\"anyOf\":[{\"type\":\"string\",\"format\":\"uuid\",\"pattern\":\"^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$\"},{\"oneOf\":[{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"existing\"},\"id\":{\"type\":\"string\",\"format\":\"uuid\"}},\"required\":[\"kind\",\"id\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"selection\"},\"objectType\":{\"type\":\"string\",\"const\":\"layer\"}},\"required\":[\"kind\",\"objectType\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"stepResult\"},\"stepId\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":100},\"output\":{\"type\":\"string\",\"enum\":[\"layerId\",\"nodeId\",\"propertyId\",\"maskId\",\"effectId\",\"edgeId\",\"compositionId\",\"keyframeId\",\"assetId\"]}},\"required\":[\"kind\",\"stepId\",\"output\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"graphNode\"},\"nodeId\":{\"type\":\"string\",\"format\":\"uuid\"}},\"required\":[\"kind\",\"nodeId\"],\"additionalProperties\":false}]}],\"description\":\"Existing UUID or semantic reference. Never invent IDs.\"},\"interpolation\":{\"oneOf\":[{\"type\":\"object\",\"properties\":{\"type\":{\"type\":\"string\",\"const\":\"linear\"}},\"required\":[\"type\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"type\":{\"type\":\"string\",\"const\":\"hold\"}},\"required\":[\"type\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"type\":{\"type\":\"string\",\"const\":\"bezier\"},\"out\":{\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"number\",\"minimum\":0,\"maximum\":1},\"y\":{\"type\":\"number\",\"minimum\":-10,\"maximum\":10}},\"required\":[\"x\",\"y\"],\"additionalProperties\":false},\"in\":{\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"number\",\"minimum\":0,\"maximum\":1},\"y\":{\"type\":\"number\",\"minimum\":-10,\"maximum\":10}},\"required\":[\"x\",\"y\"],\"additionalProperties\":false}},\"required\":[\"type\",\"out\",\"in\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"type\":{\"type\":\"string\",\"const\":\"spring\"},\"stiffness\":{\"type\":\"number\",\"minimum\":0.001,\"maximum\":10000},\"damping\":{\"type\":\"number\",\"minimum\":0.001,\"maximum\":10000},\"mass\":{\"type\":\"number\",\"minimum\":0.001,\"maximum\":10000}},\"required\":[\"type\",\"stiffness\",\"damping\",\"mass\"],\"additionalProperties\":false}]}},\"required\":[\"propertyId\",\"keyframeId\",\"interpolation\"],\"additionalProperties\":false},\"permission\":\"WRITE\",\"sideEffects\":\"shared Command / Transaction\",\"outputSchema\":{\"type\":\"object\",\"properties\":{}},\"referenceRules\":\"Actual draft identities; active composition, object type and scope are checked at runtime.\",\"available\":true},{\"name\":\"setFontSize\",\"description\":\"Set text fontSize through animated property.\",\"parameters\":{\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"type\":\"object\",\"properties\":{\"layerId\":{\"anyOf\":[{\"type\":\"string\",\"format\":\"uuid\",\"pattern\":\"^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$\"},{\"oneOf\":[{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"existing\"},\"id\":{\"type\":\"string\",\"format\":\"uuid\"}},\"required\":[\"kind\",\"id\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"selection\"},\"objectType\":{\"type\":\"string\",\"const\":\"layer\"}},\"required\":[\"kind\",\"objectType\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"stepResult\"},\"stepId\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":100},\"output\":{\"type\":\"string\",\"enum\":[\"layerId\",\"nodeId\",\"propertyId\",\"maskId\",\"effectId\",\"edgeId\",\"compositionId\",\"keyframeId\",\"assetId\"]}},\"required\":[\"kind\",\"stepId\",\"output\"],\"additionalProperties\":false},{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"const\":\"graphNode\"},\"nodeId\":{\"type\":\"string\",\"format\":\"uuid\"}},\"required\":[\"kind\",\"nodeId\"],\"additionalProperties\":false}]}],\"description\":\"Existing UUID or semantic reference. Never invent IDs.\"},\"value\":{\"type\":\"number\",\"minimum\":1,\"maximum\":2000},\"time\":{\"type\":\"number\",\"minimum\":0}},\"required\":[\"layerId\",\"value\"],\"additionalProperties\":false},\"permission\":\"WRITE\",\"sideEffects\":\"shared Command / Transaction\",\"outputSchema\":{\"type\":\"object\",\"properties\":{}},\"referenceRules\":\"Actual draft identities; active composition, object type and scope are checked at runtime.\",\"available\":true}]}"
+          },
+          {
+            "role": "user",
+            "content": "新建Red、Green、Blue三个200×200矩形。填充红绿蓝并分别放在(650,540)、(960,540)、(1270,540)。创建Title文字Cubic，serif，初始字号48、白色；创建后改字号96并移到(960,300)。Green位置0秒(960,540)、2秒(1300,540)，线性插值。最后将Red改紫色(0.5,0,0.5)。不改已有对象。"
+          }
+        ],
+        "tools": [
+          {
+            "name": "submitIntent",
+            "description": "Submit a typed high-level task intent; host resolves actual objects and commands incrementally.",
+            "parameters": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "object",
+              "properties": {
+                "goal": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                },
+                "actions": {
+                  "minItems": 1,
+                  "maxItems": 100,
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+                          },
+                          "dependsOn": {
+                            "default": [],
+                            "maxItems": 40,
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+                            }
+                          },
+                          "type": {
+                            "type": "string",
+                            "const": "createShape"
+                          },
+                          "shape": {
+                            "type": "string",
+                            "enum": [
+                              "rectangle",
+                              "ellipse"
+                            ]
+                          },
+                          "name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                          },
+                          "width": {
+                            "type": "number",
+                            "exclusiveMinimum": 0,
+                            "maximum": 16384
+                          },
+                          "height": {
+                            "type": "number",
+                            "exclusiveMinimum": 0,
+                            "maximum": 16384
+                          },
+                          "position": {
+                            "type": "object",
+                            "properties": {
+                              "x": {
+                                "type": "number"
+                              },
+                              "y": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "x",
+                              "y"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "dependsOn",
+                          "type",
+                          "shape"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+                          },
+                          "dependsOn": {
+                            "default": [],
+                            "maxItems": 40,
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+                            }
+                          },
+                          "type": {
+                            "type": "string",
+                            "const": "createText"
+                          },
+                          "name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                          },
+                          "width": {
+                            "type": "number",
+                            "exclusiveMinimum": 0,
+                            "maximum": 16384
+                          },
+                          "height": {
+                            "type": "number",
+                            "exclusiveMinimum": 0,
+                            "maximum": 16384
+                          },
+                          "position": {
+                            "type": "object",
+                            "properties": {
+                              "x": {
+                                "type": "number"
+                              },
+                              "y": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "x",
+                              "y"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "content": {
+                            "type": "string",
+                            "maxLength": 10000
+                          },
+                          "fontFamily": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                          },
+                          "fontSize": {
+                            "type": "number",
+                            "minimum": 1,
+                            "maximum": 2000
+                          },
+                          "color": {
+                            "type": "object",
+                            "properties": {
+                              "r": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1
+                              },
+                              "g": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1
+                              },
+                              "b": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1
+                              },
+                              "a": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1
+                              }
+                            },
+                            "required": [
+                              "r",
+                              "g",
+                              "b",
+                              "a"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "alignment": {
+                            "type": "string",
+                            "enum": [
+                              "left",
+                              "center",
+                              "right"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "dependsOn",
+                          "type",
+                          "content"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+                          },
+                          "dependsOn": {
+                            "default": [],
+                            "maxItems": 40,
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+                            }
+                          },
+                          "type": {
+                            "type": "string",
+                            "const": "setProperty"
+                          },
+                          "target": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "existing"
+                                  },
+                                  "id": {
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "id"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "selection"
+                                  }
+                                },
+                                "required": [
+                                  "kind"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "result"
+                                  },
+                                  "actionId": {
+                                    "type": "string",
+                                    "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "actionId"
+                                ],
+                                "additionalProperties": false
+                              }
+                            ]
+                          },
+                          "property": {
+                            "type": "string",
+                            "enum": [
+                              "position",
+                              "opacity",
+                              "fontSize"
+                            ]
+                          },
+                          "value": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "x": {
+                                    "type": "number"
+                                  },
+                                  "y": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": [
+                                  "x",
+                                  "y"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 2000
+                              }
+                            ]
+                          },
+                          "time": {
+                            "type": "number",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "dependsOn",
+                          "type",
+                          "target",
+                          "property",
+                          "value"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+                          },
+                          "dependsOn": {
+                            "default": [],
+                            "maxItems": 40,
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+                            }
+                          },
+                          "type": {
+                            "type": "string",
+                            "const": "setFill"
+                          },
+                          "target": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "existing"
+                                  },
+                                  "id": {
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "id"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "selection"
+                                  }
+                                },
+                                "required": [
+                                  "kind"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "result"
+                                  },
+                                  "actionId": {
+                                    "type": "string",
+                                    "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "actionId"
+                                ],
+                                "additionalProperties": false
+                              }
+                            ]
+                          },
+                          "color": {
+                            "type": "object",
+                            "properties": {
+                              "r": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1
+                              },
+                              "g": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1
+                              },
+                              "b": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1
+                              },
+                              "a": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1
+                              }
+                            },
+                            "required": [
+                              "r",
+                              "g",
+                              "b",
+                              "a"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "gradient": {
+                            "type": "string",
+                            "enum": [
+                              "none",
+                              "linear",
+                              "radial"
+                            ]
+                          },
+                          "endColor": {
+                            "type": "object",
+                            "properties": {
+                              "r": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1
+                              },
+                              "g": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1
+                              },
+                              "b": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1
+                              },
+                              "a": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1
+                              }
+                            },
+                            "required": [
+                              "r",
+                              "g",
+                              "b",
+                              "a"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "radialParameters": {
+                            "type": "object",
+                            "properties": {
+                              "center": {
+                                "type": "object",
+                                "properties": {
+                                  "x": {
+                                    "type": "number"
+                                  },
+                                  "y": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": [
+                                  "x",
+                                  "y"
+                                ],
+                                "additionalProperties": false,
+                                "description": "中心"
+                              },
+                              "radius": {
+                                "type": "number",
+                                "minimum": 0.001,
+                                "maximum": 10,
+                                "description": "半径"
+                              },
+                              "aspect": {
+                                "type": "number",
+                                "minimum": 0.01,
+                                "maximum": 100,
+                                "description": "宽高比"
+                              },
+                              "stops": {
+                                "minItems": 10,
+                                "maxItems": 160,
+                                "type": "array",
+                                "items": {
+                                  "type": "number",
+                                  "minimum": 0,
+                                  "maximum": 1
+                                },
+                                "description": "渐变色标; flat ordered [position,r,g,b,a] groups, 2..32 stops"
+                              },
+                              "opacity": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1,
+                                "description": "渐变不透明度"
+                              },
+                              "offset": {
+                                "type": "object",
+                                "properties": {
+                                  "x": {
+                                    "type": "number"
+                                  },
+                                  "y": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": [
+                                  "x",
+                                  "y"
+                                ],
+                                "additionalProperties": false,
+                                "description": "偏移"
+                              },
+                              "scale": {
+                                "type": "object",
+                                "properties": {
+                                  "x": {
+                                    "type": "number",
+                                    "minimum": 0.001,
+                                    "maximum": 100
+                                  },
+                                  "y": {
+                                    "type": "number",
+                                    "minimum": 0.001,
+                                    "maximum": 100
+                                  }
+                                },
+                                "required": [
+                                  "x",
+                                  "y"
+                                ],
+                                "additionalProperties": false,
+                                "description": "渐变缩放"
+                              },
+                              "rotation": {
+                                "type": "number",
+                                "description": "渐变旋转"
+                              },
+                              "interpolation": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 1,
+                                "description": "颜色插值"
+                              }
+                            },
+                            "additionalProperties": false
+                          },
+                          "time": {
+                            "type": "number",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "dependsOn",
+                          "type",
+                          "target",
+                          "color"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+                          },
+                          "dependsOn": {
+                            "default": [],
+                            "maxItems": 40,
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+                            }
+                          },
+                          "type": {
+                            "type": "string",
+                            "const": "addEffect"
+                          },
+                          "target": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "existing"
+                                  },
+                                  "id": {
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "id"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "selection"
+                                  }
+                                },
+                                "required": [
+                                  "kind"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "result"
+                                  },
+                                  "actionId": {
+                                    "type": "string",
+                                    "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "actionId"
+                                ],
+                                "additionalProperties": false
+                              }
+                            ]
+                          },
+                          "effect": {
+                            "type": "string",
+                            "const": "gaussianBlur"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "dependsOn",
+                          "type",
+                          "target",
+                          "effect"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+                          },
+                          "dependsOn": {
+                            "default": [],
+                            "maxItems": 40,
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+                            }
+                          },
+                          "type": {
+                            "type": "string",
+                            "const": "addKeyframe"
+                          },
+                          "target": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "existing"
+                                  },
+                                  "id": {
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "id"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "selection"
+                                  }
+                                },
+                                "required": [
+                                  "kind"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "result"
+                                  },
+                                  "actionId": {
+                                    "type": "string",
+                                    "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "actionId"
+                                ],
+                                "additionalProperties": false
+                              }
+                            ]
+                          },
+                          "property": {
+                            "type": "string",
+                            "enum": [
+                              "position",
+                              "opacity"
+                            ]
+                          },
+                          "time": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "value": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "x": {
+                                    "type": "number"
+                                  },
+                                  "y": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": [
+                                  "x",
+                                  "y"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "maxItems": 12000,
+                                "type": "array",
+                                "items": {
+                                  "type": "number"
+                                }
+                              }
+                            ]
+                          },
+                          "interpolation": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "linear"
+                                  }
+                                },
+                                "required": [
+                                  "type"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "hold"
+                                  }
+                                },
+                                "required": [
+                                  "type"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "bezier"
+                                  },
+                                  "out": {
+                                    "type": "object",
+                                    "properties": {
+                                      "x": {
+                                        "type": "number",
+                                        "minimum": 0,
+                                        "maximum": 1
+                                      },
+                                      "y": {
+                                        "type": "number",
+                                        "minimum": -10,
+                                        "maximum": 10
+                                      }
+                                    },
+                                    "required": [
+                                      "x",
+                                      "y"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "in": {
+                                    "type": "object",
+                                    "properties": {
+                                      "x": {
+                                        "type": "number",
+                                        "minimum": 0,
+                                        "maximum": 1
+                                      },
+                                      "y": {
+                                        "type": "number",
+                                        "minimum": -10,
+                                        "maximum": 10
+                                      }
+                                    },
+                                    "required": [
+                                      "x",
+                                      "y"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "out",
+                                  "in"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "spring"
+                                  },
+                                  "stiffness": {
+                                    "type": "number",
+                                    "minimum": 0.001,
+                                    "maximum": 10000
+                                  },
+                                  "damping": {
+                                    "type": "number",
+                                    "minimum": 0.001,
+                                    "maximum": 10000
+                                  },
+                                  "mass": {
+                                    "type": "number",
+                                    "minimum": 0.001,
+                                    "maximum": 10000
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "stiffness",
+                                  "damping",
+                                  "mass"
+                                ],
+                                "additionalProperties": false
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "dependsOn",
+                          "type",
+                          "target",
+                          "property",
+                          "time",
+                          "value"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+                          },
+                          "dependsOn": {
+                            "default": [],
+                            "maxItems": 40,
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+                            }
+                          },
+                          "type": {
+                            "type": "string",
+                            "const": "modifyKeyframe"
+                          },
+                          "target": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "existing"
+                                  },
+                                  "id": {
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "id"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "selection"
+                                  }
+                                },
+                                "required": [
+                                  "kind"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "result"
+                                  },
+                                  "actionId": {
+                                    "type": "string",
+                                    "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "actionId"
+                                ],
+                                "additionalProperties": false
+                              }
+                            ]
+                          },
+                          "property": {
+                            "type": "string",
+                            "enum": [
+                              "position",
+                              "opacity"
+                            ]
+                          },
+                          "keyframe": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "existing"
+                                  },
+                                  "id": {
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "id"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "result"
+                                  },
+                                  "actionId": {
+                                    "type": "string",
+                                    "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "actionId"
+                                ],
+                                "additionalProperties": false
+                              }
+                            ]
+                          },
+                          "interpolation": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "linear"
+                                  }
+                                },
+                                "required": [
+                                  "type"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "hold"
+                                  }
+                                },
+                                "required": [
+                                  "type"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "bezier"
+                                  },
+                                  "out": {
+                                    "type": "object",
+                                    "properties": {
+                                      "x": {
+                                        "type": "number",
+                                        "minimum": 0,
+                                        "maximum": 1
+                                      },
+                                      "y": {
+                                        "type": "number",
+                                        "minimum": -10,
+                                        "maximum": 10
+                                      }
+                                    },
+                                    "required": [
+                                      "x",
+                                      "y"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "in": {
+                                    "type": "object",
+                                    "properties": {
+                                      "x": {
+                                        "type": "number",
+                                        "minimum": 0,
+                                        "maximum": 1
+                                      },
+                                      "y": {
+                                        "type": "number",
+                                        "minimum": -10,
+                                        "maximum": 10
+                                      }
+                                    },
+                                    "required": [
+                                      "x",
+                                      "y"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "out",
+                                  "in"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "const": "spring"
+                                  },
+                                  "stiffness": {
+                                    "type": "number",
+                                    "minimum": 0.001,
+                                    "maximum": 10000
+                                  },
+                                  "damping": {
+                                    "type": "number",
+                                    "minimum": 0.001,
+                                    "maximum": 10000
+                                  },
+                                  "mass": {
+                                    "type": "number",
+                                    "minimum": 0.001,
+                                    "maximum": 10000
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "stiffness",
+                                  "damping",
+                                  "mass"
+                                ],
+                                "additionalProperties": false
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "dependsOn",
+                          "type",
+                          "target",
+                          "property",
+                          "keyframe",
+                          "interpolation"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "goal",
+                "actions"
+              ],
+              "additionalProperties": false
+            }
+          }
+        ],
+        "toolChoice": "submitIntent",
+        "model": "deepseek-flash",
+        "responseMode": "tools"
+      },
+      "response": {
+        "text": "",
+        "model": "deepseek-flash",
+        "toolCalls": [
+          {
+            "id": "call_00_rEyoMibmUX6e7WYR9vye0406",
+            "name": "submitIntent",
+            "arguments": {
+              "goal": "在合成中新建三个 200×200 矩形 Red/Green/Blue，分别填充红、绿、蓝并放置在 (650,540)、(960,540)、(1270,540)；创建 serif 字体文字 Title 内容为 \"Cubic\"，初始字号 48、白色，创建后将字号改为 96 并移动到 (960,300)；为 Green 的位置添加 0 秒 (960,540) 与 2 秒 (1300,540) 两个线性插值关键帧；最后把 Red 的填充改为紫色 (0.5,0,0.5)。不修改任何已有对象。",
+              "actions": [
+                {
+                  "id": "rectRed",
+                  "dependsOn": [],
+                  "type": "createShape",
+                  "shape": "rectangle",
+                  "name": "Red",
+                  "width": 200,
+                  "height": 200,
+                  "position": {
+                    "x": 650,
+                    "y": 540
+                  }
+                },
+                {
+                  "id": "rectGreen",
+                  "dependsOn": [],
+                  "type": "createShape",
+                  "shape": "rectangle",
+                  "name": "Green",
+                  "width": 200,
+                  "height": 200,
+                  "position": {
+                    "x": 960,
+                    "y": 540
+                  }
+                },
+                {
+                  "id": "rectBlue",
+                  "dependsOn": [],
+                  "type": "createShape",
+                  "shape": "rectangle",
+                  "name": "Blue",
+                  "width": 200,
+                  "height": 200,
+                  "position": {
+                    "x": 1270,
+                    "y": 540
+                  }
+                },
+                {
+                  "id": "fillRed",
+                  "dependsOn": [
+                    "rectRed"
+                  ],
+                  "type": "setFill",
+                  "target": {
+                    "kind": "result",
+                    "actionId": "rectRed"
+                  },
+                  "color": {
+                    "r": 1,
+                    "g": 0,
+                    "b": 0,
+                    "a": 1
+                  },
+                  "gradient": "none"
+                },
+                {
+                  "id": "fillGreen",
+                  "dependsOn": [
+                    "rectGreen"
+                  ],
+                  "type": "setFill",
+                  "target": {
+                    "kind": "result",
+                    "actionId": "rectGreen"
+                  },
+                  "color": {
+                    "r": 0,
+                    "g": 1,
+                    "b": 0,
+                    "a": 1
+                  },
+                  "gradient": "none"
+                },
+                {
+                  "id": "fillBlue",
+                  "dependsOn": [
+                    "rectBlue"
+                  ],
+                  "type": "setFill",
+                  "target": {
+                    "kind": "result",
+                    "actionId": "rectBlue"
+                  },
+                  "color": {
+                    "r": 0,
+                    "g": 0,
+                    "b": 1,
+                    "a": 1
+                  },
+                  "gradient": "none"
+                },
+                {
+                  "id": "titleText",
+                  "dependsOn": [],
+                  "type": "createText",
+                  "name": "Title",
+                  "content": "Cubic",
+                  "fontFamily": "serif",
+                  "fontSize": 48,
+                  "color": {
+                    "r": 1,
+                    "g": 1,
+                    "b": 1,
+                    "a": 1
+                  },
+                  "alignment": "center",
+                  "position": {
+                    "x": 960,
+                    "y": 540
+                  }
+                },
+                {
+                  "id": "titleSize",
+                  "dependsOn": [
+                    "titleText"
+                  ],
+                  "type": "setProperty",
+                  "target": {
+                    "kind": "result",
+                    "actionId": "titleText"
+                  },
+                  "property": "fontSize",
+                  "value": 96
+                },
+                {
+                  "id": "titleMove",
+                  "dependsOn": [
+                    "titleText"
+                  ],
+                  "type": "setProperty",
+                  "target": {
+                    "kind": "result",
+                    "actionId": "titleText"
+                  },
+                  "property": "position",
+                  "value": {
+                    "x": 960,
+                    "y": 300
+                  }
+                },
+                {
+                  "id": "greenKf0",
+                  "dependsOn": [
+                    "rectGreen"
+                  ],
+                  "type": "addKeyframe",
+                  "target": {
+                    "kind": "result",
+                    "actionId": "rectGreen"
+                  },
+                  "property": "position",
+                  "time": 0,
+                  "value": {
+                    "x": 960,
+                    "y": 540
+                  },
+                  "interpolation": {
+                    "type": "linear"
+                  }
+                },
+                {
+                  "id": "greenKf2",
+                  "dependsOn": [
+                    "rectGreen"
+                  ],
+                  "type": "addKeyframe",
+                  "target": {
+                    "kind": "result",
+                    "actionId": "rectGreen"
+                  },
+                  "property": "position",
+                  "time": 2,
+                  "value": {
+                    "x": 1300,
+                    "y": 540
+                  },
+                  "interpolation": {
+                    "type": "linear"
+                  }
+                },
+                {
+                  "id": "fillRedPurple",
+                  "dependsOn": [
+                    "rectRed"
+                  ],
+                  "type": "setFill",
+                  "target": {
+                    "kind": "result",
+                    "actionId": "rectRed"
+                  },
+                  "color": {
+                    "r": 0.5,
+                    "g": 0,
+                    "b": 0.5,
+                    "a": 1
+                  },
+                  "gradient": "none"
+                }
+              ]
+            }
+          }
+        ],
+        "usage": {
+          "inputTokens": 12300,
+          "outputTokens": 1034,
+          "totalTokens": 13334
+        }
+      }
+    }
+  ],
+  "state": {
+    "id": "5585c7af-a4a7-4097-8350-c1f21552140c",
+    "goal": "在合成中新建三个 200×200 矩形 Red/Green/Blue，分别填充红、绿、蓝并放置在 (650,540)、(960,540)、(1270,540)；创建 serif 字体文字 Title 内容为 \"Cubic\"，初始字号 48、白色，创建后将字号改为 96 并移动到 (960,300)；为 Green 的位置添加 0 秒 (960,540) 与 2 秒 (1300,540) 两个线性插值关键帧；最后把 Red 的填充改为紫色 (0.5,0,0.5)。不修改任何已有对象。",
+    "phase": "COMPLETED",
+    "baseVersion": "9ea93e66906f5f50cac086d4a91f25a217ee2ab379b28893430dd6b8c8036757",
+    "sceneVersion": "494f113ae6e6dfdbfc3694e27dbe8523fe88cdf49b0eb9abece10f5a3082b9c8",
+    "steps": [
+      {
+        "action": {
+          "id": "rectRed",
+          "dependsOn": [],
+          "type": "createShape",
+          "shape": "rectangle",
+          "name": "Red",
+          "width": 200,
+          "height": 200,
+          "position": {
+            "x": 650,
+            "y": 540
+          }
+        },
+        "status": "SUCCEEDED",
+        "attempts": 1,
+        "recoveryAttempts": 0,
+        "draftVersion": "882faba0f104a8063ca0aedc7f57a43c7ade152ba3a030ae0f5ca16b761ce9bb",
+        "resolvedArguments": {
+          "name": "Red",
+          "position": {
+            "x": 650,
+            "y": 540
+          },
+          "width": 200,
+          "height": 200
+        },
+        "result": {
+          "layerId": "e1c72b66-90ea-4568-b9db-18798c299961",
+          "edgeId": "cf813e6b-3418-4ca4-9ecb-5258961a1c33"
+        }
+      },
+      {
+        "action": {
+          "id": "rectGreen",
+          "dependsOn": [],
+          "type": "createShape",
+          "shape": "rectangle",
+          "name": "Green",
+          "width": 200,
+          "height": 200,
+          "position": {
+            "x": 960,
+            "y": 540
+          }
+        },
+        "status": "SUCCEEDED",
+        "attempts": 1,
+        "recoveryAttempts": 0,
+        "draftVersion": "11653cec6ddab0794f53ae00b5a1b2df424d83a840a801b766fcfc7c8ca5821d",
+        "resolvedArguments": {
+          "name": "Green",
+          "position": {
+            "x": 960,
+            "y": 540
+          },
+          "width": 200,
+          "height": 200
+        },
+        "result": {
+          "layerId": "c91c3462-cfcb-4c2e-bbb7-f4d79994f20f",
+          "edgeId": "b3abc0ba-625a-498b-8d12-8b78d79aa05b"
+        }
+      },
+      {
+        "action": {
+          "id": "rectBlue",
+          "dependsOn": [],
+          "type": "createShape",
+          "shape": "rectangle",
+          "name": "Blue",
+          "width": 200,
+          "height": 200,
+          "position": {
+            "x": 1270,
+            "y": 540
+          }
+        },
+        "status": "SUCCEEDED",
+        "attempts": 1,
+        "recoveryAttempts": 0,
+        "draftVersion": "1c7ea7f906d234874a4c84ef6976b11a39ecdca17a70a41734d95a72d4d36008",
+        "resolvedArguments": {
+          "name": "Blue",
+          "position": {
+            "x": 1270,
+            "y": 540
+          },
+          "width": 200,
+          "height": 200
+        },
+        "result": {
+          "layerId": "4cff03f2-51d3-4775-9552-a602751dc2f9",
+          "edgeId": "6b398ac3-402a-473d-8aeb-6dc0d94981d6"
+        }
+      },
+      {
+        "action": {
+          "id": "fillRed",
+          "dependsOn": [
+            "rectRed"
+          ],
+          "type": "setFill",
+          "target": {
+            "kind": "result",
+            "actionId": "rectRed"
+          },
+          "color": {
+            "r": 1,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "gradient": "none"
+        },
+        "status": "SUCCEEDED",
+        "attempts": 1,
+        "recoveryAttempts": 0,
+        "draftVersion": "1474e4f7bcd62b98a9489b7b3ffd37f5e9ac541269966826c4891a1bd27e3f31",
+        "resolvedArguments": {
+          "layerId": "e1c72b66-90ea-4568-b9db-18798c299961",
+          "color": {
+            "r": 1,
+            "g": 0,
+            "b": 0,
+            "a": 1
+          },
+          "gradient": "none"
+        },
+        "result": {}
+      },
+      {
+        "action": {
+          "id": "fillGreen",
+          "dependsOn": [
+            "rectGreen"
+          ],
+          "type": "setFill",
+          "target": {
+            "kind": "result",
+            "actionId": "rectGreen"
+          },
+          "color": {
+            "r": 0,
+            "g": 1,
+            "b": 0,
+            "a": 1
+          },
+          "gradient": "none"
+        },
+        "status": "SUCCEEDED",
+        "attempts": 1,
+        "recoveryAttempts": 0,
+        "draftVersion": "445a25ddd01ca2b9df3522fe9549c7aa09c940ecd2b98cf06a2e685815526dbd",
+        "resolvedArguments": {
+          "layerId": "c91c3462-cfcb-4c2e-bbb7-f4d79994f20f",
+          "color": {
+            "r": 0,
+            "g": 1,
+            "b": 0,
+            "a": 1
+          },
+          "gradient": "none"
+        },
+        "result": {}
+      },
+      {
+        "action": {
+          "id": "fillBlue",
+          "dependsOn": [
+            "rectBlue"
+          ],
+          "type": "setFill",
+          "target": {
+            "kind": "result",
+            "actionId": "rectBlue"
+          },
+          "color": {
+            "r": 0,
+            "g": 0,
+            "b": 1,
+            "a": 1
+          },
+          "gradient": "none"
+        },
+        "status": "SUCCEEDED",
+        "attempts": 1,
+        "recoveryAttempts": 0,
+        "draftVersion": "afefdda43cbbd597ab2584eebe477d32cba871b47cfb4df47bde1c1e1cad8ef9",
+        "resolvedArguments": {
+          "layerId": "4cff03f2-51d3-4775-9552-a602751dc2f9",
+          "color": {
+            "r": 0,
+            "g": 0,
+            "b": 1,
+            "a": 1
+          },
+          "gradient": "none"
+        },
+        "result": {}
+      },
+      {
+        "action": {
+          "id": "titleText",
+          "dependsOn": [],
+          "type": "createText",
+          "name": "Title",
+          "position": {
+            "x": 960,
+            "y": 540
+          },
+          "content": "Cubic",
+          "fontFamily": "serif",
+          "fontSize": 48,
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          "alignment": "center"
+        },
+        "status": "SUCCEEDED",
+        "attempts": 1,
+        "recoveryAttempts": 0,
+        "draftVersion": "5ab72a0a886d3372e4d8975a06998a587fb9f4697bcadf08ef63194c32f39758",
+        "resolvedArguments": {
+          "name": "Title",
+          "position": {
+            "x": 960,
+            "y": 540
+          },
+          "content": "Cubic",
+          "fontSize": 48,
+          "fontFamily": "serif",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          "alignment": "center"
+        },
+        "result": {
+          "layerId": "0fec246a-53cb-4ac9-97bc-0932d0b2defe",
+          "edgeId": "82a892bb-16fb-42ca-837d-ee16cd40be17"
+        }
+      },
+      {
+        "action": {
+          "id": "titleSize",
+          "dependsOn": [
+            "titleText"
+          ],
+          "type": "setProperty",
+          "target": {
+            "kind": "result",
+            "actionId": "titleText"
+          },
+          "property": "fontSize",
+          "value": 96
+        },
+        "status": "SUCCEEDED",
+        "attempts": 1,
+        "recoveryAttempts": 0,
+        "draftVersion": "171d463a3b7dea189ef06a0c7c4da838bb3c05b1afb492ad126a1810b43b9725",
+        "resolvedArguments": {
+          "layerId": "0fec246a-53cb-4ac9-97bc-0932d0b2defe",
+          "value": 96
+        },
+        "result": {}
+      },
+      {
+        "action": {
+          "id": "titleMove",
+          "dependsOn": [
+            "titleText"
+          ],
+          "type": "setProperty",
+          "target": {
+            "kind": "result",
+            "actionId": "titleText"
+          },
+          "property": "position",
+          "value": {
+            "x": 960,
+            "y": 300
+          }
+        },
+        "status": "SUCCEEDED",
+        "attempts": 1,
+        "recoveryAttempts": 0,
+        "draftVersion": "886d53c43260121413ae3d293591b37a31bd92f049d274c2c5bc6646b7f49e45",
+        "resolvedArguments": {
+          "layerId": "0fec246a-53cb-4ac9-97bc-0932d0b2defe",
+          "value": {
+            "x": 960,
+            "y": 300
+          }
+        },
+        "result": {}
+      },
+      {
+        "action": {
+          "id": "greenKf0",
+          "dependsOn": [
+            "rectGreen"
+          ],
+          "type": "addKeyframe",
+          "target": {
+            "kind": "result",
+            "actionId": "rectGreen"
+          },
+          "property": "position",
+          "time": 0,
+          "value": {
+            "x": 960,
+            "y": 540
+          },
+          "interpolation": {
+            "type": "linear"
+          }
+        },
+        "status": "SUCCEEDED",
+        "attempts": 1,
+        "recoveryAttempts": 0,
+        "draftVersion": "12c8b8ba9b4924418c828975ff582871335fb355984a34b147717e775e099a70",
+        "resolvedArguments": {
+          "layerId": "c91c3462-cfcb-4c2e-bbb7-f4d79994f20f",
+          "property": "position",
+          "time": 0,
+          "value": {
+            "x": 960,
+            "y": 540
+          },
+          "interpolation": {
+            "type": "linear"
+          }
+        },
+        "result": {
+          "keyframeId": "d7793b99-f5f9-443f-a4e8-34004a967828"
+        }
+      },
+      {
+        "action": {
+          "id": "greenKf2",
+          "dependsOn": [
+            "rectGreen"
+          ],
+          "type": "addKeyframe",
+          "target": {
+            "kind": "result",
+            "actionId": "rectGreen"
+          },
+          "property": "position",
+          "time": 2,
+          "value": {
+            "x": 1300,
+            "y": 540
+          },
+          "interpolation": {
+            "type": "linear"
+          }
+        },
+        "status": "SUCCEEDED",
+        "attempts": 1,
+        "recoveryAttempts": 0,
+        "draftVersion": "03de7820be29178b2a4e227ef1135394dc4ec3fef6ff2b18acf7da209eda01b2",
+        "resolvedArguments": {
+          "layerId": "c91c3462-cfcb-4c2e-bbb7-f4d79994f20f",
+          "property": "position",
+          "time": 2,
+          "value": {
+            "x": 1300,
+            "y": 540
+          },
+          "interpolation": {
+            "type": "linear"
+          }
+        },
+        "result": {
+          "keyframeId": "12b95fc3-dd11-4db9-8648-7f8cdd704c5d"
+        }
+      },
+      {
+        "action": {
+          "id": "fillRedPurple",
+          "dependsOn": [
+            "rectRed"
+          ],
+          "type": "setFill",
+          "target": {
+            "kind": "result",
+            "actionId": "rectRed"
+          },
+          "color": {
+            "r": 0.5,
+            "g": 0,
+            "b": 0.5,
+            "a": 1
+          },
+          "gradient": "none"
+        },
+        "status": "SUCCEEDED",
+        "attempts": 1,
+        "recoveryAttempts": 0,
+        "draftVersion": "494f113ae6e6dfdbfc3694e27dbe8523fe88cdf49b0eb9abece10f5a3082b9c8",
+        "resolvedArguments": {
+          "layerId": "e1c72b66-90ea-4568-b9db-18798c299961",
+          "color": {
+            "r": 0.5,
+            "g": 0,
+            "b": 0.5,
+            "a": 1
+          },
+          "gradient": "none"
+        },
+        "result": {}
+      }
+    ],
+    "references": {
+      "rectRed": {
+        "layerId": "e1c72b66-90ea-4568-b9db-18798c299961",
+        "edgeId": "cf813e6b-3418-4ca4-9ecb-5258961a1c33"
+      },
+      "rectGreen": {
+        "layerId": "c91c3462-cfcb-4c2e-bbb7-f4d79994f20f",
+        "edgeId": "b3abc0ba-625a-498b-8d12-8b78d79aa05b"
+      },
+      "rectBlue": {
+        "layerId": "4cff03f2-51d3-4775-9552-a602751dc2f9",
+        "edgeId": "6b398ac3-402a-473d-8aeb-6dc0d94981d6"
+      },
+      "fillRed": {},
+      "fillGreen": {},
+      "fillBlue": {},
+      "titleText": {
+        "layerId": "0fec246a-53cb-4ac9-97bc-0932d0b2defe",
+        "edgeId": "82a892bb-16fb-42ca-837d-ee16cd40be17"
+      },
+      "titleSize": {},
+      "titleMove": {},
+      "greenKf0": {
+        "keyframeId": "d7793b99-f5f9-443f-a4e8-34004a967828"
+      },
+      "greenKf2": {
+        "keyframeId": "12b95fc3-dd11-4db9-8648-7f8cdd704c5d"
+      },
+      "fillRedPurple": {}
+    },
+    "targets": [
+      "e1c72b66-90ea-4568-b9db-18798c299961",
+      "c91c3462-cfcb-4c2e-bbb7-f4d79994f20f",
+      "4cff03f2-51d3-4775-9552-a602751dc2f9",
+      "0fec246a-53cb-4ac9-97bc-0932d0b2defe"
+    ],
+    "completedActions": [
+      "rectRed",
+      "rectGreen",
+      "rectBlue",
+      "fillRed",
+      "fillGreen",
+      "fillBlue",
+      "titleText",
+      "titleSize",
+      "titleMove",
+      "greenKf0",
+      "greenKf2",
+      "fillRedPurple"
+    ],
+    "pendingActions": [],
+    "errors": [],
+    "recoveryAttempts": 0,
+    "deterministicRecoveries": 0,
+    "providerRetries": 0,
+    "recoveries": [],
+    "requests": [
+      {
+        "kind": "planning",
+        "actionId": null,
+        "inputUpper": 47179,
+        "outputUpper": 2000,
+        "status": "RECEIVED",
+        "usage": {
+          "inputTokens": 12300,
+          "outputTokens": 1034
+        }
+      }
+    ],
+    "draftDisposition": "COMMITTED",
+    "modelRequests": 1,
+    "actionAttempts": 12,
+    "budget": {
+      "actions": 100,
+      "recoveries": 2,
+      "modelRequests": 3,
+      "deterministicRecoveries": 2,
+      "providerRetries": 0,
+      "inputTokens": 300000,
+      "outputTokens": 40000,
+      "durationMs": 180000
+    },
+    "verification": {
+      "command": {
+        "status": "PASSED",
+        "count": 16
+      },
+      "scene": {
+        "status": "PASSED",
+        "graphCount": 5,
+        "animationSamples": 3
+      },
+      "render": {
+        "status": "PASSED",
+        "frames": 1
+      },
+      "visual": {
+        "status": "NOT_VERIFIED",
+        "reason": "未执行独立视觉比较"
+      },
+      "skillRules": []
+    },
+    "preview": {
+      "image": "data:image/png;base64,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",
+      "width": 720,
+      "height": 405,
+      "foregroundPixels": 17841
+    },
+    "proposedChanges": {
+      "authorization": {
+        "compositionId": "3b881efb-b94b-4b96-a166-1bbd1d6815fa",
+        "existingLayerIds": [],
+        "allowCreate": true
+      },
+      "diff": {
+        "scope": {
+          "kind": "FULL_COMPOSITION",
+          "compositionId": "3b881efb-b94b-4b96-a166-1bbd1d6815fa"
+        },
+        "labels": {
+          "727053b2-2c8a-45e4-a83a-5305626a4275": "Protected",
+          "e1c72b66-90ea-4568-b9db-18798c299961": "Red",
+          "c91c3462-cfcb-4c2e-bbb7-f4d79994f20f": "Green",
+          "4cff03f2-51d3-4775-9552-a602751dc2f9": "Blue",
+          "0fec246a-53cb-4ac9-97bc-0932d0b2defe": "Title",
+          "67008a56-03b6-490b-8dd4-b5df0c18975a": "源图像",
+          "9498cd22-9eea-4db8-bfcf-f9c66e1fbd1c": "输出",
+          "e982d58c-bc8a-4832-bf7b-df07dab823d1": "源图像",
+          "bb60ec13-d365-4fa2-9f72-77853f781e80": "输出",
+          "ac0405c8-92e8-4e97-9700-ed9b2abcb75a": "源图像",
+          "74ba411b-94b7-412b-be1d-0da53a841904": "输出",
+          "78674477-4a68-4fb5-9142-7d1533fa3c1c": "源图像",
+          "55625e57-d4c9-4574-a422-6905fdfc3176": "输出",
+          "b8928b42-53c5-4462-886e-9f591108ba1a": "源图像",
+          "fb412e76-9756-4232-909c-722bb6ada06a": "输出"
+        },
+        "objects": {
+          "created": [
+            "e1c72b66-90ea-4568-b9db-18798c299961",
+            "c91c3462-cfcb-4c2e-bbb7-f4d79994f20f",
+            "4cff03f2-51d3-4775-9552-a602751dc2f9",
+            "0fec246a-53cb-4ac9-97bc-0932d0b2defe"
+          ],
+          "deleted": [],
+          "modified": [],
+          "unchanged": [
+            "727053b2-2c8a-45e4-a83a-5305626a4275"
+          ]
+        },
+        "nodes": {
+          "created": [
+            "e982d58c-bc8a-4832-bf7b-df07dab823d1",
+            "bb60ec13-d365-4fa2-9f72-77853f781e80",
+            "ac0405c8-92e8-4e97-9700-ed9b2abcb75a",
+            "74ba411b-94b7-412b-be1d-0da53a841904",
+            "78674477-4a68-4fb5-9142-7d1533fa3c1c",
+            "55625e57-d4c9-4574-a422-6905fdfc3176",
+            "b8928b42-53c5-4462-886e-9f591108ba1a",
+            "fb412e76-9756-4232-909c-722bb6ada06a"
+          ],
+          "deleted": [],
+          "modified": [],
+          "unchanged": [
+            "67008a56-03b6-490b-8dd4-b5df0c18975a",
+            "9498cd22-9eea-4db8-bfcf-f9c66e1fbd1c"
+          ]
+        },
+        "connections": {
+          "created": [
+            "cf813e6b-3418-4ca4-9ecb-5258961a1c33",
+            "b3abc0ba-625a-498b-8d12-8b78d79aa05b",
+            "6b398ac3-402a-473d-8aeb-6dc0d94981d6",
+            "82a892bb-16fb-42ca-837d-ee16cd40be17"
+          ],
+          "deleted": [],
+          "modified": [],
+          "unchanged": [
+            "7270c714-895b-414c-b154-e7b3d0f30044"
+          ]
+        },
+        "parameters": [],
+        "estimatedCost": {
+          "externalGenerationRequests": 0,
+          "note": "仅本地命令预览；模型规划费用以服务实际用量为准"
+        },
+        "warnings": []
+      }
+    },
+    "proposalId": "44ce886e-8eca-438c-9f60-e7927e5c1205",
+    "changes": {
+      "added": [
+        "Red",
+        "Green",
+        "Blue",
+        "Title"
+      ],
+      "modified": [],
+      "deleted": [],
+      "transactionId": "112efe88-c8c9-4278-8669-6103f53de120"
+    },
+    "usage": [
+      {
+        "inputTokens": 12300,
+        "outputTokens": 1034
+      }
+    ]
+  },
+  "scene": {
+    "schemaVersion": "0.7.0",
+    "id": "deb616f0-572b-40a5-82fa-9119e007dab8",
+    "name": "未命名工程",
+    "compositions": [
+      {
+        "id": "3b881efb-b94b-4b96-a166-1bbd1d6815fa",
+        "name": "合成 01",
+        "width": 1920,
+        "height": 1080,
+        "fps": 30,
+        "duration": 5,
+        "layers": [
+          {
+            "id": "727053b2-2c8a-45e4-a83a-5305626a4275",
+            "name": "Protected",
+            "visible": true,
+            "locked": false,
+            "width": 100,
+            "height": 100,
+            "transform": {
+              "position": {
+                "id": "dca6d068-f7bc-4283-b88e-e42b650c9494",
+                "baseValue": {
+                  "x": -1000,
+                  "y": -1000
+                },
+                "keyframes": []
+              },
+              "scale": {
+                "id": "9757a8d4-38a2-4bba-a660-ebccf2665e98",
+                "baseValue": {
+                  "x": 1,
+                  "y": 1
+                },
+                "keyframes": []
+              },
+              "rotation": {
+                "id": "9d3205db-4562-4bae-b23e-4e6052dc1f3d",
+                "baseValue": 0,
+                "keyframes": []
+              },
+              "opacity": {
+                "id": "8836b242-f680-424d-a540-80f47cf8beb0",
+                "baseValue": 1,
+                "keyframes": []
+              }
+            },
+            "type": "shape",
+            "shapeKind": "rectangle",
+            "fill": {
+              "r": 0.18,
+              "g": 0.42,
+              "b": 1,
+              "a": 1
+            },
+            "editor": {
+              "parentId": null,
+              "inPoint": 0,
+              "outPoint": 3600,
+              "startTime": 0,
+              "blendMode": "normal",
+              "is3D": false,
+              "pathClosed": true,
+              "gradient": "none",
+              "textAlign": "left",
+              "strokeJoin": "round",
+              "strokeCap": "round",
+              "masks": [],
+              "graph": {
+                "id": "399ddd9e-e714-459c-9e0e-d67e374edde9",
+                "version": 1,
+                "owner": {
+                  "type": "layer",
+                  "id": "727053b2-2c8a-45e4-a83a-5305626a4275"
+                },
+                "nodes": [
+                  {
+                    "id": "67008a56-03b6-490b-8dd4-b5df0c18975a",
+                    "type": "source",
+                    "name": "源图像",
+                    "position": {
+                      "x": 40,
+                      "y": 50
+                    },
+                    "inputs": [],
+                    "outputs": [
+                      {
+                        "id": "out",
+                        "name": "图像",
+                        "type": "Image"
+                      }
+                    ],
+                    "params": {},
+                    "enabled": true
+                  },
+                  {
+                    "id": "9498cd22-9eea-4db8-bfcf-f9c66e1fbd1c",
+                    "type": "output",
+                    "name": "输出",
+                    "position": {
+                      "x": 320,
+                      "y": 50
+                    },
+                    "inputs": [
+                      {
+                        "id": "in",
+                        "name": "图像",
+                        "type": "Image",
+                        "required": true
+                      }
+                    ],
+                    "outputs": [],
+                    "params": {},
+                    "enabled": true
+                  }
+                ],
+                "edges": [
+                  {
+                    "id": "7270c714-895b-414c-b154-e7b3d0f30044",
+                    "from": {
+                      "nodeId": "67008a56-03b6-490b-8dd4-b5df0c18975a",
+                      "portId": "out"
+                    },
+                    "to": {
+                      "nodeId": "9498cd22-9eea-4db8-bfcf-f9c66e1fbd1c",
+                      "portId": "in"
+                    }
+                  }
+                ],
+                "outputNodeId": "9498cd22-9eea-4db8-bfcf-f9c66e1fbd1c"
+              },
+              "properties": {
+                "anchor": {
+                  "id": "b3a20867-0f3e-4947-b78c-ad5ab2631039",
+                  "baseValue": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "keyframes": []
+                },
+                "fill": {
+                  "id": "b997054b-6105-44ff-9608-2d3671c9a254",
+                  "baseValue": [
+                    0.18,
+                    0.42,
+                    1,
+                    1
+                  ],
+                  "keyframes": []
+                },
+                "stroke": {
+                  "id": "232545ec-fba4-4c66-a527-1eef8817041c",
+                  "baseValue": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "keyframes": []
+                },
+                "strokeWidth": {
+                  "id": "25d26775-a67a-4e08-9c46-ec730db3222a",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "gradientEnd": {
+                  "id": "0da5b966-bba4-42e2-9eb8-953062afa1da",
+                  "baseValue": [
+                    0.8,
+                    0.1,
+                    0.6,
+                    1
+                  ],
+                  "keyframes": []
+                },
+                "sides": {
+                  "id": "f92f1ad7-eca5-483f-87ed-0a8deb552922",
+                  "baseValue": 5,
+                  "keyframes": []
+                },
+                "innerRadius": {
+                  "id": "c33228df-91bf-4df8-b150-35e007d517c8",
+                  "baseValue": 0.45,
+                  "keyframes": []
+                },
+                "path": {
+                  "id": "f81d1f00-8bf7-47dc-8c81-fecd596ba34f",
+                  "baseValue": [
+                    -120,
+                    -120,
+                    -120,
+                    -120,
+                    -120,
+                    -120,
+                    120,
+                    -120,
+                    120,
+                    -120,
+                    120,
+                    -120,
+                    120,
+                    120,
+                    120,
+                    120,
+                    120,
+                    120,
+                    -120,
+                    120,
+                    -120,
+                    120,
+                    -120,
+                    120
+                  ],
+                  "keyframes": []
+                },
+                "fontSize": {
+                  "id": "73cbaa25-83ec-4411-98e7-e64d8a86c16a",
+                  "baseValue": 60,
+                  "keyframes": []
+                },
+                "fontWeight": {
+                  "id": "5f5e580a-2588-4f6a-90fd-f970a0e750c2",
+                  "baseValue": 400,
+                  "keyframes": []
+                },
+                "tracking": {
+                  "id": "6446e8a1-f9ad-49f8-93df-60be4685fb5c",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "fontItalic": {
+                  "id": "371b9bf4-a7a1-4d50-ab3d-d0cef6c2f39b",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textUnderline": {
+                  "id": "fea2faba-bf01-448f-b796-15e41b31b0ff",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textAnimatorEnabled": {
+                  "id": "29bec732-71c6-4643-981a-8fd9349e7879",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textRangeStart": {
+                  "id": "14f403b9-044f-4c87-90c3-9693f0b2c6c2",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textRangeEnd": {
+                  "id": "02cc43b3-c3b2-45ec-8f18-86cec9540b3b",
+                  "baseValue": 100,
+                  "keyframes": []
+                },
+                "textRangeOffset": {
+                  "id": "77202d67-6b5e-494e-8bbc-fabae85bfc47",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textAnimatorOpacity": {
+                  "id": "ae8839bb-71e5-49a8-83d2-e2d8af236c87",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textAnimatorX": {
+                  "id": "098dcee4-c292-4c0a-822c-189f9f377083",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textAnimatorY": {
+                  "id": "40e14d32-eba6-4baf-8eb3-16d6b513e964",
+                  "baseValue": 40,
+                  "keyframes": []
+                },
+                "textAnimatorScale": {
+                  "id": "37426564-f2cc-4437-8bb6-50514c4e977f",
+                  "baseValue": 100,
+                  "keyframes": []
+                },
+                "textAnimatorRotation": {
+                  "id": "a1752363-c8f1-4f39-8f0e-32861b7aacac",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "lineHeight": {
+                  "id": "35b5375f-3f92-4d39-be1b-b7e651c6f353",
+                  "baseValue": 1.2,
+                  "keyframes": []
+                },
+                "position3D": {
+                  "id": "254c9f71-4515-4682-96ea-4c08030a6a8d",
+                  "baseValue": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "keyframes": []
+                },
+                "rotation3D": {
+                  "id": "9d351c3c-2a0b-4a1d-a89a-182e170369a5",
+                  "baseValue": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "keyframes": []
+                },
+                "scale3D": {
+                  "id": "2e9a8ad9-21f2-4ba7-9c80-647ffb0b89d3",
+                  "baseValue": [
+                    1,
+                    1,
+                    1
+                  ],
+                  "keyframes": []
+                },
+                "anchor3D": {
+                  "id": "6456300f-d3db-4a14-b5e5-10fd6f1d00b4",
+                  "baseValue": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "keyframes": []
+                },
+                "cameraPosition": {
+                  "id": "36ae6654-695d-4a02-9110-92ccb57557dd",
+                  "baseValue": [
+                    0,
+                    0,
+                    -1000
+                  ],
+                  "keyframes": []
+                },
+                "cameraRotation": {
+                  "id": "d7379bed-524d-43a3-9726-745cc59ade89",
+                  "baseValue": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "keyframes": []
+                },
+                "cameraZoom": {
+                  "id": "e3171b4a-87d9-4ea0-84fd-1aa7e8ec3023",
+                  "baseValue": 1000,
+                  "keyframes": []
+                },
+                "cameraDepthOfField": {
+                  "id": "4afb50b9-5e54-433e-a9a9-f5894d09779d",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "cameraFocusDistance": {
+                  "id": "4fe50559-76bc-449a-8721-c4b38fd9b51e",
+                  "baseValue": 1000,
+                  "keyframes": []
+                },
+                "cameraAperture": {
+                  "id": "82c8c5f4-8b2a-4d7a-8cd5-1b3bf05a34bf",
+                  "baseValue": 2.8,
+                  "keyframes": []
+                },
+                "cameraExposure": {
+                  "id": "a1299236-94ed-446c-a370-784ee3a73d68",
+                  "baseValue": 0,
+                  "keyframes": []
+                }
+              }
+            },
+            "ui": {
+              "accentColorId": "accent-1"
+            }
+          },
+          {
+            "id": "e1c72b66-90ea-4568-b9db-18798c299961",
+            "name": "Red",
+            "visible": true,
+            "locked": false,
+            "width": 200,
+            "height": 200,
+            "transform": {
+              "position": {
+                "id": "f3020851-60f0-46fa-aa22-a624553416ce",
+                "baseValue": {
+                  "x": 650,
+                  "y": 540
+                },
+                "keyframes": []
+              },
+              "scale": {
+                "id": "80b61720-2823-4a5b-a0bc-ba598a7ff4b3",
+                "baseValue": {
+                  "x": 1,
+                  "y": 1
+                },
+                "keyframes": []
+              },
+              "rotation": {
+                "id": "c79a3ded-13fd-4cbb-b4aa-3bf7aa8bdced",
+                "baseValue": 0,
+                "keyframes": []
+              },
+              "opacity": {
+                "id": "167c13bb-b83a-47db-a9f8-0829e7092504",
+                "baseValue": 1,
+                "keyframes": []
+              }
+            },
+            "editor": {
+              "graph": {
+                "id": "9cf38b10-dd26-4033-9baa-60cb9651de10",
+                "version": 1,
+                "owner": {
+                  "type": "layer",
+                  "id": "e1c72b66-90ea-4568-b9db-18798c299961"
+                },
+                "nodes": [
+                  {
+                    "id": "e982d58c-bc8a-4832-bf7b-df07dab823d1",
+                    "type": "source",
+                    "name": "源图像",
+                    "position": {
+                      "x": 40,
+                      "y": 50
+                    },
+                    "inputs": [],
+                    "outputs": [
+                      {
+                        "id": "out",
+                        "name": "图像",
+                        "type": "Image"
+                      }
+                    ],
+                    "params": {},
+                    "enabled": true
+                  },
+                  {
+                    "id": "bb60ec13-d365-4fa2-9f72-77853f781e80",
+                    "type": "output",
+                    "name": "输出",
+                    "position": {
+                      "x": 320,
+                      "y": 50
+                    },
+                    "inputs": [
+                      {
+                        "id": "in",
+                        "name": "图像",
+                        "type": "Image",
+                        "required": true
+                      }
+                    ],
+                    "outputs": [],
+                    "params": {},
+                    "enabled": true
+                  }
+                ],
+                "edges": [
+                  {
+                    "id": "cf813e6b-3418-4ca4-9ecb-5258961a1c33",
+                    "from": {
+                      "nodeId": "e982d58c-bc8a-4832-bf7b-df07dab823d1",
+                      "portId": "out"
+                    },
+                    "to": {
+                      "nodeId": "bb60ec13-d365-4fa2-9f72-77853f781e80",
+                      "portId": "in"
+                    }
+                  }
+                ],
+                "outputNodeId": "bb60ec13-d365-4fa2-9f72-77853f781e80"
+              },
+              "properties": {
+                "anchor": {
+                  "id": "756d4214-8064-40c5-b8dd-3fdda90e38bd",
+                  "baseValue": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "keyframes": []
+                },
+                "fill": {
+                  "id": "c23e7451-7002-4679-92f1-582c48c455b2",
+                  "baseValue": [
+                    0.5,
+                    0,
+                    0.5,
+                    1
+                  ],
+                  "keyframes": []
+                },
+                "stroke": {
+                  "id": "fb227ead-bef2-41c4-b395-9c5d075c1746",
+                  "baseValue": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "keyframes": []
+                },
+                "strokeWidth": {
+                  "id": "cf0c7a19-4a87-42e2-93ae-2940117450c0",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "gradientEnd": {
+                  "id": "ff94415c-c318-4641-9aae-aca051d3a2a0",
+                  "baseValue": [
+                    0.8,
+                    0.1,
+                    0.6,
+                    1
+                  ],
+                  "keyframes": []
+                },
+                "sides": {
+                  "id": "f9149d2b-5ce9-4240-8a73-c4af123099e4",
+                  "baseValue": 5,
+                  "keyframes": []
+                },
+                "innerRadius": {
+                  "id": "a04a9bf6-67f8-4ad3-a160-a68295cbbb98",
+                  "baseValue": 0.45,
+                  "keyframes": []
+                },
+                "path": {
+                  "id": "daaab03a-4ef1-411a-aed7-776fe8163ba0",
+                  "baseValue": [
+                    -120,
+                    -120,
+                    -120,
+                    -120,
+                    -120,
+                    -120,
+                    120,
+                    -120,
+                    120,
+                    -120,
+                    120,
+                    -120,
+                    120,
+                    120,
+                    120,
+                    120,
+                    120,
+                    120,
+                    -120,
+                    120,
+                    -120,
+                    120,
+                    -120,
+                    120
+                  ],
+                  "keyframes": []
+                },
+                "fontSize": {
+                  "id": "af4e7773-24e9-49b2-8e1e-35095784d5ed",
+                  "baseValue": 60,
+                  "keyframes": []
+                },
+                "fontWeight": {
+                  "id": "ca385bba-863b-4e6d-a111-e882e7ee9e64",
+                  "baseValue": 400,
+                  "keyframes": []
+                },
+                "tracking": {
+                  "id": "4d718b8f-2c1c-4bcd-847f-a4673e96e605",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "fontItalic": {
+                  "id": "4f6b8cb7-27b6-4768-9ba1-022c42f0c8df",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textUnderline": {
+                  "id": "9a56b95b-c388-4d33-93c4-2539c7552aec",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textAnimatorEnabled": {
+                  "id": "b605b4d4-d6fb-43e0-892e-a1483ccba41e",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textRangeStart": {
+                  "id": "279e4d63-74c5-4094-8ed1-2a4b77dd7b79",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textRangeEnd": {
+                  "id": "5be677d8-5dbd-4bd4-ba0e-61021faeea89",
+                  "baseValue": 100,
+                  "keyframes": []
+                },
+                "textRangeOffset": {
+                  "id": "179caf1b-6320-416a-9fdd-80fe038dbdec",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textAnimatorOpacity": {
+                  "id": "90dbf003-858d-4866-8f66-643d20923c4b",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textAnimatorX": {
+                  "id": "2a512235-3208-427d-83b3-a8f5925adb78",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textAnimatorY": {
+                  "id": "cc55d01b-e36f-4ab9-92a0-c1baf4955bd9",
+                  "baseValue": 40,
+                  "keyframes": []
+                },
+                "textAnimatorScale": {
+                  "id": "afce8d8e-c3ba-48a2-a9c2-2c677368db1f",
+                  "baseValue": 100,
+                  "keyframes": []
+                },
+                "textAnimatorRotation": {
+                  "id": "ff49bfdc-9bc6-4bbd-89c5-323ec69c54d5",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "lineHeight": {
+                  "id": "6b316d29-b4a3-4464-a2c4-812ca1815647",
+                  "baseValue": 1.2,
+                  "keyframes": []
+                },
+                "position3D": {
+                  "id": "56b62955-36f4-48a2-af99-c14d5e617b52",
+                  "baseValue": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "keyframes": []
+                },
+                "rotation3D": {
+                  "id": "d4b534b3-dee3-4580-93e8-fe9a7f3d7a1d",
+                  "baseValue": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "keyframes": []
+                },
+                "scale3D": {
+                  "id": "170573a1-512d-4898-8485-333570ac10b6",
+                  "baseValue": [
+                    1,
+                    1,
+                    1
+                  ],
+                  "keyframes": []
+                },
+                "anchor3D": {
+                  "id": "9ca53300-3f39-4434-86fa-260b0ae5e429",
+                  "baseValue": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "keyframes": []
+                },
+                "cameraPosition": {
+                  "id": "d55ed532-8a35-4bd3-9029-ab50adc770a7",
+                  "baseValue": [
+                    0,
+                    0,
+                    -1000
+                  ],
+                  "keyframes": []
+                },
+                "cameraRotation": {
+                  "id": "cde971d0-f887-42e3-9fae-9f0c3cfb8495",
+                  "baseValue": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "keyframes": []
+                },
+                "cameraZoom": {
+                  "id": "22ccc7c2-f402-4d07-a33a-00f5ea99bd69",
+                  "baseValue": 1000,
+                  "keyframes": []
+                },
+                "cameraDepthOfField": {
+                  "id": "1231cd09-e57b-4080-8cc7-dc49b1cbe8dc",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "cameraFocusDistance": {
+                  "id": "3d2b3908-914b-4149-9f0e-83343f405d0d",
+                  "baseValue": 1000,
+                  "keyframes": []
+                },
+                "cameraAperture": {
+                  "id": "b4b1fa20-747a-49a3-877b-8c4c2eaf4745",
+                  "baseValue": 2.8,
+                  "keyframes": []
+                },
+                "cameraExposure": {
+                  "id": "e3b82b76-c2fd-4107-a4b4-d11f65f3a9cd",
+                  "baseValue": 0,
+                  "keyframes": []
+                }
+              },
+              "parentId": null,
+              "inPoint": 0,
+              "outPoint": 3600,
+              "startTime": 0,
+              "blendMode": "normal",
+              "is3D": false,
+              "pathClosed": true,
+              "gradient": "none",
+              "textAlign": "left",
+              "strokeJoin": "round",
+              "strokeCap": "round",
+              "masks": []
+            },
+            "ui": {
+              "accentColorId": "accent-2"
+            },
+            "type": "shape",
+            "shapeKind": "rectangle",
+            "fill": {
+              "r": 0.18,
+              "g": 0.42,
+              "b": 1,
+              "a": 1
+            }
+          },
+          {
+            "id": "c91c3462-cfcb-4c2e-bbb7-f4d79994f20f",
+            "name": "Green",
+            "visible": true,
+            "locked": false,
+            "width": 200,
+            "height": 200,
+            "transform": {
+              "position": {
+                "id": "1235314d-094a-4334-afed-616852585190",
+                "baseValue": {
+                  "x": 960,
+                  "y": 540
+                },
+                "keyframes": [
+                  {
+                    "id": "d7793b99-f5f9-443f-a4e8-34004a967828",
+                    "time": 0,
+                    "value": {
+                      "x": 960,
+                      "y": 540
+                    },
+                    "interpolation": {
+                      "type": "linear"
+                    }
+                  },
+                  {
+                    "id": "12b95fc3-dd11-4db9-8648-7f8cdd704c5d",
+                    "time": 2,
+                    "value": {
+                      "x": 1300,
+                      "y": 540
+                    },
+                    "interpolation": {
+                      "type": "linear"
+                    }
+                  }
+                ]
+              },
+              "scale": {
+                "id": "3ef213c3-8c78-4dc7-b5e5-eaafee4bfbb9",
+                "baseValue": {
+                  "x": 1,
+                  "y": 1
+                },
+                "keyframes": []
+              },
+              "rotation": {
+                "id": "6fddb298-5129-4fb3-bffc-8150232161af",
+                "baseValue": 0,
+                "keyframes": []
+              },
+              "opacity": {
+                "id": "3326f885-72c3-4a80-bef1-885fcfb039f4",
+                "baseValue": 1,
+                "keyframes": []
+              }
+            },
+            "editor": {
+              "graph": {
+                "id": "848ff380-9788-43d2-95b9-60ca8c9d520f",
+                "version": 1,
+                "owner": {
+                  "type": "layer",
+                  "id": "c91c3462-cfcb-4c2e-bbb7-f4d79994f20f"
+                },
+                "nodes": [
+                  {
+                    "id": "ac0405c8-92e8-4e97-9700-ed9b2abcb75a",
+                    "type": "source",
+                    "name": "源图像",
+                    "position": {
+                      "x": 40,
+                      "y": 50
+                    },
+                    "inputs": [],
+                    "outputs": [
+                      {
+                        "id": "out",
+                        "name": "图像",
+                        "type": "Image"
+                      }
+                    ],
+                    "params": {},
+                    "enabled": true
+                  },
+                  {
+                    "id": "74ba411b-94b7-412b-be1d-0da53a841904",
+                    "type": "output",
+                    "name": "输出",
+                    "position": {
+                      "x": 320,
+                      "y": 50
+                    },
+                    "inputs": [
+                      {
+                        "id": "in",
+                        "name": "图像",
+                        "type": "Image",
+                        "required": true
+                      }
+                    ],
+                    "outputs": [],
+                    "params": {},
+                    "enabled": true
+                  }
+                ],
+                "edges": [
+                  {
+                    "id": "b3abc0ba-625a-498b-8d12-8b78d79aa05b",
+                    "from": {
+                      "nodeId": "ac0405c8-92e8-4e97-9700-ed9b2abcb75a",
+                      "portId": "out"
+                    },
+                    "to": {
+                      "nodeId": "74ba411b-94b7-412b-be1d-0da53a841904",
+                      "portId": "in"
+                    }
+                  }
+                ],
+                "outputNodeId": "74ba411b-94b7-412b-be1d-0da53a841904"
+              },
+              "properties": {
+                "anchor": {
+                  "id": "a3715e04-e59a-45d7-b469-068b8336c6d5",
+                  "baseValue": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "keyframes": []
+                },
+                "fill": {
+                  "id": "e9ecdcaa-7d8b-4aaa-807b-313edf79fa10",
+                  "baseValue": [
+                    0,
+                    1,
+                    0,
+                    1
+                  ],
+                  "keyframes": []
+                },
+                "stroke": {
+                  "id": "20521002-efef-4fd6-8ca4-1abc040b0753",
+                  "baseValue": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "keyframes": []
+                },
+                "strokeWidth": {
+                  "id": "a3b45167-0d35-48c6-9b89-c4d0bd03a879",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "gradientEnd": {
+                  "id": "42b22959-5c06-44bd-b670-5db64c32f76e",
+                  "baseValue": [
+                    0.8,
+                    0.1,
+                    0.6,
+                    1
+                  ],
+                  "keyframes": []
+                },
+                "sides": {
+                  "id": "4656a2c6-367a-4544-b23e-883550325d08",
+                  "baseValue": 5,
+                  "keyframes": []
+                },
+                "innerRadius": {
+                  "id": "cbf8f1e3-9c6f-463e-a4db-2d86d83dd9a8",
+                  "baseValue": 0.45,
+                  "keyframes": []
+                },
+                "path": {
+                  "id": "8ec69ae0-0d4e-4d8d-bf5a-3cc6b25e78d4",
+                  "baseValue": [
+                    -120,
+                    -120,
+                    -120,
+                    -120,
+                    -120,
+                    -120,
+                    120,
+                    -120,
+                    120,
+                    -120,
+                    120,
+                    -120,
+                    120,
+                    120,
+                    120,
+                    120,
+                    120,
+                    120,
+                    -120,
+                    120,
+                    -120,
+                    120,
+                    -120,
+                    120
+                  ],
+                  "keyframes": []
+                },
+                "fontSize": {
+                  "id": "7e231eaa-a631-46be-a182-f014acdb63b7",
+                  "baseValue": 60,
+                  "keyframes": []
+                },
+                "fontWeight": {
+                  "id": "e9380e24-719b-4abe-88bc-4c89ec4a0035",
+                  "baseValue": 400,
+                  "keyframes": []
+                },
+                "tracking": {
+                  "id": "bff44f6f-a986-442c-9af0-e3ba64add956",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "fontItalic": {
+                  "id": "c691b4e7-0c6f-41d9-b0f7-ed300d5416f7",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textUnderline": {
+                  "id": "4e949661-7e0b-4a4e-8246-4e857b9f4923",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textAnimatorEnabled": {
+                  "id": "f7be74e7-30b6-4bb6-97e7-90fac2b70d35",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textRangeStart": {
+                  "id": "f10d7e67-8e9f-46c3-ac04-9c069867716a",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textRangeEnd": {
+                  "id": "42ce369a-c16d-4e57-9cd0-b9442b633995",
+                  "baseValue": 100,
+                  "keyframes": []
+                },
+                "textRangeOffset": {
+                  "id": "a4829e82-682f-4603-989e-06de81cabcf7",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textAnimatorOpacity": {
+                  "id": "31d5301b-21df-4d8e-a628-541986e9ed19",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textAnimatorX": {
+                  "id": "5789bf24-be11-4804-bf32-4edbd80605f6",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textAnimatorY": {
+                  "id": "4b2c9090-b9e7-4b0a-88e4-53e92b00a8e6",
+                  "baseValue": 40,
+                  "keyframes": []
+                },
+                "textAnimatorScale": {
+                  "id": "114405b5-89a7-470a-a7b7-9d5dee1b5880",
+                  "baseValue": 100,
+                  "keyframes": []
+                },
+                "textAnimatorRotation": {
+                  "id": "5f3386cc-f57c-4e04-9883-9bcb21084995",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "lineHeight": {
+                  "id": "55fca87e-3520-4033-9645-72266ea144e1",
+                  "baseValue": 1.2,
+                  "keyframes": []
+                },
+                "position3D": {
+                  "id": "2885744f-3a8c-4065-adae-5d4c0b4da972",
+                  "baseValue": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "keyframes": []
+                },
+                "rotation3D": {
+                  "id": "1a4cff46-d00c-4f90-8f52-173b856759cf",
+                  "baseValue": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "keyframes": []
+                },
+                "scale3D": {
+                  "id": "3fd35332-20f4-4e40-b4a2-3272721167cc",
+                  "baseValue": [
+                    1,
+                    1,
+                    1
+                  ],
+                  "keyframes": []
+                },
+                "anchor3D": {
+                  "id": "20c76d54-74ec-4d68-8440-045c3789f39d",
+                  "baseValue": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "keyframes": []
+                },
+                "cameraPosition": {
+                  "id": "daefcaac-89e9-4911-8a07-b4380980d4ff",
+                  "baseValue": [
+                    0,
+                    0,
+                    -1000
+                  ],
+                  "keyframes": []
+                },
+                "cameraRotation": {
+                  "id": "678f32e9-d20f-4cf7-b0bf-4cfecdcda1f5",
+                  "baseValue": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "keyframes": []
+                },
+                "cameraZoom": {
+                  "id": "bef27c9f-05de-4e84-abaf-2b576d0cfd8f",
+                  "baseValue": 1000,
+                  "keyframes": []
+                },
+                "cameraDepthOfField": {
+                  "id": "270ad644-7e06-4e4a-9b96-3d882b412585",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "cameraFocusDistance": {
+                  "id": "89098faa-43b5-4ba3-86a0-63f2d8fb67cb",
+                  "baseValue": 1000,
+                  "keyframes": []
+                },
+                "cameraAperture": {
+                  "id": "493e03c0-1ad0-42df-b838-fdd69023de76",
+                  "baseValue": 2.8,
+                  "keyframes": []
+                },
+                "cameraExposure": {
+                  "id": "0596f652-2a31-451d-85d1-643b077d8b89",
+                  "baseValue": 0,
+                  "keyframes": []
+                }
+              },
+              "parentId": null,
+              "inPoint": 0,
+              "outPoint": 3600,
+              "startTime": 0,
+              "blendMode": "normal",
+              "is3D": false,
+              "pathClosed": true,
+              "gradient": "none",
+              "textAlign": "left",
+              "strokeJoin": "round",
+              "strokeCap": "round",
+              "masks": []
+            },
+            "ui": {
+              "accentColorId": "accent-3"
+            },
+            "type": "shape",
+            "shapeKind": "rectangle",
+            "fill": {
+              "r": 0.18,
+              "g": 0.42,
+              "b": 1,
+              "a": 1
+            }
+          },
+          {
+            "id": "4cff03f2-51d3-4775-9552-a602751dc2f9",
+            "name": "Blue",
+            "visible": true,
+            "locked": false,
+            "width": 200,
+            "height": 200,
+            "transform": {
+              "position": {
+                "id": "2f1ca449-da73-4ef7-9488-ae320687a43a",
+                "baseValue": {
+                  "x": 1270,
+                  "y": 540
+                },
+                "keyframes": []
+              },
+              "scale": {
+                "id": "6e8a6fe7-bcf6-4a6e-b3ae-783f44c17f3e",
+                "baseValue": {
+                  "x": 1,
+                  "y": 1
+                },
+                "keyframes": []
+              },
+              "rotation": {
+                "id": "ffaee49d-e8bf-44a9-9e3c-af86939d35c8",
+                "baseValue": 0,
+                "keyframes": []
+              },
+              "opacity": {
+                "id": "282a569c-546e-446e-ae20-1bcb76d8c1e1",
+                "baseValue": 1,
+                "keyframes": []
+              }
+            },
+            "editor": {
+              "graph": {
+                "id": "ba66feb8-1ffc-4202-94d7-7a6894051fcc",
+                "version": 1,
+                "owner": {
+                  "type": "layer",
+                  "id": "4cff03f2-51d3-4775-9552-a602751dc2f9"
+                },
+                "nodes": [
+                  {
+                    "id": "78674477-4a68-4fb5-9142-7d1533fa3c1c",
+                    "type": "source",
+                    "name": "源图像",
+                    "position": {
+                      "x": 40,
+                      "y": 50
+                    },
+                    "inputs": [],
+                    "outputs": [
+                      {
+                        "id": "out",
+                        "name": "图像",
+                        "type": "Image"
+                      }
+                    ],
+                    "params": {},
+                    "enabled": true
+                  },
+                  {
+                    "id": "55625e57-d4c9-4574-a422-6905fdfc3176",
+                    "type": "output",
+                    "name": "输出",
+                    "position": {
+                      "x": 320,
+                      "y": 50
+                    },
+                    "inputs": [
+                      {
+                        "id": "in",
+                        "name": "图像",
+                        "type": "Image",
+                        "required": true
+                      }
+                    ],
+                    "outputs": [],
+                    "params": {},
+                    "enabled": true
+                  }
+                ],
+                "edges": [
+                  {
+                    "id": "6b398ac3-402a-473d-8aeb-6dc0d94981d6",
+                    "from": {
+                      "nodeId": "78674477-4a68-4fb5-9142-7d1533fa3c1c",
+                      "portId": "out"
+                    },
+                    "to": {
+                      "nodeId": "55625e57-d4c9-4574-a422-6905fdfc3176",
+                      "portId": "in"
+                    }
+                  }
+                ],
+                "outputNodeId": "55625e57-d4c9-4574-a422-6905fdfc3176"
+              },
+              "properties": {
+                "anchor": {
+                  "id": "aa204174-f516-4bbf-ace9-cbdfdae06b56",
+                  "baseValue": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "keyframes": []
+                },
+                "fill": {
+                  "id": "84eb3198-02eb-4ed9-877d-65215153579f",
+                  "baseValue": [
+                    0,
+                    0,
+                    1,
+                    1
+                  ],
+                  "keyframes": []
+                },
+                "stroke": {
+                  "id": "a3895ab4-055d-464b-b9d6-36d2fc4e5cf4",
+                  "baseValue": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "keyframes": []
+                },
+                "strokeWidth": {
+                  "id": "5bce934a-07fa-4e36-bff7-54cc87db12cf",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "gradientEnd": {
+                  "id": "93eb3331-cd48-4843-b26c-254f86e0aaa8",
+                  "baseValue": [
+                    0.8,
+                    0.1,
+                    0.6,
+                    1
+                  ],
+                  "keyframes": []
+                },
+                "sides": {
+                  "id": "d69ad745-b340-4607-a41c-6a55fc856476",
+                  "baseValue": 5,
+                  "keyframes": []
+                },
+                "innerRadius": {
+                  "id": "6c04eccf-e1c5-42d0-9790-91df5a09105e",
+                  "baseValue": 0.45,
+                  "keyframes": []
+                },
+                "path": {
+                  "id": "bf7f8dfe-6421-4479-985d-268662988fb1",
+                  "baseValue": [
+                    -120,
+                    -120,
+                    -120,
+                    -120,
+                    -120,
+                    -120,
+                    120,
+                    -120,
+                    120,
+                    -120,
+                    120,
+                    -120,
+                    120,
+                    120,
+                    120,
+                    120,
+                    120,
+                    120,
+                    -120,
+                    120,
+                    -120,
+                    120,
+                    -120,
+                    120
+                  ],
+                  "keyframes": []
+                },
+                "fontSize": {
+                  "id": "52e56230-c102-41b6-81b3-72a2070da48a",
+                  "baseValue": 60,
+                  "keyframes": []
+                },
+                "fontWeight": {
+                  "id": "b82a5706-4c8d-4f5a-ba66-b97850c0ce3f",
+                  "baseValue": 400,
+                  "keyframes": []
+                },
+                "tracking": {
+                  "id": "2d2f255e-724b-4cf6-9fe9-c75b230182de",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "fontItalic": {
+                  "id": "35260d20-7878-4d91-b61a-61e86dd82a83",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textUnderline": {
+                  "id": "6f9939a2-194a-45f6-bb09-704018e3b4cb",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textAnimatorEnabled": {
+                  "id": "b533f0c2-51d2-4960-968a-355fa82ed39f",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textRangeStart": {
+                  "id": "5ae8e8af-a3f9-4e59-8f36-e9f3859a7781",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textRangeEnd": {
+                  "id": "99e1f7f5-e033-466a-a169-1321f5f5438a",
+                  "baseValue": 100,
+                  "keyframes": []
+                },
+                "textRangeOffset": {
+                  "id": "7753c56d-3e2e-4371-bb57-f37e9d0d042f",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textAnimatorOpacity": {
+                  "id": "93c14199-95b4-4564-9cc0-9edde7e4cc50",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textAnimatorX": {
+                  "id": "b3049543-009c-4963-aab7-575275cabf7a",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textAnimatorY": {
+                  "id": "533459e0-44d3-4861-b2d5-d7ad75344eba",
+                  "baseValue": 40,
+                  "keyframes": []
+                },
+                "textAnimatorScale": {
+                  "id": "451c22a8-f774-4155-8324-d9b8465fb90d",
+                  "baseValue": 100,
+                  "keyframes": []
+                },
+                "textAnimatorRotation": {
+                  "id": "d733599a-92bf-40bf-b588-d4b949069c00",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "lineHeight": {
+                  "id": "de1d01d9-16cc-4762-bcee-beb64267b038",
+                  "baseValue": 1.2,
+                  "keyframes": []
+                },
+                "position3D": {
+                  "id": "e979d8bc-7449-4e17-afd3-19a3e4438657",
+                  "baseValue": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "keyframes": []
+                },
+                "rotation3D": {
+                  "id": "1edfc1ff-958b-413c-9eb2-48530be5717a",
+                  "baseValue": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "keyframes": []
+                },
+                "scale3D": {
+                  "id": "ef46909c-82df-4eb1-8eaf-e6f3fe1ce7f7",
+                  "baseValue": [
+                    1,
+                    1,
+                    1
+                  ],
+                  "keyframes": []
+                },
+                "anchor3D": {
+                  "id": "622324eb-39d1-434b-9488-cd4b3e28a182",
+                  "baseValue": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "keyframes": []
+                },
+                "cameraPosition": {
+                  "id": "cb8147da-16ae-4338-a9ae-d8e9f251edde",
+                  "baseValue": [
+                    0,
+                    0,
+                    -1000
+                  ],
+                  "keyframes": []
+                },
+                "cameraRotation": {
+                  "id": "6e9523f4-8af6-46cc-9dbd-06d47f8b975e",
+                  "baseValue": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "keyframes": []
+                },
+                "cameraZoom": {
+                  "id": "9b3b56c0-30aa-4281-ab47-ec71709db94e",
+                  "baseValue": 1000,
+                  "keyframes": []
+                },
+                "cameraDepthOfField": {
+                  "id": "918e24ee-c0b8-4f89-9d9e-232f805bf093",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "cameraFocusDistance": {
+                  "id": "7fa96c4d-9465-4df8-b01c-ee54fae4f325",
+                  "baseValue": 1000,
+                  "keyframes": []
+                },
+                "cameraAperture": {
+                  "id": "40f6bb52-88e4-40ac-ac27-7a70f2204c89",
+                  "baseValue": 2.8,
+                  "keyframes": []
+                },
+                "cameraExposure": {
+                  "id": "5bf8a1e0-df82-43e9-b860-20216a151755",
+                  "baseValue": 0,
+                  "keyframes": []
+                }
+              },
+              "parentId": null,
+              "inPoint": 0,
+              "outPoint": 3600,
+              "startTime": 0,
+              "blendMode": "normal",
+              "is3D": false,
+              "pathClosed": true,
+              "gradient": "none",
+              "textAlign": "left",
+              "strokeJoin": "round",
+              "strokeCap": "round",
+              "masks": []
+            },
+            "ui": {
+              "accentColorId": "accent-4"
+            },
+            "type": "shape",
+            "shapeKind": "rectangle",
+            "fill": {
+              "r": 0.18,
+              "g": 0.42,
+              "b": 1,
+              "a": 1
+            }
+          },
+          {
+            "id": "0fec246a-53cb-4ac9-97bc-0932d0b2defe",
+            "name": "Title",
+            "visible": true,
+            "locked": false,
+            "width": 480,
+            "height": 90,
+            "transform": {
+              "position": {
+                "id": "2b2da006-1eee-48cf-97dc-61831215452c",
+                "baseValue": {
+                  "x": 960,
+                  "y": 300
+                },
+                "keyframes": []
+              },
+              "scale": {
+                "id": "5aa151b3-9fd4-40c6-a679-347e9d05b495",
+                "baseValue": {
+                  "x": 1,
+                  "y": 1
+                },
+                "keyframes": []
+              },
+              "rotation": {
+                "id": "41835879-d0d9-4967-8f86-4ac1c37cd0e0",
+                "baseValue": 0,
+                "keyframes": []
+              },
+              "opacity": {
+                "id": "1f3c7d48-899e-4a07-97e7-46d76fc2acb4",
+                "baseValue": 1,
+                "keyframes": []
+              }
+            },
+            "editor": {
+              "graph": {
+                "id": "7d85fae5-9f9c-4dd8-818a-af175b18e680",
+                "version": 1,
+                "owner": {
+                  "type": "layer",
+                  "id": "0fec246a-53cb-4ac9-97bc-0932d0b2defe"
+                },
+                "nodes": [
+                  {
+                    "id": "b8928b42-53c5-4462-886e-9f591108ba1a",
+                    "type": "source",
+                    "name": "源图像",
+                    "position": {
+                      "x": 40,
+                      "y": 50
+                    },
+                    "inputs": [],
+                    "outputs": [
+                      {
+                        "id": "out",
+                        "name": "图像",
+                        "type": "Image"
+                      }
+                    ],
+                    "params": {},
+                    "enabled": true
+                  },
+                  {
+                    "id": "fb412e76-9756-4232-909c-722bb6ada06a",
+                    "type": "output",
+                    "name": "输出",
+                    "position": {
+                      "x": 320,
+                      "y": 50
+                    },
+                    "inputs": [
+                      {
+                        "id": "in",
+                        "name": "图像",
+                        "type": "Image",
+                        "required": true
+                      }
+                    ],
+                    "outputs": [],
+                    "params": {},
+                    "enabled": true
+                  }
+                ],
+                "edges": [
+                  {
+                    "id": "82a892bb-16fb-42ca-837d-ee16cd40be17",
+                    "from": {
+                      "nodeId": "b8928b42-53c5-4462-886e-9f591108ba1a",
+                      "portId": "out"
+                    },
+                    "to": {
+                      "nodeId": "fb412e76-9756-4232-909c-722bb6ada06a",
+                      "portId": "in"
+                    }
+                  }
+                ],
+                "outputNodeId": "fb412e76-9756-4232-909c-722bb6ada06a"
+              },
+              "properties": {
+                "anchor": {
+                  "id": "d9f0febd-938f-4495-9d1e-6929097ff74b",
+                  "baseValue": {
+                    "x": 0,
+                    "y": 0
+                  },
+                  "keyframes": []
+                },
+                "fill": {
+                  "id": "68ec2996-8ac4-4301-9473-9b47675c3d18",
+                  "baseValue": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "keyframes": []
+                },
+                "stroke": {
+                  "id": "de521d7f-7f8b-457d-8e88-36b7e1cb0d85",
+                  "baseValue": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "keyframes": []
+                },
+                "strokeWidth": {
+                  "id": "137f892c-18e7-40d9-a726-e6297d8e5152",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "gradientEnd": {
+                  "id": "84a3db13-9a25-4747-a42c-ec7f89214607",
+                  "baseValue": [
+                    0.8,
+                    0.1,
+                    0.6,
+                    1
+                  ],
+                  "keyframes": []
+                },
+                "sides": {
+                  "id": "bbd7953d-5859-446d-a4d0-d4b8152ab98a",
+                  "baseValue": 5,
+                  "keyframes": []
+                },
+                "innerRadius": {
+                  "id": "30f9df80-b645-45d8-9ff5-76b08626882d",
+                  "baseValue": 0.45,
+                  "keyframes": []
+                },
+                "path": {
+                  "id": "2433b248-7257-403c-b923-142852420dbe",
+                  "baseValue": [
+                    -120,
+                    -120,
+                    -120,
+                    -120,
+                    -120,
+                    -120,
+                    120,
+                    -120,
+                    120,
+                    -120,
+                    120,
+                    -120,
+                    120,
+                    120,
+                    120,
+                    120,
+                    120,
+                    120,
+                    -120,
+                    120,
+                    -120,
+                    120,
+                    -120,
+                    120
+                  ],
+                  "keyframes": []
+                },
+                "fontSize": {
+                  "id": "b5c09335-f486-45cf-a49d-096e52486dcd",
+                  "baseValue": 96,
+                  "keyframes": []
+                },
+                "fontWeight": {
+                  "id": "cd7238d6-6c3e-4612-8ddd-3b0ed333e550",
+                  "baseValue": 400,
+                  "keyframes": []
+                },
+                "tracking": {
+                  "id": "4654abe9-a792-4077-bb78-6f774a29d417",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "fontItalic": {
+                  "id": "3439e34f-a271-403c-a028-a873791ba5ec",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textUnderline": {
+                  "id": "85678722-bf26-4bed-82f2-4e465f1c14f4",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textAnimatorEnabled": {
+                  "id": "33e79dd1-a8da-4f81-850c-f8f7caf61cb0",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textRangeStart": {
+                  "id": "26cce5cc-655e-442e-8f35-6aad8333cdf3",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textRangeEnd": {
+                  "id": "6618dbc2-7d54-475a-964f-8b1667e2f351",
+                  "baseValue": 100,
+                  "keyframes": []
+                },
+                "textRangeOffset": {
+                  "id": "6b16b71f-792e-485b-b99d-79832a48198b",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textAnimatorOpacity": {
+                  "id": "5a0a1905-bb78-4f8b-9205-613286b4df6b",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textAnimatorX": {
+                  "id": "29a3d8a3-1799-4295-8fc8-a352286c4164",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "textAnimatorY": {
+                  "id": "2b31288d-d9de-4e56-9c7d-53e6da4ebb33",
+                  "baseValue": 40,
+                  "keyframes": []
+                },
+                "textAnimatorScale": {
+                  "id": "459f9bad-3678-4720-b244-782b4756d70f",
+                  "baseValue": 100,
+                  "keyframes": []
+                },
+                "textAnimatorRotation": {
+                  "id": "fa0d617f-2ff9-4f02-9add-c59007c852cc",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "lineHeight": {
+                  "id": "721ef4b2-b6b3-4705-bfae-b1735490eebd",
+                  "baseValue": 1.2,
+                  "keyframes": []
+                },
+                "position3D": {
+                  "id": "3bafa6a4-6afa-4736-9de5-194b88710d54",
+                  "baseValue": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "keyframes": []
+                },
+                "rotation3D": {
+                  "id": "fb61a8ce-cfe1-4321-9dcd-21feb9a9660f",
+                  "baseValue": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "keyframes": []
+                },
+                "scale3D": {
+                  "id": "e48c9467-e8bb-4b7a-bb19-1cc9b140bbd5",
+                  "baseValue": [
+                    1,
+                    1,
+                    1
+                  ],
+                  "keyframes": []
+                },
+                "anchor3D": {
+                  "id": "a2239fa5-c76c-4410-8f6c-75cef7e9c32f",
+                  "baseValue": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "keyframes": []
+                },
+                "cameraPosition": {
+                  "id": "e8fd21d7-871c-4716-857c-dd019b81a074",
+                  "baseValue": [
+                    0,
+                    0,
+                    -1000
+                  ],
+                  "keyframes": []
+                },
+                "cameraRotation": {
+                  "id": "6e43f182-ac6e-458f-b60b-2f0f19dced36",
+                  "baseValue": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "keyframes": []
+                },
+                "cameraZoom": {
+                  "id": "5a133262-b82d-4b25-afc2-e7aaa6fa1446",
+                  "baseValue": 1000,
+                  "keyframes": []
+                },
+                "cameraDepthOfField": {
+                  "id": "6db068cd-ffbb-4346-b1f3-a1397ffbbc8e",
+                  "baseValue": 0,
+                  "keyframes": []
+                },
+                "cameraFocusDistance": {
+                  "id": "6c0a8a21-5fe6-4dd2-bee2-348155cbc075",
+                  "baseValue": 1000,
+                  "keyframes": []
+                },
+                "cameraAperture": {
+                  "id": "65f8f6a5-3afa-48cb-bd41-f3f0530bc06e",
+                  "baseValue": 2.8,
+                  "keyframes": []
+                },
+                "cameraExposure": {
+                  "id": "d7158b44-e6d1-4f13-a96f-9351c957c94c",
+                  "baseValue": 0,
+                  "keyframes": []
+                }
+              },
+              "parentId": null,
+              "inPoint": 0,
+              "outPoint": 3600,
+              "startTime": 0,
+              "blendMode": "normal",
+              "is3D": false,
+              "pathClosed": true,
+              "gradient": "none",
+              "textAlign": "center",
+              "strokeJoin": "round",
+              "strokeCap": "round",
+              "masks": []
+            },
+            "ui": {
+              "accentColorId": "accent-5"
+            },
+            "type": "text",
+            "text": "Cubic",
+            "fontSize": 48,
+            "fontFamily": "serif",
+            "fill": {
+              "r": 1,
+              "g": 1,
+              "b": 1,
+              "a": 1
+            }
+          }
+        ]
+      }
+    ],
+    "activeCompositionId": "3b881efb-b94b-4b96-a166-1bbd1d6815fa",
+    "assets": []
+  }
+}

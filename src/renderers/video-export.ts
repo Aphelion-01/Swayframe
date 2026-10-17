@@ -1,7 +1,10 @@
+import { mixCompositionAudio } from './audio-mix';
 import {
   Output,
   BufferTarget,
   CanvasSource,
+  AudioBufferSource,
+  canEncodeAudio,
   Mp4OutputFormat,
   WebMOutputFormat,
   MovOutputFormat,
@@ -68,6 +71,16 @@ export async function exportVideo(
     throw Error(
       `此设备不支持所选编码器/分辨率。请尝试 MP4 H.264、WebM VP9 或 PNG 序列。`,
     );
+  const mixedAudio = await mixCompositionAudio(project, c, start, end, signal);
+  const audioCodec = settings.format === 'webm' ? 'opus' : 'aac';
+  if (
+    mixedAudio &&
+    !(await canEncodeAudio(audioCodec, {
+      numberOfChannels: 2,
+      sampleRate: 48000,
+    }))
+  )
+    throw Error('设备不支持此格式的音频编码，请选择其他格式后重试');
   const frames = new OutputFrameRenderer(project, c, settings),
     target = new BufferTarget();
   const output = new Output({
@@ -89,12 +102,20 @@ export async function exportVideo(
     latencyMode: 'quality',
   });
   output.addVideoTrack(video, { frameRate: settings.fps });
+  const audio = mixedAudio
+    ? new AudioBufferSource({ codec: audioCodec, bitrate: 192000 })
+    : undefined;
+  if (audio) output.addAudioTrack(audio);
   try {
     await frames.init();
     await output.start();
+    if (audio && mixedAudio) {
+      await audio.add(mixedAudio);
+      audio.close();
+    }
     for (const [i, time] of times.entries()) {
       if (signal?.aborted) throw Error('导出已取消');
-      frames.draw(time);
+      await frames.draw(time);
       await video.add(i / settings.fps, Math.min(1 / settings.fps, end - time));
       onProgress(i + 1, times.length);
       if (i % 3 === 0) await new Promise<void>((r) => setTimeout(r, 0));

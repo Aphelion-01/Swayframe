@@ -1,0 +1,52 @@
+
+ RUN  v5.0.3 /Users/aphelion-01/Documents/Codex/2026-10-03/Swayframe_Repairs/1.0.3
+
+ ❯ tests/agent-v2-boundaries-v27.test.ts (5 tests | 2 failed) 97ms
+   × one bounded local model repair after a prior commit keeps completed work and exports accurate per-turn accounting 17ms
+   × matched offline V1/V2 subset uses the same initial Scene/goals/provider/settings and protects non-target layers 12ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/agent-v2-boundaries-v27.test.ts > one bounded local model repair after a prior commit keeps completed work and exports accurate per-turn accounting
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ tests/agent-v2-boundaries-v27.test.ts:87:26
+     85|   }));
+     86|   await s.core.run('把刚才的矩形透明度改成0.5');
+     87|   expect(s.core.pending).toBe(true);
+       |                          ^
+     88|   expect(layers(s)[0]!.transform.opacity.baseValue).toBe(1);
+     89|   s.core.accept();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  tests/agent-v2-boundaries-v27.test.ts > matched offline V1/V2 subset uses the same initial Scene/goals/provider/settings and protects non-target layers
+TypeError: Cannot read properties of undefined (reading 'includes')
+ ❯ tests/agent-v2-boundaries-v27.test.ts:199:57
+    197|             (t) =>
+    198|               t.permission === 'READ' ||
+    199|               (coreExecutionTools as readonly string[]).includes(t.nam…
+       |                                                         ^
+    200|           );
+    201|         const begin = s.native.runtime.begin.bind(s.native.runtime);
+ ❯ AgentToolRegistry.s.native.registry.catalog tests/agent-v2-boundaries-v27.test.ts:196:21
+ ❯ Object.executionMetadata src/ui/native-agent-controller.ts:368:33
+ ❯ AgentOrchestrator.set src/agent/orchestrator.ts:58:35
+ ❯ AgentOrchestrator.run src/agent/orchestrator.ts:230:10
+ ❯ AgentOrchestrator.agent.run src/ui/native-agent-controller.ts:642:12
+ ❯ tests/agent-v2-boundaries-v27.test.ts:247:30
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 3 passed (5)
+   Start at  07:46:27
+   Duration  680ms (transform 51%, environment 18%, tests 16%, import 15%)
+

@@ -1,0 +1,1036 @@
+# SWAYFRAME
+# AGENT ARCHITECTURE STABILIZATION
+# EXECUTION PATH CONSOLIDATION
+# PRIORITY: CRITICAL
+
+你现在开始对 Swayframe AI Agent
+进行一次最高优先级的架构稳定性修复。
+
+这次不要继续增加 Agent 功能。
+
+不要继续开发新的 Skill。
+
+不要增加新的 Recovery Controller。
+
+不要开发新的 Effect Forge 能力。
+
+不要修改无关 UI。
+
+当前最重要的问题是：
+
+Swayframe Agent 经历多轮架构升级后，
+仍然频繁在基础任务中失败。
+
+近期真实错误包括：
+
+1.
+
+规划阶段工具调用越权或超过次数限制。
+
+2.
+
+计划引用了未注册能力：
+
+shape.rectangle
+
+此前还存在：
+
+createText 参数无效。
+
+setFill 参数无效。
+
+layerId 无效 UUID。
+
+creation.tasks.dependencies
+任务依赖与执行顺序冲突。
+
+这些错误发生在不同阶段，
+表明需要调查整个 Agent 执行路径的一致性。
+
+本轮核心目标：
+
+找出当前执行链路中
+真正导致不稳定的模块。
+
+消除不必要的重复定义。
+
+恢复最基础创作任务的可靠性。
+
+==================================================
+一、停止功能扩张
+==================================================
+
+本轮禁止：
+
+新增 Agent Tools
+
+新增 Skills
+
+新增 Graph Node
+
+新增 Effect
+
+新增生成模型
+
+重新开发 Renderer
+
+重新设计 Agent UI。
+
+允许：
+
+定位问题
+
+修复参数契约
+
+修复能力注册
+
+修复规划调用权限
+
+修复执行适配
+
+移除有证据证明有害的重复逻辑
+
+添加回归测试。
+
+不要无依据地整体重写 Agent。
+
+==================================================
+二、保护当前代码
+==================================================
+
+首先检查：
+
+Git Status
+
+Current Branch
+
+Current Commit
+
+Uncommitted Changes。
+
+不要删除或覆盖未提交修改。
+
+建立可回退的测试基线。
+
+记录：
+
+当前真实 Agent 执行架构。
+
+当前启用的：
+
+Planner
+
+Capability Registry
+
+Skill Router
+
+Semantic Action Compiler
+
+Tool Adapter
+
+Recovery Controller
+
+Command System。
+
+检查是否存在：
+
+多个 Planner
+
+多个 Tool Registry
+
+多个 Capability Catalogue
+
+多个 Validation Pipeline
+
+多个 Execution Adapter
+
+多个 Recovery Loop。
+
+重点判断：
+
+这些模块是否真正共享同一份状态和协议。
+
+==================================================
+三、必须首先复现最新两个错误
+==================================================
+
+ERROR A：
+
+规划阶段工具调用越权或超过次数限制。
+
+ERROR B：
+
+计划引用了未注册能力 shape.rectangle。
+
+从真实执行 Trace 中提取：
+
+User Request
+
+Provider
+
+Model
+
+Active Skills
+
+Tool Declarations
+
+Allowed Tools
+
+Tool Call Count
+
+Tool Call Budget
+
+Requested Tool
+
+Planned Capability IDs
+
+Registered Capability IDs
+
+Validation Phase
+
+Error Source
+
+Recovery Attempt。
+
+不得根据错误文案猜测根因。
+
+如果历史 Trace 不完整：
+
+先补充隔离环境中的诊断记录。
+
+然后重现。
+
+必须明确回答：
+
+错误 A 到底是越权，
+还是次数超限？
+
+错误 B 中的 shape.rectangle
+究竟从哪里产生？
+
+==================================================
+四、彻底检查 Capability Registry
+==================================================
+
+这是本轮 P0。
+
+检查：
+
+Capability Registry
+
+Feature Registry
+
+Tool Registry
+
+Command Registry
+
+Effect Registry
+
+Shape Registry
+
+Skill Manifest
+
+Planner Capability Catalogue。
+
+查找：
+
+shape.rectangle
+
+createRectangle
+
+createShape
+
+rectangle
+
+以及它们真实存在的命名形式。
+
+确定：
+
+1. Rectangle 创建能力是否真实存在。
+
+2. 该能力的正式 Capability ID 是什么。
+
+3. Agent Planner 实际看到什么 ID。
+
+4. Skill Router 是否使用相同 ID。
+
+5. Execution Compiler 使用什么 ID。
+
+6. Command System 最终调用什么命令。
+
+特别注意：
+
+Capability ID
+
+不等于：
+
+Tool Name
+
+也不等于：
+
+Command ID。
+
+三者允许不同，
+但必须具有明确、可验证的映射。
+
+例如：
+
+Capability:
+
+shape.rectangle
+
+Tool:
+
+createShape
+
+Command:
+
+layer.create
+
+这是可能合理的设计。
+
+但具体映射必须来自真实 Registry。
+
+不能由 LLM 自行推测。
+
+如果 shape.rectangle 是合法的语义能力，
+但没有注册到正式能力目录：
+
+修复真实注册链路。
+
+如果它实际上不是合法能力 ID：
+
+修复 Planner / Skill 暴露错误标识的原因。
+
+禁止：
+
+直接将所有未知字符串加入白名单。
+
+==================================================
+五、建立单一能力来源
+==================================================
+
+当前系统必须有一个权威的：
+
+Available Capability Catalogue。
+
+其他系统只能：
+
+查询
+
+筛选
+
+引用
+
+该目录。
+
+不得：
+
+Planner 一份能力列表。
+
+Skill Router 一份能力列表。
+
+Tool Adapter 又一份能力列表。
+
+它们相互独立维护，
+并允许长期不一致。
+
+如果现有 Registry 已经能够承担这一职责：
+
+复用它。
+
+不要创建新的平行 Registry。
+
+要求：
+
+Agent 规划时，
+
+只能使用当前实际可用的 Capability ID。
+
+如果某能力不可用：
+
+应在规划前排除，
+或在规划验证阶段明确拒绝。
+
+不能让模型在获得错误能力列表后，
+执行到最后才发现无法调用。
+
+==================================================
+六、修复规划阶段的工具权限与预算
+==================================================
+
+这是另一个 P0。
+
+检查：
+
+Planning Tool Allowlist
+
+Planning Tool Budget
+
+Capability Discovery Budget
+
+Execution Tool Budget
+
+Recovery Budget。
+
+区分以下情况：
+
+TOOL_NOT_ALLOWED
+
+TOOL_NOT_REGISTERED
+
+TOOL_BUDGET_EXCEEDED
+
+PROVIDER_TOOL_UNSUPPORTED
+
+TOOL_ARGUMENT_INVALID。
+
+不得继续把：
+
+越权
+
+和：
+
+次数超限
+
+合并为同一个错误。
+
+对于一次实际失败，
+必须能够记录：
+
+工具名称。
+
+是否在允许列表中。
+
+当前阶段。
+
+已调用次数。
+
+调用限制。
+
+具体拒绝原因。
+
+特别注意：
+
+Planner 需要查询能力，
+不代表它获得了修改工程的权限。
+
+Planning 阶段默认应限制为只读能力，
+写入行为应进入受控执行阶段。
+
+检查是否存在：
+
+正常 Capability Discovery
+被错误计入写操作预算。
+
+或者：
+
+Skill Router 重复触发能力查询，
+造成无意义的调用次数消耗。
+
+但不要为了完成任务
+直接取消权限限制。
+
+==================================================
+七、检查 Skill Runtime 是否引入新问题
+==================================================
+
+当前系统近期引入了：
+
+Skill Registry
+
+Skill Router
+
+Core Execution Skill
+
+Creative Skills
+
+Dynamic Capability Loading
+
+Semantic Action Compiler。
+
+必须检查：
+
+这些模块是否真正改善了执行可靠性。
+
+重点寻找：
+
+重复加载工具协议。
+
+Skill 声明不存在的 Capability。
+
+Skill 对工具命名使用旧版本。
+
+Skill Router 输出了
+正式 Registry 不支持的名称。
+
+Skill 激活导致 Planner
+获得了错误的工具调用权限。
+
+多个 Skill 产生相互冲突的任务依赖。
+
+同一个操作经过多次参数转换。
+
+如果存在这些问题：
+
+提供真实代码证据。
+
+不要因为 Skill 是新功能
+就默认认为它是故障来源。
+
+但也不要因为系统已经实现
+就默认它有价值。
+
+==================================================
+八、执行路径对照实验
+==================================================
+
+在隔离测试环境中，
+使用相同的基础创作任务，
+比较不同执行配置。
+
+CONFIG A：
+
+正式 Command System。
+
+不经过 Agent。
+
+CONFIG B：
+
+Agent Tool Adapter。
+
+使用合法固定参数。
+
+CONFIG C：
+
+Agent Planner
++
+Tool Executor。
+
+暂时不启用可选 Skill Routing。
+
+CONFIG D：
+
+完整 Agent
++
+Skill Runtime。
+
+所有实验：
+
+调用同一套正式 Command System。
+
+使用相同或语义等价的任务。
+
+不得永久移除生产功能。
+
+可以通过受控 Feature Flag
+在测试中启用或禁用相关机制。
+
+比较：
+
+Plan Validity
+
+Capability Resolution
+
+Tool Call Count
+
+Command Success
+
+Final Scene State
+
+Task Success。
+
+目的是：
+
+找出不稳定开始出现在哪一层。
+
+如果 C 成功而 D 失败：
+
+重点检查 Skill Runtime。
+
+如果 B 成功而 C 失败：
+
+重点检查 Planner / Compiler。
+
+如果 A 成功而 B 失败：
+
+重点检查 Tool Adapter。
+
+如果 A 本身失败：
+
+检查 Command / Scene。
+
+不要直接根据感觉重构。
+
+==================================================
+九、建立最小可靠执行路径
+==================================================
+
+建立并验证以下任务：
+
+Create Rectangle
+
+→
+
+Set Fill
+
+→
+
+Create Text
+
+→
+
+Set Position
+
+→
+
+Add Opacity Keyframes。
+
+要求：
+
+全部使用正式已注册能力。
+
+对象 ID 由 Runtime 解析。
+
+参数来自真实 Schema。
+
+依赖由程序验证。
+
+写操作进入 Draft Transaction。
+
+执行结果通过 Scene Verification。
+
+最终只进行一次正式 Commit。
+
+Undo 能够恢复。
+
+不能：
+
+让模型自行猜测 UUID。
+
+让模型自行猜测 Capability ID。
+
+绕过参数校验。
+
+静默跳过失败步骤。
+
+使用未注册工具。
+
+==================================================
+十、修复规划与执行之间的契约
+==================================================
+
+Planner 输出的每个任务：
+
+必须能够映射到
+一个实际存在的执行能力。
+
+例如：
+
+PlannedTask.capabilityId
+
+必须能够通过 Capability Registry 查询。
+
+该能力必须明确关联：
+
+Required Inputs
+
+Output Types
+
+Target Constraints
+
+Execution Tool
+
+Parameter Schema。
+
+如果某个 PlannedTask
+无法找到对应执行实现：
+
+Plan Validation 应明确指出。
+
+如果任务尚未具备执行条件：
+
+标记 Deferred。
+
+不能直接当成成功。
+
+不能允许模型输出一个漂亮的计划，
+但里面的操作根本无法执行。
+
+==================================================
+十一、恢复机制不能掩盖架构错误
+==================================================
+
+对于：
+
+未注册能力
+
+权限拒绝
+
+预算耗尽
+
+非法依赖
+
+参数错误
+
+应当分别处理。
+
+未注册能力：
+
+重新查询正式能力目录。
+
+若发现合法替代能力：
+
+在原始权限范围内重新规划。
+
+如果不存在：
+
+报告能力缺失。
+
+权限拒绝：
+
+不得自动提升权限。
+
+预算耗尽：
+
+不得无限重试。
+
+非法依赖：
+
+合法时确定性修复。
+
+参数错误：
+
+根据正式 Schema 修复。
+
+同一错误重复出现：
+
+停止无效尝试。
+
+不要：
+
+所有错误统一交给 LLM 再试一次。
+
+不要：
+
+通过不断增加 Recovery Budget
+掩盖真实契约不一致。
+
+==================================================
+十二、错误反馈必须可定位
+==================================================
+
+改进诊断结构。
+
+每次失败必须准确指出：
+
+Phase
+
+Module
+
+Tool
+
+Capability
+
+Error Code
+
+Invalid Field
+
+Expected Value
+
+Actual Value
+
+Recovery Attempt
+
+Final Status。
+
+普通用户：
+
+看到简短错误信息。
+
+开发者诊断：
+
+可以查看真实执行 Trace。
+
+禁止：
+
+把不同原因压缩成同一个含糊错误。
+
+禁止：
+
+将完整嵌套 Plan
+反复发送给模型。
+
+禁止：
+
+错误中重复携带大量无关 JSON。
+
+==================================================
+十三、基础回归测试
+==================================================
+
+至少测试：
+
+1. 已注册 Rectangle Capability。
+
+2. 未注册 Capability。
+
+3. Capability ID 与 Tool Name 不同。
+
+4. Capability Mapping 正确。
+
+5. Skill 使用过期 Capability ID。
+
+6. Planner 查询只读工具。
+
+7. Planner 请求未授权写工具。
+
+8. Planner 达到调用上限。
+
+9. 正常规划不应错误触发预算限制。
+
+10. Create Rectangle → Set Fill。
+
+11. Create Text → Set Font。
+
+12. Create Object → Step Result Binding。
+
+13. READ → WRITE。
+
+14. 合法依赖重排。
+
+15. 循环依赖拒绝。
+
+16. 重复错误停止重试。
+
+17. Draft Transaction 回滚。
+
+18. Undo / Redo。
+
+19. Save / Reload。
+
+20. 真实渲染结果正确。
+
+==================================================
+十四、真实 Provider 验证
+==================================================
+
+完成确定性测试后：
+
+使用当前可用的真实 Provider
+进行小规模验证。
+
+优先复现用户当前使用的：
+
+DeepSeek deepseek-flash。
+
+测试：
+
+创建矩形。
+
+创建文字。
+
+设置填充。
+
+添加关键帧。
+
+然后测试：
+
+创建矩形并设置渐变，
+再添加 Cubic 标题。
+
+所有任务使用独立测试工程。
+
+记录：
+
+实际调用次数。
+
+Planner Tool Calls。
+
+执行阶段 Tool Calls。
+
+失败阶段。
+
+是否发生自动恢复。
+
+最终 Scene 状态。
+
+最终渲染结果。
+
+如果真实 API 调用需要额外授权或预算：
+
+遵守现有授权，
+不要自行突破。
+
+如果无法执行：
+
+明确标记 LIVE NOT VERIFIED。
+
+不得使用 Mock 结果冒充。
+
+==================================================
+十五、禁止大规模重写
+==================================================
+
+本轮禁止：
+
+重新开发整个 Agent Orchestrator。
+
+重写 Renderer。
+
+重写 Scene Model。
+
+开发新 Skill Framework。
+
+创建第二套 Capability Registry。
+
+创建第二套 Command System。
+
+新增大量 Compatibility Alias
+来掩盖未知能力。
+
+通过提高 Tool Budget
+掩盖规划工具滥用。
+
+通过关闭权限检查
+提高成功率。
+
+使用无限重试
+掩盖底层错误。
+
+优先：
+
+减少重复定义。
+
+减少不必要的转换。
+
+减少失效的执行路径。
+
+让正常任务的路径更短、更明确。
+
+==================================================
+十六、可靠性验收
+==================================================
+
+本轮不能以：
+
+Typecheck Passed
+
+Build Passed
+
+500+ Tests Passed
+
+作为 Agent 已修复的唯一依据。
+
+至少必须证明：
+
+Rectangle 能力可被正确发现。
+
+Planner 不会引用不存在的 Capability。
+
+正常任务不再触发错误的越权检查。
+
+正常任务不再无意义地耗尽工具预算。
+
+模型不需要自行编造对象 UUID。
+
+基础创作任务能够完整执行。
+
+Command / Scene / Render 状态一致。
+
+失败时能够定位具体原因。
+
+需要自动恢复时：
+不会重复相同错误。
+
+正式工程不会发生意外修改。
+
+==================================================
+十七、交付结果
+==================================================
+
+输出：
+
+AGENT_EXECUTION_PATH_AUDIT.md
+
+AGENT_CAPABILITY_CONSISTENCY_REPORT.md
+
+AGENT_PLANNING_BUDGET_REPORT.md
+
+AGENT_STABILIZATION_TEST_REPORT.md
+
+AGENT_STABILIZATION_RESULT.md
+
+其中必须说明：
+
+1. shape.rectangle 真实来源是什么？
+
+2. 它是否应该被注册？
+
+3. 哪个模块首次引用了错误 Capability？
+
+4. 为什么 Planner 会出现越权或超限？
+
+5. Skill Runtime 是否引入新的不一致？
+
+6. 哪一条执行配置最稳定？
+
+7. 哪些架构层可以保留？
+
+8. 哪些重复逻辑应被移除？
+
+9. 哪些真实代码已修复？
+
+10. 哪些问题仍然未解决？
+
+所有重要判断必须附带：
+
+真实源码位置
+
+实际调用数据
+
+修复前后对照
+
+测试结果。
+
+==================================================
+十八、最终执行原则
+==================================================
+
+先定位。
+
+再修复。
+
+然后复测。
+
+不要：
+
+又增加一个新架构层，
+试图解决旧架构层产生的问题。
+
+如果问题可以通过统一 Registry 解决：
+
+就修复 Registry。
+
+如果问题可以通过修正 Tool Mapping 解决：
+
+就修复 Mapping。
+
+如果问题可以通过合理预算分配解决：
+
+就修复预算管理。
+
+不要：
+
+为了简单问题创建一套新 Runtime。
+
+目标：
+
+让 Swayframe Agent
+拥有一条清晰、稳定、可验证的执行路径。
+
+本轮完成之前：
+
+暂停其他 Agent 功能扩张。
+
+现在开始执行。

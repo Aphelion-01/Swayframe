@@ -1,0 +1,143 @@
+{
+  "sessionId": "2231aa8d-c1d8-4255-a02a-467483b6c67c",
+  "skillId": "auto",
+  "references": [],
+  "referenceMode": "overall",
+  "activeProjectId": "5923e6df-9f8a-4d15-b457-4c142587aea4",
+  "conversation": [
+    {
+      "role": "user",
+      "content": "创建矩形和文本；矩形径向半径0.8"
+    }
+  ],
+  "selectedContext": {},
+  "currentPlan": {
+    "id": "controlled",
+    "goal": "创建矩形和文本；矩形径向半径0.8",
+    "steps": [
+      {
+        "id": "rect",
+        "label": "矩形",
+        "tool": "createRectangle",
+        "arguments": {
+          "layerId": "57518438-9e5a-4b10-8f16-bc46a12010e3"
+        }
+      },
+      {
+        "id": "text",
+        "label": "文本",
+        "tool": "createText",
+        "arguments": {
+          "layerId": "2bc20ca1-78fb-4ec0-a8b1-f2c8d2bdfa85",
+          "content": "Live Recovery 0.9.27"
+        }
+      },
+      {
+        "id": "fill",
+        "label": "填充",
+        "tool": "setFill",
+        "arguments": {
+          "layerId": "57518438-9e5a-4b10-8f16-bc46a12010e3",
+          "color": {
+            "r": 0,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          "gradient": "radial",
+          "radialParameters": {
+            "radius": 0.5
+          }
+        }
+      }
+    ],
+    "risk": "low"
+  },
+  "toolCalls": [
+    {
+      "id": "rect",
+      "tool": "createRectangle",
+      "label": "矩形",
+      "status": "completed",
+      "result": {
+        "ok": true,
+        "commandCount": 1,
+        "verification": {
+          "verifiedLayerIds": [
+            "57518438-9e5a-4b10-8f16-bc46a12010e3"
+          ],
+          "verifiedPropertyIds": [],
+          "verifiedGraphLayerIds": [],
+          "verifiedKeyframeIds": []
+        }
+      }
+    },
+    {
+      "id": "text",
+      "tool": "createText",
+      "label": "文本",
+      "status": "completed",
+      "result": {
+        "ok": true,
+        "commandCount": 1,
+        "verification": {
+          "verifiedLayerIds": [
+            "2bc20ca1-78fb-4ec0-a8b1-f2c8d2bdfa85"
+          ],
+          "verifiedPropertyIds": [],
+          "verifiedGraphLayerIds": [],
+          "verifiedKeyframeIds": []
+        }
+      }
+    },
+    {
+      "id": "fill",
+      "tool": "setFill",
+      "label": "填充",
+      "status": "failed",
+      "result": {
+        "code": "SEMANTIC_INVALID",
+        "phase": "compile",
+        "toolName": "setFill",
+        "field": "radialParameters.radius",
+        "recoverable": true,
+        "message": "Controlled fault: use requested radius=0.8; preserve original target and earlier creation",
+        "expected": "radius=0.8",
+        "received": 0.5
+      }
+    }
+  ],
+  "usage": [
+    null
+  ],
+  "status": "failed",
+  "mode": "AGENT",
+  "pendingConfirmation": false,
+  "changes": null,
+  "error": "Error invoking remote method 'bench:chat': Error: Hard request budget: 24 requests",
+  "response": "Error invoking remote method 'bench:chat': Error: Hard request budget: 24 requests",
+  "recoveries": [
+    {
+      "stepId": "fill",
+      "attempt": 1,
+      "outcome": "requested",
+      "error": {
+        "code": "SEMANTIC_INVALID",
+        "phase": "compile",
+        "toolName": "setFill",
+        "field": "radialParameters.radius",
+        "recoverable": true,
+        "message": "Controlled fault: use requested radius=0.8; preserve original target and earlier creation",
+        "expected": "radius=0.8",
+        "received": 0.5
+      }
+    }
+  ],
+  "executionError": {
+    "code": "COMMAND_FAILED",
+    "phase": "execute",
+    "recoverable": false,
+    "message": "Error invoking remote method 'bench:chat': Error: Hard request budget: 24 requests",
+    "cause": {}
+  }
+}

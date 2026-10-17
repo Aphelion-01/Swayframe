@@ -1,0 +1,2208 @@
+{
+  "sessionId": "313d44b7-03a1-4732-9329-281a7bfc6dd0",
+  "skillId": "auto",
+  "references": [],
+  "referenceMode": "overall",
+  "activeProjectId": "f7863221-f32c-43f7-a555-3c209e9d3533",
+  "conversation": [
+    {
+      "role": "user",
+      "content": "创建一个名为 Background 的矩形，宽800高600，位于合成中心(960,540)，设置径向渐变填充，中心青色RGB(0,0.7,0.8)，外围深蓝RGB(0,0.05,0.15)。再创建可编辑文字图层 Title，内容 Cubic，字体 serif，字号96，位置(960,450)。仅创建这两个图层。"
+    }
+  ],
+  "selectedContext": {
+    "nativeSkills": [
+      {
+        "id": "sf.core-execution",
+        "version": "1.0.0",
+        "hash": "60abdf38a1f146e5387dc51e48fcc813b99beafb6dee01e2caabef3e7b08b261",
+        "inputs": {
+          "goal": "nonempty user request",
+          "scope": "existing execution scope"
+        },
+        "outputs": {
+          "result": "validated editable draft and one explicit commit"
+        },
+        "requiredCapabilities": [
+          "createRectangle",
+          "setFill",
+          "setPosition",
+          "addKeyframe"
+        ],
+        "workflow": {
+          "actions": [
+            "createRectangle",
+            "setFill",
+            "setPosition",
+            "addKeyframe"
+          ],
+          "constraints": [
+            "registered-tools",
+            "actual-object-binding",
+            "dependency-validation",
+            "shared-command-transaction",
+            "bounded-recovery",
+            "scene-verification",
+            "render-verification"
+          ],
+          "validationRules": [
+            "valid-plan",
+            "native-scene",
+            "native-render"
+          ],
+          "sequence": [
+            "discover",
+            "plan",
+            "validate",
+            "resolve",
+            "compile",
+            "execute-draft",
+            "verify",
+            "commit"
+          ]
+        },
+        "instructions": "# Swayframe Core Execution V1\n\nUse only capabilities discovered in the current SF runtime. Compile intentions through registered semantic actions or simple native tools. Use actual existing/selection/stepResult references; never invent UUIDs. Validate task dependencies before executing. Defer future outputs until the real producer completes. Every write uses the existing AgentTransaction and Command System. Recover only through the shared bounded controller; never replay completed creation steps or widen scope. Verify commands and draft state, then native rendered output; without vision mark visual comparison NOT VERIFIED. Commit once only after verification and user approval where required.\n"
+      },
+      {
+        "id": "sf.shape-creation",
+        "version": "1.0.0",
+        "hash": "244bbabd8eafddb4e2a06683321ad779e66794e0dfab2f1e13f339b188ee3f22",
+        "inputs": {
+          "goal": "explicit native editing task",
+          "scope": "existing user authorization"
+        },
+        "outputs": {
+          "result": "verified editable draft"
+        },
+        "requiredCapabilities": [
+          "createShape",
+          "createRectangle",
+          "createEllipse",
+          "createPolygon",
+          "createStar"
+        ],
+        "workflow": {
+          "actions": [
+            "createShape",
+            "createRectangle",
+            "createEllipse",
+            "createPolygon",
+            "createStar",
+            "setPosition",
+            "placeAtCompositionCenter"
+          ],
+          "entryActions": [
+            "createShape",
+            "createRectangle",
+            "createEllipse",
+            "createPolygon",
+            "createStar"
+          ],
+          "constraints": [
+            "registered-tools",
+            "actual-object-binding",
+            "dependency-validation",
+            "shared-command-transaction",
+            "bounded-recovery",
+            "scene-verification",
+            "render-verification"
+          ],
+          "validationRules": [
+            "valid-plan",
+            "native-scene"
+          ],
+          "sequence": [
+            "discover",
+            "resolve",
+            "compile",
+            "execute-draft",
+            "verify"
+          ]
+        },
+        "instructions": "# Shape Creation V1\n\nCreate editable native geometry using actual composition bounds. Bind each result independently; preserve names, shape alpha and geometry. Never create graph generators as substitute shapes.\n"
+      },
+      {
+        "id": "sf.typography",
+        "version": "1.0.0",
+        "hash": "1809a210dfa636fafae7bd9c8f334acfcd886337ee1006922cc094e4f3d9a5e6",
+        "inputs": {
+          "goal": "explicit native editing task",
+          "scope": "existing user authorization"
+        },
+        "outputs": {
+          "result": "verified editable draft"
+        },
+        "requiredCapabilities": [
+          "createText",
+          "setFont",
+          "setFontSize",
+          "setTextContent"
+        ],
+        "workflow": {
+          "actions": [
+            "createText",
+            "setFont",
+            "setFontSize",
+            "setTextContent",
+            "setPosition",
+            "setFill",
+            "setTracking",
+            "setLeading"
+          ],
+          "entryActions": [
+            "createText",
+            "setFont",
+            "setFontSize",
+            "setTextContent"
+          ],
+          "constraints": [
+            "registered-tools",
+            "actual-object-binding",
+            "dependency-validation",
+            "shared-command-transaction",
+            "bounded-recovery",
+            "scene-verification",
+            "render-verification"
+          ],
+          "validationRules": [
+            "valid-plan",
+            "text-visible"
+          ],
+          "sequence": [
+            "discover",
+            "resolve",
+            "compile",
+            "execute-draft",
+            "verify"
+          ]
+        },
+        "instructions": "# Typography V1\n\nCreate actual editable Text layers. Keep exact content including Chinese; use real family names and shared font-size ranges. Center placement uses composition pixels. Verify text geometry and native rendering, never assume a particular external font exists.\n"
+      },
+      {
+        "id": "sf.gradient-fill",
+        "version": "1.0.0",
+        "hash": "3d8c8c4d337636f1f26cfd6187c8f29e878f4bbec541463be611eda0eb9d98f5",
+        "inputs": {
+          "goal": "explicit native editing task",
+          "scope": "existing user authorization"
+        },
+        "outputs": {
+          "result": "verified editable draft"
+        },
+        "requiredCapabilities": [
+          "setFill",
+          "setGradientFill"
+        ],
+        "workflow": {
+          "actions": [
+            "setFill",
+            "setGradientFill",
+            "effect_search",
+            "inspectToolContract"
+          ],
+          "entryActions": [
+            "setFill",
+            "setGradientFill"
+          ],
+          "constraints": [
+            "registered-tools",
+            "actual-object-binding",
+            "dependency-validation",
+            "shared-command-transaction",
+            "bounded-recovery",
+            "scene-verification",
+            "render-verification"
+          ],
+          "validationRules": [
+            "valid-plan",
+            "native-scene"
+          ],
+          "sequence": [
+            "discover",
+            "resolve",
+            "compile",
+            "execute-draft",
+            "verify"
+          ]
+        },
+        "instructions": "# Gradient / Fill V1\n\nQuery native fill capability and use its exact parameters. Solid uses normalized colors; linear uses start/end colors; radial uses normalized center/radius and flat [position,r,g,b,a] groups. Preserve alpha geometry; validate target shape/solid/text. Do not use detached generators as fills.\n"
+      }
+    ],
+    "availableTools": [
+      {
+        "name": "createLayer",
+        "permission": "WRITE",
+        "description": "Create a real editable l"
+      },
+      {
+        "name": "createRectangle",
+        "permission": "WRITE",
+        "description": "Create an editable recta"
+      },
+      {
+        "name": "createEllipse",
+        "permission": "WRITE",
+        "description": "Create an editable ellip"
+      },
+      {
+        "name": "createPolygon",
+        "permission": "WRITE",
+        "description": "Create an editable polyg"
+      },
+      {
+        "name": "createStar",
+        "permission": "WRITE",
+        "description": "Create an editable star "
+      },
+      {
+        "name": "createText",
+        "permission": "WRITE",
+        "description": "Create editable text. co"
+      },
+      {
+        "name": "createPath",
+        "permission": "WRITE",
+        "description": "Create a closed editable"
+      },
+      {
+        "name": "deleteLayer",
+        "permission": "DESTRUCTIVE",
+        "description": "Delete a layer and detac"
+      },
+      {
+        "name": "duplicateLayer",
+        "permission": "WRITE",
+        "description": "Duplicate a layer with f"
+      },
+      {
+        "name": "renameLayer",
+        "permission": "WRITE",
+        "description": "Rename editable layer."
+      },
+      {
+        "name": "reorderLayer",
+        "permission": "WRITE",
+        "description": "Move layer to a zero-bas"
+      },
+      {
+        "name": "setLayerVisibility",
+        "permission": "WRITE",
+        "description": "Set actual visibility."
+      },
+      {
+        "name": "setParent",
+        "permission": "WRITE",
+        "description": "Reuse shared parent tran"
+      },
+      {
+        "name": "createPrecomp",
+        "permission": "WRITE",
+        "description": "Precompose related selec"
+      },
+      {
+        "name": "setPosition",
+        "permission": "WRITE",
+        "description": "Set position at current/"
+      },
+      {
+        "name": "setAnchor",
+        "permission": "WRITE",
+        "description": "Set anchor at current/ex"
+      },
+      {
+        "name": "setOpacity",
+        "permission": "WRITE",
+        "description": "Set opacity at current/e"
+      },
+      {
+        "name": "setScale",
+        "permission": "WRITE",
+        "description": "Set absolute local scale"
+      },
+      {
+        "name": "setRotation",
+        "permission": "WRITE",
+        "description": "Set absolute rotation wi"
+      },
+      {
+        "name": "transformSelection",
+        "permission": "WRITE",
+        "description": "Relative group/individua"
+      },
+      {
+        "name": "setTransformPivot",
+        "permission": "WRITE",
+        "description": "Set workspace pivot for "
+      },
+      {
+        "name": "setTransformOrientation",
+        "permission": "WRITE",
+        "description": "Set workspace orientatio"
+      },
+      {
+        "name": "setFill",
+        "permission": "WRITE",
+        "description": "Set native animated shap"
+      },
+      {
+        "name": "setStroke",
+        "permission": "WRITE",
+        "description": "Set actual stroke color "
+      },
+      {
+        "name": "setTextContent",
+        "permission": "WRITE",
+        "description": "Replace editable text co"
+      },
+      {
+        "name": "setFont",
+        "permission": "WRITE",
+        "description": "Set font family name; ca"
+      },
+      {
+        "name": "setFontSize",
+        "permission": "WRITE",
+        "description": "Set text fontSize throug"
+      },
+      {
+        "name": "setTracking",
+        "permission": "WRITE",
+        "description": "Set text tracking throug"
+      },
+      {
+        "name": "setLeading",
+        "permission": "WRITE",
+        "description": "Set text lineHeight thro"
+      },
+      {
+        "name": "setTextColor",
+        "permission": "WRITE",
+        "description": "Set text fill color."
+      },
+      {
+        "name": "setTextAlignment",
+        "permission": "WRITE",
+        "description": "Set text alignment witho"
+      },
+      {
+        "name": "addEffect",
+        "permission": "WRITE",
+        "description": "Insert an existing effec"
+      },
+      {
+        "name": "removeEffect",
+        "permission": "DESTRUCTIVE",
+        "description": "Remove effect node; requ"
+      },
+      {
+        "name": "setEffectParameter",
+        "permission": "WRITE",
+        "description": "Set animated parameter o"
+      },
+      {
+        "name": "enableEffect",
+        "permission": "WRITE",
+        "description": "Toggle an actual effect "
+      },
+      {
+        "name": "reorderEffect",
+        "permission": "WRITE",
+        "description": "Reorder a linear effect "
+      },
+      {
+        "name": "addKeyframe",
+        "permission": "WRITE",
+        "description": "Add a real timeline keyf"
+      },
+      {
+        "name": "deleteKeyframe",
+        "permission": "WRITE",
+        "description": "Delete a timeline keyfra"
+      },
+      {
+        "name": "moveKeyframe",
+        "permission": "WRITE",
+        "description": "Move a timeline keyframe"
+      },
+      {
+        "name": "setKeyframeValue",
+        "permission": "WRITE",
+        "description": "Change actual keyframe v"
+      },
+      {
+        "name": "setInterpolation",
+        "permission": "WRITE",
+        "description": "Set interpolation and cl"
+      },
+      {
+        "name": "applyMotionCurve",
+        "permission": "WRITE",
+        "description": "Apply normalized motion "
+      },
+      {
+        "name": "copyEasing",
+        "permission": "WRITE",
+        "description": "Copy a normalized segmen"
+      },
+      {
+        "name": "reverseEasing",
+        "permission": "WRITE",
+        "description": "Reverse timing and progr"
+      },
+      {
+        "name": "compileGraph",
+        "permission": "READ",
+        "description": "调用共享合成图服务：compileGraph"
+      },
+      {
+        "name": "createNode",
+        "permission": "WRITE",
+        "description": "Create a registered grap"
+      },
+      {
+        "name": "deleteNode",
+        "permission": "DESTRUCTIVE",
+        "description": "调用共享合成图服务：deleteNode"
+      },
+      {
+        "name": "connectNodes",
+        "permission": "WRITE",
+        "description": "Connect exact typed port"
+      },
+      {
+        "name": "disconnectEdge",
+        "permission": "WRITE",
+        "description": "调用共享合成图服务：disconnectEdge"
+      },
+      {
+        "name": "setNodeParameter",
+        "permission": "WRITE",
+        "description": "调用共享合成图服务：setNodeParamet"
+      },
+      {
+        "name": "setNodePosition",
+        "permission": "WRITE",
+        "description": "调用共享合成图服务：setNodePositio"
+      },
+      {
+        "name": "enableNode",
+        "permission": "WRITE",
+        "description": "调用共享合成图服务：enableNode"
+      },
+      {
+        "name": "createMask",
+        "permission": "WRITE",
+        "description": "创建现有可渲染图层遮罩；路径每个点为 x,y,i"
+      },
+      {
+        "name": "setMaskMode",
+        "permission": "WRITE",
+        "description": "设置遮罩叠加、减去或相交模式"
+      },
+      {
+        "name": "setMaskPath",
+        "permission": "WRITE",
+        "description": "通过共享属性命令修改遮罩 path"
+      },
+      {
+        "name": "setMaskFeather",
+        "permission": "WRITE",
+        "description": "通过共享属性命令修改遮罩 feather"
+      },
+      {
+        "name": "setMaskOpacity",
+        "permission": "WRITE",
+        "description": "通过共享属性命令修改遮罩 opacity"
+      },
+      {
+        "name": "setMaskExpansion",
+        "permission": "WRITE",
+        "description": "通过共享属性命令修改遮罩 expansion"
+      },
+      {
+        "name": "setCompositionSize",
+        "permission": "WRITE",
+        "description": "修改合成尺寸"
+      },
+      {
+        "name": "setDuration",
+        "permission": "WRITE",
+        "description": "修改合成 duration"
+      },
+      {
+        "name": "setFPS",
+        "permission": "WRITE",
+        "description": "修改合成 fps"
+      },
+      {
+        "name": "createLayerFromAsset",
+        "permission": "WRITE",
+        "description": "仅使用已导入图像素材创建图层"
+      },
+      {
+        "name": "replaceAssetReference",
+        "permission": "WRITE",
+        "description": "替换图像图层的已授权素材引用"
+      },
+      {
+        "name": "inspectProject",
+        "permission": "READ",
+        "description": "Read project metadata an"
+      },
+      {
+        "name": "inspectComposition",
+        "permission": "READ",
+        "description": "Read composition dimensi"
+      },
+      {
+        "name": "listLayers",
+        "permission": "READ",
+        "description": "List a page of layers wi"
+      },
+      {
+        "name": "inspectLayer",
+        "permission": "READ",
+        "description": "Read selected layer prop"
+      },
+      {
+        "name": "inspectSelection",
+        "permission": "READ",
+        "description": "Read the current selecti"
+      },
+      {
+        "name": "inspectProperty",
+        "permission": "READ",
+        "description": "Read property value and "
+      },
+      {
+        "name": "inspectKeyframes",
+        "permission": "READ",
+        "description": "Read a page of actual pe"
+      },
+      {
+        "name": "inspectEffects",
+        "permission": "READ",
+        "description": "Read effect node identit"
+      },
+      {
+        "name": "inspectGraph",
+        "permission": "READ",
+        "description": "Read graph nodes, edges "
+      },
+      {
+        "name": "inspectAssets",
+        "permission": "READ",
+        "description": "Read imported asset meta"
+      },
+      {
+        "name": "getCurrentTime",
+        "permission": "READ",
+        "description": "Read current timeline ti"
+      },
+      {
+        "name": "getCanvasInfo",
+        "permission": "READ",
+        "description": "Read composition canvas "
+      },
+      {
+        "name": "createShape",
+        "permission": "WRITE",
+        "description": "Create a native editable"
+      },
+      {
+        "name": "placeAtCompositionCenter",
+        "permission": "WRITE",
+        "description": "Place an existing native"
+      },
+      {
+        "name": "setGradientFill",
+        "permission": "WRITE",
+        "description": "Apply native linear/radi"
+      },
+      {
+        "name": "animateLayerProperty",
+        "permission": "WRITE",
+        "description": "Create native Property k"
+      },
+      {
+        "name": "inspectToolContract",
+        "permission": "READ",
+        "description": "Load authoritative tool "
+      },
+      {
+        "name": "effect_list",
+        "permission": "READ",
+        "description": "列出统一内置能力。优先复用，禁止为已支持的基础模"
+      },
+      {
+        "name": "effect_search",
+        "permission": "READ",
+        "description": "先搜索内置能力，再考虑组合节点，最后才创建程序化"
+      },
+      {
+        "name": "effect_inspect",
+        "permission": "READ",
+        "description": "检查内置能力的精确版本、端口和参数"
+      },
+      {
+        "name": "effect_createDraft",
+        "permission": "READ",
+        "description": "生成新的受控声明式像素效果草稿；只能使用公开指令"
+      },
+      {
+        "name": "effect_updateDraft",
+        "permission": "READ",
+        "description": "更新草稿并使旧预览和检查失效"
+      },
+      {
+        "name": "effect_validate",
+        "permission": "READ",
+        "description": "验证草稿的源定义、端口、绑定与资源限制"
+      },
+      {
+        "name": "effect_compile",
+        "permission": "READ",
+        "description": "编译已验证草稿，按源内容哈希缓存"
+      },
+      {
+        "name": "effect_preview",
+        "permission": "READ",
+        "description": "真实渲染草稿192×108预览，返回像素统计；隐"
+      },
+      {
+        "name": "effect_evaluate",
+        "permission": "READ",
+        "description": "记录真实预览的检查结论；没有视觉证据时必须标明限"
+      },
+      {
+        "name": "effect_getDiagnostics",
+        "permission": "READ",
+        "description": "读取草稿状态及错误，不返回源代码执行权限"
+      },
+      {
+        "name": "effect_discardDraft",
+        "permission": "READ",
+        "description": "丢弃临时草稿，工程不变"
+      },
+      {
+        "name": "effect_applyDraft",
+        "permission": "WRITE",
+        "description": "把已预览和检查的草稿提交到Agent Trans"
+      },
+      {
+        "name": "effect_saveReusable",
+        "permission": "READ",
+        "description": "仅发起保存建议。正式效果库只能由用户在效果浏览器"
+      },
+      {
+        "name": "effect_addToLayer",
+        "permission": "WRITE",
+        "description": "添加已注册内置能力到共享Graph；不会创建新的"
+      },
+      {
+        "name": "effect_addToGraph",
+        "permission": "WRITE",
+        "description": "添加已注册内置能力到共享Graph；不会创建新的"
+      },
+      {
+        "name": "effect_setParameter",
+        "permission": "WRITE",
+        "description": "通过标准动画Property设置效果参数，已有动"
+      },
+      {
+        "name": "listAgentPresets",
+        "permission": "READ",
+        "description": "读取用户保存的实际动画属性预设"
+      },
+      {
+        "name": "applyAgentPreset",
+        "permission": "WRITE",
+        "description": "应用保存的实际属性值、关键帧与曲线；保留目标Pr"
+      },
+      {
+        "name": "renderFrame",
+        "permission": "READ",
+        "description": "真实合成预览，最长边720像素；不会含选择框"
+      },
+      {
+        "name": "analyzeLayout",
+        "permission": "READ",
+        "description": "只返回专业 Proposal，由 Agent 决"
+      },
+      {
+        "name": "analyzeColor",
+        "permission": "READ",
+        "description": "只返回专业 Proposal，由 Agent 决"
+      },
+      {
+        "name": "analyzeTypography",
+        "permission": "READ",
+        "description": "只返回专业 Proposal，由 Agent 决"
+      },
+      {
+        "name": "analyzeMotion",
+        "permission": "READ",
+        "description": "只返回专业 Proposal，由 Agent 决"
+      },
+      {
+        "name": "analyzeReference",
+        "permission": "READ",
+        "description": "只返回专业 Proposal，由 Agent 决"
+      },
+      {
+        "name": "discoverCapabilities",
+        "permission": "READ",
+        "description": "查询真实命令、Fill/Generator/Ef"
+      },
+      {
+        "name": "inspectGraphNode",
+        "permission": "READ",
+        "description": "读取节点参数、端口连接、语义角色与下游渲染依赖，"
+      },
+      {
+        "name": "inspectGraphBranch",
+        "permission": "READ",
+        "description": "按选中末端节点查询上游分支；Source/Out"
+      },
+      {
+        "name": "findRelatedNodes",
+        "permission": "READ",
+        "description": "查询实际图内语义名称与类型；返回候选，无法唯一定"
+      },
+      {
+        "name": "getGraphDependencies",
+        "permission": "READ",
+        "description": "读取目标节点的真实下游依赖"
+      },
+      {
+        "name": "renameGraphNode",
+        "permission": "WRITE",
+        "description": "给已有节点设置可理解的语义名称"
+      },
+      {
+        "name": "reuseProgrammableEffect",
+        "permission": "WRITE",
+        "description": "复用已验证的精确程序包版本/哈希；不生成新算法，"
+      },
+      {
+        "name": "setGraphOutput",
+        "permission": "WRITE",
+        "description": "将已有 Image 输出接入当前图层的真实 Ou"
+      },
+      {
+        "name": "layoutGraph",
+        "permission": "WRITE",
+        "description": "将处理图按左到右拓扑自动排布，不改变连接、参数和"
+      }
+    ],
+    "contextMetrics": {
+      "fullSchemaCharacters": 192508,
+      "selectedSchemaCharacters": 30820,
+      "loadedToolNames": [
+        "createRectangle",
+        "createText",
+        "setFill",
+        "setPosition",
+        "addKeyframe",
+        "inspectToolContract",
+        "discoverCapabilities",
+        "inspectComposition",
+        "listLayers",
+        "inspectLayer",
+        "createShape",
+        "placeAtCompositionCenter",
+        "setFont",
+        "setFontSize",
+        "setTextContent",
+        "setTracking",
+        "setLeading",
+        "setGradientFill",
+        "effect_search"
+      ]
+    },
+    "providerProfiles": [
+      {
+        "providerId": "8d9a4e02-cafb-476f-a6ad-49a1dec82d69",
+        "model": "qwen3.8-27b",
+        "protocol": "openai-compatible",
+        "toolCalling": "unknown",
+        "structuredOutput": "unknown",
+        "vision": "configured",
+        "streamingToolCalls": "adapter-supported-provider-unverified",
+        "contextWindow": null,
+        "toolSchemaCompatibility": "JSON Schema; actual endpoint support unverified",
+        "parallelToolCalls": "unknown",
+        "cancellation": "local-abort-supported",
+        "errorSemantics": "typed-host-errors",
+        "adapterTransports": [
+          "tools",
+          "structured-plan"
+        ],
+        "evidence": "configuration-and-adapter; not a live provider certification"
+      },
+      {
+        "providerId": "d8d53de4-7dc4-4517-9682-b2e210686c3b",
+        "model": "deepseek-flash",
+        "protocol": "openai-compatible",
+        "toolCalling": "unknown",
+        "structuredOutput": "unknown",
+        "vision": "configured",
+        "streamingToolCalls": "adapter-supported-provider-unverified",
+        "contextWindow": null,
+        "toolSchemaCompatibility": "JSON Schema; actual endpoint support unverified",
+        "parallelToolCalls": "unknown",
+        "cancellation": "local-abort-supported",
+        "errorSemantics": "typed-host-errors",
+        "adapterTransports": [
+          "tools",
+          "structured-plan"
+        ],
+        "evidence": "configuration-and-adapter; not a live provider certification"
+      }
+    ],
+    "untrustedData": true,
+    "project": {
+      "id": "f7863221-f32c-43f7-a555-3c209e9d3533",
+      "name": "未命名工程",
+      "compositionCount": 1,
+      "assetCount": 0
+    },
+    "composition": {
+      "id": "c50ea56e-fecc-4f40-af36-f3acda4a654e",
+      "name": "合成 01",
+      "width": 1920,
+      "height": 1080,
+      "duration": 5,
+      "fps": 30,
+      "layerCount": 0,
+      "layers": []
+    },
+    "selection": [],
+    "time": 0,
+    "transform": {
+      "orientation": "local",
+      "pivotMode": "anchor"
+    },
+    "selected": [],
+    "dependencies": [],
+    "assets": [],
+    "recentCommands": [],
+    "truncated": false,
+    "estimatedTokens": 232,
+    "skill": {
+      "id": "builtin-typography",
+      "instructions": "Inspect selected text, font size, tracking and leading. Establish hierarchy, legibility and alignment. Preserve actual text unless user asks to change content; use editable text properties."
+    },
+    "references": []
+  },
+  "currentPlan": null,
+  "toolCalls": [
+    {
+      "id": "call_00_FC3AX3E1LGMeGv2E7h7h6369",
+      "tool": "inspectComposition",
+      "label": "inspectComposition",
+      "status": "completed",
+      "result": {
+        "id": "c50ea56e-fecc-4f40-af36-f3acda4a654e",
+        "name": "合成 01",
+        "width": 1920,
+        "height": 1080,
+        "duration": 5,
+        "fps": 30,
+        "layerCount": 0,
+        "layers": []
+      }
+    },
+    {
+      "id": "call_01_p9j3IUjooNZ1qHVod9T31170",
+      "tool": "inspectToolContract",
+      "label": "inspectToolContract",
+      "status": "completed",
+      "result": [
+        {
+          "name": "createRectangle",
+          "description": "Create an editable rectangle layer.",
+          "parameters": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "layerId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "position": {
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "x",
+                  "y"
+                ],
+                "additionalProperties": false,
+                "description": "Layer transform position in composition pixels, at the layer anchor/center, not its top-left corner. Default is composition center."
+              },
+              "width": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 16384
+              },
+              "height": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 16384
+              }
+            },
+            "additionalProperties": false
+          },
+          "permission": "WRITE",
+          "sideEffects": "shared Command / Transaction",
+          "outputSchema": {
+            "type": "object",
+            "properties": {
+              "layerId": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "referenceRules": "Actual draft identities; active composition, object type and scope are checked at runtime."
+        },
+        {
+          "name": "setFill",
+          "description": "Set native animated shape/solid/text fill. Optional gradient none/linear/radial changes the existing fill mode, preserving shape alpha and geometry. linear uses color and endColor. radial uses radialParameters with exact registered radialGradient parameter IDs (normalized center, radius, flat stops). Native fill does NOT require createNode or graph wiring; existing downstream blur processes it.",
+          "parameters": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "layerId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "existing"
+                          },
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "id"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "selection"
+                          },
+                          "objectType": {
+                            "type": "string",
+                            "const": "layer"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "objectType"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "stepResult"
+                          },
+                          "stepId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "output": {
+                            "type": "string",
+                            "enum": [
+                              "layerId",
+                              "nodeId",
+                              "propertyId",
+                              "maskId",
+                              "effectId",
+                              "edgeId",
+                              "compositionId",
+                              "keyframeId",
+                              "assetId"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "stepId",
+                          "output"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "graphNode"
+                          },
+                          "nodeId": {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "nodeId"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  }
+                ],
+                "description": "Existing UUID or semantic reference. Never invent IDs."
+              },
+              "color": {
+                "type": "object",
+                "properties": {
+                  "r": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "g": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "b": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "a": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                },
+                "required": [
+                  "r",
+                  "g",
+                  "b",
+                  "a"
+                ],
+                "additionalProperties": false
+              },
+              "gradient": {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "linear",
+                  "radial"
+                ]
+              },
+              "endColor": {
+                "type": "object",
+                "properties": {
+                  "r": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "g": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "b": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "a": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                },
+                "required": [
+                  "r",
+                  "g",
+                  "b",
+                  "a"
+                ],
+                "additionalProperties": false
+              },
+              "radialParameters": {
+                "type": "object",
+                "properties": {
+                  "center": {
+                    "type": "object",
+                    "properties": {
+                      "x": {
+                        "type": "number"
+                      },
+                      "y": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "x",
+                      "y"
+                    ],
+                    "additionalProperties": false,
+                    "description": "中心"
+                  },
+                  "radius": {
+                    "type": "number",
+                    "minimum": 0.001,
+                    "maximum": 10,
+                    "description": "半径"
+                  },
+                  "aspect": {
+                    "type": "number",
+                    "minimum": 0.01,
+                    "maximum": 100,
+                    "description": "宽高比"
+                  },
+                  "stops": {
+                    "minItems": 10,
+                    "maxItems": 160,
+                    "type": "array",
+                    "items": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "description": "渐变色标; flat ordered [position,r,g,b,a] groups, 2..32 stops"
+                  },
+                  "opacity": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1,
+                    "description": "渐变不透明度"
+                  },
+                  "offset": {
+                    "type": "object",
+                    "properties": {
+                      "x": {
+                        "type": "number"
+                      },
+                      "y": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "x",
+                      "y"
+                    ],
+                    "additionalProperties": false,
+                    "description": "偏移"
+                  },
+                  "scale": {
+                    "type": "object",
+                    "properties": {
+                      "x": {
+                        "type": "number",
+                        "minimum": 0.001,
+                        "maximum": 100
+                      },
+                      "y": {
+                        "type": "number",
+                        "minimum": 0.001,
+                        "maximum": 100
+                      }
+                    },
+                    "required": [
+                      "x",
+                      "y"
+                    ],
+                    "additionalProperties": false,
+                    "description": "渐变缩放"
+                  },
+                  "rotation": {
+                    "type": "number",
+                    "description": "渐变旋转"
+                  },
+                  "interpolation": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1,
+                    "description": "颜色插值"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "time": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "layerId",
+              "color"
+            ],
+            "additionalProperties": false
+          },
+          "permission": "WRITE",
+          "sideEffects": "shared Command / Transaction",
+          "outputSchema": {
+            "type": "object",
+            "properties": {}
+          },
+          "referenceRules": "Actual draft identities; active composition, object type and scope are checked at runtime."
+        },
+        {
+          "name": "createText",
+          "description": "Create editable text. content is required; position is {x,y} composition pixels. Optional fontSize, fontFamily, color {r,g,b,a} in 0..1, alignment left/center/right. Defaults to canvas center. Never use text/font_size aliases.",
+          "parameters": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "layerId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "position": {
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "x",
+                  "y"
+                ],
+                "additionalProperties": false,
+                "description": "Layer transform position in composition pixels, at the layer anchor/center, not its top-left corner. Default is composition center."
+              },
+              "width": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 16384
+              },
+              "height": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 16384
+              },
+              "content": {
+                "type": "string",
+                "maxLength": 10000
+              },
+              "fontSize": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 2000
+              },
+              "fontFamily": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "color": {
+                "type": "object",
+                "properties": {
+                  "r": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "g": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "b": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "a": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                },
+                "required": [
+                  "r",
+                  "g",
+                  "b",
+                  "a"
+                ],
+                "additionalProperties": false
+              },
+              "alignment": {
+                "type": "string",
+                "enum": [
+                  "left",
+                  "center",
+                  "right"
+                ]
+              }
+            },
+            "required": [
+              "content"
+            ],
+            "additionalProperties": false
+          },
+          "permission": "WRITE",
+          "sideEffects": "shared Command / Transaction",
+          "outputSchema": {
+            "type": "object",
+            "properties": {
+              "layerId": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "referenceRules": "Actual draft identities; active composition, object type and scope are checked at runtime."
+        },
+        {
+          "name": "setPosition",
+          "description": "Set position at current/explicit timeline time.",
+          "parameters": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "layerId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "existing"
+                          },
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "id"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "selection"
+                          },
+                          "objectType": {
+                            "type": "string",
+                            "const": "layer"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "objectType"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "stepResult"
+                          },
+                          "stepId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "output": {
+                            "type": "string",
+                            "enum": [
+                              "layerId",
+                              "nodeId",
+                              "propertyId",
+                              "maskId",
+                              "effectId",
+                              "edgeId",
+                              "compositionId",
+                              "keyframeId",
+                              "assetId"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "stepId",
+                          "output"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "graphNode"
+                          },
+                          "nodeId": {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "nodeId"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  }
+                ],
+                "description": "Existing UUID or semantic reference. Never invent IDs."
+              },
+              "value": {
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "x",
+                  "y"
+                ],
+                "additionalProperties": false
+              },
+              "time": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "layerId",
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          "permission": "WRITE",
+          "sideEffects": "shared Command / Transaction",
+          "outputSchema": {
+            "type": "object",
+            "properties": {}
+          },
+          "referenceRules": "Actual draft identities; active composition, object type and scope are checked at runtime."
+        },
+        {
+          "name": "setFont",
+          "description": "Set font family name; cannot read fonts from disk.",
+          "parameters": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "layerId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "existing"
+                          },
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "id"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "selection"
+                          },
+                          "objectType": {
+                            "type": "string",
+                            "const": "layer"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "objectType"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "stepResult"
+                          },
+                          "stepId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "output": {
+                            "type": "string",
+                            "enum": [
+                              "layerId",
+                              "nodeId",
+                              "propertyId",
+                              "maskId",
+                              "effectId",
+                              "edgeId",
+                              "compositionId",
+                              "keyframeId",
+                              "assetId"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "stepId",
+                          "output"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "graphNode"
+                          },
+                          "nodeId": {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "nodeId"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  }
+                ],
+                "description": "Existing UUID or semantic reference. Never invent IDs."
+              },
+              "fontFamily": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              }
+            },
+            "required": [
+              "layerId",
+              "fontFamily"
+            ],
+            "additionalProperties": false
+          },
+          "permission": "WRITE",
+          "sideEffects": "shared Command / Transaction",
+          "outputSchema": {
+            "type": "object",
+            "properties": {}
+          },
+          "referenceRules": "Actual draft identities; active composition, object type and scope are checked at runtime."
+        },
+        {
+          "name": "setFontSize",
+          "description": "Set text fontSize through animated property.",
+          "parameters": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "layerId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "existing"
+                          },
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "id"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "selection"
+                          },
+                          "objectType": {
+                            "type": "string",
+                            "const": "layer"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "objectType"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "stepResult"
+                          },
+                          "stepId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "output": {
+                            "type": "string",
+                            "enum": [
+                              "layerId",
+                              "nodeId",
+                              "propertyId",
+                              "maskId",
+                              "effectId",
+                              "edgeId",
+                              "compositionId",
+                              "keyframeId",
+                              "assetId"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "stepId",
+                          "output"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "graphNode"
+                          },
+                          "nodeId": {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "nodeId"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  }
+                ],
+                "description": "Existing UUID or semantic reference. Never invent IDs."
+              },
+              "value": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 2000
+              },
+              "time": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "layerId",
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          "permission": "WRITE",
+          "sideEffects": "shared Command / Transaction",
+          "outputSchema": {
+            "type": "object",
+            "properties": {}
+          },
+          "referenceRules": "Actual draft identities; active composition, object type and scope are checked at runtime."
+        }
+      ]
+    }
+  ],
+  "usage": [
+    {
+      "inputTokens": 18665,
+      "outputTokens": 126,
+      "totalTokens": 18791
+    }
+  ],
+  "status": "failed",
+  "mode": "AGENT",
+  "pendingConfirmation": false,
+  "changes": null,
+  "error": "Error invoking remote method 'bench:chat': Error: Authorized request/input cap reached before sending",
+  "response": "Error invoking remote method 'bench:chat': Error: Authorized request/input cap reached before sending",
+  "trace": {
+    "sessionId": "313d44b7-03a1-4732-9329-281a7bfc6dd0",
+    "planId": null,
+    "skillIds": [
+      {
+        "id": "sf.core-execution",
+        "version": "1.0.0",
+        "hash": "60abdf38a1f146e5387dc51e48fcc813b99beafb6dee01e2caabef3e7b08b261"
+      },
+      {
+        "id": "sf.shape-creation",
+        "version": "1.0.0",
+        "hash": "244bbabd8eafddb4e2a06683321ad779e66794e0dfab2f1e13f339b188ee3f22"
+      },
+      {
+        "id": "sf.typography",
+        "version": "1.0.0",
+        "hash": "1809a210dfa636fafae7bd9c8f334acfcd886337ee1006922cc094e4f3d9a5e6"
+      },
+      {
+        "id": "sf.gradient-fill",
+        "version": "1.0.0",
+        "hash": "3d8c8c4d337636f1f26cfd6187c8f29e878f4bbec541463be611eda0eb9d98f5"
+      }
+    ],
+    "selectedCapabilities": [
+      "createRectangle",
+      "createText",
+      "setFill",
+      "setPosition",
+      "addKeyframe",
+      "inspectToolContract",
+      "discoverCapabilities",
+      "inspectComposition",
+      "listLayers",
+      "inspectLayer",
+      "createShape",
+      "placeAtCompositionCenter",
+      "setFont",
+      "setFontSize",
+      "setTextContent",
+      "setTracking",
+      "setLeading",
+      "setGradientFill",
+      "effect_search"
+    ],
+    "registeredTools": [
+      "createLayer",
+      "createRectangle",
+      "createEllipse",
+      "createPolygon",
+      "createStar",
+      "createText",
+      "createPath",
+      "deleteLayer",
+      "duplicateLayer",
+      "renameLayer",
+      "reorderLayer",
+      "setLayerVisibility",
+      "setParent",
+      "createPrecomp",
+      "setPosition",
+      "setAnchor",
+      "setOpacity",
+      "setScale",
+      "setRotation",
+      "transformSelection",
+      "setTransformPivot",
+      "setTransformOrientation",
+      "setFill",
+      "setStroke",
+      "setTextContent",
+      "setFont",
+      "setFontSize",
+      "setTracking",
+      "setLeading",
+      "setTextColor",
+      "setTextAlignment",
+      "addEffect",
+      "removeEffect",
+      "setEffectParameter",
+      "enableEffect",
+      "reorderEffect",
+      "addKeyframe",
+      "deleteKeyframe",
+      "moveKeyframe",
+      "setKeyframeValue",
+      "setInterpolation",
+      "applyMotionCurve",
+      "copyEasing",
+      "reverseEasing",
+      "compileGraph",
+      "createNode",
+      "deleteNode",
+      "connectNodes",
+      "disconnectEdge",
+      "setNodeParameter",
+      "setNodePosition",
+      "enableNode",
+      "createMask",
+      "setMaskMode",
+      "setMaskPath",
+      "setMaskFeather",
+      "setMaskOpacity",
+      "setMaskExpansion",
+      "createComposition",
+      "setCompositionSize",
+      "setDuration",
+      "setFPS",
+      "openComposition",
+      "deleteComposition",
+      "createLayerFromAsset",
+      "replaceAssetReference",
+      "inspectProject",
+      "inspectComposition",
+      "listLayers",
+      "inspectLayer",
+      "inspectSelection",
+      "inspectProperty",
+      "inspectKeyframes",
+      "inspectEffects",
+      "inspectGraph",
+      "inspectAssets",
+      "getCurrentTime",
+      "getCanvasInfo",
+      "createShape",
+      "placeAtCompositionCenter",
+      "setGradientFill",
+      "animateLayerProperty",
+      "inspectToolContract",
+      "effect_list",
+      "effect_search",
+      "effect_inspect",
+      "effect_createDraft",
+      "effect_updateDraft",
+      "effect_validate",
+      "effect_compile",
+      "effect_preview",
+      "effect_evaluate",
+      "effect_getDiagnostics",
+      "effect_discardDraft",
+      "effect_applyDraft",
+      "effect_saveReusable",
+      "effect_addToLayer",
+      "effect_addToGraph",
+      "effect_setParameter",
+      "listAgentPresets",
+      "applyAgentPreset",
+      "renderFrame",
+      "analyzeLayout",
+      "analyzeColor",
+      "analyzeTypography",
+      "analyzeMotion",
+      "analyzeReference",
+      "discoverCapabilities",
+      "inspectGraphNode",
+      "inspectGraphBranch",
+      "findRelatedNodes",
+      "getGraphDependencies",
+      "renameGraphNode",
+      "reuseProgrammableEffect",
+      "setGraphOutput",
+      "layoutGraph"
+    ],
+    "availableCapabilities": [
+      "builtin:linear",
+      "builtin:ease-in",
+      "builtin:ease-out",
+      "builtin:ease-in-out",
+      "builtin:sine-in",
+      "builtin:sine-out",
+      "builtin:sine-in-out",
+      "builtin:quad-in",
+      "builtin:quad-out",
+      "builtin:quad-in-out",
+      "builtin:cubic-in",
+      "builtin:cubic-out",
+      "builtin:cubic-in-out",
+      "builtin:quart-in",
+      "builtin:quart-out",
+      "builtin:quart-in-out",
+      "builtin:quint-in",
+      "builtin:quint-out",
+      "builtin:quint-in-out",
+      "builtin:expo-in",
+      "builtin:expo-out",
+      "builtin:expo-in-out",
+      "builtin:back-in",
+      "builtin:back-out",
+      "builtin:back-in-out",
+      "builtin:fast-out",
+      "builtin:smooth",
+      "builtin:cinematic",
+      "builtin:ui-snappy",
+      "brightnessContrast",
+      "exposure",
+      "hueSaturation",
+      "temperature",
+      "tint",
+      "levels",
+      "gaussianBlur",
+      "dropShadow",
+      "glow",
+      "tintFill",
+      "radialGradient",
+      "solid",
+      "transform",
+      "mask",
+      "merge",
+      "organicTexture",
+      "source",
+      "output",
+      "passthrough",
+      "createLayer",
+      "createRectangle",
+      "createEllipse",
+      "createPolygon",
+      "createStar",
+      "createText",
+      "createPath",
+      "deleteLayer",
+      "duplicateLayer",
+      "renameLayer",
+      "reorderLayer",
+      "setLayerVisibility",
+      "setParent",
+      "createPrecomp",
+      "setPosition",
+      "setAnchor",
+      "setOpacity",
+      "setScale",
+      "setRotation",
+      "transformSelection",
+      "setTransformPivot",
+      "setTransformOrientation",
+      "setFill",
+      "setStroke",
+      "setTextContent",
+      "setFont",
+      "setFontSize",
+      "setTracking",
+      "setLeading",
+      "setTextColor",
+      "setTextAlignment",
+      "addEffect",
+      "removeEffect",
+      "setEffectParameter",
+      "enableEffect",
+      "reorderEffect",
+      "addKeyframe",
+      "deleteKeyframe",
+      "moveKeyframe",
+      "setKeyframeValue",
+      "setInterpolation",
+      "applyMotionCurve",
+      "copyEasing",
+      "reverseEasing",
+      "compileGraph",
+      "createNode",
+      "deleteNode",
+      "connectNodes",
+      "disconnectEdge",
+      "setNodeParameter",
+      "setNodePosition",
+      "enableNode",
+      "createMask",
+      "setMaskMode",
+      "setMaskPath",
+      "setMaskFeather",
+      "setMaskOpacity",
+      "setMaskExpansion",
+      "createComposition",
+      "setCompositionSize",
+      "setDuration",
+      "setFPS",
+      "openComposition",
+      "deleteComposition",
+      "createLayerFromAsset",
+      "replaceAssetReference",
+      "inspectProject",
+      "inspectComposition",
+      "listLayers",
+      "inspectLayer",
+      "inspectSelection",
+      "inspectProperty",
+      "inspectKeyframes",
+      "inspectEffects",
+      "inspectGraph",
+      "inspectAssets",
+      "getCurrentTime",
+      "getCanvasInfo",
+      "createShape",
+      "placeAtCompositionCenter",
+      "setGradientFill",
+      "animateLayerProperty",
+      "inspectToolContract",
+      "effect_list",
+      "effect_search",
+      "effect_inspect",
+      "effect_createDraft",
+      "effect_updateDraft",
+      "effect_validate",
+      "effect_compile",
+      "effect_preview",
+      "effect_evaluate",
+      "effect_getDiagnostics",
+      "effect_discardDraft",
+      "effect_applyDraft",
+      "effect_saveReusable",
+      "effect_addToLayer",
+      "effect_addToGraph",
+      "effect_setParameter",
+      "listAgentPresets",
+      "applyAgentPreset",
+      "renderFrame",
+      "analyzeLayout",
+      "analyzeColor",
+      "analyzeTypography",
+      "analyzeMotion",
+      "analyzeReference",
+      "discoverCapabilities",
+      "inspectGraphNode",
+      "inspectGraphBranch",
+      "findRelatedNodes",
+      "getGraphDependencies",
+      "renameGraphNode",
+      "reuseProgrammableEffect",
+      "setGraphOutput",
+      "layoutGraph",
+      "provider:0",
+      "provider:1"
+    ],
+    "modelCalls": [
+      {
+        "stage": "planning",
+        "model": "deepseek-flash",
+        "providerId": "d8d53de4-7dc4-4517-9682-b2e210686c3b",
+        "usage": {
+          "inputTokens": 18665,
+          "outputTokens": 126,
+          "totalTokens": 18791
+        },
+        "durationMs": 1031
+      },
+      {
+        "stage": "planning",
+        "model": "unknown-failed-request",
+        "durationMs": 2
+      }
+    ],
+    "planning": [
+      {
+        "round": 0,
+        "declaredTools": [
+          "submitPlan",
+          "inspectComposition",
+          "listLayers",
+          "inspectLayer",
+          "inspectToolContract",
+          "effect_search",
+          "discoverCapabilities"
+        ],
+        "requestedTools": [
+          "inspectComposition",
+          "inspectToolContract"
+        ],
+        "inspectionCalls": 2,
+        "inspectionLimit": 12,
+        "inspectionRounds": 1,
+        "inspectionRoundLimit": 3,
+        "remainingModelRequests": 3,
+        "submitOnly": false,
+        "outcome": "inspected"
+      }
+    ],
+    "executedCommands": [],
+    "objectBindings": {},
+    "validationResults": null,
+    "finalResult": "failed",
+    "durationMs": 1284
+  },
+  "executionError": {
+    "code": "COMMAND_FAILED",
+    "phase": "execute",
+    "recoverable": false,
+    "message": "Error invoking remote method 'bench:chat': Error: Authorized request/input cap reached before sending"
+  }
+}

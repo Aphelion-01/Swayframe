@@ -58,14 +58,21 @@ export async function exportPngSequence(
     for (const [i, time] of times.entries()) {
       if (signal?.aborted) throw new Error('导出已取消');
       if (!output)
+        await renderer.prepareMedia(
+          createRenderSnapshot(c, time, [], undefined, project),
+        );
+      if (!output)
         renderer.render(
           createRenderSnapshot(c, time, [], undefined, project),
           canvas,
           1,
           false,
         );
+      if (!output) renderer.assertNoEffectErrors();
       const data = new Uint8Array(
-        await (await png(output?.draw(time) ?? canvas)).arrayBuffer(),
+        await (
+          await png(output ? await output.draw(time) : canvas)
+        ).arrayBuffer(),
       );
       bytes += data.length;
       if (bytes > 512_000_000) throw new Error('序列超过 512 MB，请分段导出');
@@ -115,7 +122,7 @@ export async function exportCurrentFrame(
     const output = new OutputFrameRenderer(project, c, settings);
     try {
       await output.init();
-      return await png(output.draw(time));
+      return await png(await output.draw(time));
     } finally {
       output.dispose();
     }
@@ -124,10 +131,14 @@ export async function exportCurrentFrame(
     canvas = surface(c.width, c.height);
   try {
     await renderer.syncAssets(project.assets);
+    await renderer.prepareMedia(
+      createRenderSnapshot(c, time, [], undefined, project),
+    );
     renderer.render(
       createRenderSnapshot(c, time, [], undefined, project),
       canvas,
     );
+    renderer.assertNoEffectErrors();
     return await png(canvas);
   } finally {
     renderer.dispose();

@@ -1,0 +1,57 @@
+
+> motion-system@0.9.30 test
+> vitest run
+
+
+ RUN  v5.0.3 /Users/aphelion-01/Documents/Codex/2026-10-03/Swayframe_Repairs/0.10
+
+ ❯ tests/native-creative-skill-flow.test.ts (1 test | 1 failed) 26ms
+   × all five creative workflows use actual objects, animation and graph in one transaction 25ms
+ ❯ tests/native-skill-runtime.test.ts (4 tests | 1 failed) 58ms
+   × routes only task-relevant creative skills and keeps the same underlying tools without skills 21ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/native-creative-skill-flow.test.ts > all five creative workflows use actual objects, animation and graph in one transaction
+AgentExecutionError: Skill 缺少真实能力：sf.compositing
+ ❯ NativeSkillRuntime.load src/agent/native-skill-runtime.ts:185:15
+    183|       );
+    184|       if (missing.length)
+    185|         throw new AgentExecutionError({
+       |               ^
+    186|           code: 'CAPABILITY_UNAVAILABLE',
+    187|           phase: 'preflight',
+ ❯ NativeSkillRuntime.route src/agent/native-skill-runtime.ts:173:10
+ ❯ tests/native-creative-skill-flow.test.ts:33:10
+
+{ missing: [ 'setGraphOutput' ], name: 'Caused by', stacks: [] }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { missing: [ 'setGraphOutput' ] }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  tests/native-skill-runtime.test.ts > routes only task-relevant creative skills and keeps the same underlying tools without skills
+AgentExecutionError: Skill 缺少真实能力：sf.compositing
+ ❯ NativeSkillRuntime.load src/agent/native-skill-runtime.ts:185:15
+    183|       );
+    184|       if (missing.length)
+    185|         throw new AgentExecutionError({
+       |               ^
+    186|           code: 'CAPABILITY_UNAVAILABLE',
+    187|           phase: 'preflight',
+ ❯ NativeSkillRuntime.route src/agent/native-skill-runtime.ts:173:10
+ ❯ tests/native-skill-runtime.test.ts:81:12
+
+{ missing: [ 'setGraphOutput' ], name: 'Caused by', stacks: [] }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { missing: [ 'setGraphOutput' ] }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  2 failed | 152 passed (154)
+      Tests  2 failed | 648 passed (650)
+   Start at  23:44:23
+   Duration  15.03s (tests 66%, import 17%, environment 10%, transform 7%)
+
+    Isolate  154 workers spawned · ~169ms startup each (spawn + environment, per file)
+             at least ~2.72s faster with isolate: false — reuses workers across files instead of one per file
+

@@ -74,7 +74,7 @@ export interface TextLayer extends LayerBase {
   readonly fill: Color;
 }
 export interface ImageLayer extends LayerBase {
-  readonly type: 'image';
+  readonly type: 'image' | 'audio' | 'video';
   readonly assetId: ID;
 }
 export interface ModelLayer extends LayerBase {
@@ -95,6 +95,8 @@ export type LayerKind =
   | 'path'
   | 'text'
   | 'image'
+  | 'audio'
+  | 'video'
   | 'model'
   | 'solid'
   | 'null'
@@ -106,6 +108,12 @@ export interface ModelGeometry {
   readonly format: string;
 }
 export interface Asset {
+  readonly media?: {
+    readonly kind: 'audio' | 'video';
+    readonly duration: number;
+    readonly width: number;
+    readonly height: number;
+  };
   readonly mesh?: ModelGeometry;
   readonly id: ID;
   readonly name: string;
@@ -203,6 +211,8 @@ function createLegacyLayer(
         ellipse: '椭圆',
         text: '文字',
         image: '图片',
+        audio: '音频',
+        video: '视频',
         model: '三维模型',
         polygon: '多边形',
         star: '星形',
@@ -251,7 +261,14 @@ function createLegacyLayer(
   if (!options.assetId) throw new Error('图片图层必须引用素材编号');
   return {
     ...base,
-    type: kind === 'model' ? 'model' : 'image',
+    type:
+      kind === 'model'
+        ? 'model'
+        : kind === 'audio'
+          ? 'audio'
+          : kind === 'video'
+            ? 'video'
+            : 'image',
     assetId: options.assetId,
   };
 }
@@ -314,6 +331,11 @@ export interface Mask {
   readonly expansion: Property<number>;
 }
 export interface LayerEditor {
+  readonly motionBlur?: boolean;
+  readonly modelWireframe?: boolean;
+  readonly modelUnlit?: boolean;
+  readonly modelBackfaceCulling?: boolean;
+  readonly modelTint?: readonly [number, number, number];
   readonly graph?: CompositingGraph;
   readonly properties: Readonly<Record<string, Property<AnimValue>>>;
   readonly parentId: ID | null;

@@ -1,3 +1,4 @@
+import type { PreparedLayerPack } from '../importers/layerpack-manifest';
 import { aiRequestSchemas } from '../ai/desktop-contracts';
 import type { DesktopAIAPI } from '../ai/desktop-contracts';
 import { z } from 'zod';
@@ -61,6 +62,9 @@ export type DesktopAction =
   | ApplicationActionId
   | 'create-image'
   | 'import-model'
+  | 'image-to-layers'
+  | 'import-layerpack'
+  | 'cancel-layerpack'
   | 'spatial-translate'
   | 'spatial-rotate'
   | 'camera-frustum'
@@ -119,8 +123,14 @@ export type DesktopAction =
 export const actionSchema = z.enum([
   'create-image',
   'import-model',
+  'image-to-layers',
+  'import-layerpack',
+  'cancel-layerpack',
   'spatial-translate',
   'spatial-rotate',
+  'effect-browser',
+  'create-radial-generator',
+  'effect-forge',
   'camera-frustum',
   'canvas-aids',
   'text-animator',
@@ -179,6 +189,18 @@ export const actionSchema = z.enum([
 const dataSchema = z.string().max(20_000_000);
 export const requestSchema = z.discriminatedUnion('method', [
   ...aiRequestSchemas,
+  z.object({ method: z.literal('imageLayers.status') }).strict(),
+  z
+    .object({ method: z.literal('imageLayers.cancel'), requestId: z.uuid() })
+    .strict(),
+  z
+    .object({
+      method: z.literal('imageLayers.generate'),
+      input: pathSchema,
+      parent: pathSchema,
+      requestId: z.uuid(),
+    })
+    .strict(),
   z
     .object({
       method: z.literal('edit.text'),
@@ -194,6 +216,7 @@ export const requestSchema = z.discriminatedUnion('method', [
     })
     .strict(),
   z.object({ method: z.literal('platform.info') }).strict(),
+  z.object({ method: z.literal('fonts.list') }).strict(),
   z
     .object({ method: z.literal('window.title'), title: z.string().max(500) })
     .strict(),
@@ -232,6 +255,19 @@ export const requestSchema = z.discriminatedUnion('method', [
     .object({
       method: z.literal('assets.import'),
       paths: z.array(pathSchema).max(100).optional(),
+    })
+    .strict(),
+  z
+    .object({
+      method: z.literal('assets.layerpack'),
+      path: pathSchema,
+      requestId: z.string().uuid(),
+    })
+    .strict(),
+  z
+    .object({
+      method: z.literal('assets.layerpack.cancel'),
+      requestId: z.string().uuid(),
     })
     .strict(),
   z.object({ method: z.literal('assets.metadata'), path: pathSchema }).strict(),
@@ -278,8 +314,28 @@ export const requestSchema = z.discriminatedUnion('method', [
     .strict(),
 ]);
 export type DesktopRequest = z.infer<typeof requestSchema>;
+export interface GeneratedLayerPackage {
+  directory: string;
+  analysisDirectory: string;
+  warning: string;
+  width: number;
+  height: number;
+  instances: number;
+}
 export interface DesktopAPI {
+  imageLayers?: {
+    supported: boolean;
+    status(): Promise<{ available: boolean; reason: string }>;
+    generate(
+      input: string,
+      parent: string,
+      requestId: string,
+    ): Promise<GeneratedLayerPackage>;
+    cancel(requestId: string): Promise<void>;
+  };
+  mcp?: import('../mcp/contract').MCPDesktopAPI;
   ai?: DesktopAIAPI;
+  fonts?: { list(): Promise<string[]> };
   textEdit(
     action: 'undo' | 'redo' | 'cut' | 'copy' | 'paste' | 'delete' | 'selectAll',
   ): Promise<void>;
@@ -296,6 +352,8 @@ export interface DesktopAPI {
     confirmUnsaved(name: string): Promise<'save' | 'discard' | 'cancel'>;
   };
   assets: {
+    readLayerPack(path: string, requestId: string): Promise<PreparedLayerPack>;
+    cancelLayerPack(requestId: string): Promise<void>;
     importFiles(paths?: string[]): Promise<ImportedAsset[]>;
     readMetadata(path: string): Promise<AssetMetadata>;
     exists(path: string): Promise<boolean>;

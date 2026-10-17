@@ -111,6 +111,7 @@ export class NativeAIService {
       config,
       () => this.credentials(id),
       this.fetcher,
+      { timeoutMs: 120000 },
     );
   }
   async dispatch(request: AIRequest): Promise<unknown> {

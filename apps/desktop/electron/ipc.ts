@@ -1,3 +1,5 @@
+import { ImageLayersError } from './image-layers';
+import { LayerPackError } from '../../../src/importers/layerpack-manifest';
 import { AIError } from '../../../src/ai/contracts';
 import { app, dialog, ipcMain } from 'electron';
 import type { BrowserWindow } from 'electron';
@@ -69,8 +71,12 @@ export function installIPC(
       return {
         ok: false,
         code: error instanceof AIError ? error.code : undefined,
+        details: error instanceof AIError ? error.details : undefined,
         error:
-          error instanceof AIError || error instanceof ProjectFileError
+          error instanceof AIError ||
+          error instanceof ProjectFileError ||
+          error instanceof LayerPackError ||
+          error instanceof ImageLayersError
             ? error.message
             : '原生操作未完成，请检查文件权限或日志后重试。',
       };

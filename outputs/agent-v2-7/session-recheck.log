@@ -1,0 +1,44 @@
+
+ RUN  v5.0.3 /Users/aphelion-01/Documents/Codex/2026-10-03/Swayframe_Repairs/1.0.3
+
+ ❯ tests/agent-v2-session-v27.test.ts (18 tests | 2 failed) 336ms
+   × S1: five accepted turns preserve exactly three identities, distinct colors, animation, dimensions, undo and reload 71ms
+   × does not guess by duplicate names; selection resolves ambiguity, locks and foreign compositions reject 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/agent-v2-session-v27.test.ts > S1: five accepted turns preserve exactly three identities, distinct colors, animation, dimensions, undo and reload
+Error: [{"code":"PROVIDER_RESPONSE","message":"模型服务请求未完成；未执行编辑操作","phase":"planning","actionId":null,"target":null,"field":null,"expected":null,"actual":null,"recoverable":false,"strategy":"NONE"}]
+ ❯ Object.turn tests/helpers/agent-v2-session-fixture.ts:90:30
+     88|     enqueue(actions);
+     89|     await core.run(request);
+     90|     if (!core.pending) throw Error(JSON.stringify(core.state?.errors));
+       |                              ^
+     91|     core.accept();
+     92|   };
+ ❯ tests/agent-v2-session-v27.test.ts:77:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  tests/agent-v2-session-v27.test.ts > does not guess by duplicate names; selection resolves ambiguity, locks and foreign compositions reject
+AssertionError: expected [Function] to throw error including '不存在' but got '目标已删除或已被撤销，请重新选择；不会自动重建'
+
+Expected: "不存在"
+Received: "目标已删除或已被撤销，请重新选择；不会自动重建"
+
+ ❯ tests/agent-v2-session-v27.test.ts:383:5
+    381|       compositions: [...p.compositions, other],
+    382|     }),
+    383|   ).toThrow('不存在');
+       |     ^
+    384| });
+    385| it('duplicate submissions and double accepts cannot create duplicate o…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 16 passed (18)
+   Start at  07:31:55
+   Duration  1.01s (tests 35%, transform 34%, environment 19%, import 12%)
+

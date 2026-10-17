@@ -57,6 +57,25 @@ export class AIProviderManager {
   private listeners = new Set<() => void>();
   private queue: Promise<unknown> = Promise.resolve();
   private overrides = new Map<string, AIProvider>();
+  assistantEffort: 'low' | 'medium' | 'high' = 'medium';
+  setAssistantEffort(value: 'low' | 'medium' | 'high') {
+    if (!['low', 'medium', 'high'].includes(value))
+      throw Error('无效的思考深度');
+    this.assistantEffort = value;
+    this.set({});
+  }
+  planningPreference() {
+    return {
+      level: this.assistantEffort,
+      instruction:
+        (this.assistantEffort === 'low'
+          ? 'Prefer the smallest sufficient plan.'
+          : this.assistantEffort === 'high'
+            ? 'Carefully check all requested effects, animation values, dependencies and target constraints before submitting.'
+            : 'Check targets, dependencies and requested parameter values before submitting.') +
+        ' Return only the requested structured result. Do not output private reasoning. This preference never expands permissions or execution budgets.',
+    };
+  }
   readonly models = new ModelRegistry(() => this.state.settings);
   constructor(
     readonly storage: AIStorage,
@@ -197,11 +216,41 @@ export class AIProviderManager {
     await this.saveProvider({ ...p, models });
     return models;
   }
+  private readonly countedFailures = new WeakMap<object, number>();
+  /** One transport attempt per counted recovery call; permitted failover occurs on the next counted call. */
+  chatOnce: AIProviderManager['chat'] = async (
+    task,
+    request,
+    signal,
+    onText,
+  ) => {
+    const failed = this.countedFailures.get(request) ?? 0;
+    try {
+      const response = await this.chat(task, request, signal, onText, {
+        singleAttempt: true,
+        attempt: this.state.settings.failover.enabled
+          ? Math.min(failed, this.state.settings.failover.maxRetries)
+          : 0,
+      });
+      this.countedFailures.delete(request);
+      return response;
+    } catch (error) {
+      if (
+        error instanceof AIError &&
+        (['network', 'timeout', 'rate_limit'].includes(error.code) ||
+          (error.code === 'provider' && (error.details?.status ?? 0) >= 500))
+      )
+        this.countedFailures.set(request, failed + 1);
+      else this.countedFailures.delete(request);
+      throw error;
+    }
+  };
   async chat(
     task: 'general' | 'planning' | 'vision',
     request: Omit<ChatRequest, 'model'>,
     signal?: AbortSignal,
     onText?: (text: string) => void,
+    control?: { singleAttempt: boolean; attempt?: number },
   ) {
     const settings = this.state.settings;
     const tokens =
@@ -236,14 +285,31 @@ export class AIProviderManager {
             ?.capabilities.includes('vision'),
       )
       .slice(0, 2);
-    let route = first;
+    let route = control?.attempt
+      ? (alternatives[control.attempt - 1] ?? first)
+      : first;
+    if (route.provider.id !== first.provider.id)
+      this.set({
+        fallback: `${first.provider.name} 请求失败，已切换 ${route.provider.name}`,
+      });
     for (let attempt = 0; ; attempt++) {
       if (signal?.aborted) throw new AIError('cancelled', '已停止');
       this.set({
         health: { ...this.state.health, [route.provider.id]: '正在请求' },
       });
       try {
-        const raw = { ...request, model: route.model };
+        const raw = {
+          ...request,
+          model: route.model,
+          ...(request.tools?.length
+            ? {
+                responseMode:
+                  request.responseMode ??
+                  settings.agent.planTransport ??
+                  ('tools' as const),
+              }
+            : {}),
+        };
         const response = await (this.overrides
           .get(route.provider.id)
           ?.chat(raw, signal, onText) ??
@@ -276,7 +342,10 @@ export class AIProviderManager {
               this.set({ error: '用量记录保存失败' });
             }
         });
-        return response;
+        return {
+          ...response,
+          providerId: route.provider.id,
+        } as import('./contracts').ChatResponse;
       } catch (error) {
         const retryable =
           error instanceof AIError &&
@@ -290,6 +359,7 @@ export class AIProviderManager {
         });
         if (
           signal?.aborted ||
+          control?.singleAttempt ||
           !settings.failover.enabled ||
           !retryable ||
           attempt >= settings.failover.maxRetries
