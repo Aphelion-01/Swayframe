@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 /** Keep gestures alive when a controlled element loses native pointer capture. */
 export function usePointerRelease(handlers: {
   active: () => boolean;
+  accepts?: (event: PointerEvent) => boolean;
   move?: (event: PointerEvent) => void;
   finish: (event: PointerEvent) => void;
   cancel: () => void;
@@ -11,13 +12,16 @@ export function usePointerRelease(handlers: {
   latest.current = handlers;
   useEffect(() => {
     const move = (event: PointerEvent) => {
-      if (latest.current.active()) latest.current.move?.(event);
+      if (latest.current.active() && (latest.current.accepts?.(event) ?? true))
+        latest.current.move?.(event);
     };
     const finish = (event: PointerEvent) => {
-      if (latest.current.active()) latest.current.finish(event);
+      if (latest.current.active() && (latest.current.accepts?.(event) ?? true))
+        latest.current.finish(event);
     };
-    const cancel = () => {
-      if (latest.current.active()) latest.current.cancel();
+    const cancel = (event: PointerEvent) => {
+      if (latest.current.active() && (latest.current.accepts?.(event) ?? true))
+        latest.current.cancel();
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', finish, true);

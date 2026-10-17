@@ -1,3 +1,4 @@
+import { usePointerRelease } from './workspace/pointer-release';
 import { ShapePathOverlay } from './ShapePathOverlay';
 import { publishRenderPreview } from './RenderPreviewBar';
 import { previewEffectScale } from '../renderers/preview-quality';
@@ -218,6 +219,16 @@ export function Canvas({ store }: { store: EditorStore }) {
   const [menu, setMenu] = useState<{ x: number; y: number }>();
   const [internal, setInternal] = useState<string>();
   const outsideInteraction = useRef(false);
+  const pointerOwner = useRef<{ id: number; element: HTMLElement } | undefined>(
+    undefined,
+  );
+  const captureCanvasPointer = (event: ReactPointerEvent<HTMLElement>) => {
+    pointerOwner.current = {
+      id: event.pointerId,
+      element: event.currentTarget,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
   const marquee = interaction.slot('marquee');
   const [marqueeBox, setMarqueeBox] = useState<{ start: Vec2; end: Vec2 }>();
   const drawing = interaction.slot('drawing');
@@ -414,6 +425,7 @@ export function Canvas({ store }: { store: EditorStore }) {
     setMarqueeBox(undefined);
   };
   const cancelCanvas = () => {
+    pointerOwner.current = undefined;
     penPoints.current = [];
     setPenPreview([]);
     setInternal(undefined);
@@ -869,7 +881,7 @@ export function Canvas({ store }: { store: EditorStore }) {
       }
     }
     if (tool !== 'select' && tool !== 'hand') {
-      event.currentTarget.setPointerCapture(event.pointerId);
+      captureCanvasPointer(event);
       if (
         tool === 'pen' &&
         penPoints.current.length > 2 &&
@@ -934,7 +946,7 @@ export function Canvas({ store }: { store: EditorStore }) {
                   Math.hypot(b.point.x - p.x, b.point.y - p.y),
               )[0];
     if (handle) {
-      event.currentTarget.setPointerCapture(event.pointerId);
+      captureCanvasPointer(event);
       store.setPlaying(false);
       guidanceController.activate({
         property:
@@ -995,7 +1007,7 @@ export function Canvas({ store }: { store: EditorStore }) {
     }
     const id = hitTest(input, p, store.textMeasure);
     if (id) {
-      event.currentTarget.setPointerCapture(event.pointerId);
+      captureCanvasPointer(event);
       if (event.shiftKey || event.metaKey || event.ctrlKey)
         store.select(id, true);
       else {
@@ -1020,12 +1032,14 @@ export function Canvas({ store }: { store: EditorStore }) {
         selection: view.selection,
         additive: event.shiftKey,
       };
-      event.currentTarget.setPointerCapture(event.pointerId);
+      captureCanvasPointer(event);
       setMarqueeBox({ start: p, end: p });
       if (!event.shiftKey) store.select(null);
     }
   };
   const onPointerMove = (event: ReactPointerEvent<HTMLElement>) => {
+    if (pointerOwner.current && event.pointerId !== pointerOwner.current.id)
+      return;
     const g = gesture.current,
       p = point(event);
     if (marquee.current) {
@@ -1297,7 +1311,18 @@ export function Canvas({ store }: { store: EditorStore }) {
       ),
     );
   };
-  const onPointerUp = () => {
+  const onPointerUp = (event?: ReactPointerEvent<HTMLElement>) => {
+    if (interaction.state.type === 'idle') return;
+    if (
+      event &&
+      pointerOwner.current &&
+      event.pointerId !== pointerOwner.current.id
+    )
+      return;
+    // Pointerup may contain a newer sample than the final coalesced pointermove.
+    // Legacy mouse-only dispatchers have no pointer identity; retain their last preview.
+    if (event && Number.isFinite(event.pointerId)) onPointerMove(event);
+    pointerOwner.current = undefined;
     moveSnap.current = undefined;
     setSnapGuides([]);
     const m = marquee.current;
@@ -1403,6 +1428,28 @@ export function Canvas({ store }: { store: EditorStore }) {
     } else if (!g) store.endDrag();
     setTransformPreview(undefined);
   };
+  const canvasPointer = (event: PointerEvent) =>
+    ({
+      clientX: event.clientX,
+      clientY: event.clientY,
+      pointerId: event.pointerId,
+      shiftKey: event.shiftKey,
+      altKey: event.altKey,
+      ctrlKey: event.ctrlKey,
+      metaKey: event.metaKey,
+      currentTarget: pointerOwner.current?.element ?? ref.current!,
+    }) as ReactPointerEvent<HTMLElement>;
+  usePointerRelease({
+    active: () => !!pointerOwner.current && interaction.state.type !== 'idle',
+    accepts: (event) => event.pointerId === pointerOwner.current?.id,
+    move: (event) => {
+      // Captured events already go through React; window handles capture loss / outside moves.
+      if (event.target !== pointerOwner.current?.element)
+        onPointerMove(canvasPointer(event));
+    },
+    finish: (event) => onPointerUp(canvasPointer(event)),
+    cancel: cancelCanvas,
+  });
   return (
     <section
       className="canvas-panel"
@@ -1620,9 +1667,18 @@ export function Canvas({ store }: { store: EditorStore }) {
             setPanning(false);
           }}
           onLostPointerCapture={() => {
-            if (interaction.state.type !== 'idle') cancelCanvas();
+            // Object gestures continue via the shared window release handler.
+            if (pan.current) {
+              pan.current = undefined;
+              setPanning(false);
+            }
           }}
-          onPointerCancel={() => {
+          onPointerCancel={(event) => {
+            if (
+              pointerOwner.current &&
+              event.pointerId !== pointerOwner.current.id
+            )
+              return;
             cancelCanvas();
             setPanning(false);
             if (pan.current) setOffset(pan.current.offset);
@@ -1695,27 +1751,16 @@ export function Canvas({ store }: { store: EditorStore }) {
                   );
                 else if (layer.type === 'shape') setInternal(layer.id);
               }}
-              onPointerCancel={() => {
-                guidanceController.activate();
-                cancelMarquee();
-                drawing.current = undefined;
-                setDrawBox(undefined);
-                gesture.current = undefined;
-                setTransformPreview(undefined);
-                store.cancelDrag();
-                moveSnap.current = undefined;
-                setSnapGuides([]);
+              onPointerCancel={(event) => {
+                if (
+                  !pointerOwner.current ||
+                  event.pointerId === pointerOwner.current.id
+                )
+                  cancelCanvas();
               }}
               onLostPointerCapture={() => {
-                guidanceController.activate();
-                cancelMarquee();
-                drawing.current = undefined;
-                setDrawBox(undefined);
-                gesture.current = undefined;
-                setTransformPreview(undefined);
-                store.cancelDrag();
-                moveSnap.current = undefined;
-                setSnapGuides([]);
+                // Capture loss is not pointercancel: keep the draft until release, Esc or blur.
+                setHoverId(undefined);
               }}
             />
             <CanvasAids
