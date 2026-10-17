@@ -355,7 +355,10 @@ function LegacyAgentPanel({
           <CreationReview agent={agent} onAccepted={() => setPrompt('')} />
         )}
         {session.response && (
-          <p className="agent-response">{session.response}</p>
+          <details className="agent-response">
+            <summary>处理记录</summary>
+            <p>{session.response}</p>
+          </details>
         )}
         {session.error && <p role="alert">{session.error}</p>}
         {error && <p role="alert">{error}</p>}
